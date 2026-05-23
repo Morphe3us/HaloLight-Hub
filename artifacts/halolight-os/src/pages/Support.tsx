@@ -46,12 +46,12 @@ const priorityIcons: Record<string, React.ReactNode> = {
 export default function Support() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState("all");
   const [statusFilter, setStatusFilter] = useState("");
   const [showCreate, setShowCreate] = useState(false);
   const [form, setForm] = useState({ title: "", description: "", priority: "medium", category: "general" });
 
-  const { data, isLoading } = useListSupportTickets({ status: statusFilter || undefined });
+  const { data, isLoading } = useListSupportTickets({ status: statusFilter === "all" ? undefined : statusFilter });
   const { mutate: createTicket, isPending } = useCreateSupportTicket({
     mutation: {
       onSuccess: () => {
@@ -117,7 +117,7 @@ export default function Support() {
             <SelectValue placeholder="All statuses" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All statuses</SelectItem>
+            <SelectItem value="all">All statuses</SelectItem>
             <SelectItem value="open">Open</SelectItem>
             <SelectItem value="in_progress">In Progress</SelectItem>
             <SelectItem value="waiting_on_client">Waiting on Client</SelectItem>

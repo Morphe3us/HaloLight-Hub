@@ -41,11 +41,11 @@ export default function KBAdmin() {
   const [editId, setEditId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [form, setForm] = useState<ArticleForm>(emptyForm);
-  const [categoryFilter, setCategoryFilter] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("all");
 
   const { data: categoriesData } = useListKbCategories();
   const { data: articlesData, isLoading } = useListKbArticles({
-    categoryId: categoryFilter || undefined,
+    categoryId: categoryFilter === "all" ? undefined : categoryFilter,
   });
 
   const { mutate: createArticle, isPending: isCreating } = useCreateKbArticle({
@@ -138,7 +138,7 @@ export default function KBAdmin() {
             <SelectValue placeholder="All categories" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All categories</SelectItem>
+            <SelectItem value="all">All categories</SelectItem>
             {categories.map((c) => (
               <SelectItem key={c.id} value={c.id!}>{c.name}</SelectItem>
             ))}

@@ -35,7 +35,7 @@ function ScoreBadge({ score, tier }: { score?: number | null; tier?: string | nu
 
 export default function AdminClients() {
   const [search, setSearch] = useState("");
-  const [tierFilter, setTierFilter] = useState("");
+  const [tierFilter, setTierFilter] = useState("all");
 
   const { data, isLoading } = useListAdminClients();
   const clients = data?.items ?? [];
@@ -45,7 +45,7 @@ export default function AdminClients() {
       || (c.fullName ?? "").toLowerCase().includes(search.toLowerCase())
       || (c.email ?? "").toLowerCase().includes(search.toLowerCase())
       || (c.companyName ?? "").toLowerCase().includes(search.toLowerCase());
-    const matchTier = !tierFilter || c.tier === tierFilter;
+    const matchTier = tierFilter === "all" || c.tier === tierFilter;
     return matchSearch && matchTier;
   });
 
@@ -79,7 +79,7 @@ export default function AdminClients() {
             <Card
               key={tier}
               className={`cursor-pointer transition-all ${tierFilter === tier ? `${cfg.border} border-2` : "border"}`}
-              onClick={() => setTierFilter(tierFilter === tier ? "" : tier)}
+              onClick={() => setTierFilter(tierFilter === tier ? "all" : tier)}
             >
               <CardContent className={`p-4 ${cfg.bg} rounded-lg`}>
                 <div className="flex items-center justify-between mb-1">
@@ -108,7 +108,7 @@ export default function AdminClients() {
             <SelectValue placeholder="All tiers" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All tiers</SelectItem>
+            <SelectItem value="all">All tiers</SelectItem>
             <SelectItem value="champion">Champion</SelectItem>
             <SelectItem value="healthy">Healthy</SelectItem>
             <SelectItem value="developing">Developing</SelectItem>
