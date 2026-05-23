@@ -53,7 +53,7 @@ function PrintPreview({ quoteNumber, title, clientName, clientEmail, items, subt
       @media print{body{margin:20px}}
     </style></head><body>
     <div class="header">
-      <div><div class="brand">HaloLight OS</div><h1 style="margin-top:12px">${quoteNumber}</h1><div style="color:#666;margin-top:4px">${title}</div></div>
+      <div><div class="brand">HaloLight Hub</div><h1 style="margin-top:12px">${quoteNumber}</h1><div style="color:#666;margin-top:4px">${title}</div></div>
       <div class="meta">
         <div style="font-size:11px;color:#999">QUOTE DATE</div>
         <div>${new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"})}</div>

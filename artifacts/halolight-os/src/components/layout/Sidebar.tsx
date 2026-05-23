@@ -182,11 +182,7 @@ export function Sidebar() {
     <div className="flex flex-col h-full bg-background border-r border-border">
       {/* Logo */}
       <div className="px-5 py-5 border-b border-border">
-        <div className="flex items-center gap-2.5">
-          <img src="/logo-dark.png" alt="HaloLight" className="h-7 w-auto object-contain dark:hidden" />
-          <img src="/logo-white.png" alt="HaloLight" className="h-7 w-auto object-contain hidden dark:block" />
-          <span className="font-semibold text-base tracking-tight text-foreground">HaloLight OS</span>
-        </div>
+        <img src="/logo-hub.png" alt="HaloLight Hub" className="h-10 w-auto object-contain dark:invert" />
       </div>
 
       {/* Navigation */}
@@ -229,9 +225,7 @@ export function Sidebar() {
             <SidebarContent onClose={() => setMobileOpen(false)} />
           </SheetContent>
         </Sheet>
-        <img src="/logo-dark.png" alt="HaloLight" className="h-7 w-auto object-contain dark:hidden" />
-        <img src="/logo-white.png" alt="HaloLight" className="h-7 w-auto object-contain hidden dark:block" />
-        <span className="ml-2.5 font-semibold text-base tracking-tight text-foreground">HaloLight OS</span>
+        <img src="/logo-hub.png" alt="HaloLight Hub" className="h-8 w-auto object-contain dark:invert" />
       </div>
     </>
   );

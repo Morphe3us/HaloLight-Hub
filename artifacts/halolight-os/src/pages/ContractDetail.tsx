@@ -46,7 +46,7 @@ function PrintButton({ contractNumber, title, clientName, content, value }: {
       .content{white-space:pre-wrap;font-size:13px;line-height:1.8;background:#fafafa;padding:24px;border-radius:8px;border:1px solid #eee}
       @media print{body{margin:20px}}
     </style></head><body>
-    <div class="brand">HaloLight OS</div>
+    <div class="brand">HaloLight Hub</div>
     <div class="header">
       <h1>${title}</h1>
       <div style="color:#666;margin-top:4px">${contractNumber}</div>

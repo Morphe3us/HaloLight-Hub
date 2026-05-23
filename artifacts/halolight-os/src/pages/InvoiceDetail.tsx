@@ -51,7 +51,7 @@ function PrintButton({ invoice, items }: { invoice: any; items: any[] }) {
       @media print{body{margin:20px}}
     </style></head><body>
     <div class="header">
-      <div><div class="brand">HaloLight OS</div><h1 style="margin-top:12px">INVOICE</h1><div style="color:#666;font-size:16px;margin-top:4px">${invoice.invoiceNumber}</div><span class="badge">${invoice.status.toUpperCase()}</span></div>
+      <div><div class="brand">HaloLight Hub</div><h1 style="margin-top:12px">INVOICE</h1><div style="color:#666;font-size:16px;margin-top:4px">${invoice.invoiceNumber}</div><span class="badge">${invoice.status.toUpperCase()}</span></div>
       <div style="text-align:right;font-size:12px;color:#666">
         <div style="font-size:11px;color:#999">INVOICE DATE</div><div>${new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"})}</div>
         ${invoice.dueDate ? `<div style="margin-top:8px;font-size:11px;color:#999">DUE DATE</div><div>${new Date(invoice.dueDate).toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"})}</div>` : ""}

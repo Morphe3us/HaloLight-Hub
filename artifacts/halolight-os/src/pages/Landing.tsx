@@ -8,9 +8,7 @@ export default function Landing() {
       {/* Header */}
       <header className="bg-background/80 backdrop-blur-md border-b border-border px-6 py-4 flex items-center justify-between sticky top-0 z-50">
         <div className="flex items-center gap-3">
-          <img src="/logo-dark.png" alt="HaloLight" className="h-8 w-auto object-contain dark:hidden" />
-          <img src="/logo-white.png" alt="HaloLight" className="h-8 w-auto object-contain hidden dark:block" />
-          <span className="font-bold text-lg tracking-tight text-foreground">HaloLight OS</span>
+          <img src="/logo-hub.png" alt="HaloLight Hub" className="h-10 w-auto object-contain dark:invert" />
         </div>
         <div className="flex items-center gap-3">
           <Link href="/sign-in">
@@ -41,7 +39,7 @@ export default function Landing() {
             <span style={{ color: "#DDB398" }}>photobooth businesses</span>.
           </h1>
           <p className="text-xl text-muted-foreground mb-10 max-w-2xl leading-relaxed">
-            HaloLight OS gives you everything you need to manage your equipment, train your team, and scale your photobooth operations — all in one unified cockpit.
+            HaloLight Hub gives you everything you need to manage your equipment, train your team, and scale your photobooth operations — all in one unified cockpit.
           </p>
           <div className="flex flex-col sm:flex-row gap-4">
             <Link href="/sign-up">
@@ -122,7 +120,7 @@ export default function Landing() {
             <div className="absolute top-0 left-0 w-full h-1 bg-accent rounded-t-3xl"></div>
             <h2 className="text-3xl font-bold text-background mb-4">Ready to streamline your business?</h2>
             <p className="text-background/60 text-lg mb-8 max-w-xl mx-auto">
-              Join hundreds of professional event companies running their operations on HaloLight OS.
+              Join hundreds of professional event companies running their operations on HaloLight Hub.
             </p>
             <Link href="/sign-up">
               <Button size="lg" className="h-12 px-8 text-base font-semibold bg-accent text-foreground hover:bg-accent/90 border-0 shadow-none">
