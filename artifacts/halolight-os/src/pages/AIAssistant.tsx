@@ -552,20 +552,15 @@ export default function AIAssistant() {
     setPendingUserMsg(null);
   };
 
-  // Start a conversation from the welcome state (pill or typed input)
+  // Start a conversation from the welcome state (pill or typed input).
+  // Uses setPendingVoiceSend + newConv() — same pattern as voice input — so the
+  // useEffect below fires with a fresh sendMessage that has the updated activeConvId.
   const handleWelcomeSubmit = (text?: string) => {
     const msg = (text ?? input).trim();
     if (!msg || isCreating) return;
     if (!text) setInput("");
-    createConv(undefined as unknown as void, {
-      onSuccess: (data) => {
-        qc.invalidateQueries({ queryKey: ["/api/ai/conversations"] });
-        if (data.id) {
-          setActiveConvId(data.id);
-          setTimeout(() => void sendMessage(msg), 300);
-        }
-      },
-    });
+    setPendingVoiceSend(msg);
+    newConv();
   };
 
   // ─── Pending voice send: fires after a new conversation is activated ──────
