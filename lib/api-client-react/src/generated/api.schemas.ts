@@ -373,6 +373,407 @@ export interface EventUpdate {
   notes?: string;
 }
 
+export type LeadSource = typeof LeadSource[keyof typeof LeadSource];
+
+
+export const LeadSource = {
+  website: 'website',
+  referral: 'referral',
+  social_media: 'social_media',
+  trade_show: 'trade_show',
+  cold_outreach: 'cold_outreach',
+  inbound_call: 'inbound_call',
+  other: 'other',
+} as const;
+
+export type LeadStatus = typeof LeadStatus[keyof typeof LeadStatus];
+
+
+export const LeadStatus = {
+  new: 'new',
+  contacted: 'contacted',
+  qualified: 'qualified',
+  proposal: 'proposal',
+  negotiation: 'negotiation',
+  won: 'won',
+  lost: 'lost',
+} as const;
+
+export interface Lead {
+  id: string;
+  userId: string;
+  companyName: string;
+  contactName: string;
+  /** @nullable */
+  email?: string | null;
+  /** @nullable */
+  phone?: string | null;
+  source: LeadSource;
+  status: LeadStatus;
+  value: string;
+  /** @nullable */
+  notes?: string | null;
+  /** @nullable */
+  address?: string | null;
+  /** @nullable */
+  eventType?: string | null;
+  /** @nullable */
+  expectedEventDate?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type ActivityType = typeof ActivityType[keyof typeof ActivityType];
+
+
+export const ActivityType = {
+  note: 'note',
+  call: 'call',
+  email: 'email',
+  meeting: 'meeting',
+  status_change: 'status_change',
+  quote_sent: 'quote_sent',
+  contract_sent: 'contract_sent',
+  invoice_sent: 'invoice_sent',
+} as const;
+
+export interface Activity {
+  id: string;
+  leadId: string;
+  userId: string;
+  type: ActivityType;
+  title: string;
+  /** @nullable */
+  description?: string | null;
+  createdAt: string;
+}
+
+export type LeadDetail = Lead & {
+  activities: Activity[];
+};
+
+export interface LeadList {
+  items: Lead[];
+  total: number;
+}
+
+export type LeadInputSource = typeof LeadInputSource[keyof typeof LeadInputSource];
+
+
+export const LeadInputSource = {
+  website: 'website',
+  referral: 'referral',
+  social_media: 'social_media',
+  trade_show: 'trade_show',
+  cold_outreach: 'cold_outreach',
+  inbound_call: 'inbound_call',
+  other: 'other',
+} as const;
+
+export type LeadInputStatus = typeof LeadInputStatus[keyof typeof LeadInputStatus];
+
+
+export const LeadInputStatus = {
+  new: 'new',
+  contacted: 'contacted',
+  qualified: 'qualified',
+  proposal: 'proposal',
+  negotiation: 'negotiation',
+  won: 'won',
+  lost: 'lost',
+} as const;
+
+export interface LeadInput {
+  companyName: string;
+  contactName: string;
+  email?: string;
+  phone?: string;
+  source?: LeadInputSource;
+  status?: LeadInputStatus;
+  value?: string;
+  notes?: string;
+  address?: string;
+  eventType?: string;
+  expectedEventDate?: string;
+}
+
+export type ActivityInputType = typeof ActivityInputType[keyof typeof ActivityInputType];
+
+
+export const ActivityInputType = {
+  note: 'note',
+  call: 'call',
+  email: 'email',
+  meeting: 'meeting',
+  status_change: 'status_change',
+  quote_sent: 'quote_sent',
+  contract_sent: 'contract_sent',
+  invoice_sent: 'invoice_sent',
+} as const;
+
+export interface ActivityInput {
+  type: ActivityInputType;
+  title: string;
+  description?: string;
+}
+
+export interface QuoteItem {
+  id: string;
+  quoteId: string;
+  description: string;
+  quantity: string;
+  unitPrice: string;
+  total: string;
+  order: number;
+}
+
+export interface QuoteItemInput {
+  description: string;
+  quantity: string;
+  unitPrice: string;
+  order?: number;
+}
+
+export type QuoteStatus = typeof QuoteStatus[keyof typeof QuoteStatus];
+
+
+export const QuoteStatus = {
+  draft: 'draft',
+  sent: 'sent',
+  accepted: 'accepted',
+  declined: 'declined',
+  expired: 'expired',
+} as const;
+
+export interface Quote {
+  id: string;
+  userId: string;
+  /** @nullable */
+  leadId?: string | null;
+  quoteNumber: string;
+  title: string;
+  clientName: string;
+  /** @nullable */
+  clientEmail?: string | null;
+  /** @nullable */
+  clientPhone?: string | null;
+  status: QuoteStatus;
+  subtotal: string;
+  taxRate: string;
+  taxAmount: string;
+  total: string;
+  /** @nullable */
+  notes?: string | null;
+  /** @nullable */
+  terms?: string | null;
+  /** @nullable */
+  validUntil?: string | null;
+  /** @nullable */
+  sentAt?: string | null;
+  /** @nullable */
+  acceptedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type QuoteDetail = Quote & {
+  items: QuoteItem[];
+};
+
+export interface QuoteList {
+  items: Quote[];
+  total: number;
+}
+
+export interface QuoteInput {
+  leadId?: string;
+  title: string;
+  clientName: string;
+  clientEmail?: string;
+  clientPhone?: string;
+  taxRate?: string;
+  notes?: string;
+  terms?: string;
+  validUntil?: string;
+  items: QuoteItemInput[];
+}
+
+export interface ContractTemplate {
+  id: string;
+  title: string;
+  category: string;
+  content: string;
+  createdAt: string;
+}
+
+export type ContractStatus = typeof ContractStatus[keyof typeof ContractStatus];
+
+
+export const ContractStatus = {
+  draft: 'draft',
+  sent: 'sent',
+  signed: 'signed',
+  active: 'active',
+  expired: 'expired',
+  cancelled: 'cancelled',
+} as const;
+
+export interface Contract {
+  id: string;
+  userId: string;
+  /** @nullable */
+  leadId?: string | null;
+  /** @nullable */
+  quoteId?: string | null;
+  contractNumber: string;
+  title: string;
+  clientName: string;
+  /** @nullable */
+  clientEmail?: string | null;
+  status: ContractStatus;
+  content: string;
+  value: string;
+  /** @nullable */
+  startDate?: string | null;
+  /** @nullable */
+  endDate?: string | null;
+  /** @nullable */
+  signedAt?: string | null;
+  /** @nullable */
+  sentAt?: string | null;
+  /** @nullable */
+  notes?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ContractList {
+  items: Contract[];
+  total: number;
+}
+
+export interface ContractInput {
+  leadId?: string;
+  quoteId?: string;
+  templateId?: string;
+  title: string;
+  clientName: string;
+  clientEmail?: string;
+  content: string;
+  value?: string;
+  startDate?: string;
+  endDate?: string;
+  notes?: string;
+}
+
+export interface InvoiceItem {
+  id: string;
+  invoiceId: string;
+  description: string;
+  quantity: string;
+  unitPrice: string;
+  total: string;
+  order: number;
+}
+
+export interface InvoiceItemInput {
+  description: string;
+  quantity: string;
+  unitPrice: string;
+  order?: number;
+}
+
+export type InvoiceStatus = typeof InvoiceStatus[keyof typeof InvoiceStatus];
+
+
+export const InvoiceStatus = {
+  draft: 'draft',
+  sent: 'sent',
+  paid: 'paid',
+  overdue: 'overdue',
+  cancelled: 'cancelled',
+} as const;
+
+export interface Invoice {
+  id: string;
+  userId: string;
+  /** @nullable */
+  leadId?: string | null;
+  /** @nullable */
+  quoteId?: string | null;
+  /** @nullable */
+  contractId?: string | null;
+  invoiceNumber: string;
+  title: string;
+  clientName: string;
+  /** @nullable */
+  clientEmail?: string | null;
+  status: InvoiceStatus;
+  subtotal: string;
+  taxRate: string;
+  taxAmount: string;
+  total: string;
+  /** @nullable */
+  notes?: string | null;
+  /** @nullable */
+  terms?: string | null;
+  /** @nullable */
+  dueDate?: string | null;
+  /** @nullable */
+  sentAt?: string | null;
+  /** @nullable */
+  paidAt?: string | null;
+  /** @nullable */
+  paidAmount?: string | null;
+  /** @nullable */
+  paymentMethod?: string | null;
+  /** @nullable */
+  paymentReference?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type InvoiceDetail = Invoice & {
+  items: InvoiceItem[];
+};
+
+export interface InvoiceList {
+  items: Invoice[];
+  total: number;
+}
+
+export interface InvoiceInput {
+  leadId?: string;
+  quoteId?: string;
+  contractId?: string;
+  title: string;
+  clientName: string;
+  clientEmail?: string;
+  taxRate?: string;
+  notes?: string;
+  terms?: string;
+  dueDate?: string;
+  items: InvoiceItemInput[];
+}
+
+export type InvoiceStatusUpdateStatus = typeof InvoiceStatusUpdateStatus[keyof typeof InvoiceStatusUpdateStatus];
+
+
+export const InvoiceStatusUpdateStatus = {
+  draft: 'draft',
+  sent: 'sent',
+  paid: 'paid',
+  overdue: 'overdue',
+  cancelled: 'cancelled',
+} as const;
+
+export interface InvoiceStatusUpdate {
+  status: InvoiceStatusUpdateStatus;
+  paidAmount?: string;
+  paymentMethod?: string;
+  paymentReference?: string;
+}
+
 export type ListUsersParams = {
 role?: string;
 limit?: number;
@@ -408,4 +809,112 @@ status?: string;
 limit?: number;
 offset?: number;
 };
+
+export type ListLeadsParams = {
+status?: ListLeadsStatus;
+search?: string;
+limit?: number;
+offset?: number;
+};
+
+export type ListLeadsStatus = typeof ListLeadsStatus[keyof typeof ListLeadsStatus];
+
+
+export const ListLeadsStatus = {
+  new: 'new',
+  contacted: 'contacted',
+  qualified: 'qualified',
+  proposal: 'proposal',
+  negotiation: 'negotiation',
+  won: 'won',
+  lost: 'lost',
+} as const;
+
+export type ListQuotesParams = {
+status?: ListQuotesStatus;
+leadId?: string;
+limit?: number;
+offset?: number;
+};
+
+export type ListQuotesStatus = typeof ListQuotesStatus[keyof typeof ListQuotesStatus];
+
+
+export const ListQuotesStatus = {
+  draft: 'draft',
+  sent: 'sent',
+  accepted: 'accepted',
+  declined: 'declined',
+  expired: 'expired',
+} as const;
+
+export type UpdateQuoteStatusBodyStatus = typeof UpdateQuoteStatusBodyStatus[keyof typeof UpdateQuoteStatusBodyStatus];
+
+
+export const UpdateQuoteStatusBodyStatus = {
+  draft: 'draft',
+  sent: 'sent',
+  accepted: 'accepted',
+  declined: 'declined',
+  expired: 'expired',
+} as const;
+
+export type UpdateQuoteStatusBody = {
+  status: UpdateQuoteStatusBodyStatus;
+};
+
+export type ListContractsParams = {
+status?: ListContractsStatus;
+limit?: number;
+offset?: number;
+};
+
+export type ListContractsStatus = typeof ListContractsStatus[keyof typeof ListContractsStatus];
+
+
+export const ListContractsStatus = {
+  draft: 'draft',
+  sent: 'sent',
+  signed: 'signed',
+  active: 'active',
+  expired: 'expired',
+  cancelled: 'cancelled',
+} as const;
+
+export type UpdateContractStatusBodyStatus = typeof UpdateContractStatusBodyStatus[keyof typeof UpdateContractStatusBodyStatus];
+
+
+export const UpdateContractStatusBodyStatus = {
+  draft: 'draft',
+  sent: 'sent',
+  signed: 'signed',
+  active: 'active',
+  expired: 'expired',
+  cancelled: 'cancelled',
+} as const;
+
+export type UpdateContractStatusBody = {
+  status: UpdateContractStatusBodyStatus;
+};
+
+export type ListContractTemplates200 = {
+  items: ContractTemplate[];
+};
+
+export type ListInvoicesParams = {
+status?: ListInvoicesStatus;
+limit?: number;
+offset?: number;
+};
+
+export type ListInvoicesStatus = typeof ListInvoicesStatus[keyof typeof ListInvoicesStatus];
+
+
+export const ListInvoicesStatus = {
+  draft: 'draft',
+  sent: 'sent',
+  paid: 'paid',
+  overdue: 'overdue',
+  cancelled: 'cancelled',
+} as const;
 

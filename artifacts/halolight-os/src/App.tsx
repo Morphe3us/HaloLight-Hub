@@ -16,6 +16,14 @@ import Academy from "./pages/Academy";
 import AcademyCourse from "./pages/AcademyCourse";
 import AcademyLesson from "./pages/AcademyLesson";
 import Events from "./pages/Events";
+import Leads from "./pages/Leads";
+import LeadDetail from "./pages/LeadDetail";
+import Quotes from "./pages/Quotes";
+import QuoteDetail from "./pages/QuoteDetail";
+import Contracts from "./pages/Contracts";
+import ContractDetail from "./pages/ContractDetail";
+import Invoices from "./pages/Invoices";
+import InvoiceDetail from "./pages/InvoiceDetail";
 import { AppShell } from "./components/layout/AppShell";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -191,6 +199,14 @@ function ClerkProviderWithRoutes() {
             <ProtectedRoute path="/academy/:courseId/:lessonId" component={AcademyLesson} />
             <ProtectedRoute path="/academy/:courseId" component={AcademyCourse} />
             <ProtectedRoute path="/events" component={Events} />
+            <ProtectedRoute path="/crm/leads/:id" component={LeadDetail} />
+            <ProtectedRoute path="/crm/leads" component={Leads} />
+            <ProtectedRoute path="/quotes/:id" component={QuoteDetail} />
+            <ProtectedRoute path="/quotes" component={Quotes} />
+            <ProtectedRoute path="/contracts/:id" component={ContractDetail} />
+            <ProtectedRoute path="/contracts" component={Contracts} />
+            <ProtectedRoute path="/invoices/:id" component={InvoiceDetail} />
+            <ProtectedRoute path="/invoices" component={Invoices} />
             <ProtectedRoute path="/notifications" component={Notifications} />
             <ProtectedRoute path="/onboarding" component={Onboarding} />
             <ProtectedRoute path="/settings" component={Settings} />

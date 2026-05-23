@@ -22,6 +22,14 @@ tags:
     description: Event management
   - name: dashboard
     description: Dashboard aggregations
+  - name: leads
+    description: CRM lead pipeline management
+  - name: quotes
+    description: Quote generation and management
+  - name: contracts
+    description: Contract generation and management
+  - name: invoices
+    description: Invoice management and payment tracking
 
 paths:
   /healthz:
@@ -554,6 +562,559 @@ paths:
       responses:
         "204":
           description: Deleted
+
+  # ─── Leads ──────────────────────────────────────────────────────────────
+  /leads:
+    get:
+      operationId: listLeads
+      tags: [leads]
+      summary: List leads for current user
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [new, contacted, qualified, proposal, negotiation, won, lost]
+        - in: query
+          name: search
+          schema:
+            type: string
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 50
+        - in: query
+          name: offset
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: List of leads
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LeadList"
+    post:
+      operationId: createLead
+      tags: [leads]
+      summary: Create a new lead
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LeadInput"
+      responses:
+        "201":
+          description: Created lead
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Lead"
+
+  /leads/{id}:
+    get:
+      operationId: getLead
+      tags: [leads]
+      summary: Get lead detail with activities
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Lead detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LeadDetail"
+        "404":
+          description: Not found
+    put:
+      operationId: updateLead
+      tags: [leads]
+      summary: Update a lead
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LeadInput"
+      responses:
+        "200":
+          description: Updated lead
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Lead"
+    delete:
+      operationId: deleteLead
+      tags: [leads]
+      summary: Delete a lead
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+
+  /leads/{id}/activities:
+    post:
+      operationId: createLeadActivity
+      tags: [leads]
+      summary: Add an activity to a lead
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ActivityInput"
+      responses:
+        "201":
+          description: Created activity
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Activity"
+
+  # ─── Quotes ─────────────────────────────────────────────────────────────
+  /quotes:
+    get:
+      operationId: listQuotes
+      tags: [quotes]
+      summary: List quotes for current user
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [draft, sent, accepted, declined, expired]
+        - in: query
+          name: leadId
+          schema:
+            type: string
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 50
+        - in: query
+          name: offset
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: List of quotes
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuoteList"
+    post:
+      operationId: createQuote
+      tags: [quotes]
+      summary: Create a new quote
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/QuoteInput"
+      responses:
+        "201":
+          description: Created quote
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuoteDetail"
+
+  /quotes/{id}:
+    get:
+      operationId: getQuote
+      tags: [quotes]
+      summary: Get quote detail with items
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Quote detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuoteDetail"
+        "404":
+          description: Not found
+    put:
+      operationId: updateQuote
+      tags: [quotes]
+      summary: Update a quote
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/QuoteInput"
+      responses:
+        "200":
+          description: Updated quote
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuoteDetail"
+    delete:
+      operationId: deleteQuote
+      tags: [quotes]
+      summary: Delete a quote
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+
+  /quotes/{id}/status:
+    patch:
+      operationId: updateQuoteStatus
+      tags: [quotes]
+      summary: Update quote status
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [draft, sent, accepted, declined, expired]
+      responses:
+        "200":
+          description: Updated quote
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuoteDetail"
+
+  # ─── Contracts ───────────────────────────────────────────────────────────
+  /contracts:
+    get:
+      operationId: listContracts
+      tags: [contracts]
+      summary: List contracts for current user
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [draft, sent, signed, active, expired, cancelled]
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 50
+        - in: query
+          name: offset
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: List of contracts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContractList"
+    post:
+      operationId: createContract
+      tags: [contracts]
+      summary: Create a new contract
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContractInput"
+      responses:
+        "201":
+          description: Created contract
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Contract"
+
+  /contracts/{id}:
+    get:
+      operationId: getContract
+      tags: [contracts]
+      summary: Get contract detail
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Contract detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Contract"
+        "404":
+          description: Not found
+    put:
+      operationId: updateContract
+      tags: [contracts]
+      summary: Update a contract
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContractInput"
+      responses:
+        "200":
+          description: Updated contract
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Contract"
+    delete:
+      operationId: deleteContract
+      tags: [contracts]
+      summary: Delete a contract
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+
+  /contracts/{id}/status:
+    patch:
+      operationId: updateContractStatus
+      tags: [contracts]
+      summary: Update contract status
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [draft, sent, signed, active, expired, cancelled]
+      responses:
+        "200":
+          description: Updated contract
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Contract"
+
+  /contract-templates:
+    get:
+      operationId: listContractTemplates
+      tags: [contracts]
+      summary: List contract templates
+      responses:
+        "200":
+          description: List of templates
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ContractTemplate"
+
+  # ─── Invoices ────────────────────────────────────────────────────────────
+  /invoices:
+    get:
+      operationId: listInvoices
+      tags: [invoices]
+      summary: List invoices for current user
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [draft, sent, paid, overdue, cancelled]
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 50
+        - in: query
+          name: offset
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: List of invoices
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvoiceList"
+    post:
+      operationId: createInvoice
+      tags: [invoices]
+      summary: Create a new invoice
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InvoiceInput"
+      responses:
+        "201":
+          description: Created invoice
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvoiceDetail"
+
+  /invoices/{id}:
+    get:
+      operationId: getInvoice
+      tags: [invoices]
+      summary: Get invoice detail with items
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Invoice detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvoiceDetail"
+        "404":
+          description: Not found
+    put:
+      operationId: updateInvoice
+      tags: [invoices]
+      summary: Update an invoice
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InvoiceInput"
+      responses:
+        "200":
+          description: Updated invoice
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvoiceDetail"
+    delete:
+      operationId: deleteInvoice
+      tags: [invoices]
+      summary: Delete an invoice
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+
+  /invoices/{id}/status:
+    patch:
+      operationId: updateInvoiceStatus
+      tags: [invoices]
+      summary: Update invoice status / record payment
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InvoiceStatusUpdate"
+      responses:
+        "200":
+          description: Updated invoice
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvoiceDetail"
 
 components:
   schemas:
@@ -1111,4 +1672,527 @@ components:
           type: string
           enum: [upcoming, active, completed, cancelled]
         notes:
+          type: string
+
+    # ─── Leads / CRM ─────────────────────────────────────────────────────────
+    Lead:
+      type: object
+      required: [id, userId, companyName, contactName, source, status, value, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        companyName:
+          type: string
+        contactName:
+          type: string
+        email:
+          type: ["string", "null"]
+        phone:
+          type: ["string", "null"]
+        source:
+          type: string
+          enum: [website, referral, social_media, trade_show, cold_outreach, inbound_call, other]
+        status:
+          type: string
+          enum: [new, contacted, qualified, proposal, negotiation, won, lost]
+        value:
+          type: string
+        notes:
+          type: ["string", "null"]
+        address:
+          type: ["string", "null"]
+        eventType:
+          type: ["string", "null"]
+        expectedEventDate:
+          type: ["string", "null"]
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Activity:
+      type: object
+      required: [id, leadId, userId, type, title, createdAt]
+      properties:
+        id:
+          type: string
+        leadId:
+          type: string
+        userId:
+          type: string
+        type:
+          type: string
+          enum: [note, call, email, meeting, status_change, quote_sent, contract_sent, invoice_sent]
+        title:
+          type: string
+        description:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+
+    LeadDetail:
+      allOf:
+        - $ref: "#/components/schemas/Lead"
+        - type: object
+          required: [activities]
+          properties:
+            activities:
+              type: array
+              items:
+                $ref: "#/components/schemas/Activity"
+
+    LeadList:
+      type: object
+      required: [items, total]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Lead"
+        total:
+          type: integer
+
+    LeadInput:
+      type: object
+      required: [companyName, contactName]
+      properties:
+        companyName:
+          type: string
+        contactName:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        source:
+          type: string
+          enum: [website, referral, social_media, trade_show, cold_outreach, inbound_call, other]
+        status:
+          type: string
+          enum: [new, contacted, qualified, proposal, negotiation, won, lost]
+        value:
+          type: string
+        notes:
+          type: string
+        address:
+          type: string
+        eventType:
+          type: string
+        expectedEventDate:
+          type: string
+          format: date-time
+
+    ActivityInput:
+      type: object
+      required: [type, title]
+      properties:
+        type:
+          type: string
+          enum: [note, call, email, meeting, status_change, quote_sent, contract_sent, invoice_sent]
+        title:
+          type: string
+        description:
+          type: string
+
+    # ─── Quotes ──────────────────────────────────────────────────────────────
+    QuoteItem:
+      type: object
+      required: [id, quoteId, description, quantity, unitPrice, total, order]
+      properties:
+        id:
+          type: string
+        quoteId:
+          type: string
+        description:
+          type: string
+        quantity:
+          type: string
+        unitPrice:
+          type: string
+        total:
+          type: string
+        order:
+          type: integer
+
+    QuoteItemInput:
+      type: object
+      required: [description, quantity, unitPrice]
+      properties:
+        description:
+          type: string
+        quantity:
+          type: string
+        unitPrice:
+          type: string
+        order:
+          type: integer
+
+    Quote:
+      type: object
+      required: [id, userId, quoteNumber, title, clientName, status, subtotal, taxRate, taxAmount, total, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        leadId:
+          type: ["string", "null"]
+        quoteNumber:
+          type: string
+        title:
+          type: string
+        clientName:
+          type: string
+        clientEmail:
+          type: ["string", "null"]
+        clientPhone:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [draft, sent, accepted, declined, expired]
+        subtotal:
+          type: string
+        taxRate:
+          type: string
+        taxAmount:
+          type: string
+        total:
+          type: string
+        notes:
+          type: ["string", "null"]
+        terms:
+          type: ["string", "null"]
+        validUntil:
+          type: ["string", "null"]
+          format: date-time
+        sentAt:
+          type: ["string", "null"]
+          format: date-time
+        acceptedAt:
+          type: ["string", "null"]
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    QuoteDetail:
+      allOf:
+        - $ref: "#/components/schemas/Quote"
+        - type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: "#/components/schemas/QuoteItem"
+
+    QuoteList:
+      type: object
+      required: [items, total]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Quote"
+        total:
+          type: integer
+
+    QuoteInput:
+      type: object
+      required: [title, clientName, items]
+      properties:
+        leadId:
+          type: string
+        title:
+          type: string
+        clientName:
+          type: string
+        clientEmail:
+          type: string
+        clientPhone:
+          type: string
+        taxRate:
+          type: string
+        notes:
+          type: string
+        terms:
+          type: string
+        validUntil:
+          type: string
+          format: date-time
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/QuoteItemInput"
+
+    # ─── Contracts ───────────────────────────────────────────────────────────
+    ContractTemplate:
+      type: object
+      required: [id, title, category, content, createdAt]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        category:
+          type: string
+        content:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    Contract:
+      type: object
+      required: [id, userId, contractNumber, title, clientName, status, content, value, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        leadId:
+          type: ["string", "null"]
+        quoteId:
+          type: ["string", "null"]
+        contractNumber:
+          type: string
+        title:
+          type: string
+        clientName:
+          type: string
+        clientEmail:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [draft, sent, signed, active, expired, cancelled]
+        content:
+          type: string
+        value:
+          type: string
+        startDate:
+          type: ["string", "null"]
+          format: date-time
+        endDate:
+          type: ["string", "null"]
+          format: date-time
+        signedAt:
+          type: ["string", "null"]
+          format: date-time
+        sentAt:
+          type: ["string", "null"]
+          format: date-time
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    ContractList:
+      type: object
+      required: [items, total]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Contract"
+        total:
+          type: integer
+
+    ContractInput:
+      type: object
+      required: [title, clientName, content]
+      properties:
+        leadId:
+          type: string
+        quoteId:
+          type: string
+        templateId:
+          type: string
+        title:
+          type: string
+        clientName:
+          type: string
+        clientEmail:
+          type: string
+        content:
+          type: string
+        value:
+          type: string
+        startDate:
+          type: string
+          format: date-time
+        endDate:
+          type: string
+          format: date-time
+        notes:
+          type: string
+
+    # ─── Invoices ────────────────────────────────────────────────────────────
+    InvoiceItem:
+      type: object
+      required: [id, invoiceId, description, quantity, unitPrice, total, order]
+      properties:
+        id:
+          type: string
+        invoiceId:
+          type: string
+        description:
+          type: string
+        quantity:
+          type: string
+        unitPrice:
+          type: string
+        total:
+          type: string
+        order:
+          type: integer
+
+    InvoiceItemInput:
+      type: object
+      required: [description, quantity, unitPrice]
+      properties:
+        description:
+          type: string
+        quantity:
+          type: string
+        unitPrice:
+          type: string
+        order:
+          type: integer
+
+    Invoice:
+      type: object
+      required: [id, userId, invoiceNumber, title, clientName, status, subtotal, taxRate, taxAmount, total, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        leadId:
+          type: ["string", "null"]
+        quoteId:
+          type: ["string", "null"]
+        contractId:
+          type: ["string", "null"]
+        invoiceNumber:
+          type: string
+        title:
+          type: string
+        clientName:
+          type: string
+        clientEmail:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [draft, sent, paid, overdue, cancelled]
+        subtotal:
+          type: string
+        taxRate:
+          type: string
+        taxAmount:
+          type: string
+        total:
+          type: string
+        notes:
+          type: ["string", "null"]
+        terms:
+          type: ["string", "null"]
+        dueDate:
+          type: ["string", "null"]
+          format: date-time
+        sentAt:
+          type: ["string", "null"]
+          format: date-time
+        paidAt:
+          type: ["string", "null"]
+          format: date-time
+        paidAmount:
+          type: ["string", "null"]
+        paymentMethod:
+          type: ["string", "null"]
+        paymentReference:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    InvoiceDetail:
+      allOf:
+        - $ref: "#/components/schemas/Invoice"
+        - type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: "#/components/schemas/InvoiceItem"
+
+    InvoiceList:
+      type: object
+      required: [items, total]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Invoice"
+        total:
+          type: integer
+
+    InvoiceInput:
+      type: object
+      required: [title, clientName, items]
+      properties:
+        leadId:
+          type: string
+        quoteId:
+          type: string
+        contractId:
+          type: string
+        title:
+          type: string
+        clientName:
+          type: string
+        clientEmail:
+          type: string
+        taxRate:
+          type: string
+        notes:
+          type: string
+        terms:
+          type: string
+        dueDate:
+          type: string
+          format: date-time
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/InvoiceItemInput"
+
+    InvoiceStatusUpdate:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [draft, sent, paid, overdue, cancelled]
+        paidAmount:
+          type: string
+        paymentMethod:
+          type: string
+        paymentReference:
           type: string

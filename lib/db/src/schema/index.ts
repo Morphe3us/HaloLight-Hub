@@ -3,3 +3,7 @@ export * from "./notifications";
 export * from "./onboarding";
 export * from "./academy";
 export * from "./events";
+export * from "./crm";
+export * from "./quotes";
+export * from "./contracts";
+export * from "./invoices";

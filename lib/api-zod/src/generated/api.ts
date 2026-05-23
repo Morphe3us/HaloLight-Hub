@@ -568,3 +568,786 @@ export const DeleteEventParams = zod.object({
 })
 
 
+/**
+ * @summary List leads for current user
+ */
+export const listLeadsQueryLimitDefault = 50;
+export const listLeadsQueryOffsetDefault = 0;
+
+export const ListLeadsQueryParams = zod.object({
+  "status": zod.enum(['new', 'contacted', 'qualified', 'proposal', 'negotiation', 'won', 'lost']).optional(),
+  "search": zod.coerce.string().optional(),
+  "limit": zod.coerce.number().default(listLeadsQueryLimitDefault),
+  "offset": zod.coerce.number().default(listLeadsQueryOffsetDefault)
+})
+
+export const ListLeadsResponse = zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.string(),
+  "userId": zod.string(),
+  "companyName": zod.string(),
+  "contactName": zod.string(),
+  "email": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "source": zod.enum(['website', 'referral', 'social_media', 'trade_show', 'cold_outreach', 'inbound_call', 'other']),
+  "status": zod.enum(['new', 'contacted', 'qualified', 'proposal', 'negotiation', 'won', 'lost']),
+  "value": zod.string(),
+  "notes": zod.string().nullish(),
+  "address": zod.string().nullish(),
+  "eventType": zod.string().nullish(),
+  "expectedEventDate": zod.coerce.date().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})),
+  "total": zod.number()
+})
+
+
+/**
+ * @summary Create a new lead
+ */
+export const CreateLeadBody = zod.object({
+  "companyName": zod.string(),
+  "contactName": zod.string(),
+  "email": zod.string().optional(),
+  "phone": zod.string().optional(),
+  "source": zod.enum(['website', 'referral', 'social_media', 'trade_show', 'cold_outreach', 'inbound_call', 'other']).optional(),
+  "status": zod.enum(['new', 'contacted', 'qualified', 'proposal', 'negotiation', 'won', 'lost']).optional(),
+  "value": zod.string().optional(),
+  "notes": zod.string().optional(),
+  "address": zod.string().optional(),
+  "eventType": zod.string().optional(),
+  "expectedEventDate": zod.coerce.date().optional()
+})
+
+
+/**
+ * @summary Get lead detail with activities
+ */
+export const GetLeadParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const GetLeadResponse = zod.object({
+  "id": zod.string(),
+  "userId": zod.string(),
+  "companyName": zod.string(),
+  "contactName": zod.string(),
+  "email": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "source": zod.enum(['website', 'referral', 'social_media', 'trade_show', 'cold_outreach', 'inbound_call', 'other']),
+  "status": zod.enum(['new', 'contacted', 'qualified', 'proposal', 'negotiation', 'won', 'lost']),
+  "value": zod.string(),
+  "notes": zod.string().nullish(),
+  "address": zod.string().nullish(),
+  "eventType": zod.string().nullish(),
+  "expectedEventDate": zod.coerce.date().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}).and(zod.object({
+  "activities": zod.array(zod.object({
+  "id": zod.string(),
+  "leadId": zod.string(),
+  "userId": zod.string(),
+  "type": zod.enum(['note', 'call', 'email', 'meeting', 'status_change', 'quote_sent', 'contract_sent', 'invoice_sent']),
+  "title": zod.string(),
+  "description": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+}))
+}))
+
+
+/**
+ * @summary Update a lead
+ */
+export const UpdateLeadParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const UpdateLeadBody = zod.object({
+  "companyName": zod.string(),
+  "contactName": zod.string(),
+  "email": zod.string().optional(),
+  "phone": zod.string().optional(),
+  "source": zod.enum(['website', 'referral', 'social_media', 'trade_show', 'cold_outreach', 'inbound_call', 'other']).optional(),
+  "status": zod.enum(['new', 'contacted', 'qualified', 'proposal', 'negotiation', 'won', 'lost']).optional(),
+  "value": zod.string().optional(),
+  "notes": zod.string().optional(),
+  "address": zod.string().optional(),
+  "eventType": zod.string().optional(),
+  "expectedEventDate": zod.coerce.date().optional()
+})
+
+export const UpdateLeadResponse = zod.object({
+  "id": zod.string(),
+  "userId": zod.string(),
+  "companyName": zod.string(),
+  "contactName": zod.string(),
+  "email": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "source": zod.enum(['website', 'referral', 'social_media', 'trade_show', 'cold_outreach', 'inbound_call', 'other']),
+  "status": zod.enum(['new', 'contacted', 'qualified', 'proposal', 'negotiation', 'won', 'lost']),
+  "value": zod.string(),
+  "notes": zod.string().nullish(),
+  "address": zod.string().nullish(),
+  "eventType": zod.string().nullish(),
+  "expectedEventDate": zod.coerce.date().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Delete a lead
+ */
+export const DeleteLeadParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+
+/**
+ * @summary Add an activity to a lead
+ */
+export const CreateLeadActivityParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const CreateLeadActivityBody = zod.object({
+  "type": zod.enum(['note', 'call', 'email', 'meeting', 'status_change', 'quote_sent', 'contract_sent', 'invoice_sent']),
+  "title": zod.string(),
+  "description": zod.string().optional()
+})
+
+
+/**
+ * @summary List quotes for current user
+ */
+export const listQuotesQueryLimitDefault = 50;
+export const listQuotesQueryOffsetDefault = 0;
+
+export const ListQuotesQueryParams = zod.object({
+  "status": zod.enum(['draft', 'sent', 'accepted', 'declined', 'expired']).optional(),
+  "leadId": zod.coerce.string().optional(),
+  "limit": zod.coerce.number().default(listQuotesQueryLimitDefault),
+  "offset": zod.coerce.number().default(listQuotesQueryOffsetDefault)
+})
+
+export const ListQuotesResponse = zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.string(),
+  "userId": zod.string(),
+  "leadId": zod.string().nullish(),
+  "quoteNumber": zod.string(),
+  "title": zod.string(),
+  "clientName": zod.string(),
+  "clientEmail": zod.string().nullish(),
+  "clientPhone": zod.string().nullish(),
+  "status": zod.enum(['draft', 'sent', 'accepted', 'declined', 'expired']),
+  "subtotal": zod.string(),
+  "taxRate": zod.string(),
+  "taxAmount": zod.string(),
+  "total": zod.string(),
+  "notes": zod.string().nullish(),
+  "terms": zod.string().nullish(),
+  "validUntil": zod.coerce.date().nullish(),
+  "sentAt": zod.coerce.date().nullish(),
+  "acceptedAt": zod.coerce.date().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})),
+  "total": zod.number()
+})
+
+
+/**
+ * @summary Create a new quote
+ */
+export const CreateQuoteBody = zod.object({
+  "leadId": zod.string().optional(),
+  "title": zod.string(),
+  "clientName": zod.string(),
+  "clientEmail": zod.string().optional(),
+  "clientPhone": zod.string().optional(),
+  "taxRate": zod.string().optional(),
+  "notes": zod.string().optional(),
+  "terms": zod.string().optional(),
+  "validUntil": zod.coerce.date().optional(),
+  "items": zod.array(zod.object({
+  "description": zod.string(),
+  "quantity": zod.string(),
+  "unitPrice": zod.string(),
+  "order": zod.number().optional()
+}))
+})
+
+
+/**
+ * @summary Get quote detail with items
+ */
+export const GetQuoteParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const GetQuoteResponse = zod.object({
+  "id": zod.string(),
+  "userId": zod.string(),
+  "leadId": zod.string().nullish(),
+  "quoteNumber": zod.string(),
+  "title": zod.string(),
+  "clientName": zod.string(),
+  "clientEmail": zod.string().nullish(),
+  "clientPhone": zod.string().nullish(),
+  "status": zod.enum(['draft', 'sent', 'accepted', 'declined', 'expired']),
+  "subtotal": zod.string(),
+  "taxRate": zod.string(),
+  "taxAmount": zod.string(),
+  "total": zod.string(),
+  "notes": zod.string().nullish(),
+  "terms": zod.string().nullish(),
+  "validUntil": zod.coerce.date().nullish(),
+  "sentAt": zod.coerce.date().nullish(),
+  "acceptedAt": zod.coerce.date().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}).and(zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.string(),
+  "quoteId": zod.string(),
+  "description": zod.string(),
+  "quantity": zod.string(),
+  "unitPrice": zod.string(),
+  "total": zod.string(),
+  "order": zod.number()
+}))
+}))
+
+
+/**
+ * @summary Update a quote
+ */
+export const UpdateQuoteParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const UpdateQuoteBody = zod.object({
+  "leadId": zod.string().optional(),
+  "title": zod.string(),
+  "clientName": zod.string(),
+  "clientEmail": zod.string().optional(),
+  "clientPhone": zod.string().optional(),
+  "taxRate": zod.string().optional(),
+  "notes": zod.string().optional(),
+  "terms": zod.string().optional(),
+  "validUntil": zod.coerce.date().optional(),
+  "items": zod.array(zod.object({
+  "description": zod.string(),
+  "quantity": zod.string(),
+  "unitPrice": zod.string(),
+  "order": zod.number().optional()
+}))
+})
+
+export const UpdateQuoteResponse = zod.object({
+  "id": zod.string(),
+  "userId": zod.string(),
+  "leadId": zod.string().nullish(),
+  "quoteNumber": zod.string(),
+  "title": zod.string(),
+  "clientName": zod.string(),
+  "clientEmail": zod.string().nullish(),
+  "clientPhone": zod.string().nullish(),
+  "status": zod.enum(['draft', 'sent', 'accepted', 'declined', 'expired']),
+  "subtotal": zod.string(),
+  "taxRate": zod.string(),
+  "taxAmount": zod.string(),
+  "total": zod.string(),
+  "notes": zod.string().nullish(),
+  "terms": zod.string().nullish(),
+  "validUntil": zod.coerce.date().nullish(),
+  "sentAt": zod.coerce.date().nullish(),
+  "acceptedAt": zod.coerce.date().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}).and(zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.string(),
+  "quoteId": zod.string(),
+  "description": zod.string(),
+  "quantity": zod.string(),
+  "unitPrice": zod.string(),
+  "total": zod.string(),
+  "order": zod.number()
+}))
+}))
+
+
+/**
+ * @summary Delete a quote
+ */
+export const DeleteQuoteParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+
+/**
+ * @summary Update quote status
+ */
+export const UpdateQuoteStatusParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const UpdateQuoteStatusBody = zod.object({
+  "status": zod.enum(['draft', 'sent', 'accepted', 'declined', 'expired'])
+})
+
+export const UpdateQuoteStatusResponse = zod.object({
+  "id": zod.string(),
+  "userId": zod.string(),
+  "leadId": zod.string().nullish(),
+  "quoteNumber": zod.string(),
+  "title": zod.string(),
+  "clientName": zod.string(),
+  "clientEmail": zod.string().nullish(),
+  "clientPhone": zod.string().nullish(),
+  "status": zod.enum(['draft', 'sent', 'accepted', 'declined', 'expired']),
+  "subtotal": zod.string(),
+  "taxRate": zod.string(),
+  "taxAmount": zod.string(),
+  "total": zod.string(),
+  "notes": zod.string().nullish(),
+  "terms": zod.string().nullish(),
+  "validUntil": zod.coerce.date().nullish(),
+  "sentAt": zod.coerce.date().nullish(),
+  "acceptedAt": zod.coerce.date().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}).and(zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.string(),
+  "quoteId": zod.string(),
+  "description": zod.string(),
+  "quantity": zod.string(),
+  "unitPrice": zod.string(),
+  "total": zod.string(),
+  "order": zod.number()
+}))
+}))
+
+
+/**
+ * @summary List contracts for current user
+ */
+export const listContractsQueryLimitDefault = 50;
+export const listContractsQueryOffsetDefault = 0;
+
+export const ListContractsQueryParams = zod.object({
+  "status": zod.enum(['draft', 'sent', 'signed', 'active', 'expired', 'cancelled']).optional(),
+  "limit": zod.coerce.number().default(listContractsQueryLimitDefault),
+  "offset": zod.coerce.number().default(listContractsQueryOffsetDefault)
+})
+
+export const ListContractsResponse = zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.string(),
+  "userId": zod.string(),
+  "leadId": zod.string().nullish(),
+  "quoteId": zod.string().nullish(),
+  "contractNumber": zod.string(),
+  "title": zod.string(),
+  "clientName": zod.string(),
+  "clientEmail": zod.string().nullish(),
+  "status": zod.enum(['draft', 'sent', 'signed', 'active', 'expired', 'cancelled']),
+  "content": zod.string(),
+  "value": zod.string(),
+  "startDate": zod.coerce.date().nullish(),
+  "endDate": zod.coerce.date().nullish(),
+  "signedAt": zod.coerce.date().nullish(),
+  "sentAt": zod.coerce.date().nullish(),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})),
+  "total": zod.number()
+})
+
+
+/**
+ * @summary Create a new contract
+ */
+export const CreateContractBody = zod.object({
+  "leadId": zod.string().optional(),
+  "quoteId": zod.string().optional(),
+  "templateId": zod.string().optional(),
+  "title": zod.string(),
+  "clientName": zod.string(),
+  "clientEmail": zod.string().optional(),
+  "content": zod.string(),
+  "value": zod.string().optional(),
+  "startDate": zod.coerce.date().optional(),
+  "endDate": zod.coerce.date().optional(),
+  "notes": zod.string().optional()
+})
+
+
+/**
+ * @summary Get contract detail
+ */
+export const GetContractParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const GetContractResponse = zod.object({
+  "id": zod.string(),
+  "userId": zod.string(),
+  "leadId": zod.string().nullish(),
+  "quoteId": zod.string().nullish(),
+  "contractNumber": zod.string(),
+  "title": zod.string(),
+  "clientName": zod.string(),
+  "clientEmail": zod.string().nullish(),
+  "status": zod.enum(['draft', 'sent', 'signed', 'active', 'expired', 'cancelled']),
+  "content": zod.string(),
+  "value": zod.string(),
+  "startDate": zod.coerce.date().nullish(),
+  "endDate": zod.coerce.date().nullish(),
+  "signedAt": zod.coerce.date().nullish(),
+  "sentAt": zod.coerce.date().nullish(),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Update a contract
+ */
+export const UpdateContractParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const UpdateContractBody = zod.object({
+  "leadId": zod.string().optional(),
+  "quoteId": zod.string().optional(),
+  "templateId": zod.string().optional(),
+  "title": zod.string(),
+  "clientName": zod.string(),
+  "clientEmail": zod.string().optional(),
+  "content": zod.string(),
+  "value": zod.string().optional(),
+  "startDate": zod.coerce.date().optional(),
+  "endDate": zod.coerce.date().optional(),
+  "notes": zod.string().optional()
+})
+
+export const UpdateContractResponse = zod.object({
+  "id": zod.string(),
+  "userId": zod.string(),
+  "leadId": zod.string().nullish(),
+  "quoteId": zod.string().nullish(),
+  "contractNumber": zod.string(),
+  "title": zod.string(),
+  "clientName": zod.string(),
+  "clientEmail": zod.string().nullish(),
+  "status": zod.enum(['draft', 'sent', 'signed', 'active', 'expired', 'cancelled']),
+  "content": zod.string(),
+  "value": zod.string(),
+  "startDate": zod.coerce.date().nullish(),
+  "endDate": zod.coerce.date().nullish(),
+  "signedAt": zod.coerce.date().nullish(),
+  "sentAt": zod.coerce.date().nullish(),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Delete a contract
+ */
+export const DeleteContractParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+
+/**
+ * @summary Update contract status
+ */
+export const UpdateContractStatusParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const UpdateContractStatusBody = zod.object({
+  "status": zod.enum(['draft', 'sent', 'signed', 'active', 'expired', 'cancelled'])
+})
+
+export const UpdateContractStatusResponse = zod.object({
+  "id": zod.string(),
+  "userId": zod.string(),
+  "leadId": zod.string().nullish(),
+  "quoteId": zod.string().nullish(),
+  "contractNumber": zod.string(),
+  "title": zod.string(),
+  "clientName": zod.string(),
+  "clientEmail": zod.string().nullish(),
+  "status": zod.enum(['draft', 'sent', 'signed', 'active', 'expired', 'cancelled']),
+  "content": zod.string(),
+  "value": zod.string(),
+  "startDate": zod.coerce.date().nullish(),
+  "endDate": zod.coerce.date().nullish(),
+  "signedAt": zod.coerce.date().nullish(),
+  "sentAt": zod.coerce.date().nullish(),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary List contract templates
+ */
+export const ListContractTemplatesResponse = zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.string(),
+  "title": zod.string(),
+  "category": zod.string(),
+  "content": zod.string(),
+  "createdAt": zod.coerce.date()
+}))
+})
+
+
+/**
+ * @summary List invoices for current user
+ */
+export const listInvoicesQueryLimitDefault = 50;
+export const listInvoicesQueryOffsetDefault = 0;
+
+export const ListInvoicesQueryParams = zod.object({
+  "status": zod.enum(['draft', 'sent', 'paid', 'overdue', 'cancelled']).optional(),
+  "limit": zod.coerce.number().default(listInvoicesQueryLimitDefault),
+  "offset": zod.coerce.number().default(listInvoicesQueryOffsetDefault)
+})
+
+export const ListInvoicesResponse = zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.string(),
+  "userId": zod.string(),
+  "leadId": zod.string().nullish(),
+  "quoteId": zod.string().nullish(),
+  "contractId": zod.string().nullish(),
+  "invoiceNumber": zod.string(),
+  "title": zod.string(),
+  "clientName": zod.string(),
+  "clientEmail": zod.string().nullish(),
+  "status": zod.enum(['draft', 'sent', 'paid', 'overdue', 'cancelled']),
+  "subtotal": zod.string(),
+  "taxRate": zod.string(),
+  "taxAmount": zod.string(),
+  "total": zod.string(),
+  "notes": zod.string().nullish(),
+  "terms": zod.string().nullish(),
+  "dueDate": zod.coerce.date().nullish(),
+  "sentAt": zod.coerce.date().nullish(),
+  "paidAt": zod.coerce.date().nullish(),
+  "paidAmount": zod.string().nullish(),
+  "paymentMethod": zod.string().nullish(),
+  "paymentReference": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})),
+  "total": zod.number()
+})
+
+
+/**
+ * @summary Create a new invoice
+ */
+export const CreateInvoiceBody = zod.object({
+  "leadId": zod.string().optional(),
+  "quoteId": zod.string().optional(),
+  "contractId": zod.string().optional(),
+  "title": zod.string(),
+  "clientName": zod.string(),
+  "clientEmail": zod.string().optional(),
+  "taxRate": zod.string().optional(),
+  "notes": zod.string().optional(),
+  "terms": zod.string().optional(),
+  "dueDate": zod.coerce.date().optional(),
+  "items": zod.array(zod.object({
+  "description": zod.string(),
+  "quantity": zod.string(),
+  "unitPrice": zod.string(),
+  "order": zod.number().optional()
+}))
+})
+
+
+/**
+ * @summary Get invoice detail with items
+ */
+export const GetInvoiceParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const GetInvoiceResponse = zod.object({
+  "id": zod.string(),
+  "userId": zod.string(),
+  "leadId": zod.string().nullish(),
+  "quoteId": zod.string().nullish(),
+  "contractId": zod.string().nullish(),
+  "invoiceNumber": zod.string(),
+  "title": zod.string(),
+  "clientName": zod.string(),
+  "clientEmail": zod.string().nullish(),
+  "status": zod.enum(['draft', 'sent', 'paid', 'overdue', 'cancelled']),
+  "subtotal": zod.string(),
+  "taxRate": zod.string(),
+  "taxAmount": zod.string(),
+  "total": zod.string(),
+  "notes": zod.string().nullish(),
+  "terms": zod.string().nullish(),
+  "dueDate": zod.coerce.date().nullish(),
+  "sentAt": zod.coerce.date().nullish(),
+  "paidAt": zod.coerce.date().nullish(),
+  "paidAmount": zod.string().nullish(),
+  "paymentMethod": zod.string().nullish(),
+  "paymentReference": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}).and(zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.string(),
+  "invoiceId": zod.string(),
+  "description": zod.string(),
+  "quantity": zod.string(),
+  "unitPrice": zod.string(),
+  "total": zod.string(),
+  "order": zod.number()
+}))
+}))
+
+
+/**
+ * @summary Update an invoice
+ */
+export const UpdateInvoiceParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const UpdateInvoiceBody = zod.object({
+  "leadId": zod.string().optional(),
+  "quoteId": zod.string().optional(),
+  "contractId": zod.string().optional(),
+  "title": zod.string(),
+  "clientName": zod.string(),
+  "clientEmail": zod.string().optional(),
+  "taxRate": zod.string().optional(),
+  "notes": zod.string().optional(),
+  "terms": zod.string().optional(),
+  "dueDate": zod.coerce.date().optional(),
+  "items": zod.array(zod.object({
+  "description": zod.string(),
+  "quantity": zod.string(),
+  "unitPrice": zod.string(),
+  "order": zod.number().optional()
+}))
+})
+
+export const UpdateInvoiceResponse = zod.object({
+  "id": zod.string(),
+  "userId": zod.string(),
+  "leadId": zod.string().nullish(),
+  "quoteId": zod.string().nullish(),
+  "contractId": zod.string().nullish(),
+  "invoiceNumber": zod.string(),
+  "title": zod.string(),
+  "clientName": zod.string(),
+  "clientEmail": zod.string().nullish(),
+  "status": zod.enum(['draft', 'sent', 'paid', 'overdue', 'cancelled']),
+  "subtotal": zod.string(),
+  "taxRate": zod.string(),
+  "taxAmount": zod.string(),
+  "total": zod.string(),
+  "notes": zod.string().nullish(),
+  "terms": zod.string().nullish(),
+  "dueDate": zod.coerce.date().nullish(),
+  "sentAt": zod.coerce.date().nullish(),
+  "paidAt": zod.coerce.date().nullish(),
+  "paidAmount": zod.string().nullish(),
+  "paymentMethod": zod.string().nullish(),
+  "paymentReference": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}).and(zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.string(),
+  "invoiceId": zod.string(),
+  "description": zod.string(),
+  "quantity": zod.string(),
+  "unitPrice": zod.string(),
+  "total": zod.string(),
+  "order": zod.number()
+}))
+}))
+
+
+/**
+ * @summary Delete an invoice
+ */
+export const DeleteInvoiceParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+
+/**
+ * @summary Update invoice status / record payment
+ */
+export const UpdateInvoiceStatusParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const UpdateInvoiceStatusBody = zod.object({
+  "status": zod.enum(['draft', 'sent', 'paid', 'overdue', 'cancelled']),
+  "paidAmount": zod.string().optional(),
+  "paymentMethod": zod.string().optional(),
+  "paymentReference": zod.string().optional()
+})
+
+export const UpdateInvoiceStatusResponse = zod.object({
+  "id": zod.string(),
+  "userId": zod.string(),
+  "leadId": zod.string().nullish(),
+  "quoteId": zod.string().nullish(),
+  "contractId": zod.string().nullish(),
+  "invoiceNumber": zod.string(),
+  "title": zod.string(),
+  "clientName": zod.string(),
+  "clientEmail": zod.string().nullish(),
+  "status": zod.enum(['draft', 'sent', 'paid', 'overdue', 'cancelled']),
+  "subtotal": zod.string(),
+  "taxRate": zod.string(),
+  "taxAmount": zod.string(),
+  "total": zod.string(),
+  "notes": zod.string().nullish(),
+  "terms": zod.string().nullish(),
+  "dueDate": zod.coerce.date().nullish(),
+  "sentAt": zod.coerce.date().nullish(),
+  "paidAt": zod.coerce.date().nullish(),
+  "paidAmount": zod.string().nullish(),
+  "paymentMethod": zod.string().nullish(),
+  "paymentReference": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}).and(zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.string(),
+  "invoiceId": zod.string(),
+  "description": zod.string(),
+  "quantity": zod.string(),
+  "unitPrice": zod.string(),
+  "total": zod.string(),
+  "order": zod.number()
+}))
+}))
+
+
