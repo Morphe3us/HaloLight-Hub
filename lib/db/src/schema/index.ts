@@ -14,3 +14,4 @@ export * from "./community";
 export * from "./success";
 export * from "./equipment";
 export * from "./consumables";
+export * from "./automation";

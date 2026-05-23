@@ -88,7 +88,17 @@ An all-in-one SaaS customer portal for HaloLight — a professional photobooth a
 - Full AIAssistant.tsx rewrite: SSE streaming chat, source citations, suggested action buttons, provider badge, escalation dialog, conversation history sidebar
 - Seeded 8 starter AI suggested questions
 
-### Planned Phases (8–10)
+### Phase 8 — Automation Engine (complete)
+- DB schema: 3 tables (`automation_rules`, `automation_executions`, `automation_logs`)
+- 10 trigger evaluators: `onboarding_stalled`, `inactive_user`, `low_academy_progress`, `no_events_created`, `no_quotes_created`, `low_consumable_stock`, `warranty_expiring`, `high_performer_detected`, `upsell_opportunity_detected`, `coaching_recommendation_generated`
+- 6 action handlers: `in_app_notification`, `email_template_generation`, `coaching_task_creation`, `support_follow_up`, `upsell_recommendation`, `consumable_reorder_recommendation`
+- Engine (`engine.ts`): per-rule evaluator → matcher → cooldown check (24h default) → action dispatch → log writes
+- Scheduler (`scheduler.ts`): 5-min warm-up delay, then 1-hour interval; wired to SIGTERM/SIGINT
+- 11 REST endpoints: CRUD on rules, manual trigger, execution history, logs, stats, run-all
+- Admin dashboard at `/admin/automation`: 7-stat header, rules list with enable toggle + manual run, execution timeline, filterable log table
+- Seeded 10 default rules (one per trigger type) via `pnpm --filter @workspace/scripts run seed-automation`
+
+### Planned Phases (9–10)
 See architecture document for full 30-module scope.
 
 ## User preferences

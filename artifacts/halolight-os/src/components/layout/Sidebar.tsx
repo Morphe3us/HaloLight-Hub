@@ -5,7 +5,7 @@ import {
   LayoutDashboard, Bell, Settings as SettingsIcon, Shield, CheckCircle2,
   ChevronRight, LogOut, Menu, GraduationCap, Calendar, TrendingUp,
   FileText, FileSignature, ReceiptText, ChevronDown, LifeBuoy, BookOpen,
-  Sparkles, Users, Hash, BarChart3, UserCheck, DollarSign, Monitor, Package,
+  Sparkles, Users, Hash, BarChart3, UserCheck, DollarSign, Monitor, Package, Zap,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useClerk } from "@clerk/react";
@@ -149,6 +149,7 @@ export function Sidebar() {
             { title: "Revenue", href: "/admin/revenue", icon: DollarSign },
             { title: "Clients", href: "/admin/clients", icon: UserCheck },
             { title: "Equipment", href: "/admin/equipment", icon: Monitor },
+            { title: "Automation", href: "/admin/automation", icon: Zap },
             { title: "Users", href: "/admin", icon: Users },
           ],
         },

@@ -1663,6 +1663,7 @@ export const GetAiConversationResponse = zod.object({
   "id": zod.string().optional(),
   "userId": zod.string().optional(),
   "title": zod.string().optional(),
+  "providerName": zod.string().nullish(),
   "createdAt": zod.coerce.date().optional(),
   "updatedAt": zod.coerce.date().optional(),
   "messages": zod.array(zod.object({
@@ -2499,6 +2500,279 @@ export const GetAdminClientResponse = zod.object({
   "postsCount": zod.number().optional(),
   "repliesCount": zod.number().optional()
 }).optional()
+})
+
+
+/**
+ * @summary Get automation dashboard stats
+ */
+export const GetAutomationStatsResponse = zod.object({
+  "totalRules": zod.number().optional(),
+  "enabledRules": zod.number().optional(),
+  "todayExecutions": zod.number().optional(),
+  "totalExecutions": zod.number().optional(),
+  "actionsToday": zod.number().optional(),
+  "totalActions": zod.number().optional(),
+  "errorsToday": zod.number().optional()
+})
+
+
+/**
+ * @summary List all automation rules
+ */
+export const ListAutomationRulesResponse = zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "description": zod.string().optional(),
+  "triggerType": zod.string(),
+  "actionType": zod.string(),
+  "triggerConfig": zod.object({
+
+}).passthrough().optional(),
+  "actionConfig": zod.object({
+
+}).passthrough().optional(),
+  "isEnabled": zod.number(),
+  "runCount": zod.number(),
+  "matchCount": zod.number(),
+  "lastRunAt": zod.coerce.date().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date().optional()
+})).optional(),
+  "total": zod.number().optional()
+})
+
+
+/**
+ * @summary Create automation rule
+ */
+export const CreateAutomationRuleBody = zod.object({
+  "name": zod.string(),
+  "description": zod.string().optional(),
+  "triggerType": zod.string(),
+  "actionType": zod.string(),
+  "triggerConfig": zod.object({
+
+}).passthrough().optional(),
+  "actionConfig": zod.object({
+
+}).passthrough().optional(),
+  "isEnabled": zod.boolean().optional()
+})
+
+
+/**
+ * @summary Get rule with recent logs
+ */
+export const GetAutomationRuleParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const GetAutomationRuleResponse = zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "description": zod.string().optional(),
+  "triggerType": zod.string(),
+  "actionType": zod.string(),
+  "triggerConfig": zod.object({
+
+}).passthrough().optional(),
+  "actionConfig": zod.object({
+
+}).passthrough().optional(),
+  "isEnabled": zod.number(),
+  "runCount": zod.number(),
+  "matchCount": zod.number(),
+  "lastRunAt": zod.coerce.date().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date().optional()
+}).and(zod.object({
+  "recentLogs": zod.array(zod.object({
+  "id": zod.string(),
+  "executionId": zod.string(),
+  "ruleId": zod.string(),
+  "ruleName": zod.string(),
+  "triggerType": zod.string(),
+  "actionType": zod.string(),
+  "targetUserId": zod.string().nullish(),
+  "targetEntityId": zod.string().nullish(),
+  "status": zod.string(),
+  "detail": zod.object({
+
+}).passthrough().optional(),
+  "createdAt": zod.coerce.date()
+})).optional()
+}))
+
+
+/**
+ * @summary Update automation rule
+ */
+export const UpdateAutomationRuleParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const UpdateAutomationRuleBody = zod.object({
+  "name": zod.string().optional(),
+  "description": zod.string().optional(),
+  "triggerConfig": zod.object({
+
+}).passthrough().optional(),
+  "actionConfig": zod.object({
+
+}).passthrough().optional(),
+  "isEnabled": zod.boolean().optional()
+})
+
+export const UpdateAutomationRuleResponse = zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "description": zod.string().optional(),
+  "triggerType": zod.string(),
+  "actionType": zod.string(),
+  "triggerConfig": zod.object({
+
+}).passthrough().optional(),
+  "actionConfig": zod.object({
+
+}).passthrough().optional(),
+  "isEnabled": zod.number(),
+  "runCount": zod.number(),
+  "matchCount": zod.number(),
+  "lastRunAt": zod.coerce.date().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date().optional()
+})
+
+
+/**
+ * @summary Delete automation rule
+ */
+export const DeleteAutomationRuleParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+
+/**
+ * @summary Manually trigger a single rule
+ */
+export const TriggerAutomationRuleParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const TriggerAutomationRuleResponse = zod.object({
+  "executionId": zod.string(),
+  "rulesEvaluated": zod.number(),
+  "actionsFired": zod.number(),
+  "errors": zod.number(),
+  "durationMs": zod.number()
+})
+
+
+/**
+ * @summary List execution history
+ */
+export const listAutomationExecutionsQueryLimitDefault = 20;
+export const listAutomationExecutionsQueryOffsetDefault = 0;
+
+export const ListAutomationExecutionsQueryParams = zod.object({
+  "limit": zod.coerce.number().default(listAutomationExecutionsQueryLimitDefault),
+  "offset": zod.coerce.number().default(listAutomationExecutionsQueryOffsetDefault)
+})
+
+export const ListAutomationExecutionsResponse = zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.string(),
+  "startedAt": zod.coerce.date(),
+  "finishedAt": zod.coerce.date().nullish(),
+  "triggeredBy": zod.string(),
+  "rulesEvaluated": zod.number().optional(),
+  "actionsFired": zod.number().optional(),
+  "errors": zod.number().optional(),
+  "status": zod.string()
+})).optional(),
+  "total": zod.number().optional()
+})
+
+
+/**
+ * @summary Get execution with logs
+ */
+export const GetAutomationExecutionParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const GetAutomationExecutionResponse = zod.object({
+  "id": zod.string(),
+  "startedAt": zod.coerce.date(),
+  "finishedAt": zod.coerce.date().nullish(),
+  "triggeredBy": zod.string(),
+  "rulesEvaluated": zod.number().optional(),
+  "actionsFired": zod.number().optional(),
+  "errors": zod.number().optional(),
+  "status": zod.string()
+}).and(zod.object({
+  "logs": zod.array(zod.object({
+  "id": zod.string(),
+  "executionId": zod.string(),
+  "ruleId": zod.string(),
+  "ruleName": zod.string(),
+  "triggerType": zod.string(),
+  "actionType": zod.string(),
+  "targetUserId": zod.string().nullish(),
+  "targetEntityId": zod.string().nullish(),
+  "status": zod.string(),
+  "detail": zod.object({
+
+}).passthrough().optional(),
+  "createdAt": zod.coerce.date()
+})).optional()
+}))
+
+
+/**
+ * @summary List automation logs
+ */
+export const listAutomationLogsQueryLimitDefault = 50;
+export const listAutomationLogsQueryOffsetDefault = 0;
+
+export const ListAutomationLogsQueryParams = zod.object({
+  "ruleId": zod.coerce.string().optional(),
+  "status": zod.coerce.string().optional(),
+  "limit": zod.coerce.number().default(listAutomationLogsQueryLimitDefault),
+  "offset": zod.coerce.number().default(listAutomationLogsQueryOffsetDefault)
+})
+
+export const ListAutomationLogsResponse = zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.string(),
+  "executionId": zod.string(),
+  "ruleId": zod.string(),
+  "ruleName": zod.string(),
+  "triggerType": zod.string(),
+  "actionType": zod.string(),
+  "targetUserId": zod.string().nullish(),
+  "targetEntityId": zod.string().nullish(),
+  "status": zod.string(),
+  "detail": zod.object({
+
+}).passthrough().optional(),
+  "createdAt": zod.coerce.date()
+})).optional(),
+  "total": zod.number().optional()
+})
+
+
+/**
+ * @summary Run all enabled rules now
+ */
+export const RunAutomationResponse = zod.object({
+  "executionId": zod.string(),
+  "rulesEvaluated": zod.number(),
+  "actionsFired": zod.number(),
+  "errors": zod.number(),
+  "durationMs": zod.number()
 })
 
 

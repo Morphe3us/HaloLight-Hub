@@ -1526,6 +1526,7 @@ export interface AiConversationDetail {
   id?: string;
   userId?: string;
   title?: string;
+  providerName?: string | null;
   createdAt?: string;
   updatedAt?: string;
   messages?: AiMessage[];
@@ -1549,6 +1550,120 @@ export interface CommunityPostDetail {
   updatedAt?: string;
   replies?: CommunityReply[];
   reactions?: CommunityReaction[];
+}
+
+export interface AutomationStats {
+  totalRules?: number;
+  enabledRules?: number;
+  todayExecutions?: number;
+  totalExecutions?: number;
+  actionsToday?: number;
+  totalActions?: number;
+  errorsToday?: number;
+}
+
+export type AutomationRuleTriggerConfig = { [key: string]: unknown };
+
+export type AutomationRuleActionConfig = { [key: string]: unknown };
+
+export interface AutomationRule {
+  id: string;
+  name: string;
+  description?: string;
+  triggerType: string;
+  actionType: string;
+  triggerConfig?: AutomationRuleTriggerConfig;
+  actionConfig?: AutomationRuleActionConfig;
+  isEnabled: number;
+  runCount: number;
+  matchCount: number;
+  lastRunAt?: string | null;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export type AutomationLogDetail = { [key: string]: unknown };
+
+export interface AutomationLog {
+  id: string;
+  executionId: string;
+  ruleId: string;
+  ruleName: string;
+  triggerType: string;
+  actionType: string;
+  targetUserId?: string | null;
+  targetEntityId?: string | null;
+  status: string;
+  detail?: AutomationLogDetail;
+  createdAt: string;
+}
+
+export type AutomationRuleDetail = AutomationRule & {
+  recentLogs?: AutomationLog[];
+};
+
+export interface AutomationRuleList {
+  items?: AutomationRule[];
+  total?: number;
+}
+
+export type AutomationRuleCreateTriggerConfig = { [key: string]: unknown };
+
+export type AutomationRuleCreateActionConfig = { [key: string]: unknown };
+
+export interface AutomationRuleCreate {
+  name: string;
+  description?: string;
+  triggerType: string;
+  actionType: string;
+  triggerConfig?: AutomationRuleCreateTriggerConfig;
+  actionConfig?: AutomationRuleCreateActionConfig;
+  isEnabled?: boolean;
+}
+
+export type AutomationRuleUpdateTriggerConfig = { [key: string]: unknown };
+
+export type AutomationRuleUpdateActionConfig = { [key: string]: unknown };
+
+export interface AutomationRuleUpdate {
+  name?: string;
+  description?: string;
+  triggerConfig?: AutomationRuleUpdateTriggerConfig;
+  actionConfig?: AutomationRuleUpdateActionConfig;
+  isEnabled?: boolean;
+}
+
+export interface AutomationExecution {
+  id: string;
+  startedAt: string;
+  finishedAt?: string | null;
+  triggeredBy: string;
+  rulesEvaluated?: number;
+  actionsFired?: number;
+  errors?: number;
+  status: string;
+}
+
+export interface AutomationExecutionList {
+  items?: AutomationExecution[];
+  total?: number;
+}
+
+export type AutomationExecutionDetail = AutomationExecution & {
+  logs?: AutomationLog[];
+};
+
+export interface AutomationLogList {
+  items?: AutomationLog[];
+  total?: number;
+}
+
+export interface AutomationRunResult {
+  executionId: string;
+  rulesEvaluated: number;
+  actionsFired: number;
+  errors: number;
+  durationMs: number;
 }
 
 export type ListUsersParams = {
@@ -1765,5 +1880,17 @@ export type CreateConsumableOrderBody = {
   catalogItemId?: string;
   quantity?: number;
   notes?: string;
+};
+
+export type ListAutomationExecutionsParams = {
+limit?: number;
+offset?: number;
+};
+
+export type ListAutomationLogsParams = {
+ruleId?: string;
+status?: string;
+limit?: number;
+offset?: number;
 };
 
