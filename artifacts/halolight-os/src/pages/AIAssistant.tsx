@@ -388,7 +388,6 @@ export default function AIAssistant() {
   const [abortCtrl, setAbortCtrl] = useState<AbortController | null>(null);
   const [escalateOpen, setEscalateOpen] = useState(false);
   const [autoPlay, setAutoPlay] = useState(false);
-  const [pendingVoiceSend, setPendingVoiceSend] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatInputRef = useRef<HTMLInputElement>(null);
   const welcomeInputRef = useRef<HTMLInputElement>(null);
@@ -447,14 +446,16 @@ export default function AIAssistant() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [(activeConv as { messages?: unknown[] } | undefined)?.messages?.length, stream?.content]);
 
-  // ─── Streaming send ──────────────────────────────────────────────────────
+  // ─── Core streaming function — takes convId directly, no stale closure ──────
+  // This is the single source of truth for sending a message and streaming the
+  // response. By accepting convId as a parameter it never reads activeConvId
+  // from a potentially-stale closure, so it can safely be called from any
+  // context: onSuccess callbacks, click handlers, or the sendMessage wrapper.
 
-  const sendMessage = useCallback(
-    async (overrideText?: string) => {
-      const msg = (overrideText ?? input).trim();
-      if (!msg || !activeConvId || stream) return;
-      setInput("");
-      setPendingUserMsg(msg);
+  const streamConversation = useCallback(
+    async (convId: string, msgText: string) => {
+      if (!convId || !msgText.trim() || stream) return;
+      setPendingUserMsg(msgText);
       streamFinalContentRef.current = "";
 
       const ac = new AbortController();
@@ -462,11 +463,11 @@ export default function AIAssistant() {
       setStream({ content: "", sources: [], actions: [] });
 
       try {
-        const response = await fetch(`/api/ai/conversations/${activeConvId}/stream`, {
+        const response = await fetch(`/api/ai/conversations/${convId}/stream`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
-          body: JSON.stringify({ content: msg }),
+          body: JSON.stringify({ content: msgText }),
           signal: ac.signal,
         });
 
@@ -535,14 +536,28 @@ export default function AIAssistant() {
         setStream(null);
         setAbortCtrl(null);
         setPendingUserMsg(null);
-        qc.invalidateQueries({ queryKey: [`/api/ai/conversations/${activeConvId}`] });
+        qc.invalidateQueries({ queryKey: [`/api/ai/conversations/${convId}`] });
         qc.invalidateQueries({ queryKey: ["/api/ai/conversations"] });
         if (autoPlay && finalContent) {
           voiceOutput.speak(finalContent, "latest-response");
         }
       }
     },
-    [input, activeConvId, stream, qc, toast, autoPlay, voiceOutput]
+    // deliberately excludes activeConvId — convId is passed as a parameter
+    [stream, qc, toast, autoPlay, voiceOutput]
+  );
+
+  // ─── sendMessage: wrapper used by the chat input (activeConvId is set) ─────
+
+  const sendMessage = useCallback(
+    async (overrideText?: string) => {
+      if (!activeConvId) return;
+      const msg = (overrideText ?? input).trim();
+      if (!msg) return;
+      setInput("");
+      await streamConversation(activeConvId, msg);
+    },
+    [input, activeConvId, streamConversation]
   );
 
   const stopStreaming = () => {
@@ -552,40 +567,48 @@ export default function AIAssistant() {
     setPendingUserMsg(null);
   };
 
-  // Start a conversation from the welcome state (pill or typed input).
-  // Uses setPendingVoiceSend + newConv() — same pattern as voice input — so the
-  // useEffect below fires with a fresh sendMessage that has the updated activeConvId.
+  // ─── Welcome state submit: pill click or typed Enter ─────────────────────
+  // Creates a conversation then calls streamConversation directly with the
+  // returned ID — no React state intermediary, no stale closure possible.
+
   const handleWelcomeSubmit = (text?: string) => {
     const msg = (text ?? input).trim();
     if (!msg || isCreating) return;
     if (!text) setInput("");
-    setPendingVoiceSend(msg);
-    newConv();
+    createConv(undefined as unknown as void, {
+      onSuccess: (data) => {
+        qc.invalidateQueries({ queryKey: ["/api/ai/conversations"] });
+        const convId = data.id;
+        if (!convId) return;
+        setActiveConvId(convId);
+        setTimeout(() => chatInputRef.current?.focus(), 100);
+        void streamConversation(convId, msg);
+      },
+      onError: () => {
+        toast({ title: "Could not start conversation", variant: "destructive" });
+      },
+    });
   };
-
-  // ─── Pending voice send: fires after a new conversation is activated ──────
-
-  useEffect(() => {
-    if (activeConvId && pendingVoiceSend && !stream) {
-      const text = pendingVoiceSend;
-      setPendingVoiceSend(null);
-      void sendMessage(text);
-    }
-  }, [activeConvId, pendingVoiceSend, stream, sendMessage]);
 
   // ─── Voice input ──────────────────────────────────────────────────────────
 
   const handleVoiceTranscript = useCallback(
     (text: string) => {
       if (activeConvId) {
-        void sendMessage(text);
+        void streamConversation(activeConvId, text);
       } else {
-        setPendingVoiceSend(text);
-        newConv();
+        createConv(undefined as unknown as void, {
+          onSuccess: (data) => {
+            qc.invalidateQueries({ queryKey: ["/api/ai/conversations"] });
+            const convId = data.id;
+            if (!convId) return;
+            setActiveConvId(convId);
+            void streamConversation(convId, text);
+          },
+        });
       }
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [activeConvId, sendMessage]
+    [activeConvId, streamConversation, createConv, qc]
   );
 
   const voiceInput = useVoiceInput({
