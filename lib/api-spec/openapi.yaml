@@ -1731,6 +1731,220 @@ paths:
               schema:
                 $ref: "#/components/schemas/AdminClientList"
 
+  /equipment:
+    get:
+      operationId: getEquipment
+      tags: [equipment]
+      summary: List client's own equipment
+      responses:
+        "200":
+          description: Equipment list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Equipment"
+    post:
+      operationId: createEquipment
+      tags: [equipment]
+      summary: Register new equipment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateEquipmentInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Equipment"
+
+  /equipment/{id}:
+    get:
+      operationId: getEquipmentById
+      tags: [equipment]
+      summary: Get equipment detail with service history
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Equipment detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EquipmentDetail"
+    put:
+      operationId: updateEquipment
+      tags: [equipment]
+      summary: Update equipment record
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Equipment"
+
+  /equipment/{id}/service:
+    post:
+      operationId: addServiceRecord
+      tags: [equipment]
+      summary: Add a service history record
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateServiceRecordInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceRecord"
+
+  /admin/equipment:
+    get:
+      operationId: getAdminEquipment
+      tags: [admin]
+      summary: All client equipment with alert flags
+      responses:
+        "200":
+          description: Equipment with alerts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminEquipmentItem"
+
+  /admin/equipment/{id}:
+    get:
+      operationId: getAdminEquipmentById
+      tags: [admin]
+      summary: Admin view of single equipment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Equipment detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EquipmentDetail"
+
+  /consumables/catalog:
+    get:
+      operationId: getConsumableCatalog
+      tags: [consumables]
+      summary: Get consumable catalog
+      responses:
+        "200":
+          description: Catalog items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ConsumableCatalogItem"
+
+  /consumables:
+    get:
+      operationId: getConsumables
+      tags: [consumables]
+      summary: Client's consumable stock with alerts
+      responses:
+        "200":
+          description: Stock items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ConsumableStockItem"
+
+  /consumables/orders:
+    get:
+      operationId: getConsumableOrders
+      tags: [consumables]
+      summary: Client's order history
+      responses:
+        "200":
+          description: Orders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ConsumableOrder"
+    post:
+      operationId: createConsumableOrder
+      tags: [consumables]
+      summary: Place a reorder
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                catalogItemId: { type: string }
+                quantity: { type: integer }
+                notes: { type: string }
+      responses:
+        "201":
+          description: Order placed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConsumableOrder"
+
+  /admin/consumables:
+    get:
+      operationId: getAdminConsumables
+      tags: [admin]
+      summary: All client consumable stock with alerts
+      responses:
+        "200":
+          description: All client stock
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminConsumableItem"
+
   /admin/revenue:
     get:
       operationId: getAdminRevenue
@@ -3484,6 +3698,149 @@ components:
           properties:
             postsCount: { type: integer }
             repliesCount: { type: integer }
+
+    # ─── Equipment & Consumables ─────────────────────────────────────────────
+    Equipment:
+      type: object
+      properties:
+        id: { type: string }
+        userId: { type: string }
+        productModel: { type: string }
+        serialNumber: { type: string }
+        purchaseDate: { type: string, nullable: true }
+        warrantyExpiration: { type: string, nullable: true }
+        status: { type: string }
+        maintenanceNotes: { type: string, nullable: true }
+        lastMaintenanceDate: { type: string, nullable: true }
+        nextMaintenanceDate: { type: string, nullable: true }
+        purchasePrice: { type: string, nullable: true }
+        vendorName: { type: string, nullable: true }
+        createdAt: { type: string }
+        updatedAt: { type: string }
+
+    ServiceRecord:
+      type: object
+      properties:
+        id: { type: string }
+        equipmentId: { type: string }
+        serviceDate: { type: string }
+        serviceType: { type: string }
+        description: { type: string }
+        technicianName: { type: string, nullable: true }
+        cost: { type: string, nullable: true }
+        nextServiceDate: { type: string, nullable: true }
+        createdAt: { type: string }
+
+    EquipmentDetail:
+      allOf:
+        - $ref: "#/components/schemas/Equipment"
+        - type: object
+          properties:
+            serviceHistory:
+              type: array
+              items:
+                $ref: "#/components/schemas/ServiceRecord"
+            owner:
+              type: object
+              nullable: true
+
+    AdminEquipmentItem:
+      allOf:
+        - $ref: "#/components/schemas/Equipment"
+        - type: object
+          properties:
+            ownerName: { type: string }
+            ownerEmail: { type: string }
+            ownerCompany: { type: string }
+            warrantyExpired: { type: boolean }
+            warrantyExpiringSoon: { type: boolean }
+            maintenanceOverdue: { type: boolean }
+            maintenanceDueSoon: { type: boolean }
+
+    CreateEquipmentInput:
+      type: object
+      required: [productModel, serialNumber]
+      properties:
+        productModel: { type: string }
+        serialNumber: { type: string }
+        purchaseDate: { type: string, nullable: true }
+        warrantyExpiration: { type: string, nullable: true }
+        maintenanceNotes: { type: string, nullable: true }
+        purchasePrice: { type: string, nullable: true }
+        vendorName: { type: string, nullable: true }
+
+    CreateServiceRecordInput:
+      type: object
+      required: [serviceDate, serviceType, description]
+      properties:
+        serviceDate: { type: string }
+        serviceType: { type: string }
+        description: { type: string }
+        technicianName: { type: string, nullable: true }
+        cost: { type: string, nullable: true }
+        nextServiceDate: { type: string, nullable: true }
+
+    ConsumableCatalogItem:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        sku: { type: string }
+        category: { type: string }
+        description: { type: string, nullable: true }
+        unitType: { type: string }
+        unitPrice: { type: string }
+        reorderThreshold: { type: integer }
+        compatibleModels: { type: string, nullable: true }
+        createdAt: { type: string }
+
+    ConsumableStockItem:
+      type: object
+      properties:
+        id: { type: string }
+        catalogItemId: { type: string }
+        currentQuantity: { type: integer }
+        estimatedDailyUsage: { type: string, nullable: true }
+        lastRestockedAt: { type: string, nullable: true }
+        lowStockAlertEnabled: { type: boolean }
+        name: { type: string }
+        sku: { type: string }
+        category: { type: string }
+        unitType: { type: string }
+        unitPrice: { type: string }
+        reorderThreshold: { type: integer }
+        description: { type: string, nullable: true }
+        compatibleModels: { type: string, nullable: true }
+        isLow: { type: boolean }
+        isCritical: { type: boolean }
+        daysRemaining: { type: integer, nullable: true }
+        reorderRecommended: { type: boolean }
+
+    AdminConsumableItem:
+      allOf:
+        - $ref: "#/components/schemas/ConsumableStockItem"
+        - type: object
+          properties:
+            userId: { type: string }
+            ownerName: { type: string }
+            ownerEmail: { type: string }
+            ownerCompany: { type: string }
+
+    ConsumableOrder:
+      type: object
+      properties:
+        id: { type: string }
+        quantity: { type: integer }
+        unitPrice: { type: string }
+        total: { type: string }
+        status: { type: string }
+        orderedAt: { type: string }
+        deliveredAt: { type: string, nullable: true }
+        notes: { type: string, nullable: true }
+        name: { type: string }
+        sku: { type: string }
+        category: { type: string }
+        unitType: { type: string }
 
     # ─── Revenue Intelligence ────────────────────────────────────────────────
     RevenueOverview:

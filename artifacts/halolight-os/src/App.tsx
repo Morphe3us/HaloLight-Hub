@@ -37,6 +37,10 @@ import AdminAnalytics from "./pages/AdminAnalytics";
 import AdminRevenue from "./pages/AdminRevenue";
 import AdminClients from "./pages/AdminClients";
 import Client360 from "./pages/Client360";
+import AdminEquipment from "./pages/AdminEquipment";
+import Equipment from "./pages/Equipment";
+import EquipmentDetail from "./pages/EquipmentDetail";
+import Consumables from "./pages/Consumables";
 import { AppShell } from "./components/layout/AppShell";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -236,7 +240,11 @@ function ClerkProviderWithRoutes() {
             <ProtectedRoute path="/admin/revenue" component={AdminRevenue} />
             <ProtectedRoute path="/admin/clients/:id" component={Client360} />
             <ProtectedRoute path="/admin/clients" component={AdminClients} />
+            <ProtectedRoute path="/admin/equipment" component={AdminEquipment} />
             <ProtectedRoute path="/admin" component={Admin} />
+            <ProtectedRoute path="/equipment/:id" component={EquipmentDetail} />
+            <ProtectedRoute path="/equipment" component={Equipment} />
+            <ProtectedRoute path="/consumables" component={Consumables} />
             <Route component={NotFound} />
           </Switch>
           <Toaster />

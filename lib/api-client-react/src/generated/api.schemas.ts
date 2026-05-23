@@ -1255,6 +1255,127 @@ export interface Client360 {
   community?: Client360Community;
 }
 
+export interface Equipment {
+  id?: string;
+  userId?: string;
+  productModel?: string;
+  serialNumber?: string;
+  purchaseDate?: string | null;
+  warrantyExpiration?: string | null;
+  status?: string;
+  maintenanceNotes?: string | null;
+  lastMaintenanceDate?: string | null;
+  nextMaintenanceDate?: string | null;
+  purchasePrice?: string | null;
+  vendorName?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface ServiceRecord {
+  id?: string;
+  equipmentId?: string;
+  serviceDate?: string;
+  serviceType?: string;
+  description?: string;
+  technicianName?: string | null;
+  cost?: string | null;
+  nextServiceDate?: string | null;
+  createdAt?: string;
+}
+
+export type EquipmentDetailOwner = { [key: string]: unknown } | null;
+
+export type EquipmentDetail = Equipment & {
+  serviceHistory?: ServiceRecord[];
+  owner?: EquipmentDetailOwner;
+};
+
+export type AdminEquipmentItem = Equipment & {
+  ownerName?: string;
+  ownerEmail?: string;
+  ownerCompany?: string;
+  warrantyExpired?: boolean;
+  warrantyExpiringSoon?: boolean;
+  maintenanceOverdue?: boolean;
+  maintenanceDueSoon?: boolean;
+};
+
+export interface CreateEquipmentInput {
+  productModel: string;
+  serialNumber: string;
+  purchaseDate?: string | null;
+  warrantyExpiration?: string | null;
+  maintenanceNotes?: string | null;
+  purchasePrice?: string | null;
+  vendorName?: string | null;
+}
+
+export interface CreateServiceRecordInput {
+  serviceDate: string;
+  serviceType: string;
+  description: string;
+  technicianName?: string | null;
+  cost?: string | null;
+  nextServiceDate?: string | null;
+}
+
+export interface ConsumableCatalogItem {
+  id?: string;
+  name?: string;
+  sku?: string;
+  category?: string;
+  description?: string | null;
+  unitType?: string;
+  unitPrice?: string;
+  reorderThreshold?: number;
+  compatibleModels?: string | null;
+  createdAt?: string;
+}
+
+export interface ConsumableStockItem {
+  id?: string;
+  catalogItemId?: string;
+  currentQuantity?: number;
+  estimatedDailyUsage?: string | null;
+  lastRestockedAt?: string | null;
+  lowStockAlertEnabled?: boolean;
+  name?: string;
+  sku?: string;
+  category?: string;
+  unitType?: string;
+  unitPrice?: string;
+  reorderThreshold?: number;
+  description?: string | null;
+  compatibleModels?: string | null;
+  isLow?: boolean;
+  isCritical?: boolean;
+  daysRemaining?: number | null;
+  reorderRecommended?: boolean;
+}
+
+export type AdminConsumableItem = ConsumableStockItem & {
+  userId?: string;
+  ownerName?: string;
+  ownerEmail?: string;
+  ownerCompany?: string;
+};
+
+export interface ConsumableOrder {
+  id?: string;
+  quantity?: number;
+  unitPrice?: string;
+  total?: string;
+  status?: string;
+  orderedAt?: string;
+  deliveredAt?: string | null;
+  notes?: string | null;
+  name?: string;
+  sku?: string;
+  category?: string;
+  unitType?: string;
+}
+
 export interface RevenueOverview {
   totalRevenue?: number;
   pipelineRevenue?: number;
@@ -1565,5 +1686,13 @@ export type TogglePostReactionBody = {
 
 export type TogglePostReaction200 = {
   added?: boolean;
+};
+
+export type UpdateEquipmentBody = { [key: string]: unknown };
+
+export type CreateConsumableOrderBody = {
+  catalogItemId?: string;
+  quantity?: number;
+  notes?: string;
 };
 

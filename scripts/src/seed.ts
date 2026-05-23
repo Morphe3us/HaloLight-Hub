@@ -5,6 +5,7 @@ import { seedCrm } from "./seed-crm";
 import { seedPhase4 } from "./seed-phase4";
 import { seedPhase5 } from "./seed-phase5";
 import { seedRevenueData } from "./seed-revenue";
+import { seedPhase6 } from "./seed-phase6";
 
 async function seed() {
   console.log("Seeding Phase 1 demo data...");
@@ -107,6 +108,7 @@ async function seed() {
   await seedPhase4();
   await seedPhase5();
   await seedRevenueData();
+  await seedPhase6();
 
   console.log("\n✅ Seed complete.");
   console.log("   Note: User records are created automatically on first login via JIT provisioning.");

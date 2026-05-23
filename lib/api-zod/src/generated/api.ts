@@ -2002,6 +2002,303 @@ export const ListAdminClientsResponse = zod.object({
 
 
 /**
+ * @summary List client's own equipment
+ */
+export const GetEquipmentResponseItem = zod.object({
+  "id": zod.string().optional(),
+  "userId": zod.string().optional(),
+  "productModel": zod.string().optional(),
+  "serialNumber": zod.string().optional(),
+  "purchaseDate": zod.string().nullish(),
+  "warrantyExpiration": zod.string().nullish(),
+  "status": zod.string().optional(),
+  "maintenanceNotes": zod.string().nullish(),
+  "lastMaintenanceDate": zod.string().nullish(),
+  "nextMaintenanceDate": zod.string().nullish(),
+  "purchasePrice": zod.string().nullish(),
+  "vendorName": zod.string().nullish(),
+  "createdAt": zod.string().optional(),
+  "updatedAt": zod.string().optional()
+})
+export const GetEquipmentResponse = zod.array(GetEquipmentResponseItem)
+
+
+/**
+ * @summary Register new equipment
+ */
+export const CreateEquipmentBody = zod.object({
+  "productModel": zod.string(),
+  "serialNumber": zod.string(),
+  "purchaseDate": zod.string().nullish(),
+  "warrantyExpiration": zod.string().nullish(),
+  "maintenanceNotes": zod.string().nullish(),
+  "purchasePrice": zod.string().nullish(),
+  "vendorName": zod.string().nullish()
+})
+
+
+/**
+ * @summary Get equipment detail with service history
+ */
+export const GetEquipmentByIdParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const GetEquipmentByIdResponse = zod.object({
+  "id": zod.string().optional(),
+  "userId": zod.string().optional(),
+  "productModel": zod.string().optional(),
+  "serialNumber": zod.string().optional(),
+  "purchaseDate": zod.string().nullish(),
+  "warrantyExpiration": zod.string().nullish(),
+  "status": zod.string().optional(),
+  "maintenanceNotes": zod.string().nullish(),
+  "lastMaintenanceDate": zod.string().nullish(),
+  "nextMaintenanceDate": zod.string().nullish(),
+  "purchasePrice": zod.string().nullish(),
+  "vendorName": zod.string().nullish(),
+  "createdAt": zod.string().optional(),
+  "updatedAt": zod.string().optional()
+}).and(zod.object({
+  "serviceHistory": zod.array(zod.object({
+  "id": zod.string().optional(),
+  "equipmentId": zod.string().optional(),
+  "serviceDate": zod.string().optional(),
+  "serviceType": zod.string().optional(),
+  "description": zod.string().optional(),
+  "technicianName": zod.string().nullish(),
+  "cost": zod.string().nullish(),
+  "nextServiceDate": zod.string().nullish(),
+  "createdAt": zod.string().optional()
+})).optional(),
+  "owner": zod.object({
+
+}).passthrough().nullish()
+}))
+
+
+/**
+ * @summary Update equipment record
+ */
+export const UpdateEquipmentParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const UpdateEquipmentBody = zod.object({
+
+}).passthrough()
+
+export const UpdateEquipmentResponse = zod.object({
+  "id": zod.string().optional(),
+  "userId": zod.string().optional(),
+  "productModel": zod.string().optional(),
+  "serialNumber": zod.string().optional(),
+  "purchaseDate": zod.string().nullish(),
+  "warrantyExpiration": zod.string().nullish(),
+  "status": zod.string().optional(),
+  "maintenanceNotes": zod.string().nullish(),
+  "lastMaintenanceDate": zod.string().nullish(),
+  "nextMaintenanceDate": zod.string().nullish(),
+  "purchasePrice": zod.string().nullish(),
+  "vendorName": zod.string().nullish(),
+  "createdAt": zod.string().optional(),
+  "updatedAt": zod.string().optional()
+})
+
+
+/**
+ * @summary Add a service history record
+ */
+export const AddServiceRecordParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const AddServiceRecordBody = zod.object({
+  "serviceDate": zod.string(),
+  "serviceType": zod.string(),
+  "description": zod.string(),
+  "technicianName": zod.string().nullish(),
+  "cost": zod.string().nullish(),
+  "nextServiceDate": zod.string().nullish()
+})
+
+
+/**
+ * @summary All client equipment with alert flags
+ */
+export const GetAdminEquipmentResponseItem = zod.object({
+  "id": zod.string().optional(),
+  "userId": zod.string().optional(),
+  "productModel": zod.string().optional(),
+  "serialNumber": zod.string().optional(),
+  "purchaseDate": zod.string().nullish(),
+  "warrantyExpiration": zod.string().nullish(),
+  "status": zod.string().optional(),
+  "maintenanceNotes": zod.string().nullish(),
+  "lastMaintenanceDate": zod.string().nullish(),
+  "nextMaintenanceDate": zod.string().nullish(),
+  "purchasePrice": zod.string().nullish(),
+  "vendorName": zod.string().nullish(),
+  "createdAt": zod.string().optional(),
+  "updatedAt": zod.string().optional()
+}).and(zod.object({
+  "ownerName": zod.string().optional(),
+  "ownerEmail": zod.string().optional(),
+  "ownerCompany": zod.string().optional(),
+  "warrantyExpired": zod.boolean().optional(),
+  "warrantyExpiringSoon": zod.boolean().optional(),
+  "maintenanceOverdue": zod.boolean().optional(),
+  "maintenanceDueSoon": zod.boolean().optional()
+}))
+export const GetAdminEquipmentResponse = zod.array(GetAdminEquipmentResponseItem)
+
+
+/**
+ * @summary Admin view of single equipment
+ */
+export const GetAdminEquipmentByIdParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const GetAdminEquipmentByIdResponse = zod.object({
+  "id": zod.string().optional(),
+  "userId": zod.string().optional(),
+  "productModel": zod.string().optional(),
+  "serialNumber": zod.string().optional(),
+  "purchaseDate": zod.string().nullish(),
+  "warrantyExpiration": zod.string().nullish(),
+  "status": zod.string().optional(),
+  "maintenanceNotes": zod.string().nullish(),
+  "lastMaintenanceDate": zod.string().nullish(),
+  "nextMaintenanceDate": zod.string().nullish(),
+  "purchasePrice": zod.string().nullish(),
+  "vendorName": zod.string().nullish(),
+  "createdAt": zod.string().optional(),
+  "updatedAt": zod.string().optional()
+}).and(zod.object({
+  "serviceHistory": zod.array(zod.object({
+  "id": zod.string().optional(),
+  "equipmentId": zod.string().optional(),
+  "serviceDate": zod.string().optional(),
+  "serviceType": zod.string().optional(),
+  "description": zod.string().optional(),
+  "technicianName": zod.string().nullish(),
+  "cost": zod.string().nullish(),
+  "nextServiceDate": zod.string().nullish(),
+  "createdAt": zod.string().optional()
+})).optional(),
+  "owner": zod.object({
+
+}).passthrough().nullish()
+}))
+
+
+/**
+ * @summary Get consumable catalog
+ */
+export const GetConsumableCatalogResponseItem = zod.object({
+  "id": zod.string().optional(),
+  "name": zod.string().optional(),
+  "sku": zod.string().optional(),
+  "category": zod.string().optional(),
+  "description": zod.string().nullish(),
+  "unitType": zod.string().optional(),
+  "unitPrice": zod.string().optional(),
+  "reorderThreshold": zod.number().optional(),
+  "compatibleModels": zod.string().nullish(),
+  "createdAt": zod.string().optional()
+})
+export const GetConsumableCatalogResponse = zod.array(GetConsumableCatalogResponseItem)
+
+
+/**
+ * @summary Client's consumable stock with alerts
+ */
+export const GetConsumablesResponseItem = zod.object({
+  "id": zod.string().optional(),
+  "catalogItemId": zod.string().optional(),
+  "currentQuantity": zod.number().optional(),
+  "estimatedDailyUsage": zod.string().nullish(),
+  "lastRestockedAt": zod.string().nullish(),
+  "lowStockAlertEnabled": zod.boolean().optional(),
+  "name": zod.string().optional(),
+  "sku": zod.string().optional(),
+  "category": zod.string().optional(),
+  "unitType": zod.string().optional(),
+  "unitPrice": zod.string().optional(),
+  "reorderThreshold": zod.number().optional(),
+  "description": zod.string().nullish(),
+  "compatibleModels": zod.string().nullish(),
+  "isLow": zod.boolean().optional(),
+  "isCritical": zod.boolean().optional(),
+  "daysRemaining": zod.number().nullish(),
+  "reorderRecommended": zod.boolean().optional()
+})
+export const GetConsumablesResponse = zod.array(GetConsumablesResponseItem)
+
+
+/**
+ * @summary Client's order history
+ */
+export const GetConsumableOrdersResponseItem = zod.object({
+  "id": zod.string().optional(),
+  "quantity": zod.number().optional(),
+  "unitPrice": zod.string().optional(),
+  "total": zod.string().optional(),
+  "status": zod.string().optional(),
+  "orderedAt": zod.string().optional(),
+  "deliveredAt": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "name": zod.string().optional(),
+  "sku": zod.string().optional(),
+  "category": zod.string().optional(),
+  "unitType": zod.string().optional()
+})
+export const GetConsumableOrdersResponse = zod.array(GetConsumableOrdersResponseItem)
+
+
+/**
+ * @summary Place a reorder
+ */
+export const CreateConsumableOrderBody = zod.object({
+  "catalogItemId": zod.string().optional(),
+  "quantity": zod.number().optional(),
+  "notes": zod.string().optional()
+})
+
+
+/**
+ * @summary All client consumable stock with alerts
+ */
+export const GetAdminConsumablesResponseItem = zod.object({
+  "id": zod.string().optional(),
+  "catalogItemId": zod.string().optional(),
+  "currentQuantity": zod.number().optional(),
+  "estimatedDailyUsage": zod.string().nullish(),
+  "lastRestockedAt": zod.string().nullish(),
+  "lowStockAlertEnabled": zod.boolean().optional(),
+  "name": zod.string().optional(),
+  "sku": zod.string().optional(),
+  "category": zod.string().optional(),
+  "unitType": zod.string().optional(),
+  "unitPrice": zod.string().optional(),
+  "reorderThreshold": zod.number().optional(),
+  "description": zod.string().nullish(),
+  "compatibleModels": zod.string().nullish(),
+  "isLow": zod.boolean().optional(),
+  "isCritical": zod.boolean().optional(),
+  "daysRemaining": zod.number().nullish(),
+  "reorderRecommended": zod.boolean().optional()
+}).and(zod.object({
+  "userId": zod.string().optional(),
+  "ownerName": zod.string().optional(),
+  "ownerEmail": zod.string().optional(),
+  "ownerCompany": zod.string().optional()
+}))
+export const GetAdminConsumablesResponse = zod.array(GetAdminConsumablesResponseItem)
+
+
+/**
  * @summary Revenue Intelligence dashboard data
  */
 export const GetAdminRevenueResponse = zod.object({

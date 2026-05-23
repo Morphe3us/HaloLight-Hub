@@ -18,6 +18,8 @@ import successRouter from "./success";
 import analyticsRouter from "./analytics";
 import clientsRouter from "./clients";
 import revenueRouter from "./revenue";
+import equipmentRouter from "./equipment";
+import consumablesRouter from "./consumables";
 
 const router: IRouter = Router();
 
@@ -40,5 +42,7 @@ router.use(successRouter);
 router.use(analyticsRouter);
 router.use(clientsRouter);
 router.use(revenueRouter);
+router.use(equipmentRouter);
+router.use(consumablesRouter);
 
 export default router;

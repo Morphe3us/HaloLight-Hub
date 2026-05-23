@@ -12,3 +12,5 @@ export * from "./kb";
 export * from "./ai";
 export * from "./community";
 export * from "./success";
+export * from "./equipment";
+export * from "./consumables";

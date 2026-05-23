@@ -5,7 +5,7 @@ import {
   LayoutDashboard, Bell, Settings as SettingsIcon, Shield, CheckCircle2,
   ChevronRight, LogOut, Menu, GraduationCap, Calendar, TrendingUp,
   FileText, FileSignature, ReceiptText, ChevronDown, LifeBuoy, BookOpen,
-  Sparkles, Users, Hash, BarChart3, UserCheck, DollarSign,
+  Sparkles, Users, Hash, BarChart3, UserCheck, DollarSign, Monitor, Package,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useClerk } from "@clerk/react";
@@ -124,6 +124,15 @@ export function Sidebar() {
     },
     { title: "AI Assistant", href: "/ai", icon: Sparkles },
     { title: "Community", href: "/community", icon: Users },
+    {
+      title: "Hardware",
+      href: "/equipment",
+      icon: Monitor,
+      children: [
+        { title: "Equipment", href: "/equipment", icon: Monitor },
+        { title: "Consumables", href: "/consumables", icon: Package },
+      ],
+    },
     { title: t("nav.onboarding"), href: "/onboarding", icon: CheckCircle2 },
     { title: t("nav.notifications"), href: "/notifications", icon: Bell, badge: true },
     { title: t("nav.settings"), href: "/settings", icon: SettingsIcon },
@@ -139,6 +148,7 @@ export function Sidebar() {
             { title: "Analytics", href: "/admin/analytics", icon: BarChart3 },
             { title: "Revenue", href: "/admin/revenue", icon: DollarSign },
             { title: "Clients", href: "/admin/clients", icon: UserCheck },
+            { title: "Equipment", href: "/admin/equipment", icon: Monitor },
             { title: "Users", href: "/admin", icon: Users },
           ],
         },
