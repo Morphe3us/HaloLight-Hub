@@ -153,6 +153,97 @@ router.post("/consumables/stock", requireAuth, async (req: Request, res: Respons
   res.status(201).json(result);
 });
 
+// POST /consumables/restock — record a purchase and increase stock
+router.post("/consumables/restock", requireAuth, async (req: Request, res: Response): Promise<void> => {
+  const user = await getOrCreateUser(req);
+  if (!user) { res.status(401).json({ error: "Unauthorized" }); return; }
+
+  const {
+    stockItemId, rollsPurchased, printsPerRoll, purchaseDate,
+    supplierName, unitPricePerRoll, notes,
+  } = req.body as {
+    stockItemId?: string; rollsPurchased?: number; printsPerRoll?: number;
+    purchaseDate?: string; supplierName?: string; unitPricePerRoll?: string;
+    notes?: string;
+  };
+
+  if (!stockItemId || !rollsPurchased || rollsPurchased < 1 || !printsPerRoll || printsPerRoll < 1 || !purchaseDate) {
+    res.status(400).json({ error: "stockItemId, rollsPurchased, printsPerRoll, and purchaseDate are required" });
+    return;
+  }
+
+  // Verify the stock item belongs to this user
+  const [stockItem] = await db.select({
+    id: consumableStock.id,
+    userId: consumableStock.userId,
+    catalogItemId: consumableStock.catalogItemId,
+    currentQuantity: consumableStock.currentQuantity,
+    lowStockAlertEnabled: consumableStock.lowStockAlertEnabled,
+    estimatedDailyUsage: consumableStock.estimatedDailyUsage,
+  }).from(consumableStock).where(and(eq(consumableStock.id, stockItemId), eq(consumableStock.userId, user.id)));
+
+  if (!stockItem) { res.status(404).json({ error: "Stock item not found" }); return; }
+
+  const [catalogItem] = await db.select().from(consumableCatalog).where(eq(consumableCatalog.id, stockItem.catalogItemId));
+  if (!catalogItem) { res.status(404).json({ error: "Catalog item not found" }); return; }
+
+  const totalAdded = rollsPurchased * printsPerRoll;
+  const newQuantity = stockItem.currentQuantity + totalAdded;
+
+  // Build a descriptive note for order history
+  const autoNote = `${rollsPurchased} roll${rollsPurchased > 1 ? "s" : ""} × ${printsPerRoll} prints/roll${supplierName ? ` · Supplier: ${supplierName}` : ""}${notes ? ` · ${notes}` : ""}`;
+
+  const pricePerRoll = unitPricePerRoll ? Number(unitPricePerRoll) : 0;
+  const total = pricePerRoll * rollsPurchased;
+
+  // Record in order history as a delivered purchase
+  await db.insert(consumableOrders).values({
+    userId: user.id,
+    catalogItemId: stockItem.catalogItemId,
+    quantity: totalAdded,
+    unitPrice: unitPricePerRoll ?? "0",
+    total: String(total),
+    status: "delivered",
+    orderedAt: new Date(purchaseDate),
+    deliveredAt: new Date(purchaseDate),
+    notes: autoNote,
+  });
+
+  // Update stock quantity and last restocked date
+  await db.update(consumableStock).set({
+    currentQuantity: newQuantity,
+    lastRestockedAt: new Date(purchaseDate),
+    updatedAt: new Date(),
+  }).where(eq(consumableStock.id, stockItemId));
+
+  const isLow = newQuantity <= catalogItem.reorderThreshold;
+  const isCritical = newQuantity === 0;
+  const dailyUsage = Number(stockItem.estimatedDailyUsage ?? 0);
+  const daysRemaining = dailyUsage > 0 ? Math.floor(newQuantity / dailyUsage) : null;
+
+  res.json({
+    id: stockItem.id,
+    catalogItemId: stockItem.catalogItemId,
+    userId: stockItem.userId,
+    currentQuantity: newQuantity,
+    estimatedDailyUsage: stockItem.estimatedDailyUsage,
+    lastRestockedAt: new Date(purchaseDate).toISOString(),
+    lowStockAlertEnabled: stockItem.lowStockAlertEnabled,
+    name: catalogItem.name,
+    sku: catalogItem.sku,
+    category: catalogItem.category,
+    unitType: catalogItem.unitType,
+    unitPrice: catalogItem.unitPrice,
+    reorderThreshold: catalogItem.reorderThreshold,
+    description: catalogItem.description,
+    compatibleModels: catalogItem.compatibleModels,
+    isLow,
+    isCritical,
+    daysRemaining,
+    reorderRecommended: isLow && stockItem.lowStockAlertEnabled,
+  });
+});
+
 // POST /consumables/order — place a reorder
 router.post("/consumables/order", requireAuth, async (req: Request, res: Response): Promise<void> => {
   const user = await getOrCreateUser(req);

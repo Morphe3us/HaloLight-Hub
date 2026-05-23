@@ -1417,6 +1417,16 @@ export type AdminConsumableItem = ConsumableStockItem & {
   ownerCompany?: string;
 };
 
+export interface RestockConsumableInput {
+  stockItemId: string;
+  rollsPurchased: number;
+  printsPerRoll: number;
+  purchaseDate: string;
+  supplierName?: string | null;
+  unitPricePerRoll?: string | null;
+  notes?: string | null;
+}
+
 export interface CreateConsumableStockInput {
   name: string;
   category: string;

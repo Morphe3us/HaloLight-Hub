@@ -1996,6 +1996,25 @@ paths:
               schema:
                 $ref: "#/components/schemas/ConsumableOrder"
 
+  /consumables/restock:
+    post:
+      operationId: restockConsumable
+      tags: [consumables]
+      summary: Record a purchase and add stock to an existing consumable
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RestockConsumableInput"
+      responses:
+        "200":
+          description: Updated stock item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConsumableStockItem"
+
   /consumables/stock:
     post:
       operationId: createConsumableStock
@@ -4167,6 +4186,18 @@ components:
             ownerName: { type: string }
             ownerEmail: { type: string }
             ownerCompany: { type: string }
+
+    RestockConsumableInput:
+      type: object
+      required: [stockItemId, rollsPurchased, printsPerRoll, purchaseDate]
+      properties:
+        stockItemId: { type: string }
+        rollsPurchased: { type: integer }
+        printsPerRoll: { type: integer }
+        purchaseDate: { type: string }
+        supplierName: { type: string, nullable: true }
+        unitPricePerRoll: { type: string, nullable: true }
+        notes: { type: string, nullable: true }
 
     CreateConsumableStockInput:
       type: object

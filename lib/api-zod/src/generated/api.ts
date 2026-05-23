@@ -2316,6 +2316,41 @@ export const CreateConsumableOrderBody = zod.object({
 
 
 /**
+ * @summary Record a purchase and add stock to an existing consumable
+ */
+export const RestockConsumableBody = zod.object({
+  "stockItemId": zod.string(),
+  "rollsPurchased": zod.number(),
+  "printsPerRoll": zod.number(),
+  "purchaseDate": zod.string(),
+  "supplierName": zod.string().nullish(),
+  "unitPricePerRoll": zod.string().nullish(),
+  "notes": zod.string().nullish()
+})
+
+export const RestockConsumableResponse = zod.object({
+  "id": zod.string().optional(),
+  "catalogItemId": zod.string().optional(),
+  "currentQuantity": zod.number().optional(),
+  "estimatedDailyUsage": zod.string().nullish(),
+  "lastRestockedAt": zod.string().nullish(),
+  "lowStockAlertEnabled": zod.boolean().optional(),
+  "name": zod.string().optional(),
+  "sku": zod.string().optional(),
+  "category": zod.string().optional(),
+  "unitType": zod.string().optional(),
+  "unitPrice": zod.string().optional(),
+  "reorderThreshold": zod.number().optional(),
+  "description": zod.string().nullish(),
+  "compatibleModels": zod.string().nullish(),
+  "isLow": zod.boolean().optional(),
+  "isCritical": zod.boolean().optional(),
+  "daysRemaining": zod.number().nullish(),
+  "reorderRecommended": zod.boolean().optional()
+})
+
+
+/**
  * @summary Add a new supply item to stock
  */
 export const CreateConsumableStockBody = zod.object({
