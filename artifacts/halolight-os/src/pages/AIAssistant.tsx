@@ -3,7 +3,7 @@ import {
   useListAiConversations, useCreateAiConversation,
   useGetAiConversation, useDeleteAiConversation,
   useListAiSuggestedQuestions, useEscalateAiConversation,
-  useGetAiProvider,
+  useGetAiProvider, getAuthToken,
 } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -463,10 +463,13 @@ export default function AIAssistant() {
       setStream({ content: "", sources: [], actions: [] });
 
       try {
+        const authToken = await getAuthToken();
         const response = await fetch(`/api/ai/conversations/${convId}/stream`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+            ...(authToken ? { "Authorization": `Bearer ${authToken}` } : {}),
+          },
           body: JSON.stringify({ content: msgText }),
           signal: ac.signal,
         });

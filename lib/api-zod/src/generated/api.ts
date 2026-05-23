@@ -2316,6 +2316,24 @@ export const CreateConsumableOrderBody = zod.object({
 
 
 /**
+ * @summary Add a new supply item to stock
+ */
+export const CreateConsumableStockBody = zod.object({
+  "name": zod.string(),
+  "category": zod.string(),
+  "sku": zod.string().nullish(),
+  "unitType": zod.string().nullish(),
+  "unitPrice": zod.string().nullish(),
+  "reorderThreshold": zod.number().nullish(),
+  "compatibleModels": zod.string().nullish(),
+  "description": zod.string().nullish(),
+  "currentQuantity": zod.number(),
+  "estimatedDailyUsage": zod.string().nullish(),
+  "lowStockAlertEnabled": zod.boolean().nullish()
+})
+
+
+/**
  * @summary All client consumable stock with alerts
  */
 export const GetAdminConsumablesResponseItem = zod.object({

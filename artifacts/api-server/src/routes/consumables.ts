@@ -87,6 +87,72 @@ router.get("/consumables/orders", requireAuth, async (req: Request, res: Respons
   res.json(orders);
 });
 
+// POST /consumables/stock — add a new supply item (creates catalog entry + stock row atomically)
+router.post("/consumables/stock", requireAuth, async (req: Request, res: Response): Promise<void> => {
+  const user = await getOrCreateUser(req);
+  if (!user) { res.status(401).json({ error: "Unauthorized" }); return; }
+
+  const {
+    name, category, sku, unitType, unitPrice,
+    reorderThreshold, compatibleModels, description,
+    currentQuantity, estimatedDailyUsage, lowStockAlertEnabled,
+  } = req.body as {
+    name?: string; category?: string; sku?: string; unitType?: string;
+    unitPrice?: string; reorderThreshold?: number; compatibleModels?: string;
+    description?: string; currentQuantity?: number; estimatedDailyUsage?: string;
+    lowStockAlertEnabled?: boolean;
+  };
+
+  if (!name?.trim() || !category?.trim()) {
+    res.status(400).json({ error: "name and category are required" });
+    return;
+  }
+  if (typeof currentQuantity !== "number" || currentQuantity < 0) {
+    res.status(400).json({ error: "currentQuantity must be a non-negative number" });
+    return;
+  }
+
+  const generatedSku = sku?.trim() || `USR-${user.id.slice(-6).toUpperCase()}-${Date.now()}`;
+
+  const [catalogItem] = await db.insert(consumableCatalog).values({
+    name: name.trim(),
+    sku: generatedSku,
+    category: category as typeof consumableCatalog.$inferInsert["category"],
+    unitType: unitType?.trim() || "units",
+    unitPrice: unitPrice || "0",
+    reorderThreshold: reorderThreshold ?? 5,
+    compatibleModels: compatibleModels?.trim() || null,
+    description: description?.trim() || null,
+  }).returning();
+
+  const [stockItem] = await db.insert(consumableStock).values({
+    userId: user.id,
+    catalogItemId: catalogItem!.id,
+    currentQuantity,
+    estimatedDailyUsage: estimatedDailyUsage || null,
+    lastRestockedAt: currentQuantity > 0 ? new Date() : null,
+    lowStockAlertEnabled: lowStockAlertEnabled ?? true,
+  }).returning();
+
+  const result = {
+    ...stockItem,
+    name: catalogItem!.name,
+    sku: catalogItem!.sku,
+    category: catalogItem!.category,
+    unitType: catalogItem!.unitType,
+    unitPrice: catalogItem!.unitPrice,
+    reorderThreshold: catalogItem!.reorderThreshold,
+    description: catalogItem!.description,
+    compatibleModels: catalogItem!.compatibleModels,
+    isLow: currentQuantity <= (reorderThreshold ?? 5),
+    isCritical: currentQuantity === 0,
+    daysRemaining: null,
+    reorderRecommended: currentQuantity <= (reorderThreshold ?? 5) && (lowStockAlertEnabled ?? true),
+  };
+
+  res.status(201).json(result);
+});
+
 // POST /consumables/order — place a reorder
 router.post("/consumables/order", requireAuth, async (req: Request, res: Response): Promise<void> => {
   const user = await getOrCreateUser(req);

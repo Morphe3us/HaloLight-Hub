@@ -1,13 +1,24 @@
 import { useState } from "react";
 import { Link } from "wouter";
-import { useGetEquipment } from "@workspace/api-client-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useGetEquipment, useCreateEquipment } from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
 import {
   Monitor, Wrench, AlertTriangle, CheckCircle2, Clock,
-  ChevronRight, Package, CalendarClock, ShieldCheck, ShieldAlert,
-  ShieldX, Plus, Info,
+  ChevronRight, Package, ShieldCheck, ShieldAlert,
+  ShieldX, Plus, Info, Loader2,
 } from "lucide-react";
 
 type EquipmentItem = {
@@ -26,18 +37,10 @@ type EquipmentItem = {
 };
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.ComponentType<{className?: string}> }> = {
-  active:     { label: "Active",      color: "bg-success/15 text-success",  icon: CheckCircle2 },
-  inactive:   { label: "Inactive",    color: "bg-muted text-muted-foreground",    icon: Package },
-  in_service: { label: "In Service",  color: "bg-info/15 text-info",    icon: Wrench },
-  retired:    { label: "Retired",     color: "bg-destructive/15 text-destructive",      icon: AlertTriangle },
-};
-
-const SERVICE_TYPE_LABELS: Record<string, string> = {
-  routine_maintenance: "Routine Maintenance",
-  repair: "Repair",
-  upgrade: "Upgrade",
-  inspection: "Inspection",
-  warranty_claim: "Warranty Claim",
+  active:     { label: "Active",      color: "bg-success/15 text-success",          icon: CheckCircle2 },
+  inactive:   { label: "Inactive",    color: "bg-muted text-muted-foreground",      icon: Package },
+  in_service: { label: "In Service",  color: "bg-info/15 text-info",               icon: Wrench },
+  retired:    { label: "Retired",     color: "bg-destructive/15 text-destructive",  icon: AlertTriangle },
 };
 
 function warrantyStatus(expiry: string | null): { label: string; color: string; icon: React.ComponentType<{className?: string}> } {
@@ -65,9 +68,161 @@ function fmtDate(d: string | null) {
   return new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
 
+const EMPTY_FORM = {
+  productModel: "",
+  serialNumber: "",
+  purchaseDate: "",
+  warrantyExpiration: "",
+  vendorName: "",
+  purchasePrice: "",
+  maintenanceNotes: "",
+  status: "active",
+};
+
+function RegisterModal({
+  open,
+  onClose,
+}: {
+  open: boolean;
+  onClose: () => void;
+}) {
+  const { toast } = useToast();
+  const qc = useQueryClient();
+  const [form, setForm] = useState(EMPTY_FORM);
+
+  const { mutate: create, isPending } = useCreateEquipment({
+    mutation: {
+      onSuccess: () => {
+        qc.invalidateQueries({ queryKey: ["/api/equipment"] });
+        toast({ title: "Equipment registered", description: `${form.productModel} has been added to your registry.` });
+        setForm(EMPTY_FORM);
+        onClose();
+      },
+      onError: (err: unknown) => {
+        const msg = (err as { data?: { error?: string } })?.data?.error ?? "Failed to register equipment";
+        toast({ title: "Registration failed", description: msg, variant: "destructive" });
+      },
+    },
+  });
+
+  const set = (k: keyof typeof EMPTY_FORM) => (v: string) =>
+    setForm((f) => ({ ...f, [k]: v }));
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.productModel.trim() || !form.serialNumber.trim()) return;
+    create({
+      data: {
+        productModel: form.productModel.trim(),
+        serialNumber: form.serialNumber.trim(),
+        purchaseDate: form.purchaseDate || null,
+        warrantyExpiration: form.warrantyExpiration || null,
+        vendorName: form.vendorName.trim() || null,
+        purchasePrice: form.purchasePrice.trim() || null,
+        maintenanceNotes: form.maintenanceNotes.trim() || null,
+      },
+    });
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Register Equipment</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4 pt-1">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="col-span-2 space-y-1.5">
+              <Label htmlFor="productModel">Equipment Name / Model <span className="text-destructive">*</span></Label>
+              <Input
+                id="productModel"
+                placeholder="e.g. HaloLight Pro X1"
+                value={form.productModel}
+                onChange={(e) => set("productModel")(e.target.value)}
+                required
+              />
+            </div>
+            <div className="col-span-2 space-y-1.5">
+              <Label htmlFor="serialNumber">Serial Number <span className="text-destructive">*</span></Label>
+              <Input
+                id="serialNumber"
+                placeholder="e.g. SN-20240001"
+                value={form.serialNumber}
+                onChange={(e) => set("serialNumber")(e.target.value)}
+                required
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="purchaseDate">Purchase Date</Label>
+              <Input
+                id="purchaseDate"
+                type="date"
+                value={form.purchaseDate}
+                onChange={(e) => set("purchaseDate")(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="warrantyExpiration">Warranty Expiry</Label>
+              <Input
+                id="warrantyExpiration"
+                type="date"
+                value={form.warrantyExpiration}
+                onChange={(e) => set("warrantyExpiration")(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="vendorName">Vendor / Supplier</Label>
+              <Input
+                id="vendorName"
+                placeholder="e.g. HaloLight Direct"
+                value={form.vendorName}
+                onChange={(e) => set("vendorName")(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="purchasePrice">Purchase Price ($)</Label>
+              <Input
+                id="purchasePrice"
+                type="number"
+                min="0"
+                step="0.01"
+                placeholder="0.00"
+                value={form.purchasePrice}
+                onChange={(e) => set("purchasePrice")(e.target.value)}
+              />
+            </div>
+            <div className="col-span-2 space-y-1.5">
+              <Label htmlFor="maintenanceNotes">Maintenance Notes</Label>
+              <Textarea
+                id="maintenanceNotes"
+                placeholder="Any notes about this unit…"
+                rows={2}
+                value={form.maintenanceNotes}
+                onChange={(e) => set("maintenanceNotes")(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter className="pt-2">
+            <Button type="button" variant="outline" onClick={onClose} disabled={isPending}>
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={isPending || !form.productModel.trim() || !form.serialNumber.trim()}
+            >
+              {isPending ? <><Loader2 className="w-4 h-4 mr-1.5 animate-spin" />Registering…</> : "Register Equipment"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export default function Equipment() {
   const { data = [], isLoading } = useGetEquipment();
   const items = data as EquipmentItem[];
+  const [registerOpen, setRegisterOpen] = useState(false);
 
   const alerts = items.filter(eq => {
     const w = warrantyStatus(eq.warrantyExpiration ?? null);
@@ -86,13 +241,15 @@ export default function Equipment() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
+      <RegisterModal open={registerOpen} onClose={() => setRegisterOpen(false)} />
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">My Equipment</h1>
           <p className="text-sm text-muted-foreground mt-0.5">Track your photobooth units, warranties, and service history</p>
         </div>
-        <Button variant="outline" size="sm" className="gap-1.5" disabled>
+        <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setRegisterOpen(true)}>
           <Plus className="w-4 h-4" />
           Register Equipment
         </Button>
@@ -115,10 +272,10 @@ export default function Equipment() {
       {items.length > 0 && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
-            { label: "Total Units", value: items.length, color: "text-foreground" },
-            { label: "Active", value: items.filter(e => e.status === "active").length, color: "text-success" },
-            { label: "In Service", value: items.filter(e => e.status === "in_service").length, color: "text-info" },
-            { label: "Alerts", value: alerts.length, color: "text-warning" },
+            { label: "Total Units",  value: items.length,                                      color: "text-foreground" },
+            { label: "Active",       value: items.filter(e => e.status === "active").length,   color: "text-success" },
+            { label: "In Service",   value: items.filter(e => e.status === "in_service").length, color: "text-info" },
+            { label: "Alerts",       value: alerts.length,                                      color: "text-warning" },
           ].map(s => (
             <Card key={s.label}>
               <CardContent className="p-4 text-center">
@@ -136,7 +293,11 @@ export default function Equipment() {
           <CardContent className="py-16 text-center">
             <Monitor className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
             <p className="text-muted-foreground font-medium">No equipment registered yet</p>
-            <p className="text-sm text-muted-foreground mt-1">Your photobooth units will appear here once registered</p>
+            <p className="text-sm text-muted-foreground mt-1 mb-4">Your photobooth units will appear here once registered</p>
+            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setRegisterOpen(true)}>
+              <Plus className="w-4 h-4" />
+              Register your first unit
+            </Button>
           </CardContent>
         </Card>
       ) : (

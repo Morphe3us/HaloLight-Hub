@@ -63,6 +63,7 @@ import type {
   CourseList,
   CreateCommunityChannelBody,
   CreateConsumableOrderBody,
+  CreateConsumableStockInput,
   CreateEquipmentInput,
   CreateKbCategoryBody,
   CreateServiceRecordInput,
@@ -7522,6 +7523,77 @@ export const useCreateConsumableOrder = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getCreateConsumableOrderMutationOptions(options));
+    }
+
+export const getCreateConsumableStockUrl = () => {
+
+
+
+
+  return `/api/consumables/stock`
+}
+
+/**
+ * @summary Add a new supply item to stock
+ */
+export const createConsumableStock = async (createConsumableStockInput: CreateConsumableStockInput, options?: RequestInit): Promise<ConsumableStockItem> => {
+
+  return customFetch<ConsumableStockItem>(getCreateConsumableStockUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      createConsumableStockInput,)
+  }
+);}
+
+
+
+
+export const getCreateConsumableStockMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createConsumableStock>>, TError,{data: BodyType<CreateConsumableStockInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createConsumableStock>>, TError,{data: BodyType<CreateConsumableStockInput>}, TContext> => {
+
+const mutationKey = ['createConsumableStock'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createConsumableStock>>, {data: BodyType<CreateConsumableStockInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createConsumableStock(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateConsumableStockMutationResult = NonNullable<Awaited<ReturnType<typeof createConsumableStock>>>
+    export type CreateConsumableStockMutationBody = BodyType<CreateConsumableStockInput>
+    export type CreateConsumableStockMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Add a new supply item to stock
+ */
+export const useCreateConsumableStock = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createConsumableStock>>, TError,{data: BodyType<CreateConsumableStockInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createConsumableStock>>,
+        TError,
+        {data: BodyType<CreateConsumableStockInput>},
+        TContext
+      > => {
+      return useMutation(getCreateConsumableStockMutationOptions(options));
     }
 
 export const getGetAdminConsumablesUrl = () => {

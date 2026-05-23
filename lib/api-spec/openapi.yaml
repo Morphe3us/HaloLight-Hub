@@ -1996,6 +1996,25 @@ paths:
               schema:
                 $ref: "#/components/schemas/ConsumableOrder"
 
+  /consumables/stock:
+    post:
+      operationId: createConsumableStock
+      tags: [consumables]
+      summary: Add a new supply item to stock
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateConsumableStockInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConsumableStockItem"
+
   /admin/consumables:
     get:
       operationId: getAdminConsumables
@@ -4148,6 +4167,22 @@ components:
             ownerName: { type: string }
             ownerEmail: { type: string }
             ownerCompany: { type: string }
+
+    CreateConsumableStockInput:
+      type: object
+      required: [name, category, currentQuantity]
+      properties:
+        name: { type: string }
+        category: { type: string }
+        sku: { type: string, nullable: true }
+        unitType: { type: string, nullable: true }
+        unitPrice: { type: string, nullable: true }
+        reorderThreshold: { type: integer, nullable: true }
+        compatibleModels: { type: string, nullable: true }
+        description: { type: string, nullable: true }
+        currentQuantity: { type: integer }
+        estimatedDailyUsage: { type: string, nullable: true }
+        lowStockAlertEnabled: { type: boolean, nullable: true }
 
     ConsumableOrder:
       type: object

@@ -1417,6 +1417,20 @@ export type AdminConsumableItem = ConsumableStockItem & {
   ownerCompany?: string;
 };
 
+export interface CreateConsumableStockInput {
+  name: string;
+  category: string;
+  sku?: string | null;
+  unitType?: string | null;
+  unitPrice?: string | null;
+  reorderThreshold?: number | null;
+  compatibleModels?: string | null;
+  description?: string | null;
+  currentQuantity: number;
+  estimatedDailyUsage?: string | null;
+  lowStockAlertEnabled?: boolean | null;
+}
+
 export interface ConsumableOrder {
   id?: string;
   quantity?: number;

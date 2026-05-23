@@ -1,12 +1,22 @@
 import { useState } from "react";
-import { useGetConsumables, useGetConsumableOrders } from "@workspace/api-client-react";
+import { useGetConsumables, useGetConsumableOrders, useCreateConsumableStock } from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
 import {
   Package, AlertTriangle, CheckCircle2, ShoppingCart, Clock,
   Layers, Printer, Brush, Wrench, TrendingDown, RotateCcw,
-  ChevronDown, ChevronUp,
+  ChevronDown, ChevronUp, Plus, Loader2,
 } from "lucide-react";
 
 type StockItem = {
@@ -76,9 +86,197 @@ function StockBar({ qty, threshold, isCritical, isLow }: { qty: number; threshol
   );
 }
 
+const EMPTY_FORM = {
+  name: "",
+  category: "paper",
+  sku: "",
+  unitType: "units",
+  currentQuantity: "",
+  reorderThreshold: "5",
+  estimatedDailyUsage: "",
+  unitPrice: "0",
+  compatibleModels: "",
+  description: "",
+};
+
+function AddSupplyModal({
+  open,
+  onClose,
+}: {
+  open: boolean;
+  onClose: () => void;
+}) {
+  const { toast } = useToast();
+  const qc = useQueryClient();
+  const [form, setForm] = useState(EMPTY_FORM);
+
+  const { mutate: create, isPending } = useCreateConsumableStock({
+    mutation: {
+      onSuccess: () => {
+        qc.invalidateQueries({ queryKey: ["/api/consumables"] });
+        toast({ title: "Supply added", description: `${form.name} has been added to your inventory.` });
+        setForm(EMPTY_FORM);
+        onClose();
+      },
+      onError: (err: unknown) => {
+        const msg = (err as { data?: { error?: string } })?.data?.error ?? "Failed to add supply item";
+        toast({ title: "Failed to add supply", description: msg, variant: "destructive" });
+      },
+    },
+  });
+
+  const set = (k: keyof typeof EMPTY_FORM) => (v: string) =>
+    setForm((f) => ({ ...f, [k]: v }));
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const qty = parseInt(form.currentQuantity, 10);
+    if (!form.name.trim() || !form.category || isNaN(qty) || qty < 0) return;
+    create({
+      data: {
+        name: form.name.trim(),
+        category: form.category,
+        sku: form.sku.trim() || null,
+        unitType: form.unitType.trim() || "units",
+        currentQuantity: qty,
+        reorderThreshold: parseInt(form.reorderThreshold, 10) || 5,
+        estimatedDailyUsage: form.estimatedDailyUsage.trim() || null,
+        unitPrice: form.unitPrice.trim() || "0",
+        compatibleModels: form.compatibleModels.trim() || null,
+        description: form.description.trim() || null,
+        lowStockAlertEnabled: true,
+      },
+    });
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Add Supply Item</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4 pt-1">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="col-span-2 space-y-1.5">
+              <Label htmlFor="supplyName">Item Name <span className="text-destructive">*</span></Label>
+              <Input
+                id="supplyName"
+                placeholder="e.g. 4x6 Glossy Photo Paper"
+                value={form.name}
+                onChange={(e) => set("name")(e.target.value)}
+                required
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Category <span className="text-destructive">*</span></Label>
+              <Select value={form.category} onValueChange={set("category")}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="paper">Paper</SelectItem>
+                  <SelectItem value="ribbon">Ribbon</SelectItem>
+                  <SelectItem value="accessory">Accessory</SelectItem>
+                  <SelectItem value="cleaning">Cleaning</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="unitType">Unit Type</Label>
+              <Input
+                id="unitType"
+                placeholder="e.g. sheets, rolls, packs"
+                value={form.unitType}
+                onChange={(e) => set("unitType")(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="currentQty">Current Quantity <span className="text-destructive">*</span></Label>
+              <Input
+                id="currentQty"
+                type="number"
+                min="0"
+                placeholder="0"
+                value={form.currentQuantity}
+                onChange={(e) => set("currentQuantity")(e.target.value)}
+                required
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="reorderThreshold">Reorder Threshold</Label>
+              <Input
+                id="reorderThreshold"
+                type="number"
+                min="0"
+                placeholder="5"
+                value={form.reorderThreshold}
+                onChange={(e) => set("reorderThreshold")(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="dailyUsage">Est. Daily Usage</Label>
+              <Input
+                id="dailyUsage"
+                type="number"
+                min="0"
+                step="0.1"
+                placeholder="e.g. 10"
+                value={form.estimatedDailyUsage}
+                onChange={(e) => set("estimatedDailyUsage")(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="unitPrice">Unit Price ($)</Label>
+              <Input
+                id="unitPrice"
+                type="number"
+                min="0"
+                step="0.01"
+                placeholder="0.00"
+                value={form.unitPrice}
+                onChange={(e) => set("unitPrice")(e.target.value)}
+              />
+            </div>
+            <div className="col-span-2 space-y-1.5">
+              <Label htmlFor="compatibleModels">Compatible Models</Label>
+              <Input
+                id="compatibleModels"
+                placeholder="e.g. HaloLight Pro X1, X2"
+                value={form.compatibleModels}
+                onChange={(e) => set("compatibleModels")(e.target.value)}
+              />
+            </div>
+            <div className="col-span-2 space-y-1.5">
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                placeholder="Optional notes about this item…"
+                rows={2}
+                value={form.description}
+                onChange={(e) => set("description")(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter className="pt-2">
+            <Button type="button" variant="outline" onClick={onClose} disabled={isPending}>
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={isPending || !form.name.trim() || !form.currentQuantity}
+            >
+              {isPending ? <><Loader2 className="w-4 h-4 mr-1.5 animate-spin" />Adding…</> : "Add Supply"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export default function Consumables() {
-  const [tab, setTab] = useState<"stock" | "orders">("stock");
   const [showOrders, setShowOrders] = useState(false);
+  const [addSupplyOpen, setAddSupplyOpen] = useState(false);
   const { data: stockData = [], isLoading: stockLoading } = useGetConsumables();
   const { data: ordersData = [], isLoading: ordersLoading } = useGetConsumableOrders();
 
@@ -87,9 +285,7 @@ export default function Consumables() {
 
   const criticalItems = stock.filter(s => s.isCritical);
   const lowItems = stock.filter(s => s.isLow && !s.isCritical);
-  const reorderItems = stock.filter(s => s.reorderRecommended);
 
-  // Group stock by category
   const grouped = stock.reduce<Record<string, StockItem[]>>((acc, item) => {
     const key = item.category;
     if (!acc[key]) acc[key] = [];
@@ -106,17 +302,25 @@ export default function Consumables() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
+      <AddSupplyModal open={addSupplyOpen} onClose={() => setAddSupplyOpen(false)} />
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Consumables</h1>
           <p className="text-sm text-muted-foreground mt-0.5">Paper stock, ribbons, and accessories</p>
         </div>
-        <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setShowOrders(!showOrders)}>
-          <ShoppingCart className="w-4 h-4" />
-          Order History
-          {showOrders ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setShowOrders(!showOrders)}>
+            <ShoppingCart className="w-4 h-4" />
+            Order History
+            {showOrders ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+          </Button>
+          <Button size="sm" className="gap-1.5" onClick={() => setAddSupplyOpen(true)}>
+            <Plus className="w-4 h-4" />
+            Add Supply
+          </Button>
+        </div>
       </div>
 
       {/* Alert Banners */}
@@ -142,10 +346,10 @@ export default function Consumables() {
       {/* Summary KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: "Total Items", value: stock.length, color: "text-foreground" },
-          { label: "Well Stocked", value: stock.filter(s => !s.isLow).length, color: "text-success" },
-          { label: "Low Stock", value: lowItems.length, color: "text-warning" },
-          { label: "Out of Stock", value: criticalItems.length, color: "text-destructive" },
+          { label: "Total Items",   value: stock.length,                        color: "text-foreground" },
+          { label: "Well Stocked",  value: stock.filter(s => !s.isLow).length,  color: "text-success" },
+          { label: "Low Stock",     value: lowItems.length,                     color: "text-warning" },
+          { label: "Out of Stock",  value: criticalItems.length,                color: "text-destructive" },
         ].map(s => (
           <Card key={s.label}>
             <CardContent className="p-4 text-center">
@@ -199,7 +403,11 @@ export default function Consumables() {
           <CardContent className="py-16 text-center">
             <Package className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
             <p className="text-muted-foreground font-medium">No consumables tracked yet</p>
-            <p className="text-sm text-muted-foreground mt-1">Your paper, ribbon, and accessory stock will appear here</p>
+            <p className="text-sm text-muted-foreground mt-1 mb-4">Your paper, ribbon, and accessory stock will appear here</p>
+            <Button size="sm" className="gap-1.5" onClick={() => setAddSupplyOpen(true)}>
+              <Plus className="w-4 h-4" />
+              Add your first supply
+            </Button>
           </CardContent>
         </Card>
       ) : (

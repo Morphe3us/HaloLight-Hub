@@ -44,6 +44,17 @@ export function setAuthTokenGetter(getter: AuthTokenGetter | null): void {
   _authTokenGetter = getter;
 }
 
+/**
+ * Retrieve the current bearer token by calling the registered auth getter.
+ * Returns null when no getter is registered or the getter returns nothing.
+ * Useful for raw fetch calls (e.g. SSE streams) that bypass customFetch.
+ */
+export async function getAuthToken(): Promise<string | null> {
+  if (!_authTokenGetter) return null;
+  const token = await _authTokenGetter();
+  return token ?? null;
+}
+
 function isRequest(input: RequestInfo | URL): input is Request {
   return typeof Request !== "undefined" && input instanceof Request;
 }
