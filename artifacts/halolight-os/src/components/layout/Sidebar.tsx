@@ -5,7 +5,7 @@ import {
   LayoutDashboard, Bell, Settings as SettingsIcon, Shield, CheckCircle2,
   ChevronRight, LogOut, Menu, GraduationCap, Calendar, TrendingUp,
   FileText, FileSignature, ReceiptText, ChevronDown, LifeBuoy, BookOpen,
-  Sparkles, Users, Hash,
+  Sparkles, Users, Hash, BarChart3, UserCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useClerk } from "@clerk/react";
@@ -129,10 +129,22 @@ export function Sidebar() {
     { title: t("nav.settings"), href: "/settings", icon: SettingsIcon },
   ];
 
-  const allItems: NavItem[] = [
-    ...navItems,
-    ...(isAdmin ? [{ title: t("nav.admin"), href: "/admin", icon: Shield }] : []),
-  ];
+  const adminItems: NavItem[] = isAdmin
+    ? [
+        {
+          title: "Admin",
+          href: "/admin",
+          icon: Shield,
+          children: [
+            { title: "Analytics", href: "/admin/analytics", icon: BarChart3 },
+            { title: "Clients", href: "/admin/clients", icon: UserCheck },
+            { title: "Users", href: "/admin", icon: Users },
+          ],
+        },
+      ]
+    : [];
+
+  const allItems: NavItem[] = [...navItems, ...adminItems];
 
   const handleSignOut = () => {
     signOut({ redirectUrl: "/" });

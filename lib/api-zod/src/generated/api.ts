@@ -1884,3 +1884,202 @@ export const DeleteCommunityReplyParams = zod.object({
 })
 
 
+/**
+ * @summary Get current user success score
+ */
+export const GetMySuccessScoreResponse = zod.object({
+  "score": zod.object({
+  "id": zod.string().optional(),
+  "userId": zod.string().optional(),
+  "score": zod.number().optional(),
+  "tier": zod.enum(['at_risk', 'developing', 'healthy', 'champion']).optional(),
+  "loginScore": zod.number().optional(),
+  "onboardingScore": zod.number().optional(),
+  "academyScore": zod.number().optional(),
+  "eventsScore": zod.number().optional(),
+  "quotesScore": zod.number().optional(),
+  "invoicesScore": zod.number().optional(),
+  "communityScore": zod.number().optional(),
+  "supportScore": zod.number().optional(),
+  "computedAt": zod.coerce.date().optional()
+}).optional(),
+  "coaching": zod.array(zod.object({
+  "id": zod.string().optional(),
+  "userId": zod.string().optional(),
+  "type": zod.string().optional(),
+  "title": zod.string().optional(),
+  "description": zod.string().optional(),
+  "priority": zod.number().optional(),
+  "isActioned": zod.number().optional(),
+  "createdAt": zod.coerce.date().optional()
+})).optional(),
+  "upsells": zod.array(zod.object({
+  "id": zod.string().optional(),
+  "userId": zod.string().optional(),
+  "type": zod.string().optional(),
+  "title": zod.string().optional(),
+  "description": zod.string().optional(),
+  "confidence": zod.enum(['low', 'medium', 'high']).optional(),
+  "estimatedValue": zod.number().nullish(),
+  "isActioned": zod.number().optional(),
+  "createdAt": zod.coerce.date().optional()
+})).optional()
+})
+
+
+/**
+ * @summary Admin analytics dashboard
+ */
+export const GetAdminAnalyticsResponse = zod.object({
+  "users": zod.object({
+  "total": zod.number().optional(),
+  "active": zod.number().optional(),
+  "inactive": zod.number().optional(),
+  "activeRate": zod.number().optional()
+}).optional(),
+  "onboarding": zod.object({
+  "avgCompletionPct": zod.number().optional(),
+  "usersWithProgress": zod.number().optional()
+}).optional(),
+  "academy": zod.object({
+  "engagedLearners": zod.number().optional(),
+  "totalLessonsCompleted": zod.number().optional(),
+  "avgLessonsPerLearner": zod.number().optional()
+}).optional(),
+  "sales": zod.object({
+  "totalQuotes": zod.number().optional(),
+  "totalEvents": zod.number().optional(),
+  "totalInvoices": zod.number().optional(),
+  "paidInvoices": zod.number().optional(),
+  "totalRevenue": zod.number().optional(),
+  "conversionRate": zod.number().optional()
+}).optional(),
+  "community": zod.object({
+  "totalPosts": zod.number().optional(),
+  "totalReplies": zod.number().optional(),
+  "recentPosts": zod.number().optional()
+}).optional(),
+  "support": zod.object({
+  "totalTickets": zod.number().optional(),
+  "openTickets": zod.number().optional(),
+  "resolvedTickets": zod.number().optional(),
+  "resolutionRate": zod.number().optional()
+}).optional(),
+  "successScores": zod.object({
+  "avgScore": zod.number().optional(),
+  "tierDistribution": zod.object({
+  "at_risk": zod.number().optional(),
+  "developing": zod.number().optional(),
+  "healthy": zod.number().optional(),
+  "champion": zod.number().optional()
+}).optional()
+}).optional()
+})
+
+
+/**
+ * @summary List all clients with scores
+ */
+export const ListAdminClientsResponse = zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.string().optional(),
+  "email": zod.string().optional(),
+  "fullName": zod.string().nullish(),
+  "companyName": zod.string().nullish(),
+  "role": zod.string().optional(),
+  "createdAt": zod.coerce.date().optional(),
+  "updatedAt": zod.coerce.date().optional(),
+  "score": zod.number().nullish(),
+  "tier": zod.string().nullish(),
+  "eventsCount": zod.number().optional(),
+  "quotesCount": zod.number().optional(),
+  "ticketsCount": zod.number().optional(),
+  "coachingCount": zod.number().optional(),
+  "upsellCount": zod.number().optional()
+})).optional(),
+  "total": zod.number().optional()
+})
+
+
+/**
+ * @summary Get client 360 view
+ */
+export const GetAdminClientParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const GetAdminClientResponse = zod.object({
+  "client": zod.object({
+  "id": zod.string().optional(),
+  "email": zod.string().optional(),
+  "fullName": zod.string().nullish(),
+  "companyName": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "role": zod.string().optional(),
+  "createdAt": zod.coerce.date().optional(),
+  "updatedAt": zod.coerce.date().optional()
+}).optional(),
+  "score": zod.object({
+  "id": zod.string().optional(),
+  "userId": zod.string().optional(),
+  "score": zod.number().optional(),
+  "tier": zod.enum(['at_risk', 'developing', 'healthy', 'champion']).optional(),
+  "loginScore": zod.number().optional(),
+  "onboardingScore": zod.number().optional(),
+  "academyScore": zod.number().optional(),
+  "eventsScore": zod.number().optional(),
+  "quotesScore": zod.number().optional(),
+  "invoicesScore": zod.number().optional(),
+  "communityScore": zod.number().optional(),
+  "supportScore": zod.number().optional(),
+  "computedAt": zod.coerce.date().optional()
+}).optional(),
+  "coaching": zod.array(zod.object({
+  "id": zod.string().optional(),
+  "userId": zod.string().optional(),
+  "type": zod.string().optional(),
+  "title": zod.string().optional(),
+  "description": zod.string().optional(),
+  "priority": zod.number().optional(),
+  "isActioned": zod.number().optional(),
+  "createdAt": zod.coerce.date().optional()
+})).optional(),
+  "upsells": zod.array(zod.object({
+  "id": zod.string().optional(),
+  "userId": zod.string().optional(),
+  "type": zod.string().optional(),
+  "title": zod.string().optional(),
+  "description": zod.string().optional(),
+  "confidence": zod.enum(['low', 'medium', 'high']).optional(),
+  "estimatedValue": zod.number().nullish(),
+  "isActioned": zod.number().optional(),
+  "createdAt": zod.coerce.date().optional()
+})).optional(),
+  "onboarding": zod.object({
+  "completedSteps": zod.number().optional(),
+  "totalSteps": zod.number().optional(),
+  "pct": zod.number().optional()
+}).optional(),
+  "academy": zod.object({
+  "lessonsCompleted": zod.number().optional()
+}).optional(),
+  "events": zod.array(zod.object({
+
+}).passthrough()).optional(),
+  "quotes": zod.array(zod.object({
+
+}).passthrough()).optional(),
+  "invoices": zod.array(zod.object({
+
+}).passthrough()).optional(),
+  "revenue": zod.number().optional(),
+  "support": zod.array(zod.object({
+
+}).passthrough()).optional(),
+  "community": zod.object({
+  "postsCount": zod.number().optional(),
+  "repliesCount": zod.number().optional()
+}).optional()
+})
+
+

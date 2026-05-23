@@ -14,6 +14,9 @@ import supportRouter from "./support";
 import kbRouter from "./kb";
 import aiRouter from "./ai";
 import communityRouter from "./community";
+import successRouter from "./success";
+import analyticsRouter from "./analytics";
+import clientsRouter from "./clients";
 
 const router: IRouter = Router();
 
@@ -32,5 +35,8 @@ router.use(supportRouter);
 router.use(kbRouter);
 router.use(aiRouter);
 router.use(communityRouter);
+router.use(successRouter);
+router.use(analyticsRouter);
+router.use(clientsRouter);
 
 export default router;

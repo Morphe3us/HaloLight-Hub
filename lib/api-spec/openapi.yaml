@@ -1689,6 +1689,66 @@ paths:
         "204":
           description: Deleted
 
+  # ─── Success Score ─────────────────────────────────────────────────────────
+  /success/score:
+    get:
+      operationId: getMySuccessScore
+      tags: [success]
+      summary: Get current user success score
+      responses:
+        "200":
+          description: Score with coaching and upsells
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessScoreResponse"
+
+  # ─── Admin Analytics ───────────────────────────────────────────────────────
+  /admin/analytics:
+    get:
+      operationId: getAdminAnalytics
+      tags: [admin]
+      summary: Admin analytics dashboard
+      responses:
+        "200":
+          description: Analytics overview
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminAnalytics"
+
+  # ─── Admin Clients ─────────────────────────────────────────────────────────
+  /admin/clients:
+    get:
+      operationId: listAdminClients
+      tags: [admin]
+      summary: List all clients with scores
+      responses:
+        "200":
+          description: Client list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminClientList"
+
+  /admin/clients/{id}:
+    get:
+      operationId: getAdminClient
+      tags: [admin]
+      summary: Get client 360 view
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Client 360
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Client360"
+
 components:
   schemas:
     HealthStatus:
@@ -3157,6 +3217,260 @@ components:
             $ref: "#/components/schemas/CommunityPost"
         total:
           type: integer
+
+    # ─── Success / Analytics ────────────────────────────────────────────────
+    SuccessScore:
+      type: object
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        score:
+          type: integer
+        tier:
+          type: string
+          enum: [at_risk, developing, healthy, champion]
+        loginScore:
+          type: integer
+        onboardingScore:
+          type: integer
+        academyScore:
+          type: integer
+        eventsScore:
+          type: integer
+        quotesScore:
+          type: integer
+        invoicesScore:
+          type: integer
+        communityScore:
+          type: integer
+        supportScore:
+          type: integer
+        computedAt:
+          type: string
+          format: date-time
+
+    CoachingRecommendation:
+      type: object
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        type:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        priority:
+          type: integer
+        isActioned:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+
+    UpsellOpportunity:
+      type: object
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        type:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        confidence:
+          type: string
+          enum: [low, medium, high]
+        estimatedValue:
+          type: integer
+          nullable: true
+        isActioned:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+
+    SuccessScoreResponse:
+      type: object
+      properties:
+        score:
+          $ref: "#/components/schemas/SuccessScore"
+        coaching:
+          type: array
+          items:
+            $ref: "#/components/schemas/CoachingRecommendation"
+        upsells:
+          type: array
+          items:
+            $ref: "#/components/schemas/UpsellOpportunity"
+
+    AdminAnalytics:
+      type: object
+      properties:
+        users:
+          type: object
+          properties:
+            total: { type: integer }
+            active: { type: integer }
+            inactive: { type: integer }
+            activeRate: { type: integer }
+        onboarding:
+          type: object
+          properties:
+            avgCompletionPct: { type: integer }
+            usersWithProgress: { type: integer }
+        academy:
+          type: object
+          properties:
+            engagedLearners: { type: integer }
+            totalLessonsCompleted: { type: integer }
+            avgLessonsPerLearner: { type: integer }
+        sales:
+          type: object
+          properties:
+            totalQuotes: { type: integer }
+            totalEvents: { type: integer }
+            totalInvoices: { type: integer }
+            paidInvoices: { type: integer }
+            totalRevenue: { type: integer }
+            conversionRate: { type: integer }
+        community:
+          type: object
+          properties:
+            totalPosts: { type: integer }
+            totalReplies: { type: integer }
+            recentPosts: { type: integer }
+        support:
+          type: object
+          properties:
+            totalTickets: { type: integer }
+            openTickets: { type: integer }
+            resolvedTickets: { type: integer }
+            resolutionRate: { type: integer }
+        successScores:
+          type: object
+          properties:
+            avgScore: { type: integer }
+            tierDistribution:
+              type: object
+              properties:
+                at_risk: { type: integer }
+                developing: { type: integer }
+                healthy: { type: integer }
+                champion: { type: integer }
+
+    AdminClient:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        fullName:
+          type: string
+          nullable: true
+        companyName:
+          type: string
+          nullable: true
+        role:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        score:
+          type: integer
+          nullable: true
+        tier:
+          type: string
+          nullable: true
+        eventsCount:
+          type: integer
+        quotesCount:
+          type: integer
+        ticketsCount:
+          type: integer
+        coachingCount:
+          type: integer
+        upsellCount:
+          type: integer
+
+    AdminClientList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminClient"
+        total:
+          type: integer
+
+    Client360:
+      type: object
+      properties:
+        client:
+          type: object
+          properties:
+            id: { type: string }
+            email: { type: string }
+            fullName: { type: string, nullable: true }
+            companyName: { type: string, nullable: true }
+            phone: { type: string, nullable: true }
+            role: { type: string }
+            createdAt: { type: string, format: date-time }
+            updatedAt: { type: string, format: date-time }
+        score:
+          $ref: "#/components/schemas/SuccessScore"
+        coaching:
+          type: array
+          items:
+            $ref: "#/components/schemas/CoachingRecommendation"
+        upsells:
+          type: array
+          items:
+            $ref: "#/components/schemas/UpsellOpportunity"
+        onboarding:
+          type: object
+          properties:
+            completedSteps: { type: integer }
+            totalSteps: { type: integer }
+            pct: { type: integer }
+        academy:
+          type: object
+          properties:
+            lessonsCompleted: { type: integer }
+        events:
+          type: array
+          items:
+            type: object
+        quotes:
+          type: array
+          items:
+            type: object
+        invoices:
+          type: array
+          items:
+            type: object
+        revenue:
+          type: integer
+        support:
+          type: array
+          items:
+            type: object
+        community:
+          type: object
+          properties:
+            postsCount: { type: integer }
+            repliesCount: { type: integer }
 
     SupportTicketDetail:
       type: object

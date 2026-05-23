@@ -23,11 +23,14 @@ import type {
   AcademyProgressSummary,
   Activity,
   ActivityInput,
+  AdminAnalytics,
+  AdminClientList,
   AiConversation,
   AiConversationDetail,
   AiConversationList,
   AiMessageInput,
   AiMessagePair,
+  Client360,
   CommunityChannel,
   CommunityChannelList,
   CommunityPost,
@@ -94,6 +97,7 @@ import type {
   QuoteDetail,
   QuoteInput,
   QuoteList,
+  SuccessScoreResponse,
   SupportTicket,
   SupportTicketDetail,
   SupportTicketInput,
@@ -6214,4 +6218,312 @@ export const useDeleteCommunityReply = <TError = ErrorType<unknown>,
       > => {
       return useMutation(getDeleteCommunityReplyMutationOptions(options));
     }
+
+export const getGetMySuccessScoreUrl = () => {
+
+
+
+
+  return `/api/success/score`
+}
+
+/**
+ * @summary Get current user success score
+ */
+export const getMySuccessScore = async ( options?: RequestInit): Promise<SuccessScoreResponse> => {
+
+  return customFetch<SuccessScoreResponse>(getGetMySuccessScoreUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetMySuccessScoreQueryKey = () => {
+    return [
+    `/api/success/score`
+    ] as const;
+    }
+
+
+export const getGetMySuccessScoreQueryOptions = <TData = Awaited<ReturnType<typeof getMySuccessScore>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMySuccessScore>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetMySuccessScoreQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMySuccessScore>>> = ({ signal }) => getMySuccessScore({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getMySuccessScore>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetMySuccessScoreQueryResult = NonNullable<Awaited<ReturnType<typeof getMySuccessScore>>>
+export type GetMySuccessScoreQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get current user success score
+ */
+
+export function useGetMySuccessScore<TData = Awaited<ReturnType<typeof getMySuccessScore>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMySuccessScore>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetMySuccessScoreQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetAdminAnalyticsUrl = () => {
+
+
+
+
+  return `/api/admin/analytics`
+}
+
+/**
+ * @summary Admin analytics dashboard
+ */
+export const getAdminAnalytics = async ( options?: RequestInit): Promise<AdminAnalytics> => {
+
+  return customFetch<AdminAnalytics>(getGetAdminAnalyticsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAdminAnalyticsQueryKey = () => {
+    return [
+    `/api/admin/analytics`
+    ] as const;
+    }
+
+
+export const getGetAdminAnalyticsQueryOptions = <TData = Awaited<ReturnType<typeof getAdminAnalytics>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminAnalytics>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAdminAnalyticsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAdminAnalytics>>> = ({ signal }) => getAdminAnalytics({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAdminAnalytics>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAdminAnalyticsQueryResult = NonNullable<Awaited<ReturnType<typeof getAdminAnalytics>>>
+export type GetAdminAnalyticsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Admin analytics dashboard
+ */
+
+export function useGetAdminAnalytics<TData = Awaited<ReturnType<typeof getAdminAnalytics>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminAnalytics>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAdminAnalyticsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getListAdminClientsUrl = () => {
+
+
+
+
+  return `/api/admin/clients`
+}
+
+/**
+ * @summary List all clients with scores
+ */
+export const listAdminClients = async ( options?: RequestInit): Promise<AdminClientList> => {
+
+  return customFetch<AdminClientList>(getListAdminClientsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListAdminClientsQueryKey = () => {
+    return [
+    `/api/admin/clients`
+    ] as const;
+    }
+
+
+export const getListAdminClientsQueryOptions = <TData = Awaited<ReturnType<typeof listAdminClients>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdminClients>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListAdminClientsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAdminClients>>> = ({ signal }) => listAdminClients({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAdminClients>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListAdminClientsQueryResult = NonNullable<Awaited<ReturnType<typeof listAdminClients>>>
+export type ListAdminClientsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List all clients with scores
+ */
+
+export function useListAdminClients<TData = Awaited<ReturnType<typeof listAdminClients>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdminClients>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListAdminClientsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetAdminClientUrl = (id: string,) => {
+
+
+
+
+  return `/api/admin/clients/${id}`
+}
+
+/**
+ * @summary Get client 360 view
+ */
+export const getAdminClient = async (id: string, options?: RequestInit): Promise<Client360> => {
+
+  return customFetch<Client360>(getGetAdminClientUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAdminClientQueryKey = (id: string,) => {
+    return [
+    `/api/admin/clients/${id}`
+    ] as const;
+    }
+
+
+export const getGetAdminClientQueryOptions = <TData = Awaited<ReturnType<typeof getAdminClient>>, TError = ErrorType<unknown>>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminClient>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAdminClientQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAdminClient>>> = ({ signal }) => getAdminClient(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAdminClient>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAdminClientQueryResult = NonNullable<Awaited<ReturnType<typeof getAdminClient>>>
+export type GetAdminClientQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get client 360 view
+ */
+
+export function useGetAdminClient<TData = Awaited<ReturnType<typeof getAdminClient>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminClient>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAdminClientQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
 

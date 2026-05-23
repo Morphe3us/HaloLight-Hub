@@ -1058,6 +1058,203 @@ export interface CommunityPostList {
   total?: number;
 }
 
+export type SuccessScoreTier = typeof SuccessScoreTier[keyof typeof SuccessScoreTier];
+
+
+export const SuccessScoreTier = {
+  at_risk: 'at_risk',
+  developing: 'developing',
+  healthy: 'healthy',
+  champion: 'champion',
+} as const;
+
+export interface SuccessScore {
+  id?: string;
+  userId?: string;
+  score?: number;
+  tier?: SuccessScoreTier;
+  loginScore?: number;
+  onboardingScore?: number;
+  academyScore?: number;
+  eventsScore?: number;
+  quotesScore?: number;
+  invoicesScore?: number;
+  communityScore?: number;
+  supportScore?: number;
+  computedAt?: string;
+}
+
+export interface CoachingRecommendation {
+  id?: string;
+  userId?: string;
+  type?: string;
+  title?: string;
+  description?: string;
+  priority?: number;
+  isActioned?: number;
+  createdAt?: string;
+}
+
+export type UpsellOpportunityConfidence = typeof UpsellOpportunityConfidence[keyof typeof UpsellOpportunityConfidence];
+
+
+export const UpsellOpportunityConfidence = {
+  low: 'low',
+  medium: 'medium',
+  high: 'high',
+} as const;
+
+export interface UpsellOpportunity {
+  id?: string;
+  userId?: string;
+  type?: string;
+  title?: string;
+  description?: string;
+  confidence?: UpsellOpportunityConfidence;
+  estimatedValue?: number | null;
+  isActioned?: number;
+  createdAt?: string;
+}
+
+export interface SuccessScoreResponse {
+  score?: SuccessScore;
+  coaching?: CoachingRecommendation[];
+  upsells?: UpsellOpportunity[];
+}
+
+export type AdminAnalyticsUsers = {
+  total?: number;
+  active?: number;
+  inactive?: number;
+  activeRate?: number;
+};
+
+export type AdminAnalyticsOnboarding = {
+  avgCompletionPct?: number;
+  usersWithProgress?: number;
+};
+
+export type AdminAnalyticsAcademy = {
+  engagedLearners?: number;
+  totalLessonsCompleted?: number;
+  avgLessonsPerLearner?: number;
+};
+
+export type AdminAnalyticsSales = {
+  totalQuotes?: number;
+  totalEvents?: number;
+  totalInvoices?: number;
+  paidInvoices?: number;
+  totalRevenue?: number;
+  conversionRate?: number;
+};
+
+export type AdminAnalyticsCommunity = {
+  totalPosts?: number;
+  totalReplies?: number;
+  recentPosts?: number;
+};
+
+export type AdminAnalyticsSupport = {
+  totalTickets?: number;
+  openTickets?: number;
+  resolvedTickets?: number;
+  resolutionRate?: number;
+};
+
+export type AdminAnalyticsSuccessScoresTierDistribution = {
+  at_risk?: number;
+  developing?: number;
+  healthy?: number;
+  champion?: number;
+};
+
+export type AdminAnalyticsSuccessScores = {
+  avgScore?: number;
+  tierDistribution?: AdminAnalyticsSuccessScoresTierDistribution;
+};
+
+export interface AdminAnalytics {
+  users?: AdminAnalyticsUsers;
+  onboarding?: AdminAnalyticsOnboarding;
+  academy?: AdminAnalyticsAcademy;
+  sales?: AdminAnalyticsSales;
+  community?: AdminAnalyticsCommunity;
+  support?: AdminAnalyticsSupport;
+  successScores?: AdminAnalyticsSuccessScores;
+}
+
+export interface AdminClient {
+  id?: string;
+  email?: string;
+  fullName?: string | null;
+  companyName?: string | null;
+  role?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  score?: number | null;
+  tier?: string | null;
+  eventsCount?: number;
+  quotesCount?: number;
+  ticketsCount?: number;
+  coachingCount?: number;
+  upsellCount?: number;
+}
+
+export interface AdminClientList {
+  items?: AdminClient[];
+  total?: number;
+}
+
+export type Client360Client = {
+  id?: string;
+  email?: string;
+  fullName?: string | null;
+  companyName?: string | null;
+  phone?: string | null;
+  role?: string;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type Client360Onboarding = {
+  completedSteps?: number;
+  totalSteps?: number;
+  pct?: number;
+};
+
+export type Client360Academy = {
+  lessonsCompleted?: number;
+};
+
+export type Client360EventsItem = { [key: string]: unknown };
+
+export type Client360QuotesItem = { [key: string]: unknown };
+
+export type Client360InvoicesItem = { [key: string]: unknown };
+
+export type Client360SupportItem = { [key: string]: unknown };
+
+export type Client360Community = {
+  postsCount?: number;
+  repliesCount?: number;
+};
+
+export interface Client360 {
+  client?: Client360Client;
+  score?: SuccessScore;
+  coaching?: CoachingRecommendation[];
+  upsells?: UpsellOpportunity[];
+  onboarding?: Client360Onboarding;
+  academy?: Client360Academy;
+  events?: Client360EventsItem[];
+  quotes?: Client360QuotesItem[];
+  invoices?: Client360InvoicesItem[];
+  revenue?: number;
+  support?: Client360SupportItem[];
+  community?: Client360Community;
+}
+
 export interface SupportTicketDetail {
   id?: string;
   userId?: string;

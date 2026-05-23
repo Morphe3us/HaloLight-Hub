@@ -33,6 +33,9 @@ import AIAssistant from "./pages/AIAssistant";
 import Community from "./pages/Community";
 import CommunityChannel from "./pages/CommunityChannel";
 import PostDetail from "./pages/PostDetail";
+import AdminAnalytics from "./pages/AdminAnalytics";
+import AdminClients from "./pages/AdminClients";
+import Client360 from "./pages/Client360";
 import { AppShell } from "./components/layout/AppShell";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -228,6 +231,9 @@ function ClerkProviderWithRoutes() {
             <ProtectedRoute path="/notifications" component={Notifications} />
             <ProtectedRoute path="/onboarding" component={Onboarding} />
             <ProtectedRoute path="/settings" component={Settings} />
+            <ProtectedRoute path="/admin/analytics" component={AdminAnalytics} />
+            <ProtectedRoute path="/admin/clients/:id" component={Client360} />
+            <ProtectedRoute path="/admin/clients" component={AdminClients} />
             <ProtectedRoute path="/admin" component={Admin} />
             <Route component={NotFound} />
           </Switch>
