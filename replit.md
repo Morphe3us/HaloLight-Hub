@@ -1,19 +1,24 @@
-# [Project name]
+# HaloLight OS
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+An all-in-one SaaS customer portal for HaloLight — a professional photobooth and event equipment company. Clients manage their business, track equipment, access training, handle support, and grow their operations from a single platform.
 
 ## Run & Operate
 
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
+- `pnpm --filter @workspace/api-server run dev` — run the API server (port 8080)
+- `pnpm --filter @workspace/halolight-os run dev` — run the frontend (port 18205)
 - `pnpm run typecheck` — full typecheck across all packages
 - `pnpm run build` — typecheck + build all packages
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
+- `pnpm --filter @workspace/scripts run seed` — seed demo/onboarding data
 - Required env: `DATABASE_URL` — Postgres connection string
+- Required env: `CLERK_SECRET_KEY`, `CLERK_PUBLISHABLE_KEY`, `VITE_CLERK_PUBLISHABLE_KEY` — auto-provisioned by Replit Clerk
 
 ## Stack
 
 - pnpm workspaces, Node.js 24, TypeScript 5.9
+- Frontend: React + Vite, TailwindCSS v4, shadcn/ui, Wouter, TanStack Query, Framer Motion
+- Auth: Clerk (Replit-managed, auto-provisioned)
 - API: Express 5
 - DB: PostgreSQL + Drizzle ORM
 - Validation: Zod (`zod/v4`), `drizzle-zod`
@@ -22,24 +27,62 @@ _Replace the heading above with the project's name, and this line with one sente
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `lib/api-spec/openapi.yaml` — OpenAPI spec (source of truth for all API contracts)
+- `lib/db/src/schema/` — Drizzle ORM table definitions
+  - `users.ts` — users table with roles and language preferences
+  - `notifications.ts` — notifications and notification_preferences tables
+  - `onboarding.ts` — onboarding_steps and user_onboarding_progress tables
+- `artifacts/api-server/src/routes/` — Express route handlers
+  - `users.ts` — /users/me, /users (admin), /users/:id
+  - `notifications.ts` — /notifications, /notifications/preferences
+  - `onboarding.ts` — /onboarding/steps, /onboarding/summary
+- `artifacts/api-server/src/middlewares/` — Clerk proxy and requireAuth middleware
+- `artifacts/api-server/src/lib/userSync.ts` — JIT user provisioning (creates local user on first Clerk login)
+- `artifacts/halolight-os/src/` — React frontend
+- `scripts/src/seed.ts` — demo data seeder
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- **OpenAPI-first**: All API contracts defined in `lib/api-spec/openapi.yaml`; hooks and Zod schemas generated automatically via Orval
+- **JIT user provisioning**: Local users are created automatically in the DB on first Clerk login using `getOrCreateUser()` — no manual registration step
+- **Clerk-managed auth**: Replit provisions Clerk keys; proxy middleware at `/api/__clerk` routes Clerk traffic through the Express server
+- **Role-based access**: User roles (admin, client, coach, sales_rep) stored in local DB; checked in route handlers; admin routes gated by `user.role === 'admin'`
+- **Notification system as backbone**: Notification types are string constants; the delivery layer (email, push) is architected but channels can be wired up in later phases
 
-## Product
+## Product — Implemented Phases
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+### Phase 1 — Foundation (complete)
+- Clerk authentication (sign in, sign up, sign out) with branded pages
+- JIT user provisioning with role system (admin, client, coach, sales_rep)
+- Multilingual support framework (8 languages: EN, FR, ES, DE, IT, PL, PT, NL)
+- Main application shell: sidebar + topbar, responsive layout
+- Client dashboard with KPIs and onboarding progress
+- Notification inbox with unread badge, mark-read, mark-all-read
+- Notification preferences (per-channel toggles)
+- Onboarding wizard (8 steps, completion tracking)
+- User profile settings (name, company, phone, language)
+- Admin user list view
+- Public landing page
+
+### Planned Phases (2–10)
+See architecture document for full 30-module scope.
 
 ## User preferences
 
-_Populate as you build — explicit user instructions worth remembering across sessions._
+- Do not implement external APIs until explicitly approved
+- Stop after each phase and provide summary before continuing
+- Clean, scalable, production-ready code
+- Use mock/demo data where real integrations are pending
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- After schema changes: always run `pnpm --filter @workspace/db run push`
+- After OpenAPI spec changes: always run `pnpm --filter @workspace/api-spec run codegen`
+- To make a user an admin: update role directly in DB after their first login (JIT provisions them as 'client')
+- Clerk dev keys log a warning in console — expected in development, not a bug
+- The `scripts` package needs workspace deps explicitly added to its package.json
 
 ## Pointers
 
 - See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details
+- See `.local/skills/clerk-auth/references/setup-and-customization.md` for Clerk wiring details
