@@ -97,6 +97,7 @@ import type {
   QuoteDetail,
   QuoteInput,
   QuoteList,
+  RevenueIntelligence,
   SuccessScoreResponse,
   SupportTicket,
   SupportTicketDetail,
@@ -6438,6 +6439,83 @@ export function useListAdminClients<TData = Awaited<ReturnType<typeof listAdminC
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getListAdminClientsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetAdminRevenueUrl = () => {
+
+
+
+
+  return `/api/admin/revenue`
+}
+
+/**
+ * @summary Revenue Intelligence dashboard data
+ */
+export const getAdminRevenue = async ( options?: RequestInit): Promise<RevenueIntelligence> => {
+
+  return customFetch<RevenueIntelligence>(getGetAdminRevenueUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAdminRevenueQueryKey = () => {
+    return [
+    `/api/admin/revenue`
+    ] as const;
+    }
+
+
+export const getGetAdminRevenueQueryOptions = <TData = Awaited<ReturnType<typeof getAdminRevenue>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminRevenue>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAdminRevenueQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAdminRevenue>>> = ({ signal }) => getAdminRevenue({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAdminRevenue>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAdminRevenueQueryResult = NonNullable<Awaited<ReturnType<typeof getAdminRevenue>>>
+export type GetAdminRevenueQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Revenue Intelligence dashboard data
+ */
+
+export function useGetAdminRevenue<TData = Awaited<ReturnType<typeof getAdminRevenue>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminRevenue>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAdminRevenueQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

@@ -34,6 +34,7 @@ import Community from "./pages/Community";
 import CommunityChannel from "./pages/CommunityChannel";
 import PostDetail from "./pages/PostDetail";
 import AdminAnalytics from "./pages/AdminAnalytics";
+import AdminRevenue from "./pages/AdminRevenue";
 import AdminClients from "./pages/AdminClients";
 import Client360 from "./pages/Client360";
 import { AppShell } from "./components/layout/AppShell";
@@ -232,6 +233,7 @@ function ClerkProviderWithRoutes() {
             <ProtectedRoute path="/onboarding" component={Onboarding} />
             <ProtectedRoute path="/settings" component={Settings} />
             <ProtectedRoute path="/admin/analytics" component={AdminAnalytics} />
+            <ProtectedRoute path="/admin/revenue" component={AdminRevenue} />
             <ProtectedRoute path="/admin/clients/:id" component={Client360} />
             <ProtectedRoute path="/admin/clients" component={AdminClients} />
             <ProtectedRoute path="/admin" component={Admin} />

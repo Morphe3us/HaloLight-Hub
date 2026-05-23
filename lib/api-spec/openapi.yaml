@@ -1731,6 +1731,19 @@ paths:
               schema:
                 $ref: "#/components/schemas/AdminClientList"
 
+  /admin/revenue:
+    get:
+      operationId: getAdminRevenue
+      tags: [admin]
+      summary: Revenue Intelligence dashboard data
+      responses:
+        "200":
+          description: Revenue intelligence data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RevenueIntelligence"
+
   /admin/clients/{id}:
     get:
       operationId: getAdminClient
@@ -3471,6 +3484,91 @@ components:
           properties:
             postsCount: { type: integer }
             repliesCount: { type: integer }
+
+    # ─── Revenue Intelligence ────────────────────────────────────────────────
+    RevenueOverview:
+      type: object
+      properties:
+        totalRevenue: { type: integer }
+        pipelineRevenue: { type: integer }
+        paidInvoices: { type: integer }
+        avgBookingValue: { type: integer }
+        quoteAcceptanceRate: { type: integer }
+        revenueGrowth: { type: integer }
+        lifetimeEstimate: { type: integer }
+        totalInvoices: { type: integer }
+
+    RevenueMonthly:
+      type: object
+      properties:
+        month: { type: string }
+        label: { type: string }
+        revenue: { type: integer }
+        invoiceCount: { type: integer }
+
+    RevenueClient:
+      type: object
+      properties:
+        userId: { type: string }
+        name: { type: string }
+        email: { type: string }
+        company: { type: string }
+        totalRevenue: { type: integer }
+        invoiceCount: { type: integer }
+        avgBooking: { type: integer }
+        score: { type: integer, nullable: true }
+        tier: { type: string, nullable: true }
+
+    RevenueTier:
+      type: object
+      properties:
+        tier: { type: string }
+        revenue: { type: integer }
+        clientCount: { type: integer }
+
+    RevenueSegment:
+      type: object
+      properties:
+        label: { type: string }
+        revenue: { type: integer }
+        count: { type: integer }
+
+    RevenueIntelligence:
+      type: object
+      properties:
+        overview:
+          $ref: "#/components/schemas/RevenueOverview"
+        monthly:
+          type: array
+          items:
+            $ref: "#/components/schemas/RevenueMonthly"
+        clientLeaderboard:
+          type: array
+          items:
+            $ref: "#/components/schemas/RevenueClient"
+        revenueByTier:
+          type: array
+          items:
+            $ref: "#/components/schemas/RevenueTier"
+        revenueBySegment:
+          type: array
+          items:
+            $ref: "#/components/schemas/RevenueSegment"
+        quoteFunnel:
+          type: object
+          properties:
+            draft: { type: object }
+            sent: { type: object }
+            accepted: { type: object }
+            declined: { type: object }
+            expired: { type: object }
+            totalQuotes: { type: integer }
+            acceptanceRate: { type: integer }
+            conversionValue: { type: integer }
+        topPerformers:
+          type: array
+          items:
+            $ref: "#/components/schemas/RevenueClient"
 
     SupportTicketDetail:
       type: object

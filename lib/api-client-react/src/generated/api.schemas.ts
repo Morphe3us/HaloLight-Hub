@@ -1255,6 +1255,79 @@ export interface Client360 {
   community?: Client360Community;
 }
 
+export interface RevenueOverview {
+  totalRevenue?: number;
+  pipelineRevenue?: number;
+  paidInvoices?: number;
+  avgBookingValue?: number;
+  quoteAcceptanceRate?: number;
+  revenueGrowth?: number;
+  lifetimeEstimate?: number;
+  totalInvoices?: number;
+}
+
+export interface RevenueMonthly {
+  month?: string;
+  label?: string;
+  revenue?: number;
+  invoiceCount?: number;
+}
+
+export interface RevenueClient {
+  userId?: string;
+  name?: string;
+  email?: string;
+  company?: string;
+  totalRevenue?: number;
+  invoiceCount?: number;
+  avgBooking?: number;
+  score?: number | null;
+  tier?: string | null;
+}
+
+export interface RevenueTier {
+  tier?: string;
+  revenue?: number;
+  clientCount?: number;
+}
+
+export interface RevenueSegment {
+  label?: string;
+  revenue?: number;
+  count?: number;
+}
+
+export type RevenueIntelligenceQuoteFunnelDraft = { [key: string]: unknown };
+
+export type RevenueIntelligenceQuoteFunnelSent = { [key: string]: unknown };
+
+export type RevenueIntelligenceQuoteFunnelAccepted = { [key: string]: unknown };
+
+export type RevenueIntelligenceQuoteFunnelDeclined = { [key: string]: unknown };
+
+export type RevenueIntelligenceQuoteFunnelExpired = { [key: string]: unknown };
+
+export type RevenueIntelligenceQuoteFunnel = {
+  draft?: RevenueIntelligenceQuoteFunnelDraft;
+  sent?: RevenueIntelligenceQuoteFunnelSent;
+  accepted?: RevenueIntelligenceQuoteFunnelAccepted;
+  declined?: RevenueIntelligenceQuoteFunnelDeclined;
+  expired?: RevenueIntelligenceQuoteFunnelExpired;
+  totalQuotes?: number;
+  acceptanceRate?: number;
+  conversionValue?: number;
+};
+
+export interface RevenueIntelligence {
+  overview?: RevenueOverview;
+  monthly?: RevenueMonthly[];
+  clientLeaderboard?: RevenueClient[];
+  revenueByTier?: RevenueTier[];
+  revenueBySegment?: RevenueSegment[];
+  quoteFunnel?: RevenueIntelligenceQuoteFunnel;
+  topPerformers?: RevenueClient[];
+}
+
 export interface SupportTicketDetail {
   id?: string;
   userId?: string;

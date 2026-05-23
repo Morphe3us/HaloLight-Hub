@@ -17,6 +17,7 @@ import communityRouter from "./community";
 import successRouter from "./success";
 import analyticsRouter from "./analytics";
 import clientsRouter from "./clients";
+import revenueRouter from "./revenue";
 
 const router: IRouter = Router();
 
@@ -38,5 +39,6 @@ router.use(communityRouter);
 router.use(successRouter);
 router.use(analyticsRouter);
 router.use(clientsRouter);
+router.use(revenueRouter);
 
 export default router;

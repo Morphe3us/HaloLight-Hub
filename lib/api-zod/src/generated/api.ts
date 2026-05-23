@@ -2002,6 +2002,81 @@ export const ListAdminClientsResponse = zod.object({
 
 
 /**
+ * @summary Revenue Intelligence dashboard data
+ */
+export const GetAdminRevenueResponse = zod.object({
+  "overview": zod.object({
+  "totalRevenue": zod.number().optional(),
+  "pipelineRevenue": zod.number().optional(),
+  "paidInvoices": zod.number().optional(),
+  "avgBookingValue": zod.number().optional(),
+  "quoteAcceptanceRate": zod.number().optional(),
+  "revenueGrowth": zod.number().optional(),
+  "lifetimeEstimate": zod.number().optional(),
+  "totalInvoices": zod.number().optional()
+}).optional(),
+  "monthly": zod.array(zod.object({
+  "month": zod.string().optional(),
+  "label": zod.string().optional(),
+  "revenue": zod.number().optional(),
+  "invoiceCount": zod.number().optional()
+})).optional(),
+  "clientLeaderboard": zod.array(zod.object({
+  "userId": zod.string().optional(),
+  "name": zod.string().optional(),
+  "email": zod.string().optional(),
+  "company": zod.string().optional(),
+  "totalRevenue": zod.number().optional(),
+  "invoiceCount": zod.number().optional(),
+  "avgBooking": zod.number().optional(),
+  "score": zod.number().nullish(),
+  "tier": zod.string().nullish()
+})).optional(),
+  "revenueByTier": zod.array(zod.object({
+  "tier": zod.string().optional(),
+  "revenue": zod.number().optional(),
+  "clientCount": zod.number().optional()
+})).optional(),
+  "revenueBySegment": zod.array(zod.object({
+  "label": zod.string().optional(),
+  "revenue": zod.number().optional(),
+  "count": zod.number().optional()
+})).optional(),
+  "quoteFunnel": zod.object({
+  "draft": zod.object({
+
+}).passthrough().optional(),
+  "sent": zod.object({
+
+}).passthrough().optional(),
+  "accepted": zod.object({
+
+}).passthrough().optional(),
+  "declined": zod.object({
+
+}).passthrough().optional(),
+  "expired": zod.object({
+
+}).passthrough().optional(),
+  "totalQuotes": zod.number().optional(),
+  "acceptanceRate": zod.number().optional(),
+  "conversionValue": zod.number().optional()
+}).optional(),
+  "topPerformers": zod.array(zod.object({
+  "userId": zod.string().optional(),
+  "name": zod.string().optional(),
+  "email": zod.string().optional(),
+  "company": zod.string().optional(),
+  "totalRevenue": zod.number().optional(),
+  "invoiceCount": zod.number().optional(),
+  "avgBooking": zod.number().optional(),
+  "score": zod.number().nullish(),
+  "tier": zod.string().nullish()
+})).optional()
+})
+
+
+/**
  * @summary Get client 360 view
  */
 export const GetAdminClientParams = zod.object({
