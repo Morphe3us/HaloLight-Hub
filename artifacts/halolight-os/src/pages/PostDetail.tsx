@@ -149,7 +149,7 @@ export default function PostDetail() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-7 w-7 text-red-400 hover:text-destructive"
+                  className="h-7 w-7 text-destructive/70 hover:text-destructive"
                   onClick={() => deletePost({ id: id! })}
                 >
                   <Trash2 className="w-3.5 h-3.5" />
@@ -222,7 +222,7 @@ export default function PostDetail() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-6 w-6 text-red-400 hover:text-destructive"
+                        className="h-6 w-6 text-destructive/70 hover:text-destructive"
                         onClick={() => deleteReply({ id: r.id })}
                       >
                         <Trash2 className="w-3 h-3" />

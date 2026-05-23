@@ -64,7 +64,7 @@ export default function Dashboard() {
       {/* KPI Cards */}
       {summary && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card className="border-0 shadow-sm bg-gradient-to-br from-blue-50 to-indigo-50">
+          <Card className="border-0 shadow-sm bg-info/8">
             <CardContent className="p-5">
               <div className="flex items-center gap-3 mb-3">
                 <div className="h-9 w-9 rounded-lg bg-primary flex items-center justify-center">
@@ -76,42 +76,42 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          <Card className="border-0 shadow-sm bg-gradient-to-br from-amber-50 to-orange-50">
+          <Card className="border-0 shadow-sm bg-warning/8">
             <CardContent className="p-5">
               <div className="flex items-center gap-3 mb-3">
-                <div className="h-9 w-9 rounded-lg bg-amber-500 flex items-center justify-center">
-                  <Trophy className="w-4 h-4 text-white" />
+                <div className="h-9 w-9 rounded-lg bg-warning flex items-center justify-center">
+                  <Trophy className="w-4 h-4 text-foreground" />
                 </div>
-                <span className="text-xs font-medium text-amber-600 uppercase tracking-wide leading-tight">{t("dashboard.kpi_onboarding")}</span>
+                <span className="text-xs font-medium text-warning uppercase tracking-wide leading-tight">{t("dashboard.kpi_onboarding")}</span>
               </div>
-              <p className="text-3xl font-bold text-amber-900">{summary.onboardingPercent}%</p>
+              <p className="text-3xl font-bold text-foreground">{summary.onboardingPercent}%</p>
             </CardContent>
           </Card>
 
-          <Card className="border-0 shadow-sm bg-gradient-to-br from-emerald-50 to-teal-50">
+          <Card className="border-0 shadow-sm bg-success/8">
             <CardContent className="p-5">
               <div className="flex items-center gap-3 mb-3">
-                <div className="h-9 w-9 rounded-lg bg-emerald-500 flex items-center justify-center">
+                <div className="h-9 w-9 rounded-lg bg-success flex items-center justify-center">
                   <GraduationCap className="w-4 h-4 text-white" />
                 </div>
-                <span className="text-xs font-medium text-emerald-600 uppercase tracking-wide leading-tight">{t("dashboard.kpi_lessons")}</span>
+                <span className="text-xs font-medium text-success uppercase tracking-wide leading-tight">{t("dashboard.kpi_lessons")}</span>
               </div>
-              <p className="text-3xl font-bold text-emerald-900">
+              <p className="text-3xl font-bold text-foreground">
                 {summary.academyLessonsCompleted}
-                <span className="text-base font-normal text-emerald-600 ml-1">/ {summary.academyTotalLessons}</span>
+                <span className="text-base font-normal text-muted-foreground ml-1">/ {summary.academyTotalLessons}</span>
               </p>
             </CardContent>
           </Card>
 
-          <Card className="border-0 shadow-sm bg-gradient-to-br from-violet-50 to-purple-50">
+          <Card className="border-0 shadow-sm bg-accent/8">
             <CardContent className="p-5">
               <div className="flex items-center gap-3 mb-3">
-                <div className="h-9 w-9 rounded-lg bg-violet-500 flex items-center justify-center">
-                  <Calendar className="w-4 h-4 text-white" />
+                <div className="h-9 w-9 rounded-lg bg-accent flex items-center justify-center">
+                  <Calendar className="w-4 h-4 text-foreground" />
                 </div>
-                <span className="text-xs font-medium text-violet-600 uppercase tracking-wide leading-tight">{t("dashboard.kpi_events")}</span>
+                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide leading-tight">{t("dashboard.kpi_events")}</span>
               </div>
-              <p className="text-3xl font-bold text-violet-900">{summary.upcomingEventsCount}</p>
+              <p className="text-3xl font-bold text-foreground">{summary.upcomingEventsCount}</p>
             </CardContent>
           </Card>
         </div>
@@ -123,7 +123,7 @@ export default function Dashboard() {
         <div className="lg:col-span-2 space-y-6">
           {/* Next Lesson */}
           {summary?.nextLesson ? (
-            <Card className="border border-primary/10 bg-gradient-to-br from-primary/5 via-white to-white shadow-sm overflow-hidden">
+            <Card className="border border-primary/10 bg-gradient-to-br from-primary/5 via-card to-card shadow-sm overflow-hidden">
               <CardContent className="p-6">
                 <div className="flex items-start gap-4">
                   <div className="h-16 w-16 rounded-xl overflow-hidden flex-shrink-0 shadow-sm">
@@ -181,21 +181,21 @@ export default function Dashboard() {
 
           {/* Onboarding */}
           {summary && summary.onboardingPercent < 100 && (
-            <Card className="border border-amber-100 bg-amber-50/40 shadow-sm">
+            <Card className="border border-warning/20 bg-warning/5 shadow-sm">
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-base flex items-center gap-2">
-                    <Trophy className="w-4 h-4 text-amber-500" />
+                    <Trophy className="w-4 h-4 text-warning" />
                     {t("dashboard.onboarding_card")}
                   </CardTitle>
-                  <span className="text-sm font-semibold text-amber-600">{summary.onboardingPercent}%</span>
+                  <span className="text-sm font-semibold text-warning">{summary.onboardingPercent}%</span>
                 </div>
               </CardHeader>
               <CardContent className="pt-0">
                 <Progress value={summary.onboardingPercent} className="h-2 mb-3" />
                 <p className="text-sm text-muted-foreground mb-3">{t("dashboard.onboarding_desc")}</p>
                 <Link href="/onboarding">
-                  <Button size="sm" variant="outline" className="border-amber-300 text-amber-700 hover:bg-amber-100">
+                  <Button size="sm" variant="outline" className="border-warning/40 text-warning hover:bg-warning/10">
                     {t("dashboard.continue_setup")} <ArrowRight className="w-4 h-4 ml-1.5" />
                   </Button>
                 </Link>

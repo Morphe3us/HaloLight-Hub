@@ -27,9 +27,9 @@ export function VoiceButton({
     <div className="relative flex items-center justify-center">
       {isListening && (
         <>
-          <span className="absolute inset-0 rounded-full bg-red-500/25 animate-ping pointer-events-none" />
+          <span className="absolute inset-0 rounded-full bg-destructive/25 animate-ping pointer-events-none" />
           <span
-            className="absolute rounded-full bg-red-400/15 animate-ping pointer-events-none"
+            className="absolute rounded-full bg-destructive/15 animate-ping pointer-events-none"
             style={{
               inset: "-5px",
               animationDelay: "0.15s",
@@ -51,9 +51,9 @@ export function VoiceButton({
           "border focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
           "disabled:cursor-not-allowed disabled:opacity-50",
           isListening &&
-            "bg-red-500 border-red-500 text-white shadow-md shadow-red-500/30 scale-105",
+            "bg-destructive border-destructive text-destructive-foreground shadow-md shadow-destructive/30 scale-105",
           isBusy && "bg-muted border-muted-foreground/20 text-muted-foreground",
-          isError && "bg-red-50 border-red-200 text-red-500",
+          isError && "bg-destructive/8 border-destructive/20 text-destructive",
           !isListening &&
             !isBusy &&
             !isError &&

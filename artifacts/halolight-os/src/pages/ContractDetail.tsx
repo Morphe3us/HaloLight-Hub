@@ -16,9 +16,9 @@ import { cn } from "@/lib/utils";
 const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   draft: { label: "Draft", color: "bg-slate-100 text-slate-700 border-slate-200" },
   sent: { label: "Sent", color: "bg-info/10 text-info border-info/30" },
-  signed: { label: "Signed", color: "bg-emerald-50 text-emerald-700 border-emerald-200" },
+  signed: { label: "Signed", color: "bg-success/8 text-success border-success/20" },
   active: { label: "Active", color: "bg-success/10 text-success border-green-200" },
-  expired: { label: "Expired", color: "bg-amber-50 text-amber-700 border-amber-200" },
+  expired: { label: "Expired", color: "bg-warning/8 text-warning border-warning/20" },
   cancelled: { label: "Cancelled", color: "bg-destructive/10 text-destructive border-destructive/30" },
 };
 
@@ -161,14 +161,14 @@ export default function ContractDetail() {
           <div className="space-y-1.5 text-sm">
             <div className="flex justify-between"><span className="text-muted-foreground">Created</span><span>{formatDate(contract.createdAt)}</span></div>
             {contract.sentAt && <div className="flex justify-between"><span className="text-muted-foreground">Sent</span><span>{formatDate(contract.sentAt)}</span></div>}
-            {contract.signedAt && <div className="flex justify-between"><span className="text-muted-foreground">Signed</span><span className="text-emerald-600 font-medium">{formatDate(contract.signedAt)}</span></div>}
+            {contract.signedAt && <div className="flex justify-between"><span className="text-muted-foreground">Signed</span><span className="text-success font-medium">{formatDate(contract.signedAt)}</span></div>}
             {contract.startDate && <div className="flex justify-between"><span className="text-muted-foreground">Start</span><span>{formatDate(contract.startDate)}</span></div>}
             {contract.endDate && <div className="flex justify-between"><span className="text-muted-foreground">End</span><span>{formatDate(contract.endDate)}</span></div>}
           </div>
         </div>
         <div className="rounded-xl border bg-card p-5 space-y-3">
           <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Value</h3>
-          <p className="text-2xl font-bold text-emerald-600">{formatCurrency(contract.value)}</p>
+          <p className="text-2xl font-bold text-success">{formatCurrency(contract.value)}</p>
           {contract.notes && <p className="text-xs text-muted-foreground">{contract.notes}</p>}
         </div>
       </div>

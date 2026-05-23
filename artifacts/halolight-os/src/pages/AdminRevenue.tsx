@@ -46,7 +46,7 @@ function KPICard({ title, value, sub, icon: Icon, color = "text-primary", trend 
             <p className={`text-2xl font-bold ${color} leading-none`}>{value}</p>
             {sub && <p className="text-xs text-muted-foreground mt-1.5">{sub}</p>}
             {trend !== undefined && (
-              <div className={`flex items-center gap-1 mt-1.5 text-xs font-medium ${trend >= 0 ? "text-success" : "text-red-500"}`}>
+              <div className={`flex items-center gap-1 mt-1.5 text-xs font-medium ${trend >= 0 ? "text-success" : "text-destructive"}`}>
                 {trend >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
                 {trend >= 0 ? "+" : ""}{trend}% vs last month
               </div>
@@ -64,7 +64,7 @@ function KPICard({ title, value, sub, icon: Icon, color = "text-primary", trend 
 function RankBadge({ rank }: { rank: number }) {
   if (rank === 1) return <Crown className="w-5 h-5 text-yellow-500" />;
   if (rank === 2) return <Medal className="w-5 h-5 text-muted-foreground" />;
-  if (rank === 3) return <Medal className="w-5 h-5 text-amber-600" />;
+  if (rank === 3) return <Medal className="w-5 h-5 text-warning" />;
   return <span className="w-5 text-center text-sm font-bold text-muted-foreground">#{rank}</span>;
 }
 
@@ -162,7 +162,7 @@ export default function AdminRevenue() {
           value={fmtFull(overview?.pipelineRevenue ?? 0)}
           sub="from open invoices"
           icon={Zap}
-          color="text-orange-500"
+          color="text-warning"
         />
       </div>
 
@@ -173,7 +173,7 @@ export default function AdminRevenue() {
           value={`${overview?.revenueGrowth >= 0 ? "+" : ""}${overview?.revenueGrowth ?? 0}%`}
           sub="vs previous month"
           icon={TrendingUp}
-          color={(overview?.revenueGrowth ?? 0) >= 0 ? "text-success" : "text-red-500"}
+          color={(overview?.revenueGrowth ?? 0) >= 0 ? "text-success" : "text-destructive"}
         />
         <KPICard
           title="Lifetime Estimate"
@@ -308,8 +308,8 @@ export default function AdminRevenue() {
               {[
                 { key: "draft",    label: "Draft",    color: "bg-border" },
                 { key: "sent",     label: "Sent",     color: "bg-info" },
-                { key: "accepted", label: "Accepted", color: "bg-green-500" },
-                { key: "declined", label: "Declined", color: "bg-red-400" },
+                { key: "accepted", label: "Accepted", color: "bg-success" },
+                { key: "declined", label: "Declined", color: "bg-destructive" },
                 { key: "expired",  label: "Expired",  color: "bg-muted-foreground" },
               ].map(({ key, label, color }) => {
                 const item = (quoteFunnel as any)?.[key];

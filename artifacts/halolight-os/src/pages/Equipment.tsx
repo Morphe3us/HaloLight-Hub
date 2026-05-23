@@ -45,8 +45,8 @@ function warrantyStatus(expiry: string | null): { label: string; color: string; 
   const now = new Date();
   const exp = new Date(expiry);
   const daysLeft = Math.round((exp.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-  if (daysLeft < 0) return { label: "Expired", color: "text-red-500", icon: ShieldX };
-  if (daysLeft <= 60) return { label: `Expires in ${daysLeft}d`, color: "text-amber-500", icon: ShieldAlert };
+  if (daysLeft < 0) return { label: "Expired", color: "text-destructive", icon: ShieldX };
+  if (daysLeft <= 60) return { label: `Expires in ${daysLeft}d`, color: "text-warning", icon: ShieldAlert };
   return { label: `${Math.floor(daysLeft / 30)}mo left`, color: "text-success", icon: ShieldCheck };
 }
 
@@ -72,7 +72,7 @@ export default function Equipment() {
   const alerts = items.filter(eq => {
     const w = warrantyStatus(eq.warrantyExpiration ?? null);
     const m = maintenanceStatus(eq.nextMaintenanceDate ?? null);
-    return w.label === "Expired" || w.color === "text-amber-500" || m.urgent;
+    return w.label === "Expired" || w.color === "text-warning" || m.urgent;
   });
 
   if (isLoading) {
@@ -100,11 +100,11 @@ export default function Equipment() {
 
       {/* Alert Banner */}
       {alerts.length > 0 && (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
-          <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+        <div className="bg-warning/8 border border-warning/30 rounded-xl p-4 flex items-start gap-3">
+          <AlertTriangle className="w-5 h-5 text-warning shrink-0 mt-0.5" />
           <div>
-            <p className="text-sm font-semibold text-amber-800">{alerts.length} item{alerts.length > 1 ? "s" : ""} need{alerts.length === 1 ? "s" : ""} attention</p>
-            <p className="text-xs text-amber-600 mt-0.5">
+            <p className="text-sm font-semibold text-warning">{alerts.length} item{alerts.length > 1 ? "s" : ""} need{alerts.length === 1 ? "s" : ""} attention</p>
+            <p className="text-xs text-warning mt-0.5">
               {alerts.map(a => a.productModel).join(", ")} — check warranty or maintenance status below
             </p>
           </div>
@@ -118,7 +118,7 @@ export default function Equipment() {
             { label: "Total Units", value: items.length, color: "text-foreground" },
             { label: "Active", value: items.filter(e => e.status === "active").length, color: "text-success" },
             { label: "In Service", value: items.filter(e => e.status === "in_service").length, color: "text-info" },
-            { label: "Alerts", value: alerts.length, color: "text-amber-500" },
+            { label: "Alerts", value: alerts.length, color: "text-warning" },
           ].map(s => (
             <Card key={s.label}>
               <CardContent className="p-4 text-center">
@@ -184,7 +184,7 @@ export default function Equipment() {
                           </div>
                           <div>
                             <p className="text-xs text-muted-foreground">Next Service</p>
-                            <p className={`text-xs font-medium flex items-center gap-1 ${m.urgent ? "text-amber-500" : "text-foreground"}`}>
+                            <p className={`text-xs font-medium flex items-center gap-1 ${m.urgent ? "text-warning" : "text-foreground"}`}>
                               {m.urgent && <AlertTriangle className="w-3 h-3" />}
                               {m.label}
                             </p>

@@ -84,7 +84,7 @@ export default function CommunityChannel() {
         <span className="text-muted-foreground">/</span>
         <div className="flex items-center gap-2">
           {channel?.type === "announcement" ? (
-            <Megaphone className="w-4 h-4 text-amber-500" />
+            <Megaphone className="w-4 h-4 text-warning" />
           ) : channel?.type === "private" ? (
             <Lock className="w-4 h-4 text-muted-foreground" />
           ) : (
@@ -126,7 +126,7 @@ export default function CommunityChannel() {
           {posts.map((post) => (
             <div key={post.id} className="relative">
               {post.isPinned ? (
-                <div className="absolute -top-1.5 left-4 flex items-center gap-1 bg-amber-100 text-amber-700 text-xs px-2 py-0.5 rounded-full z-10">
+                <div className="absolute -top-1.5 left-4 flex items-center gap-1 bg-warning/15 text-warning text-xs px-2 py-0.5 rounded-full z-10">
                   <Pin className="w-3 h-3" />
                   Pinned
                 </div>
@@ -168,7 +168,7 @@ export default function CommunityChannel() {
                             onClick={(e) => { e.preventDefault(); post.id && togglePin({ id: post.id }); }}
                             title={post.isPinned ? "Unpin" : "Pin"}
                           >
-                            <Pin className={`w-3.5 h-3.5 ${post.isPinned ? "text-amber-500" : "text-muted-foreground"}`} />
+                            <Pin className={`w-3.5 h-3.5 ${post.isPinned ? "text-warning" : "text-muted-foreground"}`} />
                           </Button>
                         )}
                         <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-muted-foreground transition-colors" />

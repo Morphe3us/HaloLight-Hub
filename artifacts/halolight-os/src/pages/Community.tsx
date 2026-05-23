@@ -16,13 +16,13 @@ const channelTypeIcons: Record<string, React.ComponentType<{ className?: string 
 const channelTypeColors: Record<string, string> = {
   public: "text-info bg-info/10",
   private: "text-muted-foreground bg-muted",
-  announcement: "text-amber-600 bg-amber-50",
+  announcement: "text-warning bg-warning/8",
 };
 
 const channelTypeBadge: Record<string, string> = {
   public: "bg-info/15 text-info",
   private: "bg-muted text-muted-foreground",
-  announcement: "bg-amber-100 text-amber-700",
+  announcement: "bg-warning/15 text-warning",
 };
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -62,10 +62,10 @@ export default function Community() {
                   const CustomIcon = getChannelIcon(channel.icon ?? "Hash");
                   return (
                     <Link key={channel.id} href={`/community/${channel.id}`}>
-                      <Card className="hover:shadow-md transition-all cursor-pointer group border-amber-100 bg-amber-50/30">
+                      <Card className="hover:shadow-md transition-all cursor-pointer group border-warning/20 bg-warning/5">
                         <CardContent className="p-4 flex items-center gap-4">
-                          <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center shrink-0">
-                            <CustomIcon className="w-5 h-5 text-amber-600" />
+                          <div className="w-10 h-10 rounded-xl bg-warning/15 flex items-center justify-center shrink-0">
+                            <CustomIcon className="w-5 h-5 text-warning" />
                           </div>
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-0.5">

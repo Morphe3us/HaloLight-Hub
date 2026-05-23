@@ -100,7 +100,7 @@ export default function Settings() {
               <div className="space-y-2">
                 <Label htmlFor="fullName">Full Name</Label>
                 <Input id="fullName" {...register("fullName")} data-testid="input-fullname" />
-                {errors.fullName && <p className="text-xs text-red-500">{errors.fullName.message}</p>}
+                {errors.fullName && <p className="text-xs text-destructive">{errors.fullName.message}</p>}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>

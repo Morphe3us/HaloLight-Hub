@@ -16,7 +16,7 @@ function formatDuration(seconds: number): string {
 }
 
 const LEVEL_COLORS: Record<string, string> = {
-  beginner: "bg-emerald-100 text-emerald-700",
+  beginner: "bg-success/15 text-success",
   intermediate: "bg-info/15 text-info",
   advanced: "bg-muted text-foreground",
 };
@@ -59,7 +59,7 @@ export default function Academy() {
       {/* Progress Summary */}
       {summary && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="border-0 shadow-sm bg-gradient-to-br from-blue-50 to-blue-100/50">
+          <Card className="border-0 shadow-sm bg-info/8">
             <CardContent className="p-5 flex items-center gap-4">
               <div className="h-12 w-12 rounded-xl bg-primary flex items-center justify-center flex-shrink-0">
                 <TrendingUp className="w-6 h-6 text-white" />
@@ -72,28 +72,28 @@ export default function Academy() {
             </CardContent>
           </Card>
 
-          <Card className="border-0 shadow-sm bg-gradient-to-br from-emerald-50 to-emerald-100/50">
+          <Card className="border-0 shadow-sm bg-success/8">
             <CardContent className="p-5 flex items-center gap-4">
-              <div className="h-12 w-12 rounded-xl bg-emerald-500 flex items-center justify-center flex-shrink-0">
+              <div className="h-12 w-12 rounded-xl bg-success flex items-center justify-center flex-shrink-0">
                 <GraduationCap className="w-6 h-6 text-white" />
               </div>
               <div>
-                <p className="text-sm text-emerald-600 font-medium">{t("academy.courses_completed")}</p>
-                <p className="text-2xl font-bold text-emerald-900">{summary.completedCourses}</p>
-                <p className="text-xs text-emerald-500">{t("common.of")} {summary.totalCourses} {t("academy.courses").toLowerCase()}</p>
+                <p className="text-sm text-success font-medium">{t("academy.courses_completed")}</p>
+                <p className="text-2xl font-bold text-foreground">{summary.completedCourses}</p>
+                <p className="text-xs text-muted-foreground">{t("common.of")} {summary.totalCourses} {t("academy.courses").toLowerCase()}</p>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="border-0 shadow-sm bg-gradient-to-br from-violet-50 to-violet-100/50">
+          <Card className="border-0 shadow-sm bg-accent/8">
             <CardContent className="p-5 flex items-center gap-4">
-              <div className="h-12 w-12 rounded-xl bg-violet-500 flex items-center justify-center flex-shrink-0">
-                <Clock className="w-6 h-6 text-white" />
+              <div className="h-12 w-12 rounded-xl bg-accent flex items-center justify-center flex-shrink-0">
+                <Clock className="w-6 h-6 text-foreground" />
               </div>
               <div>
-                <p className="text-sm text-violet-600 font-medium">Watch Time</p>
-                <p className="text-2xl font-bold text-violet-900">{formatDuration(summary.watchedDurationSeconds)}</p>
-                <p className="text-xs text-violet-500">{t("common.of")} {formatDuration(summary.totalDurationSeconds)}</p>
+                <p className="text-sm text-muted-foreground font-medium">Watch Time</p>
+                <p className="text-2xl font-bold text-foreground">{formatDuration(summary.watchedDurationSeconds)}</p>
+                <p className="text-xs text-muted-foreground">{t("common.of")} {formatDuration(summary.totalDurationSeconds)}</p>
               </div>
             </CardContent>
           </Card>
@@ -126,7 +126,7 @@ export default function Academy() {
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                       {isComplete && (
-                        <div className="absolute top-3 right-3 bg-emerald-500 text-white rounded-full p-1.5">
+                        <div className="absolute top-3 right-3 bg-success text-white rounded-full p-1.5">
                           <CheckCircle2 className="w-4 h-4" />
                         </div>
                       )}

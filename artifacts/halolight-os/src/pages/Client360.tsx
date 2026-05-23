@@ -151,10 +151,10 @@ export default function Client360() {
             <ScoreBar label="Login Activity" value={score?.loginScore ?? 0} max={20} color="bg-info" />
             <ScoreBar label="Onboarding" value={score?.onboardingScore ?? 0} max={20} color="bg-accent" />
             <ScoreBar label="Academy" value={score?.academyScore ?? 0} max={15} color="bg-info" />
-            <ScoreBar label="Events" value={score?.eventsScore ?? 0} max={15} color="bg-green-400" />
+            <ScoreBar label="Events" value={score?.eventsScore ?? 0} max={15} color="bg-success" />
             <ScoreBar label="Quotes" value={score?.quotesScore ?? 0} max={10} color="bg-teal-400" />
-            <ScoreBar label="Invoices" value={score?.invoicesScore ?? 0} max={5} color="bg-emerald-400" />
-            <ScoreBar label="Community" value={score?.communityScore ?? 0} max={10} color="bg-orange-400" />
+            <ScoreBar label="Invoices" value={score?.invoicesScore ?? 0} max={5} color="bg-success" />
+            <ScoreBar label="Community" value={score?.communityScore ?? 0} max={10} color="bg-warning" />
             <ScoreBar label="Support" value={score?.supportScore ?? 0} max={5} color="bg-rose-400" />
             {score?.computedAt && (
               <p className="text-xs text-muted-foreground text-right pt-1">Updated {formatDate(score.computedAt)}</p>
@@ -167,9 +167,9 @@ export default function Client360() {
       {((coaching?.length ?? 0) > 0 || (upsells?.length ?? 0) > 0) && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {(coaching?.length ?? 0) > 0 && (
-            <Card className="border-amber-200 bg-amber-50/30">
+            <Card className="border-warning/20 bg-warning/5">
               <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2 text-amber-800">
+                <CardTitle className="text-base flex items-center gap-2 text-warning">
                   <Lightbulb className="w-4 h-4" />
                   Coaching Recommendations ({coaching.length})
                 </CardTitle>
@@ -179,7 +179,7 @@ export default function Client360() {
                   <div key={c.id} className="bg-card rounded-lg p-3 border border-amber-100">
                     <div className="flex items-start justify-between gap-2 mb-1">
                       <p className="font-medium text-foreground text-sm">{c.title}</p>
-                      <Badge className="text-xs bg-amber-100 text-amber-700 border-0 shrink-0">P{c.priority}</Badge>
+                      <Badge className="text-xs bg-warning/15 text-warning border-0 shrink-0">P{c.priority}</Badge>
                     </div>
                     <p className="text-xs text-muted-foreground leading-relaxed">{c.description}</p>
                   </div>
@@ -252,7 +252,7 @@ export default function Client360() {
               <span className="text-sm text-muted-foreground">lessons completed</span>
             </div>
             {(academy?.lessonsCompleted ?? 0) === 0 && (
-              <p className="text-xs text-amber-600 mt-2 flex items-center gap-1">
+              <p className="text-xs text-warning mt-2 flex items-center gap-1">
                 <AlertTriangle className="w-3.5 h-3.5" />
                 No academy activity yet
               </p>
@@ -387,7 +387,7 @@ export default function Client360() {
               </div>
             </div>
             {(community?.postsCount ?? 0) + (community?.repliesCount ?? 0) === 0 && (
-              <p className="text-xs text-amber-600 mt-3 flex items-center gap-1">
+              <p className="text-xs text-warning mt-3 flex items-center gap-1">
                 <AlertTriangle className="w-3.5 h-3.5" />
                 No community participation
               </p>

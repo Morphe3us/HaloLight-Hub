@@ -63,7 +63,7 @@ const MODEL_COLORS: Record<string, string> = {
   "HaloLight Pro 2":       "bg-info/15 text-info",
   "HaloLight Elite":       "bg-muted text-foreground",
   "HaloLight Open Air":    "bg-success/15 text-success",
-  "HaloLight Studio 360":  "bg-orange-100 text-orange-700",
+  "HaloLight Studio 360":  "bg-warning/15 text-warning",
 };
 
 function fmtDate(d: string | null) {
@@ -145,7 +145,7 @@ export default function AdminEquipment() {
           >
             {t.label}
             {t.alert ? (
-              <span className="w-4 h-4 bg-amber-500 text-white rounded-full text-xs flex items-center justify-center">{t.count}</span>
+              <span className="w-4 h-4 bg-warning text-foreground rounded-full text-xs flex items-center justify-center">{t.count}</span>
             ) : (
               <span className="text-xs text-muted-foreground">({t.count})</span>
             )}
@@ -158,10 +158,10 @@ export default function AdminEquipment() {
           {/* Alert Summary Cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              { label: "Warranty Expired",   value: alertCounts.warrantyExpired,    color: "text-red-500",   bg: "bg-destructive/10 border-destructive/30",    filter: "warranty_expired" },
-              { label: "Warranty Expiring",  value: alertCounts.warrantySoon,       color: "text-amber-500", bg: "bg-amber-50 border-amber-200", filter: "warranty_soon" },
-              { label: "Maintenance Overdue",value: alertCounts.maintenanceOverdue, color: "text-red-500",   bg: "bg-destructive/10 border-destructive/30",    filter: "maintenance_overdue" },
-              { label: "Service Due Soon",   value: alertCounts.maintenanceDue,     color: "text-amber-500", bg: "bg-amber-50 border-amber-200", filter: "maintenance_due" },
+              { label: "Warranty Expired",   value: alertCounts.warrantyExpired,    color: "text-destructive",   bg: "bg-destructive/10 border-destructive/30",    filter: "warranty_expired" },
+              { label: "Warranty Expiring",  value: alertCounts.warrantySoon,       color: "text-warning", bg: "bg-warning/8 border-warning/30", filter: "warranty_soon" },
+              { label: "Maintenance Overdue",value: alertCounts.maintenanceOverdue, color: "text-destructive",   bg: "bg-destructive/10 border-destructive/30",    filter: "maintenance_overdue" },
+              { label: "Service Due Soon",   value: alertCounts.maintenanceDue,     color: "text-warning", bg: "bg-warning/8 border-warning/30", filter: "maintenance_due" },
             ].map(s => (
               <button
                 key={s.label}
@@ -258,9 +258,9 @@ export default function AdminEquipment() {
                             </td>
                             <td className="px-4 py-3 hidden lg:table-cell">
                               {item.warrantyExpired ? (
-                                <span className="text-xs text-red-500 flex items-center gap-1"><ShieldX className="w-3 h-3" />Expired</span>
+                                <span className="text-xs text-destructive flex items-center gap-1"><ShieldX className="w-3 h-3" />Expired</span>
                               ) : item.warrantyExpiringSoon ? (
-                                <span className="text-xs text-amber-500 flex items-center gap-1"><ShieldAlert className="w-3 h-3" />{fmtDate(item.warrantyExpiration)}</span>
+                                <span className="text-xs text-warning flex items-center gap-1"><ShieldAlert className="w-3 h-3" />{fmtDate(item.warrantyExpiration)}</span>
                               ) : item.warrantyExpiration ? (
                                 <span className="text-xs text-success flex items-center gap-1"><ShieldCheck className="w-3 h-3" />{fmtDate(item.warrantyExpiration)}</span>
                               ) : (
@@ -269,9 +269,9 @@ export default function AdminEquipment() {
                             </td>
                             <td className="px-4 py-3 hidden lg:table-cell">
                               {item.maintenanceOverdue ? (
-                                <span className="text-xs text-red-500 flex items-center gap-1"><AlertTriangle className="w-3 h-3" />Overdue</span>
+                                <span className="text-xs text-destructive flex items-center gap-1"><AlertTriangle className="w-3 h-3" />Overdue</span>
                               ) : item.maintenanceDueSoon ? (
-                                <span className="text-xs text-amber-500 flex items-center gap-1"><Clock className="w-3 h-3" />{fmtDate(item.nextMaintenanceDate)}</span>
+                                <span className="text-xs text-warning flex items-center gap-1"><Clock className="w-3 h-3" />{fmtDate(item.nextMaintenanceDate)}</span>
                               ) : (
                                 <span className="text-xs text-muted-foreground">{fmtDate(item.nextMaintenanceDate)}</span>
                               )}
@@ -280,18 +280,18 @@ export default function AdminEquipment() {
                               {hasAlert ? (
                                 <div className="flex justify-center gap-1">
                                   {(item.warrantyExpired || item.warrantyExpiringSoon) && (
-                                    <div className="w-5 h-5 bg-amber-100 rounded-full flex items-center justify-center" title="Warranty alert">
-                                      <ShieldAlert className="w-3 h-3 text-amber-500" />
+                                    <div className="w-5 h-5 bg-warning/15 rounded-full flex items-center justify-center" title="Warranty alert">
+                                      <ShieldAlert className="w-3 h-3 text-warning" />
                                     </div>
                                   )}
                                   {(item.maintenanceOverdue || item.maintenanceDueSoon) && (
-                                    <div className="w-5 h-5 bg-amber-100 rounded-full flex items-center justify-center" title="Maintenance alert">
-                                      <Wrench className="w-3 h-3 text-amber-500" />
+                                    <div className="w-5 h-5 bg-warning/15 rounded-full flex items-center justify-center" title="Maintenance alert">
+                                      <Wrench className="w-3 h-3 text-warning" />
                                     </div>
                                   )}
                                 </div>
                               ) : (
-                                <CheckCircle2 className="w-4 h-4 text-green-400 mx-auto" />
+                                <CheckCircle2 className="w-4 h-4 text-success mx-auto" />
                               )}
                             </td>
                             <td className="px-4 py-3">
@@ -321,25 +321,25 @@ export default function AdminEquipment() {
             <div className="space-y-3">
               {criticalConsumables.map(c => (
                 <div key={c.id} className="bg-destructive/10 border border-destructive/30 rounded-xl p-4 flex items-center gap-3">
-                  <AlertTriangle className="w-5 h-5 text-red-500 shrink-0" />
+                  <AlertTriangle className="w-5 h-5 text-destructive shrink-0" />
                   <div className="flex-1">
-                    <p className="text-sm font-semibold text-red-800">Out of stock: {c.name}</p>
+                    <p className="text-sm font-semibold text-destructive">Out of stock: {c.name}</p>
                     <p className="text-xs text-destructive">{c.ownerName} ({c.ownerCompany}) — 0 {c.unitType} remaining</p>
                   </div>
                   <span className="text-xs bg-destructive/15 text-destructive px-2 py-0.5 rounded-full font-medium">Critical</span>
                 </div>
               ))}
               {lowConsumables.map(c => (
-                <div key={c.id} className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-center gap-3">
-                  <TrendingDown className="w-5 h-5 text-amber-500 shrink-0" />
+                <div key={c.id} className="bg-warning/8 border border-warning/30 rounded-xl p-4 flex items-center gap-3">
+                  <TrendingDown className="w-5 h-5 text-warning shrink-0" />
                   <div className="flex-1">
-                    <p className="text-sm font-semibold text-amber-800">Low stock: {c.name}</p>
-                    <p className="text-xs text-amber-600">
+                    <p className="text-sm font-semibold text-warning">Low stock: {c.name}</p>
+                    <p className="text-xs text-warning">
                       {c.ownerName} ({c.ownerCompany}) — {c.currentQuantity} {c.unitType} left
                       {c.daysRemaining !== null ? ` (~${c.daysRemaining} days)` : ""}
                     </p>
                   </div>
-                  <span className="text-xs bg-amber-100 text-amber-600 px-2 py-0.5 rounded-full font-medium">Low</span>
+                  <span className="text-xs bg-warning/15 text-warning px-2 py-0.5 rounded-full font-medium">Low</span>
                 </div>
               ))}
             </div>
@@ -380,7 +380,7 @@ export default function AdminEquipment() {
                             <p className="text-xs text-muted-foreground">{c.ownerCompany}</p>
                           </td>
                           <td className="px-4 py-3 text-center">
-                            <span className={`font-bold ${c.isCritical ? "text-red-500" : c.isLow ? "text-amber-500" : "text-foreground"}`}>
+                            <span className={`font-bold ${c.isCritical ? "text-destructive" : c.isLow ? "text-warning" : "text-foreground"}`}>
                               {c.currentQuantity}
                             </span>
                             <span className="text-xs text-muted-foreground ml-1">{c.unitType}</span>
@@ -392,7 +392,7 @@ export default function AdminEquipment() {
                             {c.isCritical ? (
                               <span className="text-xs px-2 py-0.5 rounded-full bg-destructive/15 text-destructive font-medium">Out of Stock</span>
                             ) : c.isLow ? (
-                              <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-600 font-medium">Low</span>
+                              <span className="text-xs px-2 py-0.5 rounded-full bg-warning/15 text-warning font-medium">Low</span>
                             ) : (
                               <span className="text-xs px-2 py-0.5 rounded-full bg-success/15 text-success font-medium">OK</span>
                             )}

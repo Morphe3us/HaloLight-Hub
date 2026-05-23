@@ -48,7 +48,7 @@ type Order = {
 const CATEGORY_CONFIG: Record<string, { label: string; icon: React.ComponentType<{className?: string}>; color: string }> = {
   paper:     { label: "Paper",      icon: Layers,   color: "text-info" },
   ribbon:    { label: "Ribbon",     icon: Printer,  color: "text-muted-foreground" },
-  accessory: { label: "Accessory",  icon: Package,  color: "text-orange-500" },
+  accessory: { label: "Accessory",  icon: Package,  color: "text-warning" },
   cleaning:  { label: "Cleaning",   icon: Brush,    color: "text-teal-600" },
 };
 
@@ -68,7 +68,7 @@ function fmtDate(d: string | null) {
 function StockBar({ qty, threshold, isCritical, isLow }: { qty: number; threshold: number; isCritical: boolean; isLow: boolean }) {
   const max = Math.max(qty, threshold * 3, 10);
   const pct = Math.min((qty / max) * 100, 100);
-  const barColor = isCritical ? "bg-red-500" : isLow ? "bg-amber-400" : "bg-green-500";
+  const barColor = isCritical ? "bg-destructive" : isLow ? "bg-warning" : "bg-success";
   return (
     <div className="h-2 bg-muted rounded-full overflow-hidden">
       <div className={`h-full ${barColor} rounded-full transition-all`} style={{ width: `${pct}%` }} />
@@ -122,19 +122,19 @@ export default function Consumables() {
       {/* Alert Banners */}
       {criticalItems.length > 0 && (
         <div className="bg-destructive/10 border border-destructive/30 rounded-xl p-4 flex items-start gap-3">
-          <AlertTriangle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
+          <AlertTriangle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
           <div>
-            <p className="text-sm font-semibold text-red-800">Critical: Out of stock</p>
+            <p className="text-sm font-semibold text-destructive">Critical: Out of stock</p>
             <p className="text-xs text-destructive mt-0.5">{criticalItems.map(i => i.name).join(", ")} — reorder immediately</p>
           </div>
         </div>
       )}
       {lowItems.length > 0 && (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
-          <TrendingDown className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+        <div className="bg-warning/8 border border-warning/30 rounded-xl p-4 flex items-start gap-3">
+          <TrendingDown className="w-5 h-5 text-warning shrink-0 mt-0.5" />
           <div>
-            <p className="text-sm font-semibold text-amber-800">Low stock — reorder recommended</p>
-            <p className="text-xs text-amber-600 mt-0.5">{lowItems.map(i => `${i.name} (${i.currentQuantity} ${i.unitType})`).join(", ")}</p>
+            <p className="text-sm font-semibold text-warning">Low stock — reorder recommended</p>
+            <p className="text-xs text-warning mt-0.5">{lowItems.map(i => `${i.name} (${i.currentQuantity} ${i.unitType})`).join(", ")}</p>
           </div>
         </div>
       )}
@@ -144,8 +144,8 @@ export default function Consumables() {
         {[
           { label: "Total Items", value: stock.length, color: "text-foreground" },
           { label: "Well Stocked", value: stock.filter(s => !s.isLow).length, color: "text-success" },
-          { label: "Low Stock", value: lowItems.length, color: "text-amber-500" },
-          { label: "Out of Stock", value: criticalItems.length, color: "text-red-500" },
+          { label: "Low Stock", value: lowItems.length, color: "text-warning" },
+          { label: "Out of Stock", value: criticalItems.length, color: "text-destructive" },
         ].map(s => (
           <Card key={s.label}>
             <CardContent className="p-4 text-center">
@@ -179,7 +179,7 @@ export default function Consumables() {
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-foreground">{order.name}</p>
                         <p className="text-xs text-muted-foreground">{order.quantity} {order.unitType} · ${Number(order.total).toFixed(2)} · {fmtDate(order.orderedAt)}</p>
-                        {order.notes && <p className="text-xs text-amber-600 mt-0.5">{order.notes}</p>}
+                        {order.notes && <p className="text-xs text-warning mt-0.5">{order.notes}</p>}
                       </div>
                       <span className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${statusCfg.color}`}>
                         {statusCfg.label}
@@ -226,7 +226,7 @@ export default function Consumables() {
                               <span className="text-xs px-1.5 py-0.5 rounded-full bg-destructive/15 text-destructive font-medium">Out of Stock</span>
                             )}
                             {item.isLow && !item.isCritical && (
-                              <span className="text-xs px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-600 font-medium">Low Stock</span>
+                              <span className="text-xs px-1.5 py-0.5 rounded-full bg-warning/15 text-warning font-medium">Low Stock</span>
                             )}
                           </div>
                           <p className="text-xs text-muted-foreground">{item.sku}</p>
@@ -235,7 +235,7 @@ export default function Consumables() {
                           )}
                         </div>
                         <div className="text-right shrink-0">
-                          <p className={`text-lg font-bold ${item.isCritical ? "text-red-500" : item.isLow ? "text-amber-500" : "text-foreground"}`}>
+                          <p className={`text-lg font-bold ${item.isCritical ? "text-destructive" : item.isLow ? "text-warning" : "text-foreground"}`}>
                             {item.currentQuantity}
                             <span className="text-xs font-normal text-muted-foreground ml-1">{item.unitType}</span>
                           </p>
@@ -250,8 +250,8 @@ export default function Consumables() {
                         <span>Last restocked: {fmtDate(item.lastRestockedAt)}</span>
                       </div>
                       {item.reorderRecommended && (
-                        <div className="bg-amber-50 border border-amber-200 rounded-lg p-2.5 flex items-center justify-between">
-                          <p className="text-xs text-amber-700 font-medium flex items-center gap-1.5">
+                        <div className="bg-warning/8 border border-warning/30 rounded-lg p-2.5 flex items-center justify-between">
+                          <p className="text-xs text-warning font-medium flex items-center gap-1.5">
                             <RotateCcw className="w-3.5 h-3.5" />
                             Reorder recommended — {item.currentQuantity <= item.reorderThreshold ? "at or below" : "approaching"} minimum level
                           </p>

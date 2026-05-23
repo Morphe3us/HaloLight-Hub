@@ -180,7 +180,7 @@ export default function KBAdmin() {
                   <Button variant="ghost" size="sm" onClick={() => handleEdit(article)} title="Edit">
                     <Pencil className="w-4 h-4" />
                   </Button>
-                  <Button variant="ghost" size="sm" className="text-red-500 hover:text-destructive" onClick={() => setDeleteId(article.id ?? null)} title="Delete">
+                  <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => setDeleteId(article.id ?? null)} title="Delete">
                     <Trash2 className="w-4 h-4" />
                   </Button>
                 </div>
@@ -254,7 +254,7 @@ export default function KBAdmin() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction className="bg-red-500 hover:bg-red-600" onClick={() => deleteId && deleteArticle({ id: deleteId })}>
+            <AlertDialogAction className="bg-destructive hover:bg-destructive/90" onClick={() => deleteId && deleteArticle({ id: deleteId })}>
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>

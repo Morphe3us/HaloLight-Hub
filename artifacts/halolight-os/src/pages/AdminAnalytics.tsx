@@ -81,7 +81,7 @@ export default function AdminAnalytics() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <StatCard title="Total Clients" value={users?.total ?? 0} icon={Users} />
           <StatCard title="Active (30 days)" value={users?.active ?? 0} sub={`${users?.activeRate ?? 0}% of total`} icon={Activity} color="text-success" />
-          <StatCard title="Inactive" value={users?.inactive ?? 0} icon={AlertTriangle} color="text-orange-500" />
+          <StatCard title="Inactive" value={users?.inactive ?? 0} icon={AlertTriangle} color="text-warning" />
           <StatCard title="Avg Success Score" value={successScores?.avgScore ?? 0} sub="/ 100" icon={Award} color="text-muted-foreground" />
         </div>
       </section>
@@ -211,7 +211,7 @@ export default function AdminAnalytics() {
                 <p className="text-xs text-muted-foreground">Total tickets</p>
               </div>
               <div>
-                <p className="text-2xl font-bold text-orange-500">{support?.openTickets ?? 0}</p>
+                <p className="text-2xl font-bold text-warning">{support?.openTickets ?? 0}</p>
                 <p className="text-xs text-muted-foreground">Open</p>
               </div>
               <div>
@@ -224,7 +224,7 @@ export default function AdminAnalytics() {
                 <span>Resolution rate</span>
                 <span className="font-medium">{support?.resolutionRate ?? 0}%</span>
               </div>
-              <ProgressBar value={support?.resolutionRate ?? 0} color="bg-green-500" />
+              <ProgressBar value={support?.resolutionRate ?? 0} color="bg-success" />
             </div>
           </CardContent>
         </Card>

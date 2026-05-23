@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.ComponentType<{ className?: string }> }> = {
   draft: { label: "Draft", color: "bg-slate-100 text-slate-700 border-slate-200", icon: Clock },
   sent: { label: "Sent", color: "bg-info/10 text-info border-info/30", icon: Clock },
-  paid: { label: "Paid", color: "bg-emerald-50 text-emerald-700 border-emerald-200", icon: CheckCircle2 },
+  paid: { label: "Paid", color: "bg-success/8 text-success border-success/20", icon: CheckCircle2 },
   overdue: { label: "Overdue", color: "bg-destructive/10 text-destructive border-destructive/30", icon: AlertCircle },
   cancelled: { label: "Cancelled", color: "bg-slate-50 text-slate-500 border-slate-200", icon: Clock },
 };
@@ -148,7 +148,7 @@ export default function InvoiceDetail() {
         <div className="flex gap-2 flex-wrap">
           <PrintButton invoice={invoice} items={items} />
           {invoice.status !== "paid" && invoice.status !== "cancelled" && (
-            <Button onClick={() => { setPaymentForm({ paidAmount: invoice.total, paymentMethod: "Bank Transfer", paymentReference: "" }); setShowMarkPaid(true); }} className="gap-2 bg-emerald-600 hover:bg-emerald-700">
+            <Button onClick={() => { setPaymentForm({ paidAmount: invoice.total, paymentMethod: "Bank Transfer", paymentReference: "" }); setShowMarkPaid(true); }} className="gap-2 bg-success hover:bg-success/90">
               <CheckCircle2 className="w-4 h-4" /> Mark as Paid
             </Button>
           )}
@@ -163,13 +163,13 @@ export default function InvoiceDetail() {
 
       {/* Paid Banner */}
       {invoice.status === "paid" && (
-        <div className="rounded-xl bg-emerald-50 border border-emerald-200 p-4 flex items-center gap-3">
-          <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+        <div className="rounded-xl bg-success/8 border border-success/20 p-4 flex items-center gap-3">
+          <CheckCircle2 className="w-5 h-5 text-success shrink-0" />
           <div className="text-sm">
-            <span className="font-semibold text-emerald-700">Payment Received — </span>
-            <span className="text-emerald-600">{formatCurrency(invoice.paidAmount ?? invoice.total)} on {formatDate(invoice.paidAt)}</span>
-            {invoice.paymentMethod && <span className="text-emerald-600"> via {invoice.paymentMethod}</span>}
-            {invoice.paymentReference && <span className="text-emerald-600"> · Ref: {invoice.paymentReference}</span>}
+            <span className="font-semibold text-success">Payment Received — </span>
+            <span className="text-success">{formatCurrency(invoice.paidAmount ?? invoice.total)} on {formatDate(invoice.paidAt)}</span>
+            {invoice.paymentMethod && <span className="text-success"> via {invoice.paymentMethod}</span>}
+            {invoice.paymentReference && <span className="text-success"> · Ref: {invoice.paymentReference}</span>}
           </div>
         </div>
       )}
@@ -197,12 +197,12 @@ export default function InvoiceDetail() {
             <div className="flex justify-between"><span className="text-muted-foreground">Created</span><span>{formatDate(invoice.createdAt)}</span></div>
             {invoice.dueDate && <div className="flex justify-between"><span className="text-muted-foreground">Due Date</span><span className={cn(invoice.status === "overdue" ? "text-destructive font-medium" : "")}>{formatDate(invoice.dueDate)}</span></div>}
             {invoice.sentAt && <div className="flex justify-between"><span className="text-muted-foreground">Sent</span><span>{formatDate(invoice.sentAt)}</span></div>}
-            {invoice.paidAt && <div className="flex justify-between"><span className="text-muted-foreground">Paid</span><span className="text-emerald-600 font-medium">{formatDate(invoice.paidAt)}</span></div>}
+            {invoice.paidAt && <div className="flex justify-between"><span className="text-muted-foreground">Paid</span><span className="text-success font-medium">{formatDate(invoice.paidAt)}</span></div>}
           </div>
         </div>
         <div className="rounded-xl border bg-card p-5 space-y-3">
           <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Amount Due</h3>
-          <p className={cn("text-2xl font-bold", invoice.status === "paid" ? "text-emerald-600" : invoice.status === "overdue" ? "text-destructive" : "")}>{formatCurrency(invoice.total)}</p>
+          <p className={cn("text-2xl font-bold", invoice.status === "paid" ? "text-success" : invoice.status === "overdue" ? "text-destructive" : "")}>{formatCurrency(invoice.total)}</p>
           <div className="text-xs text-muted-foreground space-y-1">
             <div className="flex justify-between"><span>Subtotal</span><span>{formatCurrency(invoice.subtotal)}</span></div>
             <div className="flex justify-between"><span>Tax ({invoice.taxRate}%)</span><span>{formatCurrency(invoice.taxAmount)}</span></div>
@@ -266,7 +266,7 @@ export default function InvoiceDetail() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowMarkPaid(false)}>Cancel</Button>
-            <Button onClick={handleMarkPaid} disabled={statusMutation.isPending} className="bg-emerald-600 hover:bg-emerald-700">{statusMutation.isPending ? "Saving…" : "Confirm Payment"}</Button>
+            <Button onClick={handleMarkPaid} disabled={statusMutation.isPending} className="bg-success hover:bg-success/90">{statusMutation.isPending ? "Saving…" : "Confirm Payment"}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

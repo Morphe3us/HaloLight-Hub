@@ -155,7 +155,7 @@ export default function AdminClients() {
                       <span className="flex items-center gap-1"><FileText className="w-3 h-3" />{client.quotesCount ?? 0}</span>
                       <span className="flex items-center gap-1"><LifeBuoy className="w-3 h-3" />{client.ticketsCount ?? 0}</span>
                       {(client.coachingCount ?? 0) > 0 && (
-                        <Badge className="bg-amber-100 text-amber-700 text-xs px-1.5 py-0 border-0 gap-1">
+                        <Badge className="bg-warning/15 text-warning text-xs px-1.5 py-0 border-0 gap-1">
                           <Lightbulb className="w-3 h-3" />
                           {client.coachingCount} coaching
                         </Badge>

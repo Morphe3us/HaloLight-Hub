@@ -33,7 +33,7 @@ type EventStatus = "upcoming" | "active" | "completed" | "cancelled";
 
 const STATUS_STYLES: Record<EventStatus, string> = {
   upcoming: "bg-info/15 text-info border-info/30",
-  active: "bg-emerald-100 text-emerald-700 border-emerald-200",
+  active: "bg-success/15 text-success border-success/30",
   completed: "bg-muted text-muted-foreground border-border",
   cancelled: "bg-destructive/15 text-destructive border-destructive/30",
 };
@@ -258,7 +258,7 @@ export default function Events() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 text-muted-foreground hover:text-red-500"
+                      className="h-8 w-8 text-muted-foreground hover:text-destructive"
                       onClick={() => setDeleteId(ev.id)}
                     >
                       <Trash2 className="w-3.5 h-3.5" />

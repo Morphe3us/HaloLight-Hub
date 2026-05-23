@@ -16,9 +16,9 @@ import { cn } from "@/lib/utils";
 const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   draft: { label: "Draft", color: "bg-slate-100 text-slate-700 border-slate-200" },
   sent: { label: "Sent", color: "bg-info/10 text-info border-info/30" },
-  signed: { label: "Signed", color: "bg-emerald-50 text-emerald-700 border-emerald-200" },
+  signed: { label: "Signed", color: "bg-success/8 text-success border-success/20" },
   active: { label: "Active", color: "bg-success/10 text-success border-green-200" },
-  expired: { label: "Expired", color: "bg-amber-50 text-amber-700 border-amber-200" },
+  expired: { label: "Expired", color: "bg-warning/8 text-warning border-warning/20" },
   cancelled: { label: "Cancelled", color: "bg-destructive/10 text-destructive border-destructive/30" },
 };
 

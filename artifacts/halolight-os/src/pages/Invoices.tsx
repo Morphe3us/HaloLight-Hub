@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils";
 const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   draft: { label: "Draft", color: "bg-slate-100 text-slate-700 border-slate-200" },
   sent: { label: "Sent", color: "bg-info/10 text-info border-info/30" },
-  paid: { label: "Paid", color: "bg-emerald-50 text-emerald-700 border-emerald-200" },
+  paid: { label: "Paid", color: "bg-success/8 text-success border-success/20" },
   overdue: { label: "Overdue", color: "bg-destructive/10 text-destructive border-destructive/30" },
   cancelled: { label: "Cancelled", color: "bg-slate-50 text-slate-500 border-slate-200" },
 };
@@ -122,9 +122,9 @@ export default function Invoices() {
           <p className="text-xs text-muted-foreground font-medium">Total Invoices</p>
           <p className="text-xl font-bold mt-1">{invoices.length}</p>
         </div>
-        <div className="rounded-xl border bg-emerald-50 border-emerald-200 p-4">
-          <p className="text-xs text-emerald-700 font-medium flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> Paid</p>
-          <p className="text-xl font-bold mt-1 text-emerald-700">{formatCurrency(paidTotal)}</p>
+        <div className="rounded-xl border bg-success/8 border-success/20 p-4">
+          <p className="text-xs text-success font-medium flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> Paid</p>
+          <p className="text-xl font-bold mt-1 text-success">{formatCurrency(paidTotal)}</p>
         </div>
         <div className="rounded-xl border bg-info/10 border-info/30 p-4">
           <p className="text-xs text-info font-medium">Pending</p>
@@ -190,14 +190,14 @@ export default function Invoices() {
                       <span className={cn(overdue ? "text-destructive font-medium" : "text-muted-foreground")}>{formatDate(inv.dueDate)}</span>
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <span className={cn("font-bold", inv.status === "paid" ? "text-emerald-600" : overdue ? "text-destructive" : "")}>{formatCurrency(inv.total)}</span>
+                      <span className={cn("font-bold", inv.status === "paid" ? "text-success" : overdue ? "text-destructive" : "")}>{formatCurrency(inv.total)}</span>
                     </td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         {inv.status !== "paid" && inv.status !== "cancelled" && (
                           <button
                             onClick={() => markPaidMutation.mutate({ id: inv.id, data: { status: "paid", paidAmount: inv.total } })}
-                            className="text-xs text-emerald-600 hover:text-emerald-700 border border-emerald-200 rounded px-2 py-0.5 bg-emerald-50 hover:bg-emerald-100 transition-colors whitespace-nowrap"
+                            className="text-xs text-success hover:text-success/80 border border-success/30 rounded px-2 py-0.5 bg-success/8 hover:bg-success/15 transition-colors whitespace-nowrap"
                           >
                             Mark Paid
                           </button>

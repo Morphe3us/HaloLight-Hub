@@ -94,16 +94,16 @@ const ACTION_LABELS: Record<string, string> = {
 };
 
 const TRIGGER_COLORS: Record<string, string> = {
-  onboarding_stalled: "bg-amber-100 text-amber-800",
+  onboarding_stalled: "bg-warning/15 text-warning",
   inactive_user: "bg-slate-100 text-slate-700",
   low_academy_progress: "bg-info/15 text-info",
   no_events_created: "bg-muted text-foreground",
   no_quotes_created: "bg-info/15 text-info",
-  low_consumable_stock: "bg-orange-100 text-orange-800",
-  warranty_expiring: "bg-destructive/15 text-red-800",
-  high_performer_detected: "bg-success/15 text-green-800",
+  low_consumable_stock: "bg-warning/15 text-warning",
+  warranty_expiring: "bg-destructive/15 text-destructive",
+  high_performer_detected: "bg-success/15 text-success",
   upsell_opportunity_detected: "bg-teal-100 text-teal-800",
-  coaching_recommendation_generated: "bg-violet-100 text-violet-800",
+  coaching_recommendation_generated: "bg-info/15 text-info",
 };
 
 const ACTION_ICONS: Record<string, React.ElementType> = {
@@ -118,8 +118,8 @@ const ACTION_ICONS: Record<string, React.ElementType> = {
 const STATUS_CONFIG: Record<string, { icon: React.ElementType; color: string; label: string }> = {
   action_taken: { icon: CheckCircle2, color: "text-success", label: "Action Taken" },
   no_match: { icon: SkipForward, color: "text-slate-400", label: "No Match" },
-  skipped_cooldown: { icon: Clock, color: "text-amber-500", label: "Cooldown" },
-  error: { icon: XCircle, color: "text-red-500", label: "Error" },
+  skipped_cooldown: { icon: Clock, color: "text-warning", label: "Cooldown" },
+  error: { icon: XCircle, color: "text-destructive", label: "Error" },
   matched: { icon: CheckCircle2, color: "text-info", label: "Matched" },
 };
 
@@ -226,9 +226,9 @@ export default function AdminAutomation() {
           { label: "Enabled", value: stats?.enabledRules ?? 0, icon: CheckCircle2, color: "text-success" },
           { label: "Runs Today", value: stats?.todayExecutions ?? 0, icon: Activity, color: "text-info" },
           { label: "Total Runs", value: stats?.totalExecutions ?? 0, icon: RefreshCw, color: "text-slate-600" },
-          { label: "Actions Today", value: stats?.actionsToday ?? 0, icon: Zap, color: "text-violet-600" },
+          { label: "Actions Today", value: stats?.actionsToday ?? 0, icon: Zap, color: "text-info" },
           { label: "Total Actions", value: stats?.totalActions ?? 0, icon: BarChart3, color: "text-teal-600" },
-          { label: "Errors Today", value: stats?.errorsToday ?? 0, icon: AlertTriangle, color: "text-red-500" },
+          { label: "Errors Today", value: stats?.errorsToday ?? 0, icon: AlertTriangle, color: "text-destructive" },
         ].map((s) => (
           <Card key={s.label} className="p-4">
             <div className="flex items-center gap-2 mb-1">
@@ -385,14 +385,14 @@ export default function AdminAutomation() {
                     <CardContent className="p-4">
                       <div className="flex items-center gap-4">
                         <div className={`h-8 w-8 rounded-full flex items-center justify-center shrink-0 ${
-                          hasFailed ? "bg-destructive/15" : isOk ? "bg-success/15" : "bg-amber-100"
+                          hasFailed ? "bg-destructive/15" : isOk ? "bg-success/15" : "bg-warning/8"
                         }`}>
                           {hasFailed ? (
-                            <XCircle className="h-4 w-4 text-red-500" />
+                            <XCircle className="h-4 w-4 text-destructive" />
                           ) : isOk ? (
                             <CheckCircle2 className="h-4 w-4 text-success" />
                           ) : (
-                            <AlertTriangle className="h-4 w-4 text-amber-500" />
+                            <AlertTriangle className="h-4 w-4 text-warning" />
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
@@ -429,7 +429,7 @@ export default function AdminAutomation() {
                             <p className="text-xs text-muted-foreground">Actions</p>
                           </div>
                           <div className="text-center">
-                            <p className={`font-semibold ${exec.errors > 0 ? "text-red-500" : ""}`}>
+                            <p className={`font-semibold ${exec.errors > 0 ? "text-destructive" : ""}`}>
                               {exec.errors}
                             </p>
                             <p className="text-xs text-muted-foreground">Errors</p>

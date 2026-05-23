@@ -16,9 +16,9 @@ import { cn } from "@/lib/utils";
 const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   draft: { label: "Draft", color: "bg-slate-100 text-slate-700 border-slate-200" },
   sent: { label: "Sent", color: "bg-info/10 text-info border-info/30" },
-  accepted: { label: "Accepted", color: "bg-emerald-50 text-emerald-700 border-emerald-200" },
+  accepted: { label: "Accepted", color: "bg-success/8 text-success border-success/20" },
   declined: { label: "Declined", color: "bg-destructive/10 text-destructive border-destructive/30" },
-  expired: { label: "Expired", color: "bg-amber-50 text-amber-700 border-amber-200" },
+  expired: { label: "Expired", color: "bg-warning/8 text-warning border-warning/20" },
 };
 
 function formatCurrency(val: string | number) {

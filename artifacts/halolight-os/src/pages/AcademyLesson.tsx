@@ -156,7 +156,7 @@ export default function AcademyLesson() {
           <h1 className="text-2xl font-bold text-foreground">{lesson.title}</h1>
         </div>
         {isCompleted && (
-          <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 shrink-0">
+          <Badge className="bg-success/15 text-success border-success/30 shrink-0">
             <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
             {t("academy.completed")}
           </Badge>
@@ -221,9 +221,9 @@ export default function AcademyLesson() {
                                 "w-full text-left px-4 py-3 rounded-lg border text-sm transition-all",
                                 quizSubmitted
                                   ? isCorrect
-                                    ? "border-emerald-400 bg-emerald-50 text-emerald-800"
+                                    ? "border-success/40 bg-success/8 text-success"
                                     : isWrong
-                                      ? "border-red-300 bg-destructive/10 text-red-800"
+                                      ? "border-destructive/30 bg-destructive/10 text-destructive"
                                       : "border-border text-muted-foreground"
                                   : isSelected
                                     ? "border-primary bg-primary/5 text-primary font-medium"
@@ -243,17 +243,17 @@ export default function AcademyLesson() {
                 {quizResult && (
                   <div className={cn(
                     "rounded-xl p-4 flex items-center gap-3",
-                    quizResult.passed ? "bg-emerald-50 border border-emerald-200" : "bg-amber-50 border border-amber-200"
+                    quizResult.passed ? "bg-success/8 border border-success/20" : "bg-warning/8 border border-warning/20"
                   )}>
                     {quizResult.passed
-                      ? <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-                      : <AlertCircle className="w-5 h-5 text-amber-600 shrink-0" />
+                      ? <CheckCircle2 className="w-5 h-5 text-success shrink-0" />
+                      : <AlertCircle className="w-5 h-5 text-warning shrink-0" />
                     }
                     <div>
-                      <p className={cn("font-semibold", quizResult.passed ? "text-emerald-800" : "text-amber-800")}>
+                      <p className={cn("font-semibold", quizResult.passed ? "text-success" : "text-warning")}>
                         {quizResult.passed ? t("academy.quiz_passed") : t("academy.quiz_failed")}
                       </p>
-                      <p className={cn("text-sm", quizResult.passed ? "text-emerald-600" : "text-amber-600")}>
+                      <p className={cn("text-sm", quizResult.passed ? "text-success" : "text-warning")}>
                         {t("academy.quiz_score")}: {quizResult.score} / {quizResult.total}
                       </p>
                     </div>

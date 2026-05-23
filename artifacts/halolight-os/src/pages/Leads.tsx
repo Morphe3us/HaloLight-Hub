@@ -17,21 +17,21 @@ import { cn } from "@/lib/utils";
 const PIPELINE_STAGES = [
   { key: "new", label: "New", color: "bg-slate-100 text-slate-700 border-slate-200" },
   { key: "contacted", label: "Contacted", color: "bg-info/10 text-info border-info/30" },
-  { key: "qualified", label: "Qualified", color: "bg-violet-50 text-violet-700 border-violet-200" },
-  { key: "proposal", label: "Proposal", color: "bg-amber-50 text-amber-700 border-amber-200" },
-  { key: "negotiation", label: "Negotiation", color: "bg-orange-50 text-orange-700 border-orange-200" },
-  { key: "won", label: "Won", color: "bg-emerald-50 text-emerald-700 border-emerald-200" },
+  { key: "qualified", label: "Qualified", color: "bg-info/8 text-info border-info/20" },
+  { key: "proposal", label: "Proposal", color: "bg-warning/8 text-warning border-warning/20" },
+  { key: "negotiation", label: "Negotiation", color: "bg-warning/8 text-warning border-warning/20" },
+  { key: "won", label: "Won", color: "bg-success/8 text-success border-success/20" },
   { key: "lost", label: "Lost", color: "bg-destructive/10 text-destructive border-destructive/30" },
 ] as const;
 
 const STATUS_DOT: Record<string, string> = {
   new: "bg-slate-400",
   contacted: "bg-primary",
-  qualified: "bg-violet-500",
-  proposal: "bg-amber-500",
-  negotiation: "bg-orange-500",
-  won: "bg-emerald-500",
-  lost: "bg-red-400",
+  qualified: "bg-info",
+  proposal: "bg-warning",
+  negotiation: "bg-warning",
+  won: "bg-success",
+  lost: "bg-destructive",
 };
 
 const SOURCE_LABELS: Record<string, string> = {
@@ -199,7 +199,7 @@ export default function Leads() {
                           <p className="font-semibold text-sm truncate">{lead.companyName}</p>
                           <p className="text-xs text-muted-foreground truncate mt-0.5">{lead.contactName}</p>
                           <div className="flex items-center justify-between mt-2">
-                            <span className="text-xs font-medium text-emerald-600">{formatCurrency(lead.value)}</span>
+                            <span className="text-xs font-medium text-success">{formatCurrency(lead.value)}</span>
                             <ChevronRight className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                           </div>
                           {lead.eventType && <p className="text-xs text-muted-foreground mt-1 truncate">{lead.eventType}</p>}
@@ -246,7 +246,7 @@ export default function Leads() {
                     <td className="px-4 py-3 hidden sm:table-cell text-muted-foreground">{lead.contactName}</td>
                     <td className="px-4 py-3 hidden md:table-cell text-muted-foreground">{SOURCE_LABELS[lead.source] ?? lead.source}</td>
                     <td className="px-4 py-3">{getStatusBadge(lead.status)}</td>
-                    <td className="px-4 py-3 text-right font-medium text-emerald-600">{formatCurrency(lead.value)}</td>
+                    <td className="px-4 py-3 text-right font-medium text-success">{formatCurrency(lead.value)}</td>
                     <td className="px-4 py-3 text-right">
                       <button
                         onClick={() => deleteMutation.mutate({ id: lead.id })}

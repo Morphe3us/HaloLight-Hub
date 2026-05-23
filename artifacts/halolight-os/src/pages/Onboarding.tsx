@@ -43,28 +43,28 @@ export default function Onboarding() {
         <p className="text-muted-foreground mt-1">Get your account ready for production.</p>
       </div>
 
-      <Card className="bg-sidebar text-sidebar-foreground border-sidebar-border shadow-lg overflow-hidden relative">
+      <Card className="bg-foreground text-background border-border shadow-lg overflow-hidden relative">
         <div className="absolute top-0 right-0 p-8 opacity-10">
           <Trophy className="w-32 h-32" />
         </div>
         <CardHeader className="relative z-10 pb-4">
-          <CardTitle className="text-2xl text-white">Your Progress</CardTitle>
-          <CardDescription className="text-muted-foreground">
+          <CardTitle className="text-2xl text-background">Your Progress</CardTitle>
+          <CardDescription className="text-background/60">
             {summary?.completedSteps} of {summary?.totalSteps} steps completed
           </CardDescription>
         </CardHeader>
         <CardContent className="relative z-10">
           <div className="flex items-center gap-4 mb-2">
-            <div className="flex-1 h-3 bg-sidebar-accent rounded-full overflow-hidden">
+            <div className="flex-1 h-3 bg-background/20 rounded-full overflow-hidden">
               <div 
-                className="h-full bg-primary transition-all duration-1000 ease-out" 
+                className="h-full bg-accent transition-all duration-1000 ease-out" 
                 style={{ width: `${summary?.percentComplete || 0}%` }}
               />
             </div>
-            <span className="font-bold text-white w-12 text-right">{summary?.percentComplete}%</span>
+            <span className="font-bold text-background w-12 text-right">{summary?.percentComplete}%</span>
           </div>
           {isAllComplete && (
-            <p className="text-green-400 text-sm font-medium mt-4 flex items-center gap-2">
+            <p className="text-accent text-sm font-medium mt-4 flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4" /> All set! Your account is fully configured.
             </p>
           )}
@@ -84,7 +84,7 @@ export default function Onboarding() {
               <div className="p-6 flex flex-col sm:flex-row sm:items-center gap-6">
                 <div className="shrink-0 flex items-center justify-center">
                   {isCompleted ? (
-                    <CheckCircle2 className="w-8 h-8 text-green-500" />
+                    <CheckCircle2 className="w-8 h-8 text-success" />
                   ) : (
                     <Circle className="w-8 h-8 text-muted-foreground" />
                   )}

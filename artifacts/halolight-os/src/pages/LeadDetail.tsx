@@ -22,10 +22,10 @@ import { cn } from "@/lib/utils";
 const PIPELINE_STAGES = [
   { key: "new", label: "New", color: "bg-slate-100 text-slate-700 border-slate-200" },
   { key: "contacted", label: "Contacted", color: "bg-info/10 text-info border-info/30" },
-  { key: "qualified", label: "Qualified", color: "bg-violet-50 text-violet-700 border-violet-200" },
-  { key: "proposal", label: "Proposal", color: "bg-amber-50 text-amber-700 border-amber-200" },
-  { key: "negotiation", label: "Negotiation", color: "bg-orange-50 text-orange-700 border-orange-200" },
-  { key: "won", label: "Won", color: "bg-emerald-50 text-emerald-700 border-emerald-200" },
+  { key: "qualified", label: "Qualified", color: "bg-info/8 text-info border-info/20" },
+  { key: "proposal", label: "Proposal", color: "bg-warning/8 text-warning border-warning/20" },
+  { key: "negotiation", label: "Negotiation", color: "bg-warning/8 text-warning border-warning/20" },
+  { key: "won", label: "Won", color: "bg-success/8 text-success border-success/20" },
   { key: "lost", label: "Lost", color: "bg-destructive/10 text-destructive border-destructive/30" },
 ] as const;
 
@@ -43,12 +43,12 @@ const ACTIVITY_ICONS: Record<string, React.ComponentType<{ className?: string }>
 const ACTIVITY_COLORS: Record<string, string> = {
   note: "bg-slate-100 text-slate-600",
   call: "bg-info/15 text-info",
-  email: "bg-violet-100 text-violet-600",
-  meeting: "bg-amber-100 text-amber-600",
+  email: "bg-info/15 text-info",
+  meeting: "bg-warning/15 text-warning",
   status_change: "bg-muted text-muted-foreground",
-  quote_sent: "bg-emerald-100 text-emerald-600",
+  quote_sent: "bg-success/15 text-success",
   contract_sent: "bg-info/15 text-info",
-  invoice_sent: "bg-orange-100 text-orange-600",
+  invoice_sent: "bg-warning/15 text-warning",
 };
 
 function formatCurrency(val: string | number) {
@@ -207,7 +207,7 @@ export default function LeadDetail() {
           <div className="rounded-xl border bg-card p-5 space-y-3">
             <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Opportunity</h3>
             <div className="space-y-2 text-sm">
-              <div className="flex justify-between"><span className="text-muted-foreground">Value</span><span className="font-bold text-emerald-600 text-base">{formatCurrency(lead.value)}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Value</span><span className="font-bold text-success text-base">{formatCurrency(lead.value)}</span></div>
               <div className="flex justify-between"><span className="text-muted-foreground">Event Type</span><span>{lead.eventType ?? "—"}</span></div>
               <div className="flex justify-between"><span className="text-muted-foreground">Stage</span><span>{stage?.label ?? "—"}</span></div>
               <div className="flex justify-between"><span className="text-muted-foreground">Created</span><span>{formatDate(lead.createdAt)}</span></div>

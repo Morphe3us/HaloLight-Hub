@@ -44,10 +44,10 @@ const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
 
 const SERVICE_TYPE_CONFIG: Record<string, { label: string; color: string; dot: string }> = {
   routine_maintenance: { label: "Routine Maintenance", color: "bg-info/10 text-info border-info/30", dot: "bg-info" },
-  repair:              { label: "Repair",              color: "bg-amber-50 text-amber-700 border-amber-200", dot: "bg-amber-400" },
+  repair:              { label: "Repair",              color: "bg-warning/8 text-warning border-warning/20", dot: "bg-warning" },
   upgrade:             { label: "Upgrade",             color: "bg-muted text-foreground border-border", dot: "bg-accent" },
-  inspection:          { label: "Inspection",          color: "bg-success/10 text-success border-green-200", dot: "bg-green-400" },
-  warranty_claim:      { label: "Warranty Claim",      color: "bg-destructive/10 text-destructive border-destructive/30", dot: "bg-red-400" },
+  inspection:          { label: "Inspection",          color: "bg-success/10 text-success border-success/30", dot: "bg-success" },
+  warranty_claim:      { label: "Warranty Claim",      color: "bg-destructive/10 text-destructive border-destructive/30", dot: "bg-destructive" },
 };
 
 function fmtDate(d: string | null, opts?: Intl.DateTimeFormatOptions) {
@@ -60,8 +60,8 @@ function warrantyInfo(expiry: string | null) {
   const now = new Date();
   const exp = new Date(expiry);
   const daysLeft = Math.round((exp.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-  if (daysLeft < 0) return { label: `Expired ${Math.abs(Math.floor(daysLeft / 30))} months ago`, color: "text-red-500", Icon: ShieldX, alert: true };
-  if (daysLeft <= 60) return { label: `Expiring in ${daysLeft} days (${fmtDate(expiry, { month: "short", day: "numeric", year: "numeric" })})`, color: "text-amber-500", Icon: ShieldAlert, alert: true };
+  if (daysLeft < 0) return { label: `Expired ${Math.abs(Math.floor(daysLeft / 30))} months ago`, color: "text-destructive", Icon: ShieldX, alert: true };
+  if (daysLeft <= 60) return { label: `Expiring in ${daysLeft} days (${fmtDate(expiry, { month: "short", day: "numeric", year: "numeric" })})`, color: "text-warning", Icon: ShieldAlert, alert: true };
   return { label: `Valid until ${fmtDate(expiry, { month: "long", year: "numeric" })}`, color: "text-success", Icon: ShieldCheck, alert: false };
 }
 
@@ -153,7 +153,7 @@ export default function EquipmentDetail() {
 
       {/* Warranty & Maintenance Status */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <Card className={warranty.alert ? "border-amber-200 bg-amber-50/30" : ""}>
+        <Card className={warranty.alert ? "border-warning/20 bg-warning/5" : ""}>
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-2">
               <WarrantyIcon className={`w-4 h-4 ${warranty.color}`} />
@@ -165,13 +165,13 @@ export default function EquipmentDetail() {
             )}
           </CardContent>
         </Card>
-        <Card className={maintenance.urgent ? "border-amber-200 bg-amber-50/30" : ""}>
+        <Card className={maintenance.urgent ? "border-warning/20 bg-warning/5" : ""}>
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-2">
-              <Wrench className={`w-4 h-4 ${maintenance.urgent ? "text-amber-500" : "text-muted-foreground"}`} />
+              <Wrench className={`w-4 h-4 ${maintenance.urgent ? "text-warning" : "text-muted-foreground"}`} />
               <p className="text-sm font-semibold text-foreground">Maintenance</p>
             </div>
-            <p className={`text-sm font-medium ${maintenance.urgent ? "text-amber-500" : "text-foreground"}`}>{maintenance.label}</p>
+            <p className={`text-sm font-medium ${maintenance.urgent ? "text-warning" : "text-foreground"}`}>{maintenance.label}</p>
             {item.lastMaintenanceDate && (
               <p className="text-xs text-muted-foreground mt-0.5">Last: {fmtDate(item.lastMaintenanceDate, { month: "short", day: "numeric", year: "numeric" })}</p>
             )}

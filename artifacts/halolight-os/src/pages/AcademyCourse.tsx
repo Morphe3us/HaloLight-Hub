@@ -17,7 +17,7 @@ function formatDuration(seconds: number): string {
 }
 
 const LEVEL_COLORS: Record<string, string> = {
-  beginner: "bg-emerald-100 text-emerald-700 border-emerald-200",
+  beginner: "bg-success/15 text-success border-success/30",
   intermediate: "bg-info/15 text-info border-info/30",
   advanced: "bg-muted text-foreground border-border",
 };
@@ -87,7 +87,7 @@ export default function AcademyCourse() {
             alt={course.title}
             className="w-full h-full object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-gray-900/90 via-gray-900/70 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-r from-foreground/90 via-foreground/70 to-transparent" />
         </div>
         <div className="relative p-8 md:p-12 flex flex-col gap-4 min-h-[240px] justify-end">
           <div className="flex flex-wrap gap-2">
@@ -113,7 +113,7 @@ export default function AcademyCourse() {
             </span>
             {progress > 0 && (
               <span className="flex items-center gap-1.5">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                <CheckCircle2 className="w-4 h-4 text-success" />
                 {progress}% {t("academy.completed")}
               </span>
             )}
@@ -171,10 +171,10 @@ export default function AcademyCourse() {
                           <div className="flex items-center gap-4 px-5 py-3.5 hover:bg-muted transition-colors cursor-pointer group">
                             <div className={cn(
                               "h-8 w-8 rounded-full flex items-center justify-center flex-shrink-0 transition-colors",
-                              isCompleted ? "bg-emerald-100" : "bg-muted group-hover:bg-primary/10"
+                              isCompleted ? "bg-success/15" : "bg-muted group-hover:bg-primary/10"
                             )}>
                               {isCompleted
-                                ? <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                                ? <CheckCircle2 className="w-4 h-4 text-success" />
                                 : <PlayCircle className={cn("w-4 h-4", "text-muted-foreground group-hover:text-primary")} />
                               }
                             </div>

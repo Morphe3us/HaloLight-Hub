@@ -162,7 +162,7 @@ function SuggestedActions({
               key={i}
               size="sm"
               variant="outline"
-              className="h-7 text-xs gap-1.5 border-orange-200 text-orange-700 hover:bg-orange-50"
+              className="h-7 text-xs gap-1.5 border-warning/30 text-warning hover:bg-warning/8"
               onClick={onEscalate}
             >
               <ActionIcon type={a.type} />
@@ -213,7 +213,7 @@ function MessageBubble({
           "flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center shadow-sm",
           isUser
             ? "bg-primary text-primary-foreground"
-            : "bg-gradient-to-br from-violet-500 to-blue-600 text-white"
+            : "bg-foreground text-background"
         )}
       >
         {isUser ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
@@ -266,7 +266,7 @@ function MessageBubble({
               className={cn(
                 "w-5 h-5 flex items-center justify-center rounded-full transition-colors",
                 "text-muted-foreground/50 hover:text-muted-foreground focus:outline-none",
-                isSpeaking && "text-violet-500 hover:text-violet-600"
+                isSpeaking && "text-accent hover:text-accent/80"
               )}
             >
               {isSpeaking
@@ -592,7 +592,7 @@ export default function AIAssistant() {
         {/* Provider badge */}
         <div className="p-3 border-t">
           <div className="flex items-center gap-2 px-2.5 py-2 rounded-lg bg-muted/60">
-            <Cpu className="w-3.5 h-3.5 text-violet-500 shrink-0" />
+            <Cpu className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
             <span className="text-[11px] text-muted-foreground truncate">{providerName}</span>
           </div>
         </div>
@@ -603,7 +603,7 @@ export default function AIAssistant() {
         {!activeConvId ? (
           /* ── Welcome / empty state ─────────────────────────────────────── */
           <div className="flex-1 flex flex-col items-center justify-center p-8 text-center overflow-auto">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500 to-blue-600 flex items-center justify-center mb-5 shadow-xl">
+            <div className="w-16 h-16 rounded-2xl bg-foreground flex items-center justify-center mb-5 shadow-xl">
               <Sparkles className="w-8 h-8 text-white" />
             </div>
             <h2 className="text-2xl font-bold mb-2">HaloLight AI Assistant</h2>
@@ -649,15 +649,15 @@ export default function AIAssistant() {
             {/* ── Chat header ────────────────────────────────────────────── */}
             <div className="flex items-center justify-between px-5 py-3 border-b bg-background/90 backdrop-blur-sm shrink-0">
               <div className="flex items-center gap-3 min-w-0">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-500 to-blue-600 flex items-center justify-center shrink-0 shadow-sm">
+                <div className="w-8 h-8 rounded-full bg-foreground flex items-center justify-center shrink-0 shadow-sm">
                   <Bot className="w-4 h-4 text-white" />
                 </div>
                 <div className="min-w-0">
                   <h3 className="font-semibold text-sm truncate">{convTitle}</h3>
                   <p className="text-[11px] text-muted-foreground">
                     {isStreaming ? (
-                      <span className="flex items-center gap-1 text-violet-600">
-                        <span className="w-1.5 h-1.5 rounded-full bg-violet-500 animate-pulse" />
+                      <span className="flex items-center gap-1 text-accent">
+                        <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
                         Generating…
                       </span>
                     ) : (
@@ -675,7 +675,7 @@ export default function AIAssistant() {
                     className={cn(
                       "h-8 w-8 p-0 transition-colors",
                       autoPlay
-                        ? "text-violet-600 bg-violet-50 hover:bg-violet-100"
+                        ? "text-foreground bg-accent/20 hover:bg-accent/30"
                         : "text-muted-foreground hover:text-foreground"
                     )}
                     onClick={() => {
@@ -690,7 +690,7 @@ export default function AIAssistant() {
                 <Button
                   size="sm"
                   variant="outline"
-                  className="gap-1.5 h-8 text-xs border-orange-200 text-orange-700 hover:bg-orange-50"
+                  className="gap-1.5 h-8 text-xs border-warning/30 text-warning hover:bg-warning/8"
                   onClick={() => setEscalateOpen(true)}
                   disabled={messages.length === 0}
                 >
@@ -771,7 +771,7 @@ export default function AIAssistant() {
                 {/* Listening indicator bar */}
                 {voiceInput.isListening && (
                   <div className="flex items-center gap-2 mb-2 px-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse shrink-0" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-destructive animate-pulse shrink-0" />
                     <span className="text-xs text-destructive font-medium">
                       {voiceInput.partialTranscript
                         ? voiceInput.partialTranscript
@@ -839,7 +839,7 @@ export default function AIAssistant() {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5 text-orange-500" />
+              <AlertTriangle className="w-5 h-5 text-warning" />
               Escalate to Support
             </DialogTitle>
             <DialogDescription>
@@ -852,7 +852,7 @@ export default function AIAssistant() {
               Cancel
             </Button>
             <Button
-              className="gap-2 bg-orange-600 hover:bg-orange-700 text-white"
+              className="gap-2 bg-destructive hover:bg-destructive/90 text-destructive-foreground"
               onClick={() => {
                 if (activeConvId) {
                   doEscalate({
