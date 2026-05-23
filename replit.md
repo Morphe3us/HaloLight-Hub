@@ -64,7 +64,31 @@ An all-in-one SaaS customer portal for HaloLight — a professional photobooth a
 - Admin user list view
 - Public landing page
 
-### Planned Phases (2–10)
+### Phase 6 — Hardware Management (complete)
+- Equipment registry (5 tables: equipment, service_history, consumable_catalog, consumable_stock, consumable_orders)
+- 12 API endpoints across equipment.ts and consumables.ts
+- Equipment page with warranty/maintenance alert flags
+- Equipment Detail with service history timeline
+- Consumables page with stock bars, days remaining, reorder workflow
+- Admin Equipment dashboard with alert filters and search
+- Seeded 7 units, 24 service records, 18 stock rows, 8 orders
+
+### Phase 7 — AI Assistant (complete)
+- Provider abstraction layer: `artifacts/api-server/src/lib/ai/`
+  - `provider.ts` — AIProvider interface, RAGSource, SuggestedAction types
+  - `mock.ts` — Local mock provider (no API key needed), domain-aware rich responses
+  - `openai.ts` — OpenAI streaming provider (gpt-4o-mini default)
+  - `claude.ts` — Anthropic streaming provider (claude-3-5-haiku default)
+  - `factory.ts` — Auto-selects provider: OPENAI_API_KEY → ANTHROPIC_API_KEY → Mock
+  - `rag.ts` — RAG retrieval: keyword search on KB articles + Academy courses (vector-search-ready)
+- New SSE streaming endpoint: `POST /ai/conversations/:id/stream`
+- Escalation endpoint: `POST /ai/conversations/:id/escalate` (creates support ticket)
+- Provider info endpoint: `GET /ai/provider`
+- DB schema additions: `sources` (jsonb) and `suggestedActions` (jsonb) on ai_messages; `providerName` on ai_conversations
+- Full AIAssistant.tsx rewrite: SSE streaming chat, source citations, suggested action buttons, provider badge, escalation dialog, conversation history sidebar
+- Seeded 8 starter AI suggested questions
+
+### Planned Phases (8–10)
 See architecture document for full 30-module scope.
 
 ## User preferences

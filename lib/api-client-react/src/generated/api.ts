@@ -30,8 +30,10 @@ import type {
   AiConversation,
   AiConversationDetail,
   AiConversationList,
+  AiEscalationResult,
   AiMessageInput,
   AiMessagePair,
+  AiProviderInfo,
   Client360,
   CommunityChannel,
   CommunityChannelList,
@@ -57,6 +59,7 @@ import type {
   DashboardSummary,
   Equipment,
   EquipmentDetail,
+  EscalateAiConversationBody,
   Event,
   EventInput,
   EventList,
@@ -5352,7 +5355,7 @@ export const getSendAiMessageUrl = (id: string,) => {
 }
 
 /**
- * @summary Send a message in a conversation
+ * @summary Send a message in a conversation (non-streaming)
  */
 export const sendAiMessage = async (id: string,
     aiMessageInput: AiMessageInput, options?: RequestInit): Promise<AiMessagePair> => {
@@ -5402,7 +5405,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type SendAiMessageMutationError = ErrorType<unknown>
 
     /**
- * @summary Send a message in a conversation
+ * @summary Send a message in a conversation (non-streaming)
  */
 export const useSendAiMessage = <TError = ErrorType<unknown>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof sendAiMessage>>, TError,{id: string;data: BodyType<AiMessageInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -5414,6 +5417,227 @@ export const useSendAiMessage = <TError = ErrorType<unknown>,
       > => {
       return useMutation(getSendAiMessageMutationOptions(options));
     }
+
+export const getStreamAiMessageUrl = (id: string,) => {
+
+
+
+
+  return `/api/ai/conversations/${id}/stream`
+}
+
+/**
+ * @summary Send a message and stream the AI response via SSE
+ */
+export const streamAiMessage = async (id: string,
+    aiMessageInput: AiMessageInput, options?: RequestInit): Promise<string> => {
+
+  return customFetch<string>(getStreamAiMessageUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      aiMessageInput,)
+  }
+);}
+
+
+
+
+export const getStreamAiMessageMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof streamAiMessage>>, TError,{id: string;data: BodyType<AiMessageInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof streamAiMessage>>, TError,{id: string;data: BodyType<AiMessageInput>}, TContext> => {
+
+const mutationKey = ['streamAiMessage'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof streamAiMessage>>, {id: string;data: BodyType<AiMessageInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  streamAiMessage(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type StreamAiMessageMutationResult = NonNullable<Awaited<ReturnType<typeof streamAiMessage>>>
+    export type StreamAiMessageMutationBody = BodyType<AiMessageInput>
+    export type StreamAiMessageMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Send a message and stream the AI response via SSE
+ */
+export const useStreamAiMessage = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof streamAiMessage>>, TError,{id: string;data: BodyType<AiMessageInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof streamAiMessage>>,
+        TError,
+        {id: string;data: BodyType<AiMessageInput>},
+        TContext
+      > => {
+      return useMutation(getStreamAiMessageMutationOptions(options));
+    }
+
+export const getEscalateAiConversationUrl = (id: string,) => {
+
+
+
+
+  return `/api/ai/conversations/${id}/escalate`
+}
+
+/**
+ * @summary Escalate conversation to a support ticket
+ */
+export const escalateAiConversation = async (id: string,
+    escalateAiConversationBody?: EscalateAiConversationBody, options?: RequestInit): Promise<AiEscalationResult> => {
+
+  return customFetch<AiEscalationResult>(getEscalateAiConversationUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      escalateAiConversationBody,)
+  }
+);}
+
+
+
+
+export const getEscalateAiConversationMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof escalateAiConversation>>, TError,{id: string;data?: BodyType<EscalateAiConversationBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof escalateAiConversation>>, TError,{id: string;data?: BodyType<EscalateAiConversationBody>}, TContext> => {
+
+const mutationKey = ['escalateAiConversation'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof escalateAiConversation>>, {id: string;data?: BodyType<EscalateAiConversationBody>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  escalateAiConversation(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type EscalateAiConversationMutationResult = NonNullable<Awaited<ReturnType<typeof escalateAiConversation>>>
+    export type EscalateAiConversationMutationBody = BodyType<EscalateAiConversationBody> | undefined
+    export type EscalateAiConversationMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Escalate conversation to a support ticket
+ */
+export const useEscalateAiConversation = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof escalateAiConversation>>, TError,{id: string;data?: BodyType<EscalateAiConversationBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof escalateAiConversation>>,
+        TError,
+        {id: string;data?: BodyType<EscalateAiConversationBody>},
+        TContext
+      > => {
+      return useMutation(getEscalateAiConversationMutationOptions(options));
+    }
+
+export const getGetAiProviderUrl = () => {
+
+
+
+
+  return `/api/ai/provider`
+}
+
+/**
+ * @summary Get current AI provider info
+ */
+export const getAiProvider = async ( options?: RequestInit): Promise<AiProviderInfo> => {
+
+  return customFetch<AiProviderInfo>(getGetAiProviderUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAiProviderQueryKey = () => {
+    return [
+    `/api/ai/provider`
+    ] as const;
+    }
+
+
+export const getGetAiProviderQueryOptions = <TData = Awaited<ReturnType<typeof getAiProvider>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAiProvider>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAiProviderQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAiProvider>>> = ({ signal }) => getAiProvider({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAiProvider>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAiProviderQueryResult = NonNullable<Awaited<ReturnType<typeof getAiProvider>>>
+export type GetAiProviderQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get current AI provider info
+ */
+
+export function useGetAiProvider<TData = Awaited<ReturnType<typeof getAiProvider>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAiProvider>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAiProviderQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
 
 export const getListAiSuggestedQuestionsUrl = () => {
 

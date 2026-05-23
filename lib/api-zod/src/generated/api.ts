@@ -1645,6 +1645,7 @@ export const ListAiConversationsResponse = zod.object({
   "id": zod.string().optional(),
   "userId": zod.string().optional(),
   "title": zod.string().optional(),
+  "providerName": zod.string().nullish(),
   "createdAt": zod.coerce.date().optional(),
   "updatedAt": zod.coerce.date().optional()
 })).optional()
@@ -1669,6 +1670,18 @@ export const GetAiConversationResponse = zod.object({
   "conversationId": zod.string().optional(),
   "role": zod.enum(['user', 'assistant']).optional(),
   "content": zod.string().optional(),
+  "sources": zod.array(zod.object({
+  "id": zod.string().optional(),
+  "type": zod.enum(['kb', 'academy', 'support', 'product']).optional(),
+  "title": zod.string().optional(),
+  "url": zod.string().optional(),
+  "excerpt": zod.string().optional()
+})).nullish(),
+  "suggestedActions": zod.array(zod.object({
+  "type": zod.enum(['escalate', 'navigate', 'reorder', 'book_service']).optional(),
+  "label": zod.string().optional(),
+  "data": zod.record(zod.string(), zod.unknown()).optional()
+})).nullish(),
   "createdAt": zod.coerce.date().optional()
 })).optional()
 })
@@ -1683,7 +1696,7 @@ export const DeleteAiConversationParams = zod.object({
 
 
 /**
- * @summary Send a message in a conversation
+ * @summary Send a message in a conversation (non-streaming)
  */
 export const SendAiMessageParams = zod.object({
   "id": zod.coerce.string()
@@ -1691,6 +1704,40 @@ export const SendAiMessageParams = zod.object({
 
 export const SendAiMessageBody = zod.object({
   "content": zod.string()
+})
+
+
+/**
+ * @summary Send a message and stream the AI response via SSE
+ */
+export const StreamAiMessageParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const StreamAiMessageBody = zod.object({
+  "content": zod.string()
+})
+
+
+/**
+ * @summary Escalate conversation to a support ticket
+ */
+export const EscalateAiConversationParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const EscalateAiConversationBody = zod.object({
+  "subject": zod.string().optional(),
+  "priority": zod.enum(['low', 'medium', 'high', 'urgent']).optional()
+})
+
+
+/**
+ * @summary Get current AI provider info
+ */
+export const GetAiProviderResponse = zod.object({
+  "name": zod.string().optional(),
+  "modelId": zod.string().optional()
 })
 
 

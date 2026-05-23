@@ -952,8 +952,45 @@ export interface AiConversation {
   id?: string;
   userId?: string;
   title?: string;
+  providerName?: string | null;
   createdAt?: string;
   updatedAt?: string;
+}
+
+export type RAGSourceType = typeof RAGSourceType[keyof typeof RAGSourceType];
+
+
+export const RAGSourceType = {
+  kb: 'kb',
+  academy: 'academy',
+  support: 'support',
+  product: 'product',
+} as const;
+
+export interface RAGSource {
+  id?: string;
+  type?: RAGSourceType;
+  title?: string;
+  url?: string;
+  excerpt?: string;
+}
+
+export type SuggestedActionType = typeof SuggestedActionType[keyof typeof SuggestedActionType];
+
+
+export const SuggestedActionType = {
+  escalate: 'escalate',
+  navigate: 'navigate',
+  reorder: 'reorder',
+  book_service: 'book_service',
+} as const;
+
+export type SuggestedActionData = { [key: string]: unknown };
+
+export interface SuggestedAction {
+  type?: SuggestedActionType;
+  label?: string;
+  data?: SuggestedActionData;
 }
 
 export type AiMessageRole = typeof AiMessageRole[keyof typeof AiMessageRole];
@@ -969,7 +1006,26 @@ export interface AiMessage {
   conversationId?: string;
   role?: AiMessageRole;
   content?: string;
+  sources?: RAGSource[] | null;
+  suggestedActions?: SuggestedAction[] | null;
   createdAt?: string;
+}
+
+export interface AiProviderInfo {
+  name?: string;
+  modelId?: string;
+}
+
+export type AiEscalationResultTicket = {
+  id?: string;
+  title?: string;
+  status?: string;
+  priority?: string;
+  createdAt?: string;
+};
+
+export interface AiEscalationResult {
+  ticket?: AiEscalationResultTicket;
 }
 
 export interface AiSuggestedQuestion {
@@ -1660,6 +1716,21 @@ status?: string;
 search?: string;
 limit?: number;
 offset?: number;
+};
+
+export type EscalateAiConversationBodyPriority = typeof EscalateAiConversationBodyPriority[keyof typeof EscalateAiConversationBodyPriority];
+
+
+export const EscalateAiConversationBodyPriority = {
+  low: 'low',
+  medium: 'medium',
+  high: 'high',
+  urgent: 'urgent',
+} as const;
+
+export type EscalateAiConversationBody = {
+  subject?: string;
+  priority?: EscalateAiConversationBodyPriority;
 };
 
 export type ListAiSuggestedQuestions200 = {

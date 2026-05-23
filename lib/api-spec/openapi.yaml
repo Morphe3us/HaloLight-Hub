@@ -1451,7 +1451,7 @@ paths:
     post:
       operationId: sendAiMessage
       tags: [ai]
-      summary: Send a message in a conversation
+      summary: Send a message in a conversation (non-streaming)
       parameters:
         - name: id
           in: path
@@ -1470,6 +1470,72 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AiMessagePair"
+
+  /ai/conversations/{id}/stream:
+    post:
+      operationId: streamAiMessage
+      tags: [ai]
+      summary: Send a message and stream the AI response via SSE
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AiMessageInput"
+      responses:
+        "200":
+          description: SSE stream of AI response chunks
+          content:
+            text/event-stream:
+              schema:
+                type: string
+
+  /ai/conversations/{id}/escalate:
+    post:
+      operationId: escalateAiConversation
+      tags: [ai]
+      summary: Escalate conversation to a support ticket
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                subject:
+                  type: string
+                priority:
+                  type: string
+                  enum: [low, medium, high, urgent]
+      responses:
+        "201":
+          description: Created support ticket
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AiEscalationResult"
+
+  /ai/provider:
+    get:
+      operationId: getAiProvider
+      tags: [ai]
+      summary: Get current AI provider info
+      responses:
+        "200":
+          description: Provider info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AiProviderInfo"
 
   /ai/suggested-questions:
     get:
@@ -3270,12 +3336,42 @@ components:
           type: string
         title:
           type: string
+        providerName:
+          type: string
+          nullable: true
         createdAt:
           type: string
           format: date-time
         updatedAt:
           type: string
           format: date-time
+
+    RAGSource:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+          enum: [kb, academy, support, product]
+        title:
+          type: string
+        url:
+          type: string
+        excerpt:
+          type: string
+
+    SuggestedAction:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [escalate, navigate, reorder, book_service]
+        label:
+          type: string
+        data:
+          type: object
+          additionalProperties: true
 
     AiMessage:
       type: object
@@ -3289,9 +3385,45 @@ components:
           enum: [user, assistant]
         content:
           type: string
+        sources:
+          type: array
+          nullable: true
+          items:
+            $ref: "#/components/schemas/RAGSource"
+        suggestedActions:
+          type: array
+          nullable: true
+          items:
+            $ref: "#/components/schemas/SuggestedAction"
         createdAt:
           type: string
           format: date-time
+
+    AiProviderInfo:
+      type: object
+      properties:
+        name:
+          type: string
+        modelId:
+          type: string
+
+    AiEscalationResult:
+      type: object
+      properties:
+        ticket:
+          type: object
+          properties:
+            id:
+              type: string
+            title:
+              type: string
+            status:
+              type: string
+            priority:
+              type: string
+            createdAt:
+              type: string
+              format: date-time
 
     AiSuggestedQuestion:
       type: object
@@ -3977,6 +4109,9 @@ components:
           type: string
         title:
           type: string
+        providerName:
+          type: string
+          nullable: true
         createdAt:
           type: string
           format: date-time
