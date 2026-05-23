@@ -6,7 +6,6 @@ import {
   useGetAiProvider,
 } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -16,9 +15,9 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import {
-  Send, Plus, Trash2, Bot, User, Sparkles, MessageSquare, Loader2,
+  Send, Plus, Trash2, Bot, User, Sparkles, Loader2,
   BookOpen, GraduationCap, Ticket, ArrowRight, Package, Wrench,
-  AlertTriangle, ChevronRight, Cpu, StopCircle, ExternalLink,
+  AlertTriangle, Cpu, StopCircle, ExternalLink,
   Volume2, VolumeX, Volume1,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -76,7 +75,6 @@ function formatDate(d: string | Date | null | undefined) {
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
-// Markdown-lite: **bold**, line breaks preserved
 function RichText({ text }: { text: string }) {
   const segments = text.split(/(\*\*[^*]+\*\*)/g);
   return (
@@ -113,7 +111,7 @@ function SourceIcon({ type }: { type: RAGSource["type"] }) {
 function SourceCitations({ sources }: { sources: RAGSource[] }) {
   if (!sources.length) return null;
   return (
-    <div className="mt-3 pt-3 border-t border-muted/60">
+    <div className="mt-3 pt-3 border-t border-border/40">
       <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold mb-2">
         Sources
       </p>
@@ -210,35 +208,38 @@ function MessageBubble({
     <div className={cn("flex gap-3", isUser ? "flex-row-reverse" : "flex-row")}>
       <div
         className={cn(
-          "flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center shadow-sm",
+          "flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center mt-0.5",
           isUser
             ? "bg-primary text-primary-foreground"
             : "bg-foreground text-background"
         )}
       >
-        {isUser ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
+        {isUser ? <User className="w-3.5 h-3.5" /> : <Bot className="w-3.5 h-3.5" />}
       </div>
 
-      <div className={cn("max-w-[78%]", isUser ? "items-end" : "items-start")}>
+      <div className={cn("flex flex-col max-w-[82%]", isUser ? "items-end" : "items-start")}>
         <div
           className={cn(
             "rounded-2xl px-4 py-3 text-sm leading-relaxed",
             isUser
               ? "bg-primary text-primary-foreground rounded-tr-sm"
-              : "bg-muted text-foreground rounded-tl-sm"
+              : "bg-card border border-border rounded-tl-sm"
           )}
         >
           {displayContent ? (
             <span className="whitespace-pre-wrap">
               <RichText text={displayContent} />
               {isStreaming && (
-                <span className="inline-block w-1 h-4 bg-current ml-0.5 animate-pulse align-middle" />
+                <span className="inline-block w-0.5 h-4 bg-current ml-0.5 animate-pulse align-middle opacity-70" />
               )}
             </span>
           ) : isStreaming ? (
             <span className="flex items-center gap-2 text-muted-foreground">
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              Thinking…
+              <span className="flex gap-0.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/60 animate-bounce [animation-delay:0ms]" />
+                <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/60 animate-bounce [animation-delay:150ms]" />
+                <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/60 animate-bounce [animation-delay:300ms]" />
+              </span>
             </span>
           ) : null}
 
@@ -255,7 +256,7 @@ function MessageBubble({
           "flex items-center gap-2 px-1 mt-1",
           isUser ? "justify-end" : "justify-start"
         )}>
-          <p className="text-[11px] text-muted-foreground">
+          <p className="text-[11px] text-muted-foreground/60">
             {formatTime(message.createdAt)}
           </p>
           {canSpeak && (
@@ -265,7 +266,7 @@ function MessageBubble({
               aria-label={isSpeaking ? "Stop speaking" : "Read aloud"}
               className={cn(
                 "w-5 h-5 flex items-center justify-center rounded-full transition-colors",
-                "text-muted-foreground/50 hover:text-muted-foreground focus:outline-none",
+                "text-muted-foreground/40 hover:text-muted-foreground focus:outline-none",
                 isSpeaking && "text-accent hover:text-accent/80"
               )}
             >
@@ -281,14 +282,99 @@ function MessageBubble({
   );
 }
 
-// ─── Default Starter Prompts ──────────────────────────────────────────────────
+// ─── Suggestion pills ─────────────────────────────────────────────────────────
 
-const STARTERS = [
-  { icon: <Wrench className="w-4 h-4" />, text: "My printer is jamming — how do I fix it?" },
-  { icon: <Package className="w-4 h-4" />, text: "How do I know when to reorder ribbon?" },
-  { icon: <GraduationCap className="w-4 h-4" />, text: "What Academy courses should I start with?" },
-  { icon: <MessageSquare className="w-4 h-4" />, text: "What's the best way to price a wedding event?" },
+const DEFAULT_PILLS = [
+  "My printer is jamming",
+  "How do I reorder consumables?",
+  "Which Academy course should I start with?",
+  "How should I price a wedding event?",
 ];
+
+// ─── Integrated input bar (shared between welcome + chat states) ──────────────
+
+function InputBar({
+  value,
+  onChange,
+  onSubmit,
+  onStop,
+  isStreaming,
+  isDisabled,
+  voiceInput,
+  placeholder,
+  inputRef,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  onSubmit: () => void;
+  onStop: () => void;
+  isStreaming: boolean;
+  isDisabled: boolean;
+  voiceInput: ReturnType<typeof useVoiceInput>;
+  placeholder?: string;
+  inputRef?: React.RefObject<HTMLInputElement | null>;
+}) {
+  return (
+    <div className="relative">
+      {voiceInput.isListening && (
+        <div className="absolute -top-7 left-0 flex items-center gap-1.5 text-xs text-destructive font-medium">
+          <span className="w-1.5 h-1.5 rounded-full bg-destructive animate-pulse shrink-0" />
+          {voiceInput.partialTranscript || "Listening… speak your question"}
+        </div>
+      )}
+      <div className={cn(
+        "flex items-center gap-1 rounded-2xl border bg-card pl-4 pr-2 py-2 transition-shadow",
+        "focus-within:ring-2 focus-within:ring-ring/30 focus-within:border-ring/50 shadow-sm"
+      )}>
+        <input
+          ref={inputRef}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              onSubmit();
+            }
+          }}
+          placeholder={voiceInput.isListening ? "Listening…" : (placeholder ?? "Message HaloLight AI…")}
+          disabled={isStreaming || voiceInput.isActive || isDisabled}
+          className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground py-1.5 min-w-0"
+          autoComplete="off"
+        />
+        <div className="flex items-center gap-1 shrink-0">
+          {voiceInput.isSupported && (
+            <VoiceButton
+              state={voiceInput.state}
+              onClick={() => void voiceInput.start()}
+              disabled={isStreaming}
+              partialTranscript={voiceInput.partialTranscript}
+            />
+          )}
+          {isStreaming ? (
+            <button
+              type="button"
+              onClick={onStop}
+              className="p-2 rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors"
+              aria-label="Stop generating"
+            >
+              <StopCircle className="w-4 h-4" />
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={onSubmit}
+              disabled={!value.trim() || voiceInput.isActive || isDisabled}
+              className="p-2 rounded-xl bg-primary text-primary-foreground disabled:opacity-25 hover:bg-primary/90 transition-all"
+              aria-label="Send message"
+            >
+              <Send className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
@@ -304,7 +390,8 @@ export default function AIAssistant() {
   const [autoPlay, setAutoPlay] = useState(false);
   const [pendingVoiceSend, setPendingVoiceSend] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const chatInputRef = useRef<HTMLInputElement>(null);
+  const welcomeInputRef = useRef<HTMLInputElement>(null);
   const streamFinalContentRef = useRef("");
 
   const { data: convsData, isLoading: convsLoading } = useListAiConversations();
@@ -319,7 +406,7 @@ export default function AIAssistant() {
       onSuccess: (data) => {
         qc.invalidateQueries({ queryKey: ["/api/ai/conversations"] });
         setActiveConvId(data.id ?? null);
-        setTimeout(() => inputRef.current?.focus(), 100);
+        setTimeout(() => chatInputRef.current?.focus(), 100);
       },
     },
   });
@@ -465,20 +552,17 @@ export default function AIAssistant() {
     setPendingUserMsg(null);
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      void sendMessage();
-    }
-  };
-
-  const handleStarterClick = (text: string) => {
+  // Start a conversation from the welcome state (pill or typed input)
+  const handleWelcomeSubmit = (text?: string) => {
+    const msg = (text ?? input).trim();
+    if (!msg || isCreating) return;
+    if (!text) setInput("");
     createConv(undefined as unknown as void, {
       onSuccess: (data) => {
         qc.invalidateQueries({ queryKey: ["/api/ai/conversations"] });
         if (data.id) {
           setActiveConvId(data.id);
-          setTimeout(() => void sendMessage(text), 300);
+          setTimeout(() => void sendMessage(msg), 300);
         }
       },
     });
@@ -524,6 +608,10 @@ export default function AIAssistant() {
   const providerName = providerData?.name ?? "AI Assistant";
   const isStreaming = !!stream;
 
+  const pills = suggestions.length > 0
+    ? suggestions.slice(0, 4).map((s) => s.question)
+    : DEFAULT_PILLS;
+
   const displayMessages: Array<StoredMessage & { isOptimistic?: boolean }> = [
     ...messages,
     ...(pendingUserMsg && !messages.find((m) => m.content === pendingUserMsg && m.role === "user")
@@ -532,29 +620,32 @@ export default function AIAssistant() {
   ];
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] overflow-hidden">
-      {/* ── Sidebar ─────────────────────────────────────────────────────── */}
-      <div className="w-64 border-r bg-muted/20 flex flex-col shrink-0">
+    <div className="flex h-[calc(100vh-4rem)] overflow-hidden" data-testid="page-ai-assistant">
+
+      {/* ── Conversation sidebar ──────────────────────────────────────────── */}
+      <div className="w-60 border-r bg-muted/10 flex flex-col shrink-0">
         <div className="p-3 border-b">
-          <Button
-            className="w-full gap-2"
+          <button
             onClick={() => newConv()}
             disabled={isCreating}
+            className="w-full flex items-center justify-center gap-2 rounded-xl border border-border bg-card hover:bg-muted py-2 text-sm font-medium text-foreground transition-colors disabled:opacity-50"
           >
-            {isCreating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-            New Chat
-          </Button>
+            {isCreating
+              ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              : <Plus className="w-3.5 h-3.5" />}
+            New chat
+          </button>
         </div>
 
         <ScrollArea className="flex-1">
           <div className="p-2 space-y-0.5">
             {convsLoading ? (
               <div className="flex items-center justify-center py-8">
-                <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+                <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
               </div>
             ) : conversations.length === 0 ? (
-              <p className="text-center text-xs text-muted-foreground py-8 px-4">
-                No conversations yet. Start a new chat!
+              <p className="text-center text-xs text-muted-foreground py-8 px-3 leading-relaxed">
+                No conversations yet
               </p>
             ) : (
               conversations.map((c) => (
@@ -569,8 +660,8 @@ export default function AIAssistant() {
                   className={cn(
                     "w-full text-left rounded-lg px-3 py-2.5 text-sm transition-colors group",
                     activeConvId === c.id
-                      ? "bg-primary/10 text-primary"
-                      : "hover:bg-muted text-foreground"
+                      ? "bg-primary/8 text-primary"
+                      : "hover:bg-muted/60 text-foreground"
                   )}
                 >
                   <div className="flex items-start justify-between gap-1">
@@ -578,83 +669,88 @@ export default function AIAssistant() {
                     <button
                       onClick={(e) => { e.stopPropagation(); if (c.id) deleteConv({ id: c.id }); }}
                       className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-opacity shrink-0 mt-0.5"
+                      aria-label="Delete conversation"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
-                  <p className="text-[11px] text-muted-foreground mt-0.5">{formatDate(c.updatedAt)}</p>
+                  <p className="text-[11px] text-muted-foreground/70 mt-0.5">{formatDate(c.updatedAt)}</p>
                 </button>
               ))
             )}
           </div>
         </ScrollArea>
 
-        {/* Provider badge */}
         <div className="p-3 border-t">
-          <div className="flex items-center gap-2 px-2.5 py-2 rounded-lg bg-muted/60">
-            <Cpu className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-            <span className="text-[11px] text-muted-foreground truncate">{providerName}</span>
+          <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-muted/40">
+            <Cpu className="w-3 h-3 text-muted-foreground/60 shrink-0" />
+            <span className="text-[11px] text-muted-foreground/70 truncate">{providerName}</span>
           </div>
         </div>
       </div>
 
-      {/* ── Main area ────────────────────────────────────────────────────── */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+      {/* ── Main area ─────────────────────────────────────────────────────── */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-background">
+
         {!activeConvId ? (
-          /* ── Welcome / empty state ─────────────────────────────────────── */
-          <div className="flex-1 flex flex-col items-center justify-center p-8 text-center overflow-auto">
-            <div className="w-16 h-16 rounded-2xl bg-foreground flex items-center justify-center mb-5 shadow-xl">
-              <Sparkles className="w-8 h-8 text-white" />
-            </div>
-            <h2 className="text-2xl font-bold mb-2">HaloLight AI Assistant</h2>
-            <p className="text-muted-foreground max-w-sm mb-8 text-sm">
-              Ask me anything about your equipment, consumables, bookings, or business operations.
-              I'll search your knowledge base and academy for the best answers.
-            </p>
+          /* ── Welcome / empty state ──────────────────────────────────────── */
+          <div className="flex-1 flex flex-col items-center justify-center px-6 py-12 overflow-auto">
+            <div className="w-full max-w-2xl flex flex-col items-center">
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-lg mb-8">
-              {(suggestions.length > 0
-                ? suggestions.slice(0, 4).map((s) => ({ icon: <MessageSquare className="w-4 h-4" />, text: s.question }))
-                : STARTERS
-              ).map((p, i) => (
-                <button
-                  key={i}
-                  onClick={() => handleStarterClick(p.text ?? "")}
-                  disabled={isCreating}
-                  className="flex items-start gap-3 p-3.5 rounded-xl border bg-card hover:bg-muted/50 text-left text-sm transition-colors group"
-                >
-                  <span className="text-primary mt-0.5 shrink-0">{p.icon}</span>
-                  <span className="text-muted-foreground group-hover:text-foreground transition-colors flex-1 text-sm">{p.text ?? ""}</span>
-                  <ChevronRight className="w-4 h-4 text-muted-foreground/40 shrink-0 mt-0.5 group-hover:text-muted-foreground transition-colors" />
-                </button>
-              ))}
-            </div>
+              {/* Icon + title */}
+              <div className="w-10 h-10 rounded-2xl bg-foreground flex items-center justify-center mb-5 shadow-md">
+                <Sparkles className="w-5 h-5 text-background" />
+              </div>
+              <h1 className="text-2xl font-bold text-foreground mb-1.5 tracking-tight">
+                HaloLight AI Assistant
+              </h1>
+              <p className="text-muted-foreground text-sm mb-8">
+                How can I help you today?
+              </p>
 
-            <div className="flex items-center gap-3">
-              <Button onClick={() => newConv()} disabled={isCreating} size="lg" className="gap-2">
-                {isCreating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-                Start a conversation
-              </Button>
-              {voiceInput.isSupported && (
-                <VoiceButton
-                  state={voiceInput.state}
-                  onClick={() => void voiceInput.start()}
-                  partialTranscript={voiceInput.partialTranscript}
+              {/* Integrated input */}
+              <div className="w-full mb-5">
+                <InputBar
+                  value={input}
+                  onChange={setInput}
+                  onSubmit={() => handleWelcomeSubmit()}
+                  onStop={stopStreaming}
+                  isStreaming={false}
+                  isDisabled={isCreating}
+                  voiceInput={voiceInput}
+                  placeholder="Ask about equipment, pricing, bookings…"
+                  inputRef={welcomeInputRef}
                 />
-              )}
+              </div>
+
+              {/* Suggestion pills */}
+              <div className="flex flex-wrap justify-center gap-2">
+                {pills.map((p, i) => (
+                  <button
+                    key={i}
+                    onClick={() => handleWelcomeSubmit(p)}
+                    disabled={isCreating}
+                    className="px-3.5 py-1.5 rounded-full border border-border bg-card text-sm text-muted-foreground hover:text-foreground hover:bg-muted hover:border-border/80 transition-colors disabled:opacity-50"
+                  >
+                    {p}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
+
         ) : (
+          /* ── Active conversation ──────────────────────────────────────────── */
           <>
-            {/* ── Chat header ────────────────────────────────────────────── */}
-            <div className="flex items-center justify-between px-5 py-3 border-b bg-background/90 backdrop-blur-sm shrink-0">
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="w-8 h-8 rounded-full bg-foreground flex items-center justify-center shrink-0 shadow-sm">
-                  <Bot className="w-4 h-4 text-white" />
+            {/* Chat header */}
+            <div className="flex items-center justify-between px-5 py-2.5 border-b bg-background/95 backdrop-blur-sm shrink-0">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-7 h-7 rounded-full bg-foreground flex items-center justify-center shrink-0">
+                  <Bot className="w-3.5 h-3.5 text-background" />
                 </div>
                 <div className="min-w-0">
-                  <h3 className="font-semibold text-sm truncate">{convTitle}</h3>
-                  <p className="text-[11px] text-muted-foreground">
+                  <p className="font-semibold text-sm truncate text-foreground">{convTitle}</p>
+                  <p className="text-[11px] text-muted-foreground leading-none mt-0.5">
                     {isStreaming ? (
                       <span className="flex items-center gap-1 text-accent">
                         <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
@@ -666,70 +762,65 @@ export default function AIAssistant() {
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-1.5">
-                {/* TTS auto-play toggle */}
+              <div className="flex items-center gap-1">
                 {voiceOutput.isSupported && (
-                  <Button
-                    size="sm"
-                    variant={autoPlay ? "secondary" : "ghost"}
-                    className={cn(
-                      "h-8 w-8 p-0 transition-colors",
-                      autoPlay
-                        ? "text-foreground bg-accent/20 hover:bg-accent/30"
-                        : "text-muted-foreground hover:text-foreground"
-                    )}
+                  <button
                     onClick={() => {
                       if (autoPlay) voiceOutput.stop();
                       setAutoPlay((v) => !v);
                     }}
-                    title={autoPlay ? "Disable auto-read responses" : "Enable auto-read responses"}
+                    title={autoPlay ? "Disable auto-read" : "Enable auto-read"}
+                    className={cn(
+                      "w-8 h-8 flex items-center justify-center rounded-lg transition-colors",
+                      autoPlay
+                        ? "text-foreground bg-accent/20 hover:bg-accent/30"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                    )}
                   >
                     {autoPlay ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
-                  </Button>
+                  </button>
                 )}
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="gap-1.5 h-8 text-xs border-warning/30 text-warning hover:bg-warning/8"
+                <button
                   onClick={() => setEscalateOpen(true)}
                   disabled={messages.length === 0}
+                  className="flex items-center gap-1.5 px-2.5 h-8 rounded-lg border border-warning/30 text-warning hover:bg-warning/8 text-xs font-medium transition-colors disabled:opacity-40"
                 >
                   <AlertTriangle className="w-3.5 h-3.5" />
                   Escalate
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
+                </button>
+                <button
                   onClick={() => { if (activeConvId) deleteConv({ id: activeConvId }); }}
                   disabled={isDeleting}
+                  className="w-8 h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-destructive hover:bg-muted transition-colors"
+                  aria-label="Delete conversation"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
-                </Button>
+                </button>
               </div>
             </div>
 
-            {/* ── Messages ─────────────────────────────────────────────── */}
+            {/* Messages */}
             <ScrollArea className="flex-1">
-              <div className="px-5 py-6 space-y-6 max-w-3xl mx-auto w-full">
+              <div className="px-6 py-6 space-y-6 max-w-3xl mx-auto w-full">
                 {convLoading ? (
                   <div className="flex items-center justify-center py-20">
-                    <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                    <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
                   </div>
                 ) : displayMessages.length === 0 && !isStreaming ? (
-                  <div className="text-center py-16 space-y-3">
-                    <MessageSquare className="w-10 h-10 text-muted-foreground/40 mx-auto" />
-                    <p className="text-muted-foreground text-sm">Send a message to get started</p>
-                    {suggestions.slice(0, 3).map((s) => (
-                      <button
-                        key={s.id}
-                        onClick={() => void sendMessage(s.question)}
-                        disabled={isStreaming}
-                        className="block w-full max-w-xs mx-auto text-xs text-primary hover:underline"
-                      >
-                        {s.question}
-                      </button>
-                    ))}
+                  <div className="flex flex-col items-center justify-center py-16 gap-3">
+                    <p className="text-sm text-muted-foreground">Send a message to get started</p>
+                    <div className="flex flex-wrap justify-center gap-2 max-w-md">
+                      {pills.slice(0, 3).map((p, i) => (
+                        <button
+                          key={i}
+                          onClick={() => void sendMessage(p)}
+                          disabled={isStreaming}
+                          className="px-3 py-1.5 rounded-full border border-border bg-card text-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                        >
+                          {p}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 ) : (
                   <>
@@ -745,7 +836,6 @@ export default function AIAssistant() {
                         isSpeaking={voiceOutput.speakingId === m.id && voiceOutput.isPlaying}
                       />
                     ))}
-                    {/* Streaming assistant response */}
                     {isStreaming && stream && (
                       <MessageBubble
                         key="streaming"
@@ -765,68 +855,22 @@ export default function AIAssistant() {
               </div>
             </ScrollArea>
 
-            {/* ── Input ────────────────────────────────────────────────── */}
-            <div className="border-t bg-background px-4 py-4 shrink-0">
+            {/* Input bar */}
+            <div className="border-t bg-background px-5 py-4 shrink-0">
               <div className="max-w-3xl mx-auto">
-                {/* Listening indicator bar */}
-                {voiceInput.isListening && (
-                  <div className="flex items-center gap-2 mb-2 px-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-destructive animate-pulse shrink-0" />
-                    <span className="text-xs text-destructive font-medium">
-                      {voiceInput.partialTranscript
-                        ? voiceInput.partialTranscript
-                        : "Listening… speak your question"}
-                    </span>
-                  </div>
-                )}
-                <div className="flex gap-2">
-                  <Input
-                    ref={inputRef}
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    placeholder={
-                      voiceInput.isListening
-                        ? "Listening…"
-                        : "Ask about equipment, consumables, bookings…"
-                    }
-                    disabled={isStreaming || voiceInput.isActive}
-                    className="flex-1 h-11"
-                    autoComplete="off"
-                  />
-                  {voiceInput.isSupported && (
-                    <VoiceButton
-                      state={voiceInput.state}
-                      onClick={() => void voiceInput.start()}
-                      disabled={isStreaming}
-                      partialTranscript={voiceInput.partialTranscript}
-                    />
-                  )}
-                  {isStreaming ? (
-                    <Button
-                      variant="destructive"
-                      size="icon"
-                      className="h-11 w-11 shrink-0"
-                      onClick={stopStreaming}
-                    >
-                      <StopCircle className="w-5 h-5" />
-                    </Button>
-                  ) : (
-                    <Button
-                      size="icon"
-                      className="h-11 w-11 shrink-0"
-                      onClick={() => void sendMessage()}
-                      disabled={!input.trim() || voiceInput.isActive}
-                    >
-                      <Send className="w-4 h-4" />
-                    </Button>
-                  )}
-                </div>
-                <p className="text-[11px] text-muted-foreground text-center mt-2">
-                  Responses are powered by your Knowledge Base &amp; Academy content.
-                  {providerData && (
-                    <span className="ml-1 text-muted-foreground/60">· {providerData.name}</span>
-                  )}
+                <InputBar
+                  value={input}
+                  onChange={setInput}
+                  onSubmit={() => void sendMessage()}
+                  onStop={stopStreaming}
+                  isStreaming={isStreaming}
+                  isDisabled={false}
+                  voiceInput={voiceInput}
+                  inputRef={chatInputRef}
+                />
+                <p className="text-[11px] text-muted-foreground/50 text-center mt-2.5">
+                  Powered by your Knowledge Base &amp; Academy
+                  {providerData && <span className="ml-1">· {providerData.name}</span>}
                 </p>
               </div>
             </div>
