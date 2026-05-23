@@ -8,7 +8,7 @@ export default function Landing() {
       {/* Header */}
       <header className="bg-background/80 backdrop-blur-md border-b border-border px-6 py-4 flex items-center justify-between sticky top-0 z-50">
         <div className="flex items-center gap-3">
-          <img src="/logo-hub.png" alt="HaloLight Hub" className="h-10 w-auto object-contain dark:invert" />
+          <img src="/logo-hub.png" alt="HaloLight Hub" className="w-44 h-auto object-contain dark:invert" />
         </div>
         <div className="flex items-center gap-3">
           <Link href="/sign-in">
@@ -35,7 +35,7 @@ export default function Landing() {
             Now Available for Partners
           </div>
           <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-foreground mb-6 max-w-4xl leading-[1.1]">
-            The complete operating system for{" "}
+            The complete hub for{" "}
             <span style={{ color: "#DDB398" }}>photobooth businesses</span>.
           </h1>
           <p className="text-xl text-muted-foreground mb-10 max-w-2xl leading-relaxed">
