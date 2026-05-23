@@ -11,18 +11,18 @@ import { useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Send, Shield, User, Clock, CheckCircle2, AlertCircle, Tag } from "lucide-react";
 
 const statusColors: Record<string, string> = {
-  open: "bg-blue-100 text-blue-700",
-  in_progress: "bg-purple-100 text-purple-700",
-  waiting_on_client: "bg-yellow-100 text-yellow-700",
-  resolved: "bg-green-100 text-green-700",
-  closed: "bg-gray-100 text-gray-600",
+  open: "bg-info/15 text-info",
+  in_progress: "bg-muted text-foreground",
+  waiting_on_client: "bg-warning/15 text-yellow-700",
+  resolved: "bg-success/15 text-success",
+  closed: "bg-muted text-muted-foreground",
 };
 
 const priorityColors: Record<string, string> = {
-  low: "bg-gray-100 text-gray-600",
-  medium: "bg-blue-100 text-blue-700",
+  low: "bg-muted text-muted-foreground",
+  medium: "bg-info/15 text-info",
   high: "bg-orange-100 text-orange-700",
-  urgent: "bg-red-100 text-red-700",
+  urgent: "bg-destructive/15 text-destructive",
 };
 
 function formatDate(d: string | Date | null | undefined) {
@@ -65,8 +65,8 @@ export default function TicketDetail() {
   if (isLoading) {
     return (
       <div className="max-w-3xl mx-auto space-y-4">
-        <div className="h-8 w-48 bg-gray-200 rounded animate-pulse" />
-        <div className="h-40 bg-gray-100 rounded-lg animate-pulse" />
+        <div className="h-8 w-48 bg-border rounded animate-pulse" />
+        <div className="h-40 bg-muted rounded-lg animate-pulse" />
       </div>
     );
   }
@@ -74,7 +74,7 @@ export default function TicketDetail() {
   if (!ticket) {
     return (
       <div className="max-w-3xl mx-auto text-center py-16">
-        <p className="text-gray-500">Ticket not found.</p>
+        <p className="text-muted-foreground">Ticket not found.</p>
         <Link href="/support">
           <Button variant="outline" className="mt-4">Back to Support</Button>
         </Link>
@@ -93,8 +93,8 @@ export default function TicketDetail() {
             Support
           </Button>
         </Link>
-        <span className="text-gray-400">/</span>
-        <span className="text-sm text-gray-500 font-mono">{ticket.ticketNumber}</span>
+        <span className="text-muted-foreground">/</span>
+        <span className="text-sm text-muted-foreground font-mono">{ticket.ticketNumber}</span>
       </div>
 
       <Card>
@@ -138,35 +138,35 @@ export default function TicketDetail() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center gap-2 text-xs text-gray-400 mb-4">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground mb-4">
             <Clock className="w-3.5 h-3.5" />
             Opened {formatDate(ticket.createdAt)}
           </div>
-          <div className="bg-gray-50 rounded-lg p-4">
-            <p className="text-gray-700 whitespace-pre-wrap">{ticket.description}</p>
+          <div className="bg-muted rounded-lg p-4">
+            <p className="text-foreground whitespace-pre-wrap">{ticket.description}</p>
           </div>
         </CardContent>
       </Card>
 
       {replies.length > 0 && (
         <div className="space-y-3">
-          <h3 className="font-medium text-gray-700">Conversation ({replies.length})</h3>
+          <h3 className="font-medium text-foreground">Conversation ({replies.length})</h3>
           {replies.map((r) => (
             <div key={r.id} className={`flex gap-3 ${r.isStaff ? "flex-row-reverse" : ""}`}>
-              <div className={`h-8 w-8 rounded-full flex items-center justify-center shrink-0 ${r.isStaff ? "bg-primary text-white" : "bg-gray-200 text-gray-600"}`}>
+              <div className={`h-8 w-8 rounded-full flex items-center justify-center shrink-0 ${r.isStaff ? "bg-primary text-white" : "bg-border text-muted-foreground"}`}>
                 {r.isStaff ? <Shield className="w-4 h-4" /> : <User className="w-4 h-4" />}
               </div>
               <div className={`flex-1 max-w-[80%] ${r.isStaff ? "items-end" : ""}`}>
-                <div className={`rounded-xl px-4 py-3 ${r.isStaff ? "bg-primary text-white rounded-tr-none" : "bg-white border rounded-tl-none"}`}>
+                <div className={`rounded-xl px-4 py-3 ${r.isStaff ? "bg-primary text-white rounded-tr-none" : "bg-card border rounded-tl-none"}`}>
                   <div className="flex items-center gap-2 mb-1">
-                    <span className={`text-xs font-medium ${r.isStaff ? "text-primary-foreground/80" : "text-gray-500"}`}>
+                    <span className={`text-xs font-medium ${r.isStaff ? "text-primary-foreground/80" : "text-muted-foreground"}`}>
                       {r.isStaff ? "Support Team" : (r.userName ?? "You")}
                     </span>
-                    {r.isStaff && <Badge className="text-xs bg-white/20 text-white px-1 py-0">Staff</Badge>}
+                    {r.isStaff && <Badge className="text-xs bg-card/20 text-white px-1 py-0">Staff</Badge>}
                   </div>
-                  <p className={`text-sm whitespace-pre-wrap ${r.isStaff ? "text-white" : "text-gray-700"}`}>{r.content}</p>
+                  <p className={`text-sm whitespace-pre-wrap ${r.isStaff ? "text-white" : "text-foreground"}`}>{r.content}</p>
                 </div>
-                <p className={`text-xs text-gray-400 mt-1 ${r.isStaff ? "text-right" : ""}`}>{formatDate(r.createdAt)}</p>
+                <p className={`text-xs text-muted-foreground mt-1 ${r.isStaff ? "text-right" : ""}`}>{formatDate(r.createdAt)}</p>
               </div>
             </div>
           ))}
@@ -176,7 +176,7 @@ export default function TicketDetail() {
       {ticket.status !== "closed" && (
         <Card>
           <CardContent className="p-4">
-            <h3 className="font-medium text-gray-700 mb-3">
+            <h3 className="font-medium text-foreground mb-3">
               {isAdmin ? "Reply as Support Staff" : "Add a Reply"}
             </h3>
             <Textarea
@@ -201,7 +201,7 @@ export default function TicketDetail() {
       )}
 
       {ticket.status === "closed" && (
-        <div className="flex items-center justify-center gap-2 py-6 text-green-600">
+        <div className="flex items-center justify-center gap-2 py-6 text-success">
           <CheckCircle2 className="w-5 h-5" />
           <span className="font-medium">This ticket is closed</span>
         </div>

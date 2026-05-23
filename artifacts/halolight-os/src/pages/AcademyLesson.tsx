@@ -77,7 +77,7 @@ export default function AcademyLesson() {
 
   if (!lesson || !course) {
     return (
-      <div className="text-center py-16 text-gray-400">
+      <div className="text-center py-16 text-muted-foreground">
         <p>Lesson not found.</p>
         <Link href={`/academy/${courseId}`}>
           <Button variant="outline" className="mt-4">{t("academy.back_to_course")}</Button>
@@ -143,7 +143,7 @@ export default function AcademyLesson() {
     <div className="space-y-6" data-testid="page-academy-lesson">
       {/* Back */}
       <Link href={`/academy/${courseId}`}>
-        <button className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-800 transition-colors">
+        <button className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
           <ArrowLeft className="w-4 h-4" />
           {t("academy.back_to_course")}
         </button>
@@ -152,8 +152,8 @@ export default function AcademyLesson() {
       {/* Title & status */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-sm text-gray-400 mb-1">{course.title}</p>
-          <h1 className="text-2xl font-bold text-gray-900">{lesson.title}</h1>
+          <p className="text-sm text-muted-foreground mb-1">{course.title}</p>
+          <h1 className="text-2xl font-bold text-foreground">{lesson.title}</h1>
         </div>
         {isCompleted && (
           <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 shrink-0">
@@ -192,7 +192,7 @@ export default function AcademyLesson() {
         {/* Left: Quiz */}
         <div className="lg:col-span-2 space-y-6">
           {lesson.quizQuestions.length > 0 && (
-            <Card className="border-gray-100 shadow-sm">
+            <Card className="border-border shadow-sm">
               <CardHeader className="pb-4">
                 <CardTitle className="text-lg flex items-center gap-2">
                   <BookOpen className="w-5 h-5 text-primary" />
@@ -204,7 +204,7 @@ export default function AcademyLesson() {
                   const result = quizResult?.answers.find((a) => a.questionId === q.id);
                   return (
                     <div key={q.id} className="space-y-3">
-                      <p className="font-medium text-gray-900">
+                      <p className="font-medium text-foreground">
                         {qi + 1}. {q.question}
                       </p>
                       <div className="space-y-2">
@@ -223,11 +223,11 @@ export default function AcademyLesson() {
                                   ? isCorrect
                                     ? "border-emerald-400 bg-emerald-50 text-emerald-800"
                                     : isWrong
-                                      ? "border-red-300 bg-red-50 text-red-800"
-                                      : "border-gray-200 text-gray-400"
+                                      ? "border-red-300 bg-destructive/10 text-red-800"
+                                      : "border-border text-muted-foreground"
                                   : isSelected
                                     ? "border-primary bg-primary/5 text-primary font-medium"
-                                    : "border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-700"
+                                    : "border-border hover:border-border hover:bg-muted text-foreground"
                               )}
                             >
                               {opt}
@@ -289,7 +289,7 @@ export default function AcademyLesson() {
         {/* Right: Resources */}
         {lesson.resources.length > 0 && (
           <div className="space-y-4">
-            <Card className="border-gray-100 shadow-sm">
+            <Card className="border-border shadow-sm">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base">{t("academy.resources")}</CardTitle>
               </CardHeader>
@@ -302,12 +302,12 @@ export default function AcademyLesson() {
                       href={r.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-50 transition-colors group"
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted transition-colors group"
                     >
                       <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
                         <Icon className="w-4 h-4 text-primary" />
                       </div>
-                      <span className="text-sm font-medium text-gray-700 group-hover:text-primary transition-colors">
+                      <span className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">
                         {r.title}
                       </span>
                     </a>
@@ -320,7 +320,7 @@ export default function AcademyLesson() {
       </div>
 
       {/* Navigation */}
-      <div className="flex justify-between pt-4 border-t border-gray-100">
+      <div className="flex justify-between pt-4 border-t border-border">
         {prevLesson ? (
           <Link href={`/academy/${courseId}/${prevLesson.id}`}>
             <Button variant="outline" className="gap-2">

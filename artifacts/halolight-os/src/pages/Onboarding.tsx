@@ -39,8 +39,8 @@ export default function Onboarding() {
   return (
     <div className="max-w-4xl mx-auto space-y-8" data-testid="page-onboarding">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight text-gray-900">Partner Setup</h1>
-        <p className="text-gray-500 mt-1">Get your account ready for production.</p>
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">Partner Setup</h1>
+        <p className="text-muted-foreground mt-1">Get your account ready for production.</p>
       </div>
 
       <Card className="bg-sidebar text-sidebar-foreground border-sidebar-border shadow-lg overflow-hidden relative">
@@ -49,7 +49,7 @@ export default function Onboarding() {
         </div>
         <CardHeader className="relative z-10 pb-4">
           <CardTitle className="text-2xl text-white">Your Progress</CardTitle>
-          <CardDescription className="text-gray-400">
+          <CardDescription className="text-muted-foreground">
             {summary?.completedSteps} of {summary?.totalSteps} steps completed
           </CardDescription>
         </CardHeader>
@@ -78,7 +78,7 @@ export default function Onboarding() {
           return (
             <Card 
               key={step.id} 
-              className={`transition-all ${isCompleted ? 'bg-gray-50 border-gray-200' : 'bg-white border-gray-200 hover:border-primary/50 shadow-sm'}`}
+              className={`transition-all ${isCompleted ? 'bg-muted border-border' : 'bg-card border-border hover:border-primary/50 shadow-sm'}`}
               data-testid={`card-step-${step.id}`}
             >
               <div className="p-6 flex flex-col sm:flex-row sm:items-center gap-6">
@@ -86,25 +86,25 @@ export default function Onboarding() {
                   {isCompleted ? (
                     <CheckCircle2 className="w-8 h-8 text-green-500" />
                   ) : (
-                    <Circle className="w-8 h-8 text-gray-300" />
+                    <Circle className="w-8 h-8 text-muted-foreground" />
                   )}
                 </div>
                 
                 <div className="flex-1">
                   <div className="flex flex-wrap items-center gap-3 mb-1">
-                    <h3 className={`text-lg font-bold ${isCompleted ? 'text-gray-500 line-through' : 'text-gray-900'}`}>
+                    <h3 className={`text-lg font-bold ${isCompleted ? 'text-muted-foreground line-through' : 'text-foreground'}`}>
                       {step.title}
                     </h3>
                     {step.isRequired && !isCompleted && (
-                      <span className="px-2 py-0.5 rounded text-xs font-semibold bg-red-100 text-red-700 uppercase tracking-wide">
+                      <span className="px-2 py-0.5 rounded text-xs font-semibold bg-destructive/15 text-destructive uppercase tracking-wide">
                         Required
                       </span>
                     )}
-                    <span className="px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600 capitalize">
+                    <span className="px-2 py-0.5 rounded text-xs font-medium bg-muted text-muted-foreground capitalize">
                       {step.category}
                     </span>
                   </div>
-                  <p className={`text-sm ${isCompleted ? 'text-gray-400' : 'text-gray-600'}`}>
+                  <p className={`text-sm ${isCompleted ? 'text-muted-foreground' : 'text-muted-foreground'}`}>
                     {step.description}
                   </p>
                 </div>
@@ -120,7 +120,7 @@ export default function Onboarding() {
                       Complete Step <ArrowRight className="w-4 h-4 ml-2" />
                     </Button>
                   ) : (
-                    <Button variant="ghost" disabled className="w-full sm:w-auto text-green-600 font-medium">
+                    <Button variant="ghost" disabled className="w-full sm:w-auto text-success font-medium">
                       Completed
                     </Button>
                   )}

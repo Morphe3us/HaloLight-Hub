@@ -1,0 +1,298 @@
+Phase 8 approved.
+
+Start Phase 9.
+
+Goal:
+
+Transform HaloLight OS from a generic SaaS dashboard into a premium HaloLight customer experience.
+
+Important:
+
+Do not modify business logic.
+Do not modify database schema.
+Do not modify APIs.
+Do not remove any existing functionality.
+
+This phase is purely focused on:
+
+- Branding
+- Design system
+- UX improvements
+- Visual consistency
+- Mobile experience
+
+Brand Inspiration:
+
+HaloLight.fr
+
+Core values:
+
+- Professionalism
+- Trust
+- Simplicity
+- Growth
+- Profitability
+- Customer Success
+- Premium support
+
+Visual references:
+
+- Stripe
+- Linear
+- Notion
+- Apple
+
+But warmer and more approachable.
+
+Typography:
+
+Primary font:
+Plus Jakarta Sans
+
+Fallback:
+Inter, sans-serif
+
+Create a complete typography scale:
+
+- Display
+- H1
+- H2
+- H3
+- H4
+- Body
+- Small
+- Caption
+
+Use proper line heights and spacing.
+
+Color System:
+
+Background:
+#FAF8F5
+
+Surface:
+#FFFFFF
+
+Primary Text:
+#111111
+
+Secondary Text:
+#6F6F6F
+
+Border:
+#EAE5DD
+
+Primary Accent:
+#DDB398
+
+Accent Hover:
+#C89C7E
+
+Success:
+#2E7D5A
+
+Warning:
+#D49A32
+
+Danger:
+#C95B5B
+
+Info:
+#4A6FA5
+
+Create semantic tokens for all states.
+
+Layout System:
+
+- Increase whitespace
+- Improve spacing consistency
+- Improve visual hierarchy
+- Improve readability
+- Reduce dashboard clutter
+
+Cards:
+
+- Larger border radius
+- Soft shadows
+- Premium appearance
+- Better KPI presentation
+- Improved hover states
+
+Buttons:
+
+Primary:
+Dark background (#111111)
+
+Secondary:
+White background with border
+
+Accent:
+HaloLight accent color
+
+Danger:
+Danger color
+
+Improve focus states and accessibility.
+
+Sidebar:
+
+- Cleaner structure
+- Better active states
+- Better section grouping
+- Premium appearance
+- Improve admin navigation
+
+Dashboard:
+
+Redesign all dashboard pages:
+
+- Better KPI cards
+- Better chart presentation
+- Better onboarding widgets
+- Better activity feed
+- Better next-action widgets
+
+Customer Success Dashboard:
+
+Make success score a premium centerpiece.
+
+Add:
+
+- tier badges
+- visual progression
+- clearer recommendations
+
+Academy:
+
+Improve:
+
+- lesson cards
+- course cards
+- progress indicators
+- quiz experience
+- completion states
+
+CRM:
+
+Improve:
+
+- pipeline visualization
+- quote tables
+- invoice tables
+- lead cards
+
+Support:
+
+Improve:
+
+- ticket cards
+- knowledge base cards
+- article reading experience
+- AI assistant interface
+
+AI Assistant:
+
+Create a premium chat experience.
+
+Improve:
+
+- message bubbles
+- source citations
+- suggested actions
+- voice controls
+- loading states
+- empty state
+
+Equipment & Consumables:
+
+Improve:
+
+- inventory cards
+- warranty indicators
+- maintenance timelines
+- stock visualizations
+
+Community:
+
+Improve:
+
+- feed layout
+- post cards
+- interaction states
+- user identity presentation
+
+Animations:
+
+Use subtle animations only.
+
+Rules:
+
+- 150ms–250ms transitions
+- Smooth hover effects
+- Smooth page transitions
+- Smooth loading skeletons
+
+Avoid flashy animations.
+
+Dark Mode:
+
+Implement a complete dark mode.
+
+Create matching dark palette.
+
+Allow user toggle.
+
+Responsive Design:
+
+Audit every page for:
+
+- desktop
+- tablet
+- mobile
+
+Ensure:
+
+- touch-friendly controls
+- proper spacing
+- readable typography
+- usable navigation
+
+PWA Polish:
+
+Improve:
+
+- install experience
+- splash screen
+- icons
+- loading states
+
+Accessibility:
+
+Improve:
+
+- contrast
+- keyboard navigation
+- focus states
+- ARIA support
+
+Deliverables:
+
+1. Complete HaloLight Design System
+2. Updated global theme
+3. Updated typography
+4. Updated component library
+5. Updated dashboards
+6. Updated mobile experience
+7. Dark mode
+8. Accessibility improvements
+
+Requirements:
+
+- Preserve all existing functionality
+- Preserve all routes
+- Preserve all business logic
+- Preserve all APIs
+
+After implementation:
+
+Provide a detailed branding and UX summary before continuing.

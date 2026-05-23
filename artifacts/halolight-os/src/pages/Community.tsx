@@ -14,14 +14,14 @@ const channelTypeIcons: Record<string, React.ComponentType<{ className?: string 
 };
 
 const channelTypeColors: Record<string, string> = {
-  public: "text-blue-600 bg-blue-50",
-  private: "text-gray-600 bg-gray-100",
+  public: "text-info bg-info/10",
+  private: "text-muted-foreground bg-muted",
   announcement: "text-amber-600 bg-amber-50",
 };
 
 const channelTypeBadge: Record<string, string> = {
-  public: "bg-blue-100 text-blue-700",
-  private: "bg-gray-100 text-gray-600",
+  public: "bg-info/15 text-info",
+  private: "bg-muted text-muted-foreground",
   announcement: "bg-amber-100 text-amber-700",
 };
 
@@ -43,19 +43,19 @@ export default function Community() {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Community</h1>
-        <p className="text-sm text-gray-500 mt-0.5">Connect with other HaloLight partners and operators</p>
+        <h1 className="text-2xl font-bold text-foreground">Community</h1>
+        <p className="text-sm text-muted-foreground mt-0.5">Connect with other HaloLight partners and operators</p>
       </div>
 
       {isLoading ? (
         <div className="space-y-3">
-          {[1, 2, 3, 4].map((i) => <div key={i} className="h-20 bg-gray-100 rounded-xl animate-pulse" />)}
+          {[1, 2, 3, 4].map((i) => <div key={i} className="h-20 bg-muted rounded-xl animate-pulse" />)}
         </div>
       ) : (
         <>
           {announcementChannels.length > 0 && (
             <div>
-              <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">Announcements</h2>
+              <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide mb-3">Announcements</h2>
               <div className="space-y-2">
                 {announcementChannels.map((channel) => {
                   const TypeIcon = channelTypeIcons[channel.type ?? "public"] ?? Hash;
@@ -69,18 +69,18 @@ export default function Community() {
                           </div>
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-0.5">
-                              <h3 className="font-semibold text-gray-900">{channel.name}</h3>
+                              <h3 className="font-semibold text-foreground">{channel.name}</h3>
                               <Badge className={`text-xs px-1.5 py-0 ${channelTypeBadge[channel.type ?? "public"] ?? ""}`}>
                                 <TypeIcon className="w-2.5 h-2.5 mr-0.5" />
                                 {channel.type}
                               </Badge>
                             </div>
-                            {channel.description && <p className="text-sm text-gray-500">{channel.description}</p>}
+                            {channel.description && <p className="text-sm text-muted-foreground">{channel.description}</p>}
                           </div>
-                          <div className="flex items-center gap-2 text-sm text-gray-400 shrink-0">
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground shrink-0">
                             <MessageSquare className="w-4 h-4" />
                             <span>{(channel as unknown as { postCount?: number }).postCount ?? 0}</span>
-                            <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-gray-500 transition-colors" />
+                            <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-muted-foreground transition-colors" />
                           </div>
                         </CardContent>
                       </Card>
@@ -93,7 +93,7 @@ export default function Community() {
 
           {publicChannels.length > 0 && (
             <div>
-              <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">Channels</h2>
+              <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide mb-3">Channels</h2>
               <div className="grid gap-3">
                 {publicChannels.map((channel) => {
                   const TypeIcon = channelTypeIcons[channel.type ?? "public"] ?? Hash;
@@ -107,7 +107,7 @@ export default function Community() {
                           </div>
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-0.5">
-                              <h3 className="font-semibold text-gray-900">{channel.name}</h3>
+                              <h3 className="font-semibold text-foreground">{channel.name}</h3>
                               {channel.type === "private" && (
                                 <Badge className={`text-xs px-1.5 py-0 ${channelTypeBadge[channel.type] ?? ""}`}>
                                   <Lock className="w-2.5 h-2.5 mr-0.5" />
@@ -115,12 +115,12 @@ export default function Community() {
                                 </Badge>
                               )}
                             </div>
-                            {channel.description && <p className="text-sm text-gray-500">{channel.description}</p>}
+                            {channel.description && <p className="text-sm text-muted-foreground">{channel.description}</p>}
                           </div>
-                          <div className="flex items-center gap-2 text-sm text-gray-400 shrink-0">
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground shrink-0">
                             <MessageSquare className="w-4 h-4" />
                             <span>{(channel as unknown as { postCount?: number }).postCount ?? 0} posts</span>
-                            <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-gray-500 transition-colors" />
+                            <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-muted-foreground transition-colors" />
                           </div>
                         </CardContent>
                       </Card>
@@ -134,9 +134,9 @@ export default function Community() {
           {channels.length === 0 && (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-                <Users className="w-12 h-12 text-gray-300 mb-3" />
-                <p className="text-gray-500 font-medium">Community channels coming soon</p>
-                <p className="text-sm text-gray-400 mt-1">Check back after seeding demo data</p>
+                <Users className="w-12 h-12 text-muted-foreground mb-3" />
+                <p className="text-muted-foreground font-medium">Community channels coming soon</p>
+                <p className="text-sm text-muted-foreground mt-1">Check back after seeding demo data</p>
               </CardContent>
             </Card>
           )}

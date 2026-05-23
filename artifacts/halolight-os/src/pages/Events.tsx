@@ -32,10 +32,10 @@ import { cn } from "@/lib/utils";
 type EventStatus = "upcoming" | "active" | "completed" | "cancelled";
 
 const STATUS_STYLES: Record<EventStatus, string> = {
-  upcoming: "bg-blue-100 text-blue-700 border-blue-200",
+  upcoming: "bg-info/15 text-info border-info/30",
   active: "bg-emerald-100 text-emerald-700 border-emerald-200",
-  completed: "bg-gray-100 text-gray-600 border-gray-200",
-  cancelled: "bg-red-100 text-red-600 border-red-200",
+  completed: "bg-muted text-muted-foreground border-border",
+  cancelled: "bg-destructive/15 text-destructive border-destructive/30",
 };
 
 interface EventFormData {
@@ -155,8 +155,8 @@ export default function Events() {
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900">{t("events.title")}</h1>
-          <p className="text-gray-500 mt-1">{t("events.subtitle")}</p>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">{t("events.title")}</h1>
+          <p className="text-muted-foreground mt-1">{t("events.subtitle")}</p>
         </div>
         <Button onClick={openCreate} className="shrink-0 shadow-sm">
           <Plus className="w-4 h-4 mr-2" />
@@ -174,7 +174,7 @@ export default function Events() {
               "px-4 py-1.5 rounded-full text-sm font-medium transition-all border",
               statusFilter === s
                 ? "bg-primary text-primary-foreground border-primary shadow-sm"
-                : "bg-white text-gray-600 border-gray-200 hover:border-gray-300"
+                : "bg-card text-muted-foreground border-border hover:border-border"
             )}
           >
             {s === "all" ? t("events.all_statuses") : t(`events.status_${s}`)}
@@ -188,7 +188,7 @@ export default function Events() {
           {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-28 rounded-xl" />)}
         </div>
       ) : events.length === 0 ? (
-        <div className="text-center py-20 text-gray-400">
+        <div className="text-center py-20 text-muted-foreground">
           <Calendar className="w-12 h-12 mx-auto mb-3 opacity-40" />
           <p className="mb-4">{t("events.no_events")}</p>
           <Button onClick={openCreate} variant="outline">
@@ -199,7 +199,7 @@ export default function Events() {
       ) : (
         <div className="space-y-4">
           {events.map((ev) => (
-            <Card key={ev.id} className="border border-gray-100 shadow-sm hover:shadow-md transition-all">
+            <Card key={ev.id} className="border border-border shadow-sm hover:shadow-md transition-all">
               <CardContent className="p-5">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex gap-4 flex-1 min-w-0">
@@ -215,13 +215,13 @@ export default function Events() {
 
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap mb-1">
-                        <h3 className="font-semibold text-gray-900 truncate">{ev.title}</h3>
+                        <h3 className="font-semibold text-foreground truncate">{ev.title}</h3>
                         <Badge variant="outline" className={cn("text-xs shrink-0", STATUS_STYLES[ev.status as EventStatus])}>
                           {t(`events.status_${ev.status}`)}
                         </Badge>
                       </div>
 
-                      <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-400">
+                      <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
                         <span className="flex items-center gap-1">
                           <Clock className="w-3.5 h-3.5" />
                           {format(parseISO(ev.eventDate), "PPP 'at' p")}
@@ -241,7 +241,7 @@ export default function Events() {
                       </div>
 
                       {ev.description && (
-                        <p className="text-sm text-gray-500 mt-1.5 line-clamp-1">{ev.description}</p>
+                        <p className="text-sm text-muted-foreground mt-1.5 line-clamp-1">{ev.description}</p>
                       )}
                     </div>
                   </div>
@@ -250,7 +250,7 @@ export default function Events() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 text-gray-400 hover:text-gray-700"
+                      className="h-8 w-8 text-muted-foreground hover:text-foreground"
                       onClick={() => openEdit(ev)}
                     >
                       <Pencil className="w-3.5 h-3.5" />
@@ -258,7 +258,7 @@ export default function Events() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 text-gray-400 hover:text-red-500"
+                      className="h-8 w-8 text-muted-foreground hover:text-red-500"
                       onClick={() => setDeleteId(ev.id)}
                     >
                       <Trash2 className="w-3.5 h-3.5" />

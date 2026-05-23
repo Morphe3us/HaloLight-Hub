@@ -5,6 +5,7 @@ import { shadcn } from '@clerk/themes';
 import { Switch, Route, useLocation, Router as WouterRouter, Redirect } from 'wouter';
 import { QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
+import { ThemeProvider } from "./components/theme-provider";
 
 import Landing from "./pages/Landing";
 import Dashboard from "./pages/Dashboard";
@@ -87,23 +88,23 @@ const clerkAppearance = {
   options: {
     logoPlacement: "inside" as const,
     logoLinkUrl: basePath || "/",
-    logoImageUrl: `${window.location.origin}${basePath}/logo.svg`,
+    logoImageUrl: `${window.location.origin}${basePath}/logo-dark.png`,
   },
   variables: {
-    colorPrimary: "hsl(221 83% 53%)",
-    colorForeground: "hsl(220 40% 10%)",
-    colorMutedForeground: "hsl(215 16% 47%)",
-    colorDanger: "hsl(0 84% 60%)",
-    colorBackground: "hsl(0 0% 100%)",
-    colorInput: "hsl(214 32% 91%)",
-    colorInputForeground: "hsl(220 40% 10%)",
-    colorNeutral: "hsl(214 32% 91%)",
-    fontFamily: "'Outfit', sans-serif",
-    borderRadius: "0.5rem",
+    colorPrimary: "hsl(0 0% 7%)",
+    colorForeground: "hsl(0 0% 7%)",
+    colorMutedForeground: "hsl(0 0% 44%)",
+    colorDanger: "hsl(0 48% 57%)",
+    colorBackground: "hsl(36 22% 97%)",
+    colorInput: "hsl(37 24% 89%)",
+    colorInputForeground: "hsl(0 0% 7%)",
+    colorNeutral: "hsl(37 24% 89%)",
+    fontFamily: "'Plus Jakarta Sans', 'Inter', sans-serif",
+    borderRadius: "0.75rem",
   },
   elements: {
     rootBox: "w-full flex justify-center",
-    cardBox: "bg-white rounded-2xl w-[440px] max-w-full overflow-hidden shadow-xl border border-gray-100",
+    cardBox: "bg-white rounded-[16px] w-[440px] max-w-full overflow-hidden shadow-xl border border-[hsl(37,24%,89%)]",
     card: "!shadow-none !border-0 !bg-transparent !rounded-none",
     footer: "!shadow-none !border-0 !bg-transparent !rounded-none",
     headerTitle: "text-2xl font-semibold text-gray-900",
@@ -116,15 +117,15 @@ const clerkAppearance = {
     identityPreviewEditButton: "text-primary hover:text-primary/90",
     formFieldSuccessText: "text-green-600",
     alertText: "text-red-600",
-    logoBox: "h-12 w-12 object-contain",
-    logoImage: "h-12 w-12 object-contain",
+    logoBox: "h-10 object-contain",
+    logoImage: "h-10 object-contain",
     socialButtonsBlockButton: "border-gray-200 hover:bg-gray-50",
-    formButtonPrimary: "bg-primary hover:bg-primary/90 text-white shadow-sm transition-all",
-    formFieldInput: "border-gray-200 focus:border-primary focus:ring-primary/20",
+    formButtonPrimary: "bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm transition-all",
+    formFieldInput: "border-gray-200 focus:border-accent focus:ring-accent/20 rounded-[8px]",
     footerAction: "bg-gray-50/50 py-4",
     dividerLine: "bg-gray-200",
     alert: "bg-red-50 border border-red-200",
-    otpCodeFieldInput: "border-gray-200 focus:border-primary focus:ring-primary/20",
+    otpCodeFieldInput: "border-gray-200 focus:border-accent focus:ring-accent/20",
     formFieldRow: "gap-4",
     main: "gap-6",
   },
@@ -132,7 +133,7 @@ const clerkAppearance = {
 
 function SignInPage() {
   return (
-    <div className="flex min-h-[100dvh] items-center justify-center bg-gray-50 px-4" data-testid="page-signin">
+    <div className="flex min-h-[100dvh] items-center justify-center bg-background px-4" data-testid="page-signin">
       <SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} />
     </div>
   );
@@ -140,7 +141,7 @@ function SignInPage() {
 
 function SignUpPage() {
   return (
-    <div className="flex min-h-[100dvh] items-center justify-center bg-gray-50 px-4" data-testid="page-signup">
+    <div className="flex min-h-[100dvh] items-center justify-center bg-background px-4" data-testid="page-signup">
       <SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in`} />
     </div>
   );
@@ -258,9 +259,11 @@ function ClerkProviderWithRoutes() {
 
 function App() {
   return (
-    <WouterRouter base={basePath}>
-      <ClerkProviderWithRoutes />
-    </WouterRouter>
+    <ThemeProvider defaultTheme="light" storageKey="halolight-theme">
+      <WouterRouter base={basePath}>
+        <ClerkProviderWithRoutes />
+      </WouterRouter>
+    </ThemeProvider>
   );
 }
 

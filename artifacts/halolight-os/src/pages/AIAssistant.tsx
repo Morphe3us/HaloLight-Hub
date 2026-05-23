@@ -772,7 +772,7 @@ export default function AIAssistant() {
                 {voiceInput.isListening && (
                   <div className="flex items-center gap-2 mb-2 px-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse shrink-0" />
-                    <span className="text-xs text-red-600 font-medium">
+                    <span className="text-xs text-destructive font-medium">
                       {voiceInput.partialTranscript
                         ? voiceInput.partialTranscript
                         : "Listening… speak your question"}

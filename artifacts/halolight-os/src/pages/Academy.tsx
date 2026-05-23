@@ -17,8 +17,8 @@ function formatDuration(seconds: number): string {
 
 const LEVEL_COLORS: Record<string, string> = {
   beginner: "bg-emerald-100 text-emerald-700",
-  intermediate: "bg-blue-100 text-blue-700",
-  advanced: "bg-purple-100 text-purple-700",
+  intermediate: "bg-info/15 text-info",
+  advanced: "bg-muted text-foreground",
 };
 
 export default function Academy() {
@@ -52,8 +52,8 @@ export default function Academy() {
     <div className="space-y-8" data-testid="page-academy">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold tracking-tight text-gray-900">{t("academy.title")}</h1>
-        <p className="text-gray-500 mt-1">{t("academy.subtitle")}</p>
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">{t("academy.title")}</h1>
+        <p className="text-muted-foreground mt-1">{t("academy.subtitle")}</p>
       </div>
 
       {/* Progress Summary */}
@@ -61,13 +61,13 @@ export default function Academy() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card className="border-0 shadow-sm bg-gradient-to-br from-blue-50 to-blue-100/50">
             <CardContent className="p-5 flex items-center gap-4">
-              <div className="h-12 w-12 rounded-xl bg-blue-500 flex items-center justify-center flex-shrink-0">
+              <div className="h-12 w-12 rounded-xl bg-primary flex items-center justify-center flex-shrink-0">
                 <TrendingUp className="w-6 h-6 text-white" />
               </div>
               <div>
-                <p className="text-sm text-blue-600 font-medium">{t("academy.total_progress")}</p>
-                <p className="text-2xl font-bold text-blue-900">{summary.percentComplete}%</p>
-                <p className="text-xs text-blue-500">{summary.completedLessons} / {summary.totalLessons} {t("academy.lessons")}</p>
+                <p className="text-sm text-info font-medium">{t("academy.total_progress")}</p>
+                <p className="text-2xl font-bold text-foreground">{summary.percentComplete}%</p>
+                <p className="text-xs text-info">{summary.completedLessons} / {summary.totalLessons} {t("academy.lessons")}</p>
               </div>
             </CardContent>
           </Card>
@@ -102,9 +102,9 @@ export default function Academy() {
 
       {/* Course Grid */}
       <div>
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">{t("academy.all_courses")}</h2>
+        <h2 className="text-xl font-semibold text-foreground mb-4">{t("academy.all_courses")}</h2>
         {courses.length === 0 ? (
-          <div className="text-center py-16 text-gray-400">
+          <div className="text-center py-16 text-muted-foreground">
             <BookOpen className="w-12 h-12 mx-auto mb-3 opacity-40" />
             <p>{t("academy.no_courses")}</p>
           </div>
@@ -117,7 +117,7 @@ export default function Academy() {
                 : 0;
               return (
                 <Link key={course.id} href={`/academy/${course.id}`}>
-                  <Card className="group border border-gray-100 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden h-full">
+                  <Card className="group border border-border shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden h-full">
                     <div className="relative aspect-video overflow-hidden">
                       <img
                         src={course.thumbnailUrl}
@@ -131,7 +131,7 @@ export default function Academy() {
                         </div>
                       )}
                       <div className="absolute bottom-3 left-3 flex gap-2">
-                        <span className={cn("text-xs font-medium px-2.5 py-1 rounded-full", LEVEL_COLORS[course.level] ?? "bg-gray-100 text-gray-700")}>
+                        <span className={cn("text-xs font-medium px-2.5 py-1 rounded-full", LEVEL_COLORS[course.level] ?? "bg-muted text-foreground")}>
                           {t(`academy.level_${course.level}`)}
                         </span>
                         <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-black/40 text-white backdrop-blur-sm">
@@ -141,12 +141,12 @@ export default function Academy() {
                     </div>
                     <CardContent className="p-5 flex flex-col gap-3">
                       <div>
-                        <h3 className="font-semibold text-gray-900 group-hover:text-primary transition-colors leading-snug">
+                        <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors leading-snug">
                           {course.title}
                         </h3>
-                        <p className="text-sm text-gray-500 mt-1 line-clamp-2">{course.description}</p>
+                        <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{course.description}</p>
                       </div>
-                      <div className="flex items-center gap-3 text-xs text-gray-400">
+                      <div className="flex items-center gap-3 text-xs text-muted-foreground">
                         <span className="flex items-center gap-1">
                           <BookOpen className="w-3.5 h-3.5" />
                           {course.lessonCount} {t("academy.lessons")}
@@ -158,7 +158,7 @@ export default function Academy() {
                       </div>
                       {progress > 0 && (
                         <div>
-                          <div className="flex justify-between text-xs text-gray-500 mb-1">
+                          <div className="flex justify-between text-xs text-muted-foreground mb-1">
                             <span>{t("academy.progress")}</span>
                             <span>{progress}%</span>
                           </div>

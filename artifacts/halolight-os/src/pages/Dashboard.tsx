@@ -55,10 +55,10 @@ export default function Dashboard() {
     <div className="space-y-8" data-testid="page-dashboard">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold tracking-tight text-gray-900">
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">
           {greeting}, {firstName}
         </h1>
-        <p className="text-gray-500 mt-1">{t("dashboard.subtitle")}</p>
+        <p className="text-muted-foreground mt-1">{t("dashboard.subtitle")}</p>
       </div>
 
       {/* KPI Cards */}
@@ -67,12 +67,12 @@ export default function Dashboard() {
           <Card className="border-0 shadow-sm bg-gradient-to-br from-blue-50 to-indigo-50">
             <CardContent className="p-5">
               <div className="flex items-center gap-3 mb-3">
-                <div className="h-9 w-9 rounded-lg bg-blue-500 flex items-center justify-center">
+                <div className="h-9 w-9 rounded-lg bg-primary flex items-center justify-center">
                   <Bell className="w-4 h-4 text-white" />
                 </div>
-                <span className="text-xs font-medium text-blue-600 uppercase tracking-wide leading-tight">{t("dashboard.kpi_notifications")}</span>
+                <span className="text-xs font-medium text-info uppercase tracking-wide leading-tight">{t("dashboard.kpi_notifications")}</span>
               </div>
-              <p className="text-3xl font-bold text-blue-900">{summary.unreadNotifications}</p>
+              <p className="text-3xl font-bold text-foreground">{summary.unreadNotifications}</p>
             </CardContent>
           </Card>
 
@@ -137,12 +137,12 @@ export default function Dashboard() {
                     <p className="text-xs font-medium text-primary uppercase tracking-wide mb-0.5">
                       {t("dashboard.next_lesson")}
                     </p>
-                    <h3 className="font-semibold text-gray-900 text-lg leading-snug truncate">
+                    <h3 className="font-semibold text-foreground text-lg leading-snug truncate">
                       {summary.nextLesson.lessonTitle}
                     </h3>
-                    <p className="text-sm text-gray-500 truncate">{summary.nextLesson.courseTitle}</p>
+                    <p className="text-sm text-muted-foreground truncate">{summary.nextLesson.courseTitle}</p>
                     <div className="flex items-center gap-3 mt-2">
-                      <span className="text-xs text-gray-400 flex items-center gap-1">
+                      <span className="text-xs text-muted-foreground flex items-center gap-1">
                         <Clock className="w-3.5 h-3.5" />
                         {formatDuration(summary.nextLesson.durationSeconds)}
                       </span>
@@ -166,10 +166,10 @@ export default function Dashboard() {
               </CardContent>
             </Card>
           ) : (
-            <Card className="border border-dashed border-gray-200 shadow-sm">
+            <Card className="border border-dashed border-border shadow-sm">
               <CardContent className="p-6 text-center">
-                <BookOpen className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-                <p className="text-gray-500 font-medium">{t("dashboard.no_lessons")}</p>
+                <BookOpen className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
+                <p className="text-muted-foreground font-medium">{t("dashboard.no_lessons")}</p>
                 <Link href="/academy">
                   <Button variant="outline" size="sm" className="mt-3">
                     {t("academy.all_courses")} <ArrowRight className="w-4 h-4 ml-1.5" />
@@ -193,7 +193,7 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent className="pt-0">
                 <Progress value={summary.onboardingPercent} className="h-2 mb-3" />
-                <p className="text-sm text-gray-500 mb-3">{t("dashboard.onboarding_desc")}</p>
+                <p className="text-sm text-muted-foreground mb-3">{t("dashboard.onboarding_desc")}</p>
                 <Link href="/onboarding">
                   <Button size="sm" variant="outline" className="border-amber-300 text-amber-700 hover:bg-amber-100">
                     {t("dashboard.continue_setup")} <ArrowRight className="w-4 h-4 ml-1.5" />
@@ -204,7 +204,7 @@ export default function Dashboard() {
           )}
 
           {/* Recent Notifications */}
-          <Card className="border border-gray-100 shadow-sm">
+          <Card className="border border-border shadow-sm">
             <CardHeader className="pb-3 flex flex-row items-center justify-between">
               <CardTitle className="text-base">{t("dashboard.recent_notifications")}</CardTitle>
               <Link href="/notifications">
@@ -215,18 +215,18 @@ export default function Dashboard() {
               {loadingNotifs ? (
                 <div className="space-y-3">{[...Array(3)].map((_, i) => <Skeleton key={i} className="h-10" />)}</div>
               ) : notifications?.items.length === 0 ? (
-                <p className="text-sm text-gray-400 py-4 text-center">{t("dashboard.no_notifications")}</p>
+                <p className="text-sm text-muted-foreground py-4 text-center">{t("dashboard.no_notifications")}</p>
               ) : (
                 <div className="space-y-2">
                   {notifications?.items.map((n) => (
                     <div key={n.id} className={cn(
                       "flex items-start gap-3 p-3 rounded-lg transition-colors",
-                      !n.isRead ? "bg-primary/5" : "hover:bg-gray-50"
+                      !n.isRead ? "bg-primary/5" : "hover:bg-muted"
                     )}>
                       {!n.isRead && <div className="h-2 w-2 rounded-full bg-primary mt-1.5 flex-shrink-0" />}
                       <div className={cn("flex-1 min-w-0", n.isRead && "pl-5")}>
-                        <p className="text-sm font-medium text-gray-900 truncate">{n.title}</p>
-                        <p className="text-xs text-gray-400 truncate">{n.body}</p>
+                        <p className="text-sm font-medium text-foreground truncate">{n.title}</p>
+                        <p className="text-xs text-muted-foreground truncate">{n.body}</p>
                       </div>
                     </div>
                   ))}
@@ -239,7 +239,7 @@ export default function Dashboard() {
         {/* Right — 1/3 */}
         <div className="space-y-6">
           {/* Upcoming Events */}
-          <Card className="border border-gray-100 shadow-sm">
+          <Card className="border border-border shadow-sm">
             <CardHeader className="pb-3 flex flex-row items-center justify-between">
               <CardTitle className="text-base">{t("dashboard.upcoming_events")}</CardTitle>
               <Link href="/events">
@@ -251,8 +251,8 @@ export default function Dashboard() {
                 <div className="space-y-3">{[...Array(3)].map((_, i) => <Skeleton key={i} className="h-14" />)}</div>
               ) : eventsData?.items.length === 0 ? (
                 <div className="text-center py-6">
-                  <Calendar className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                  <p className="text-sm text-gray-400 mb-3">{t("dashboard.no_events")}</p>
+                  <Calendar className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                  <p className="text-sm text-muted-foreground mb-3">{t("dashboard.no_events")}</p>
                   <Link href="/events">
                     <Button variant="outline" size="sm">{t("dashboard.add_event")}</Button>
                   </Link>
@@ -260,7 +260,7 @@ export default function Dashboard() {
               ) : (
                 <div className="space-y-3">
                   {eventsData?.items.map((ev) => (
-                    <div key={ev.id} className="flex gap-3 items-start p-2 rounded-lg hover:bg-gray-50 transition-colors">
+                    <div key={ev.id} className="flex gap-3 items-start p-2 rounded-lg hover:bg-muted transition-colors">
                       <div className="h-10 w-10 rounded-lg bg-primary/10 flex flex-col items-center justify-center flex-shrink-0">
                         <span className="text-[10px] font-medium text-primary uppercase leading-tight">
                           {format(parseISO(ev.eventDate), "MMM")}
@@ -270,9 +270,9 @@ export default function Dashboard() {
                         </span>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 truncate">{ev.title}</p>
+                        <p className="text-sm font-medium text-foreground truncate">{ev.title}</p>
                         {ev.location && (
-                          <p className="text-xs text-gray-400 flex items-center gap-1 truncate">
+                          <p className="text-xs text-muted-foreground flex items-center gap-1 truncate">
                             <MapPin className="w-3 h-3" /> {ev.location}
                           </p>
                         )}
@@ -286,15 +286,15 @@ export default function Dashboard() {
 
           {/* Academy Stats */}
           {summary && (
-            <Card className="border border-gray-100 shadow-sm">
+            <Card className="border border-border shadow-sm">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base">{t("academy.your_progress")}</CardTitle>
               </CardHeader>
               <CardContent className="pt-0 space-y-4">
                 <div>
                   <div className="flex justify-between text-sm mb-1.5">
-                    <span className="text-gray-600">{t("academy.total_progress")}</span>
-                    <span className="font-semibold text-gray-900">
+                    <span className="text-muted-foreground">{t("academy.total_progress")}</span>
+                    <span className="font-semibold text-foreground">
                       {summary.academyTotalLessons > 0
                         ? Math.round((summary.academyLessonsCompleted / summary.academyTotalLessons) * 100)
                         : 0}%
@@ -308,13 +308,13 @@ export default function Dashboard() {
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-gray-50 rounded-lg p-3 text-center">
-                    <p className="text-2xl font-bold text-gray-900">{summary.academyCoursesCompleted}</p>
-                    <p className="text-xs text-gray-500 mt-0.5">{t("academy.courses_completed")}</p>
+                  <div className="bg-muted rounded-lg p-3 text-center">
+                    <p className="text-2xl font-bold text-foreground">{summary.academyCoursesCompleted}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{t("academy.courses_completed")}</p>
                   </div>
-                  <div className="bg-gray-50 rounded-lg p-3 text-center">
-                    <p className="text-2xl font-bold text-gray-900">{summary.academyLessonsCompleted}</p>
-                    <p className="text-xs text-gray-500 mt-0.5">{t("academy.lessons")}</p>
+                  <div className="bg-muted rounded-lg p-3 text-center">
+                    <p className="text-2xl font-bold text-foreground">{summary.academyLessonsCompleted}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{t("academy.lessons")}</p>
                   </div>
                 </div>
                 <Link href="/academy">

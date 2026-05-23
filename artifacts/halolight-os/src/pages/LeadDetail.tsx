@@ -21,12 +21,12 @@ import { cn } from "@/lib/utils";
 
 const PIPELINE_STAGES = [
   { key: "new", label: "New", color: "bg-slate-100 text-slate-700 border-slate-200" },
-  { key: "contacted", label: "Contacted", color: "bg-blue-50 text-blue-700 border-blue-200" },
+  { key: "contacted", label: "Contacted", color: "bg-info/10 text-info border-info/30" },
   { key: "qualified", label: "Qualified", color: "bg-violet-50 text-violet-700 border-violet-200" },
   { key: "proposal", label: "Proposal", color: "bg-amber-50 text-amber-700 border-amber-200" },
   { key: "negotiation", label: "Negotiation", color: "bg-orange-50 text-orange-700 border-orange-200" },
   { key: "won", label: "Won", color: "bg-emerald-50 text-emerald-700 border-emerald-200" },
-  { key: "lost", label: "Lost", color: "bg-red-50 text-red-700 border-red-200" },
+  { key: "lost", label: "Lost", color: "bg-destructive/10 text-destructive border-destructive/30" },
 ] as const;
 
 const ACTIVITY_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -42,12 +42,12 @@ const ACTIVITY_ICONS: Record<string, React.ComponentType<{ className?: string }>
 
 const ACTIVITY_COLORS: Record<string, string> = {
   note: "bg-slate-100 text-slate-600",
-  call: "bg-blue-100 text-blue-600",
+  call: "bg-info/15 text-info",
   email: "bg-violet-100 text-violet-600",
   meeting: "bg-amber-100 text-amber-600",
-  status_change: "bg-gray-100 text-gray-600",
+  status_change: "bg-muted text-muted-foreground",
   quote_sent: "bg-emerald-100 text-emerald-600",
-  contract_sent: "bg-indigo-100 text-indigo-600",
+  contract_sent: "bg-info/15 text-info",
   invoice_sent: "bg-orange-100 text-orange-600",
 };
 
@@ -244,7 +244,7 @@ export default function LeadDetail() {
                     const Icon = ACTIVITY_ICONS[activity.type] ?? MessageSquare;
                     return (
                       <div key={activity.id} className="flex gap-4 relative">
-                        <div className={cn("w-10 h-10 rounded-full flex items-center justify-center shrink-0 z-10 border-2 border-background", ACTIVITY_COLORS[activity.type] ?? "bg-gray-100 text-gray-600")}>
+                        <div className={cn("w-10 h-10 rounded-full flex items-center justify-center shrink-0 z-10 border-2 border-background", ACTIVITY_COLORS[activity.type] ?? "bg-muted text-muted-foreground")}>
                           <Icon className="w-4 h-4" />
                         </div>
                         <div className="flex-1 min-w-0 pt-1">

@@ -34,19 +34,19 @@ export default function Admin() {
           <ShieldAlert className="w-8 h-8 text-primary" />
         </div>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900">Admin Console</h1>
-          <p className="text-gray-500 mt-1">Manage users and system-wide settings.</p>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">Admin Console</h1>
+          <p className="text-muted-foreground mt-1">Manage users and system-wide settings.</p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-gray-500">Total Users</CardTitle>
-            <Users className="w-4 h-4 text-gray-400" />
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Users</CardTitle>
+            <Users className="w-4 h-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-gray-900">{usersData?.total || 0}</div>
+            <div className="text-3xl font-bold text-foreground">{usersData?.total || 0}</div>
           </CardContent>
         </Card>
       </div>
@@ -59,7 +59,7 @@ export default function Admin() {
         <CardContent>
           <div className="rounded-md border">
             <Table>
-              <TableHeader className="bg-gray-50">
+              <TableHeader className="bg-muted">
                 <TableRow>
                   <TableHead>User</TableHead>
                   <TableHead>Email</TableHead>
@@ -70,17 +70,17 @@ export default function Admin() {
               <TableBody>
                 {users.map((user) => (
                   <TableRow key={user.id} data-testid={`row-user-${user.id}`}>
-                    <TableCell className="font-medium text-gray-900">
+                    <TableCell className="font-medium text-foreground">
                       {user.fullName || "Unset"}
-                      {user.companyName && <span className="block text-xs font-normal text-gray-500">{user.companyName}</span>}
+                      {user.companyName && <span className="block text-xs font-normal text-muted-foreground">{user.companyName}</span>}
                     </TableCell>
-                    <TableCell className="text-gray-600">{user.email}</TableCell>
+                    <TableCell className="text-muted-foreground">{user.email}</TableCell>
                     <TableCell>
                       <Badge variant="outline" className={`capitalize ${user.role === 'admin' ? 'bg-primary/10 text-primary border-primary/20' : ''}`}>
                         {user.role.replace('_', ' ')}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-gray-600">{new Date(user.createdAt).toLocaleDateString()}</TableCell>
+                    <TableCell className="text-muted-foreground">{new Date(user.createdAt).toLocaleDateString()}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

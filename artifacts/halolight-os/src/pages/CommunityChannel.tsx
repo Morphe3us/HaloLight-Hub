@@ -81,26 +81,26 @@ export default function CommunityChannel() {
             Community
           </Button>
         </Link>
-        <span className="text-gray-400">/</span>
+        <span className="text-muted-foreground">/</span>
         <div className="flex items-center gap-2">
           {channel?.type === "announcement" ? (
             <Megaphone className="w-4 h-4 text-amber-500" />
           ) : channel?.type === "private" ? (
-            <Lock className="w-4 h-4 text-gray-400" />
+            <Lock className="w-4 h-4 text-muted-foreground" />
           ) : (
-            <Hash className="w-4 h-4 text-blue-500" />
+            <Hash className="w-4 h-4 text-info" />
           )}
-          <span className="font-semibold text-gray-800">{channel?.name ?? "Channel"}</span>
-          <span className="text-sm text-gray-400">({total} posts)</span>
+          <span className="font-semibold text-foreground">{channel?.name ?? "Channel"}</span>
+          <span className="text-sm text-muted-foreground">({total} posts)</span>
         </div>
       </div>
 
       {channel?.description && (
-        <p className="text-sm text-gray-500 bg-gray-50 rounded-lg px-4 py-2">{channel.description}</p>
+        <p className="text-sm text-muted-foreground bg-muted rounded-lg px-4 py-2">{channel.description}</p>
       )}
 
       <div className="flex items-center justify-between">
-        <h2 className="font-medium text-gray-700">Posts</h2>
+        <h2 className="font-medium text-foreground">Posts</h2>
         {canPost && (
           <Button onClick={() => setShowCreate(true)} size="sm" className="gap-2">
             <Plus className="w-4 h-4" />
@@ -111,14 +111,14 @@ export default function CommunityChannel() {
 
       {isLoading ? (
         <div className="space-y-3">
-          {[1, 2, 3].map((i) => <div key={i} className="h-24 bg-gray-100 rounded-xl animate-pulse" />)}
+          {[1, 2, 3].map((i) => <div key={i} className="h-24 bg-muted rounded-xl animate-pulse" />)}
         </div>
       ) : posts.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-            <MessageSquare className="w-12 h-12 text-gray-300 mb-3" />
-            <p className="text-gray-500 font-medium">No posts yet</p>
-            {canPost && <p className="text-sm text-gray-400 mt-1">Be the first to post in this channel</p>}
+            <MessageSquare className="w-12 h-12 text-muted-foreground mb-3" />
+            <p className="text-muted-foreground font-medium">No posts yet</p>
+            {canPost && <p className="text-sm text-muted-foreground mt-1">Be the first to post in this channel</p>}
           </CardContent>
         </Card>
       ) : (
@@ -136,11 +136,11 @@ export default function CommunityChannel() {
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-gray-900 group-hover:text-primary transition-colors mb-1 line-clamp-1">
+                        <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors mb-1 line-clamp-1">
                           {post.title}
                         </h3>
-                        <p className="text-sm text-gray-500 line-clamp-2 mb-2">{post.content}</p>
-                        <div className="flex items-center gap-3 text-xs text-gray-400">
+                        <p className="text-sm text-muted-foreground line-clamp-2 mb-2">{post.content}</p>
+                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
                           <span className="flex items-center gap-1">
                             <div className="w-5 h-5 rounded-full bg-gradient-to-br from-primary/30 to-primary/10 flex items-center justify-center text-primary font-bold text-xs">
                               {((post as unknown as { userName?: string }).userName ?? "U").charAt(0).toUpperCase()}
@@ -168,10 +168,10 @@ export default function CommunityChannel() {
                             onClick={(e) => { e.preventDefault(); post.id && togglePin({ id: post.id }); }}
                             title={post.isPinned ? "Unpin" : "Pin"}
                           >
-                            <Pin className={`w-3.5 h-3.5 ${post.isPinned ? "text-amber-500" : "text-gray-400"}`} />
+                            <Pin className={`w-3.5 h-3.5 ${post.isPinned ? "text-amber-500" : "text-muted-foreground"}`} />
                           </Button>
                         )}
-                        <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-gray-500 transition-colors" />
+                        <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-muted-foreground transition-colors" />
                       </div>
                     </div>
                   </CardContent>

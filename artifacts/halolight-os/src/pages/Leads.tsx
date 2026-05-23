@@ -16,17 +16,17 @@ import { cn } from "@/lib/utils";
 
 const PIPELINE_STAGES = [
   { key: "new", label: "New", color: "bg-slate-100 text-slate-700 border-slate-200" },
-  { key: "contacted", label: "Contacted", color: "bg-blue-50 text-blue-700 border-blue-200" },
+  { key: "contacted", label: "Contacted", color: "bg-info/10 text-info border-info/30" },
   { key: "qualified", label: "Qualified", color: "bg-violet-50 text-violet-700 border-violet-200" },
   { key: "proposal", label: "Proposal", color: "bg-amber-50 text-amber-700 border-amber-200" },
   { key: "negotiation", label: "Negotiation", color: "bg-orange-50 text-orange-700 border-orange-200" },
   { key: "won", label: "Won", color: "bg-emerald-50 text-emerald-700 border-emerald-200" },
-  { key: "lost", label: "Lost", color: "bg-red-50 text-red-700 border-red-200" },
+  { key: "lost", label: "Lost", color: "bg-destructive/10 text-destructive border-destructive/30" },
 ] as const;
 
 const STATUS_DOT: Record<string, string> = {
   new: "bg-slate-400",
-  contacted: "bg-blue-500",
+  contacted: "bg-primary",
   qualified: "bg-violet-500",
   proposal: "bg-amber-500",
   negotiation: "bg-orange-500",
@@ -189,13 +189,13 @@ export default function Leads() {
                     <span className="font-semibold text-sm">{stage.label}</span>
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-medium opacity-70">{formatCurrency(stageValue)}</span>
-                      <span className="bg-white/60 text-xs font-bold px-1.5 py-0.5 rounded-full">{stageLeads.length}</span>
+                      <span className="bg-card/60 text-xs font-bold px-1.5 py-0.5 rounded-full">{stageLeads.length}</span>
                     </div>
                   </div>
                   <div className="border border-t-0 rounded-b-lg bg-muted/30 min-h-[120px] p-2 space-y-2">
                     {stageLeads.map((lead) => (
                       <Link key={lead.id} href={`/crm/leads/${lead.id}`}>
-                        <div className="bg-white rounded-lg border p-3 cursor-pointer hover:shadow-md transition-shadow hover:border-primary/30 group">
+                        <div className="bg-card rounded-lg border p-3 cursor-pointer hover:shadow-md transition-shadow hover:border-primary/30 group">
                           <p className="font-semibold text-sm truncate">{lead.companyName}</p>
                           <p className="text-xs text-muted-foreground truncate mt-0.5">{lead.contactName}</p>
                           <div className="flex items-center justify-between mt-2">

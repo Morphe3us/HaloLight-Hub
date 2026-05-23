@@ -13,10 +13,10 @@ import {
 } from "recharts";
 
 const TIER_CONFIG: Record<string, { label: string; color: string; bg: string; text: string }> = {
-  champion:   { label: "Champion",   color: "#9333ea", bg: "bg-purple-100", text: "text-purple-700" },
-  healthy:    { label: "Healthy",    color: "#16a34a", bg: "bg-green-100",  text: "text-green-700"  },
-  developing: { label: "Developing", color: "#ca8a04", bg: "bg-yellow-100", text: "text-yellow-700" },
-  at_risk:    { label: "At Risk",    color: "#dc2626", bg: "bg-red-100",    text: "text-red-700"    },
+  champion:   { label: "Champion",   color: "#9333ea", bg: "bg-muted", text: "text-foreground" },
+  healthy:    { label: "Healthy",    color: "#16a34a", bg: "bg-success/15",  text: "text-success"  },
+  developing: { label: "Developing", color: "#ca8a04", bg: "bg-warning/15", text: "text-yellow-700" },
+  at_risk:    { label: "At Risk",    color: "#dc2626", bg: "bg-destructive/15",    text: "text-destructive"    },
 };
 
 const SEGMENT_COLORS = ["#3b82f6", "#6366f1", "#8b5cf6", "#a855f7"];
@@ -42,11 +42,11 @@ function KPICard({ title, value, sub, icon: Icon, color = "text-primary", trend 
       <CardContent className="p-5">
         <div className="flex items-start justify-between">
           <div className="flex-1 min-w-0">
-            <p className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wide">{title}</p>
+            <p className="text-xs text-muted-foreground mb-1 font-medium uppercase tracking-wide">{title}</p>
             <p className={`text-2xl font-bold ${color} leading-none`}>{value}</p>
-            {sub && <p className="text-xs text-gray-400 mt-1.5">{sub}</p>}
+            {sub && <p className="text-xs text-muted-foreground mt-1.5">{sub}</p>}
             {trend !== undefined && (
-              <div className={`flex items-center gap-1 mt-1.5 text-xs font-medium ${trend >= 0 ? "text-green-600" : "text-red-500"}`}>
+              <div className={`flex items-center gap-1 mt-1.5 text-xs font-medium ${trend >= 0 ? "text-success" : "text-red-500"}`}>
                 {trend >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
                 {trend >= 0 ? "+" : ""}{trend}% vs last month
               </div>
@@ -63,16 +63,16 @@ function KPICard({ title, value, sub, icon: Icon, color = "text-primary", trend 
 
 function RankBadge({ rank }: { rank: number }) {
   if (rank === 1) return <Crown className="w-5 h-5 text-yellow-500" />;
-  if (rank === 2) return <Medal className="w-5 h-5 text-gray-400" />;
+  if (rank === 2) return <Medal className="w-5 h-5 text-muted-foreground" />;
   if (rank === 3) return <Medal className="w-5 h-5 text-amber-600" />;
-  return <span className="w-5 text-center text-sm font-bold text-gray-400">#{rank}</span>;
+  return <span className="w-5 text-center text-sm font-bold text-muted-foreground">#{rank}</span>;
 }
 
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-lg text-sm">
-      <p className="font-medium text-gray-700 mb-1">{label}</p>
+    <div className="bg-card border border-border rounded-lg p-3 shadow-lg text-sm">
+      <p className="font-medium text-foreground mb-1">{label}</p>
       {payload.map((p: any, i: number) => (
         <p key={i} style={{ color: p.color }}>
           {p.name}: {fmtFull(p.value)}
@@ -88,12 +88,12 @@ export default function AdminRevenue() {
   if (isLoading) {
     return (
       <div className="max-w-7xl mx-auto space-y-6">
-        <div className="h-8 w-72 bg-gray-200 rounded animate-pulse" />
+        <div className="h-8 w-72 bg-border rounded animate-pulse" />
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {[1,2,3,4].map(i => <div key={i} className="h-28 bg-gray-100 rounded-xl animate-pulse" />)}
+          {[1,2,3,4].map(i => <div key={i} className="h-28 bg-muted rounded-xl animate-pulse" />)}
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {[1,2,3,4].map(i => <div key={i} className="h-64 bg-gray-100 rounded-xl animate-pulse" />)}
+          {[1,2,3,4].map(i => <div key={i} className="h-64 bg-muted rounded-xl animate-pulse" />)}
         </div>
       </div>
     );
@@ -122,8 +122,8 @@ export default function AdminRevenue() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Revenue Intelligence</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Financial performance, trends, and client revenue rankings</p>
+          <h1 className="text-2xl font-bold text-foreground">Revenue Intelligence</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">Financial performance, trends, and client revenue rankings</p>
         </div>
         <Link href="/admin/analytics">
           <Button variant="outline" size="sm" className="gap-2">
@@ -140,7 +140,7 @@ export default function AdminRevenue() {
           value={fmtFull(overview?.totalRevenue ?? 0)}
           sub={`${overview?.paidInvoices ?? 0} paid invoices`}
           icon={DollarSign}
-          color="text-green-600"
+          color="text-success"
           trend={overview?.revenueGrowth}
         />
         <KPICard
@@ -148,14 +148,14 @@ export default function AdminRevenue() {
           value={fmtFull(overview?.avgBookingValue ?? 0)}
           sub="per paid invoice"
           icon={Target}
-          color="text-blue-600"
+          color="text-info"
         />
         <KPICard
           title="Quote Acceptance"
           value={`${overview?.quoteAcceptanceRate ?? 0}%`}
           sub={`${quoteFunnel?.accepted?.count ?? 0} of ${quoteFunnel?.totalQuotes ?? 0} quotes`}
           icon={FileText}
-          color="text-purple-600"
+          color="text-muted-foreground"
         />
         <KPICard
           title="Pipeline Revenue"
@@ -173,21 +173,21 @@ export default function AdminRevenue() {
           value={`${overview?.revenueGrowth >= 0 ? "+" : ""}${overview?.revenueGrowth ?? 0}%`}
           sub="vs previous month"
           icon={TrendingUp}
-          color={(overview?.revenueGrowth ?? 0) >= 0 ? "text-green-600" : "text-red-500"}
+          color={(overview?.revenueGrowth ?? 0) >= 0 ? "text-success" : "text-red-500"}
         />
         <KPICard
           title="Lifetime Estimate"
           value={fmtFull(overview?.lifetimeEstimate ?? 0)}
           sub="12-month projection"
           icon={Award}
-          color="text-indigo-600"
+          color="text-info"
         />
         <KPICard
           title="Total Invoices"
           value={String(overview?.totalInvoices ?? 0)}
           sub={`${overview?.paidInvoices ?? 0} paid`}
           icon={ReceiptText}
-          color="text-gray-700"
+          color="text-foreground"
         />
         <KPICard
           title="Conversion Value"
@@ -237,10 +237,10 @@ export default function AdminRevenue() {
                 return (
                   <div key={seg.label}>
                     <div className="flex justify-between text-xs mb-1">
-                      <span className="text-gray-600 font-medium">{seg.label}</span>
-                      <span className="text-gray-500">{fmtFull(seg.revenue)} ({seg.count})</span>
+                      <span className="text-muted-foreground font-medium">{seg.label}</span>
+                      <span className="text-muted-foreground">{fmtFull(seg.revenue)} ({seg.count})</span>
                     </div>
-                    <div className="h-2 bg-gray-100 rounded-full">
+                    <div className="h-2 bg-muted rounded-full">
                       <div
                         className="h-2 rounded-full transition-all"
                         style={{ width: `${pct}%`, backgroundColor: SEGMENT_COLORS[i] ?? "#6366f1" }}
@@ -281,16 +281,16 @@ export default function AdminRevenue() {
                       <div key={t.tier} className="flex items-center justify-between text-xs">
                         <div className="flex items-center gap-1.5">
                           <div className="w-2 h-2 rounded-full" style={{ backgroundColor: cfg?.color ?? "#6b7280" }} />
-                          <span className="text-gray-600">{cfg?.label ?? t.tier}</span>
+                          <span className="text-muted-foreground">{cfg?.label ?? t.tier}</span>
                         </div>
-                        <span className="font-medium text-gray-700">{fmtFull(t.revenue)}</span>
+                        <span className="font-medium text-foreground">{fmtFull(t.revenue)}</span>
                       </div>
                     );
                   })}
                 </div>
               </>
             ) : (
-              <div className="flex items-center justify-center h-40 text-sm text-gray-400">No tier data yet</div>
+              <div className="flex items-center justify-center h-40 text-sm text-muted-foreground">No tier data yet</div>
             )}
           </CardContent>
         </Card>
@@ -306,11 +306,11 @@ export default function AdminRevenue() {
           <CardContent>
             <div className="space-y-3 mt-1">
               {[
-                { key: "draft",    label: "Draft",    color: "bg-gray-200" },
-                { key: "sent",     label: "Sent",     color: "bg-blue-400" },
+                { key: "draft",    label: "Draft",    color: "bg-border" },
+                { key: "sent",     label: "Sent",     color: "bg-info" },
                 { key: "accepted", label: "Accepted", color: "bg-green-500" },
                 { key: "declined", label: "Declined", color: "bg-red-400" },
-                { key: "expired",  label: "Expired",  color: "bg-gray-400" },
+                { key: "expired",  label: "Expired",  color: "bg-muted-foreground" },
               ].map(({ key, label, color }) => {
                 const item = (quoteFunnel as any)?.[key];
                 if (!item?.count) return null;
@@ -319,18 +319,18 @@ export default function AdminRevenue() {
                 return (
                   <div key={key}>
                     <div className="flex justify-between text-xs mb-1">
-                      <span className="text-gray-600 font-medium">{label}</span>
-                      <span className="text-gray-500">{item.count} · {fmtFull(item.value ?? 0)}</span>
+                      <span className="text-muted-foreground font-medium">{label}</span>
+                      <span className="text-muted-foreground">{item.count} · {fmtFull(item.value ?? 0)}</span>
                     </div>
-                    <div className="h-2 bg-gray-100 rounded-full">
+                    <div className="h-2 bg-muted rounded-full">
                       <div className={`h-2 ${color} rounded-full`} style={{ width: `${pct}%` }} />
                     </div>
                   </div>
                 );
               })}
-              <div className="pt-2 border-t text-xs text-gray-500 flex justify-between">
+              <div className="pt-2 border-t text-xs text-muted-foreground flex justify-between">
                 <span>Acceptance rate</span>
-                <span className="font-bold text-green-600">{quoteFunnel?.acceptanceRate ?? 0}%</span>
+                <span className="font-bold text-success">{quoteFunnel?.acceptanceRate ?? 0}%</span>
               </div>
             </div>
           </CardContent>
@@ -349,13 +349,13 @@ export default function AdminRevenue() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-100">
-                  <th className="text-left pb-2 text-xs font-semibold text-gray-400 uppercase tracking-wide w-10">#</th>
-                  <th className="text-left pb-2 text-xs font-semibold text-gray-400 uppercase tracking-wide">Client</th>
-                  <th className="text-right pb-2 text-xs font-semibold text-gray-400 uppercase tracking-wide">Total Revenue</th>
-                  <th className="text-right pb-2 text-xs font-semibold text-gray-400 uppercase tracking-wide hidden md:table-cell">Invoices</th>
-                  <th className="text-right pb-2 text-xs font-semibold text-gray-400 uppercase tracking-wide hidden md:table-cell">Avg Booking</th>
-                  <th className="text-center pb-2 text-xs font-semibold text-gray-400 uppercase tracking-wide hidden lg:table-cell">Tier</th>
+                <tr className="border-b border-border">
+                  <th className="text-left pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide w-10">#</th>
+                  <th className="text-left pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Client</th>
+                  <th className="text-right pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Total Revenue</th>
+                  <th className="text-right pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide hidden md:table-cell">Invoices</th>
+                  <th className="text-right pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide hidden md:table-cell">Avg Booking</th>
+                  <th className="text-center pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide hidden lg:table-cell">Tier</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
@@ -363,7 +363,7 @@ export default function AdminRevenue() {
                   const tier = client.tier ?? "at_risk";
                   const cfg = TIER_CONFIG[tier];
                   return (
-                    <tr key={client.userId} className="hover:bg-gray-50/50 transition-colors">
+                    <tr key={client.userId} className="hover:bg-muted/50 transition-colors">
                       <td className="py-3 pr-2">
                         <div className="flex items-center justify-center w-6">
                           <RankBadge rank={i + 1} />
@@ -372,16 +372,16 @@ export default function AdminRevenue() {
                       <td className="py-3">
                         <Link href={`/admin/clients/${client.userId}`}>
                           <div className="cursor-pointer hover:text-primary">
-                            <p className="font-semibold text-gray-900">{client.name}</p>
-                            <p className="text-xs text-gray-400">{client.company || client.email}</p>
+                            <p className="font-semibold text-foreground">{client.name}</p>
+                            <p className="text-xs text-muted-foreground">{client.company || client.email}</p>
                           </div>
                         </Link>
                       </td>
                       <td className="py-3 text-right">
-                        <span className="font-bold text-gray-900">{fmtFull(client.totalRevenue)}</span>
+                        <span className="font-bold text-foreground">{fmtFull(client.totalRevenue)}</span>
                       </td>
-                      <td className="py-3 text-right hidden md:table-cell text-gray-500">{client.invoiceCount}</td>
-                      <td className="py-3 text-right hidden md:table-cell text-gray-500">{fmtFull(client.avgBooking)}</td>
+                      <td className="py-3 text-right hidden md:table-cell text-muted-foreground">{client.invoiceCount}</td>
+                      <td className="py-3 text-right hidden md:table-cell text-muted-foreground">{fmtFull(client.avgBooking)}</td>
                       <td className="py-3 hidden lg:table-cell">
                         <div className="flex justify-center">
                           {cfg ? (
@@ -396,7 +396,7 @@ export default function AdminRevenue() {
                 })}
                 {(!clientLeaderboard || clientLeaderboard.length === 0) && (
                   <tr>
-                    <td colSpan={6} className="py-8 text-center text-gray-400 text-sm">No revenue data yet</td>
+                    <td colSpan={6} className="py-8 text-center text-muted-foreground text-sm">No revenue data yet</td>
                   </tr>
                 )}
               </tbody>
@@ -408,7 +408,7 @@ export default function AdminRevenue() {
       {/* Top Performers Spotlight */}
       {(topPerformers ?? []).length > 0 && (
         <div>
-          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Top Performers</h2>
+          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Top Performers</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             {(topPerformers ?? []).slice(0, 5).map((client: any, i: number) => {
               const tier = client.tier ?? "at_risk";
@@ -425,8 +425,8 @@ export default function AdminRevenue() {
                       <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center text-primary font-bold text-lg mx-auto mb-2">
                         {(client.name ?? "?").charAt(0).toUpperCase()}
                       </div>
-                      <p className="font-semibold text-gray-900 text-sm truncate">{client.name}</p>
-                      <p className="text-xs text-gray-400 truncate mb-2">{client.company || ""}</p>
+                      <p className="font-semibold text-foreground text-sm truncate">{client.name}</p>
+                      <p className="text-xs text-muted-foreground truncate mb-2">{client.company || ""}</p>
                       <p className="text-lg font-bold text-primary">{fmtFull(client.totalRevenue)}</p>
                       {cfg && (
                         <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium mt-1 inline-block ${cfg.bg} ${cfg.text}`}>

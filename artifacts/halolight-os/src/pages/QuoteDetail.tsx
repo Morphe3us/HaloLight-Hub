@@ -11,9 +11,9 @@ import { useLocation } from "wouter";
 
 const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   draft: { label: "Draft", color: "bg-slate-100 text-slate-700 border-slate-200" },
-  sent: { label: "Sent", color: "bg-blue-50 text-blue-700 border-blue-200" },
+  sent: { label: "Sent", color: "bg-info/10 text-info border-info/30" },
   accepted: { label: "Accepted", color: "bg-emerald-50 text-emerald-700 border-emerald-200" },
-  declined: { label: "Declined", color: "bg-red-50 text-red-700 border-red-200" },
+  declined: { label: "Declined", color: "bg-destructive/10 text-destructive border-destructive/30" },
   expired: { label: "Expired", color: "bg-amber-50 text-amber-700 border-amber-200" },
 };
 
@@ -205,7 +205,7 @@ export default function QuoteDetail() {
           </thead>
           <tbody className="divide-y">
             {(quote.items ?? []).map((item) => (
-              <tr key={item.id} className={cn(Number(item.total) < 0 ? "text-red-600" : "")}>
+              <tr key={item.id} className={cn(Number(item.total) < 0 ? "text-destructive" : "")}>
                 <td className="px-5 py-3">{item.description}</td>
                 <td className="px-4 py-3 text-right text-muted-foreground">{item.quantity}</td>
                 <td className="px-4 py-3 text-right text-muted-foreground">{formatCurrency(item.unitPrice)}</td>

@@ -46,18 +46,18 @@ type Order = {
 };
 
 const CATEGORY_CONFIG: Record<string, { label: string; icon: React.ComponentType<{className?: string}>; color: string }> = {
-  paper:     { label: "Paper",      icon: Layers,   color: "text-blue-600" },
-  ribbon:    { label: "Ribbon",     icon: Printer,  color: "text-purple-600" },
+  paper:     { label: "Paper",      icon: Layers,   color: "text-info" },
+  ribbon:    { label: "Ribbon",     icon: Printer,  color: "text-muted-foreground" },
   accessory: { label: "Accessory",  icon: Package,  color: "text-orange-500" },
   cleaning:  { label: "Cleaning",   icon: Brush,    color: "text-teal-600" },
 };
 
 const ORDER_STATUS: Record<string, { label: string; color: string }> = {
-  pending:    { label: "Pending",    color: "bg-yellow-100 text-yellow-700" },
-  processing: { label: "Processing", color: "bg-blue-100 text-blue-700" },
-  shipped:    { label: "Shipped",    color: "bg-indigo-100 text-indigo-700" },
-  delivered:  { label: "Delivered",  color: "bg-green-100 text-green-700" },
-  cancelled:  { label: "Cancelled",  color: "bg-gray-100 text-gray-500" },
+  pending:    { label: "Pending",    color: "bg-warning/15 text-yellow-700" },
+  processing: { label: "Processing", color: "bg-info/15 text-info" },
+  shipped:    { label: "Shipped",    color: "bg-info/15 text-info" },
+  delivered:  { label: "Delivered",  color: "bg-success/15 text-success" },
+  cancelled:  { label: "Cancelled",  color: "bg-muted text-muted-foreground" },
 };
 
 function fmtDate(d: string | null) {
@@ -70,7 +70,7 @@ function StockBar({ qty, threshold, isCritical, isLow }: { qty: number; threshol
   const pct = Math.min((qty / max) * 100, 100);
   const barColor = isCritical ? "bg-red-500" : isLow ? "bg-amber-400" : "bg-green-500";
   return (
-    <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+    <div className="h-2 bg-muted rounded-full overflow-hidden">
       <div className={`h-full ${barColor} rounded-full transition-all`} style={{ width: `${pct}%` }} />
     </div>
   );
@@ -99,8 +99,8 @@ export default function Consumables() {
 
   if (stockLoading) return (
     <div className="max-w-4xl mx-auto space-y-4">
-      <div className="h-8 w-48 bg-gray-200 rounded animate-pulse" />
-      {[1,2,3].map(i => <div key={i} className="h-28 bg-gray-100 rounded-xl animate-pulse" />)}
+      <div className="h-8 w-48 bg-border rounded animate-pulse" />
+      {[1,2,3].map(i => <div key={i} className="h-28 bg-muted rounded-xl animate-pulse" />)}
     </div>
   );
 
@@ -109,8 +109,8 @@ export default function Consumables() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Consumables</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Paper stock, ribbons, and accessories</p>
+          <h1 className="text-2xl font-bold text-foreground">Consumables</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">Paper stock, ribbons, and accessories</p>
         </div>
         <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setShowOrders(!showOrders)}>
           <ShoppingCart className="w-4 h-4" />
@@ -121,11 +121,11 @@ export default function Consumables() {
 
       {/* Alert Banners */}
       {criticalItems.length > 0 && (
-        <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3">
+        <div className="bg-destructive/10 border border-destructive/30 rounded-xl p-4 flex items-start gap-3">
           <AlertTriangle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
           <div>
             <p className="text-sm font-semibold text-red-800">Critical: Out of stock</p>
-            <p className="text-xs text-red-600 mt-0.5">{criticalItems.map(i => i.name).join(", ")} — reorder immediately</p>
+            <p className="text-xs text-destructive mt-0.5">{criticalItems.map(i => i.name).join(", ")} — reorder immediately</p>
           </div>
         </div>
       )}
@@ -142,15 +142,15 @@ export default function Consumables() {
       {/* Summary KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: "Total Items", value: stock.length, color: "text-gray-700" },
-          { label: "Well Stocked", value: stock.filter(s => !s.isLow).length, color: "text-green-600" },
+          { label: "Total Items", value: stock.length, color: "text-foreground" },
+          { label: "Well Stocked", value: stock.filter(s => !s.isLow).length, color: "text-success" },
           { label: "Low Stock", value: lowItems.length, color: "text-amber-500" },
           { label: "Out of Stock", value: criticalItems.length, color: "text-red-500" },
         ].map(s => (
           <Card key={s.label}>
             <CardContent className="p-4 text-center">
               <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
-              <p className="text-xs text-gray-500 mt-0.5">{s.label}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{s.label}</p>
             </CardContent>
           </Card>
         ))}
@@ -167,18 +167,18 @@ export default function Consumables() {
           </CardHeader>
           <CardContent>
             {ordersLoading ? (
-              <div className="space-y-2">{[1,2,3].map(i => <div key={i} className="h-12 bg-gray-100 rounded animate-pulse" />)}</div>
+              <div className="space-y-2">{[1,2,3].map(i => <div key={i} className="h-12 bg-muted rounded animate-pulse" />)}</div>
             ) : orders.length === 0 ? (
-              <div className="py-8 text-center text-gray-400 text-sm">No orders yet</div>
+              <div className="py-8 text-center text-muted-foreground text-sm">No orders yet</div>
             ) : (
               <div className="space-y-2">
                 {orders.map(order => {
                   const statusCfg = ORDER_STATUS[order.status] ?? ORDER_STATUS.pending!;
                   return (
-                    <div key={order.id} className="flex items-center gap-3 py-2.5 border-b border-gray-50 last:border-0">
+                    <div key={order.id} className="flex items-center gap-3 py-2.5 border-b border-border last:border-0">
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-800">{order.name}</p>
-                        <p className="text-xs text-gray-400">{order.quantity} {order.unitType} · ${Number(order.total).toFixed(2)} · {fmtDate(order.orderedAt)}</p>
+                        <p className="text-sm font-medium text-foreground">{order.name}</p>
+                        <p className="text-xs text-muted-foreground">{order.quantity} {order.unitType} · ${Number(order.total).toFixed(2)} · {fmtDate(order.orderedAt)}</p>
                         {order.notes && <p className="text-xs text-amber-600 mt-0.5">{order.notes}</p>}
                       </div>
                       <span className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${statusCfg.color}`}>
@@ -197,9 +197,9 @@ export default function Consumables() {
       {stock.length === 0 ? (
         <Card>
           <CardContent className="py-16 text-center">
-            <Package className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-            <p className="text-gray-500 font-medium">No consumables tracked yet</p>
-            <p className="text-sm text-gray-400 mt-1">Your paper, ribbon, and accessory stock will appear here</p>
+            <Package className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
+            <p className="text-muted-foreground font-medium">No consumables tracked yet</p>
+            <p className="text-sm text-muted-foreground mt-1">Your paper, ribbon, and accessory stock will appear here</p>
           </CardContent>
         </Card>
       ) : (
@@ -221,31 +221,31 @@ export default function Consumables() {
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <p className="text-sm font-medium text-gray-800">{item.name}</p>
+                            <p className="text-sm font-medium text-foreground">{item.name}</p>
                             {item.isCritical && (
-                              <span className="text-xs px-1.5 py-0.5 rounded-full bg-red-100 text-red-600 font-medium">Out of Stock</span>
+                              <span className="text-xs px-1.5 py-0.5 rounded-full bg-destructive/15 text-destructive font-medium">Out of Stock</span>
                             )}
                             {item.isLow && !item.isCritical && (
                               <span className="text-xs px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-600 font-medium">Low Stock</span>
                             )}
                           </div>
-                          <p className="text-xs text-gray-400">{item.sku}</p>
+                          <p className="text-xs text-muted-foreground">{item.sku}</p>
                           {item.compatibleModels && (
-                            <p className="text-xs text-gray-400">Compatible: {item.compatibleModels}</p>
+                            <p className="text-xs text-muted-foreground">Compatible: {item.compatibleModels}</p>
                           )}
                         </div>
                         <div className="text-right shrink-0">
-                          <p className={`text-lg font-bold ${item.isCritical ? "text-red-500" : item.isLow ? "text-amber-500" : "text-gray-900"}`}>
+                          <p className={`text-lg font-bold ${item.isCritical ? "text-red-500" : item.isLow ? "text-amber-500" : "text-foreground"}`}>
                             {item.currentQuantity}
-                            <span className="text-xs font-normal text-gray-400 ml-1">{item.unitType}</span>
+                            <span className="text-xs font-normal text-muted-foreground ml-1">{item.unitType}</span>
                           </p>
                           {item.daysRemaining !== null && item.daysRemaining >= 0 && (
-                            <p className="text-xs text-gray-400">~{item.daysRemaining}d remaining</p>
+                            <p className="text-xs text-muted-foreground">~{item.daysRemaining}d remaining</p>
                           )}
                         </div>
                       </div>
                       <StockBar qty={item.currentQuantity} threshold={item.reorderThreshold} isCritical={item.isCritical} isLow={item.isLow} />
-                      <div className="flex justify-between text-xs text-gray-400">
+                      <div className="flex justify-between text-xs text-muted-foreground">
                         <span>Reorder threshold: {item.reorderThreshold} {item.unitType}</span>
                         <span>Last restocked: {fmtDate(item.lastRestockedAt)}</span>
                       </div>

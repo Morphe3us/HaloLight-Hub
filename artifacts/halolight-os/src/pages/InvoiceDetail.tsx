@@ -14,9 +14,9 @@ import { cn } from "@/lib/utils";
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.ComponentType<{ className?: string }> }> = {
   draft: { label: "Draft", color: "bg-slate-100 text-slate-700 border-slate-200", icon: Clock },
-  sent: { label: "Sent", color: "bg-blue-50 text-blue-700 border-blue-200", icon: Clock },
+  sent: { label: "Sent", color: "bg-info/10 text-info border-info/30", icon: Clock },
   paid: { label: "Paid", color: "bg-emerald-50 text-emerald-700 border-emerald-200", icon: CheckCircle2 },
-  overdue: { label: "Overdue", color: "bg-red-50 text-red-700 border-red-200", icon: AlertCircle },
+  overdue: { label: "Overdue", color: "bg-destructive/10 text-destructive border-destructive/30", icon: AlertCircle },
   cancelled: { label: "Cancelled", color: "bg-slate-50 text-slate-500 border-slate-200", icon: Clock },
 };
 
@@ -176,9 +176,9 @@ export default function InvoiceDetail() {
 
       {/* Overdue Banner */}
       {invoice.status === "overdue" && (
-        <div className="rounded-xl bg-red-50 border border-red-200 p-4 flex items-center gap-3">
-          <AlertCircle className="w-5 h-5 text-red-600 shrink-0" />
-          <p className="text-sm text-red-700 font-medium">This invoice is overdue. Due date was {formatDate(invoice.dueDate)}.</p>
+        <div className="rounded-xl bg-destructive/10 border border-destructive/30 p-4 flex items-center gap-3">
+          <AlertCircle className="w-5 h-5 text-destructive shrink-0" />
+          <p className="text-sm text-destructive font-medium">This invoice is overdue. Due date was {formatDate(invoice.dueDate)}.</p>
         </div>
       )}
 
@@ -195,14 +195,14 @@ export default function InvoiceDetail() {
           <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Dates</h3>
           <div className="space-y-1.5 text-sm">
             <div className="flex justify-between"><span className="text-muted-foreground">Created</span><span>{formatDate(invoice.createdAt)}</span></div>
-            {invoice.dueDate && <div className="flex justify-between"><span className="text-muted-foreground">Due Date</span><span className={cn(invoice.status === "overdue" ? "text-red-600 font-medium" : "")}>{formatDate(invoice.dueDate)}</span></div>}
+            {invoice.dueDate && <div className="flex justify-between"><span className="text-muted-foreground">Due Date</span><span className={cn(invoice.status === "overdue" ? "text-destructive font-medium" : "")}>{formatDate(invoice.dueDate)}</span></div>}
             {invoice.sentAt && <div className="flex justify-between"><span className="text-muted-foreground">Sent</span><span>{formatDate(invoice.sentAt)}</span></div>}
             {invoice.paidAt && <div className="flex justify-between"><span className="text-muted-foreground">Paid</span><span className="text-emerald-600 font-medium">{formatDate(invoice.paidAt)}</span></div>}
           </div>
         </div>
         <div className="rounded-xl border bg-card p-5 space-y-3">
           <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Amount Due</h3>
-          <p className={cn("text-2xl font-bold", invoice.status === "paid" ? "text-emerald-600" : invoice.status === "overdue" ? "text-red-600" : "")}>{formatCurrency(invoice.total)}</p>
+          <p className={cn("text-2xl font-bold", invoice.status === "paid" ? "text-emerald-600" : invoice.status === "overdue" ? "text-destructive" : "")}>{formatCurrency(invoice.total)}</p>
           <div className="text-xs text-muted-foreground space-y-1">
             <div className="flex justify-between"><span>Subtotal</span><span>{formatCurrency(invoice.subtotal)}</span></div>
             <div className="flex justify-between"><span>Tax ({invoice.taxRate}%)</span><span>{formatCurrency(invoice.taxAmount)}</span></div>
@@ -224,7 +224,7 @@ export default function InvoiceDetail() {
           </thead>
           <tbody className="divide-y">
             {items.map((item) => (
-              <tr key={item.id} className={cn(Number(item.total) < 0 ? "text-red-600" : "")}>
+              <tr key={item.id} className={cn(Number(item.total) < 0 ? "text-destructive" : "")}>
                 <td className="px-5 py-3">{item.description}</td>
                 <td className="px-4 py-3 text-right text-muted-foreground">{item.quantity}</td>
                 <td className="px-4 py-3 text-right text-muted-foreground">{formatCurrency(item.unitPrice)}</td>

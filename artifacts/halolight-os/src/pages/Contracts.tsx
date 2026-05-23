@@ -15,11 +15,11 @@ import { cn } from "@/lib/utils";
 
 const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   draft: { label: "Draft", color: "bg-slate-100 text-slate-700 border-slate-200" },
-  sent: { label: "Sent", color: "bg-blue-50 text-blue-700 border-blue-200" },
+  sent: { label: "Sent", color: "bg-info/10 text-info border-info/30" },
   signed: { label: "Signed", color: "bg-emerald-50 text-emerald-700 border-emerald-200" },
-  active: { label: "Active", color: "bg-green-50 text-green-700 border-green-200" },
+  active: { label: "Active", color: "bg-success/10 text-success border-green-200" },
   expired: { label: "Expired", color: "bg-amber-50 text-amber-700 border-amber-200" },
-  cancelled: { label: "Cancelled", color: "bg-red-50 text-red-700 border-red-200" },
+  cancelled: { label: "Cancelled", color: "bg-destructive/10 text-destructive border-destructive/30" },
 };
 
 function formatCurrency(val: string | number) {

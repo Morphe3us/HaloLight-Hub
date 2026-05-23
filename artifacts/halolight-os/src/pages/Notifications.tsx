@@ -47,7 +47,7 @@ export default function Notifications() {
     <div className="max-w-4xl mx-auto space-y-6" data-testid="page-notifications">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900 flex items-center gap-3">
+          <h1 className="text-3xl font-bold tracking-tight text-foreground flex items-center gap-3">
             Inbox
             {unreadCount > 0 && (
               <Badge variant="secondary" className="bg-primary/10 text-primary hover:bg-primary/20 text-sm">
@@ -55,7 +55,7 @@ export default function Notifications() {
               </Badge>
             )}
           </h1>
-          <p className="text-gray-500 mt-1">Manage your alerts and system updates.</p>
+          <p className="text-muted-foreground mt-1">Manage your alerts and system updates.</p>
         </div>
         
         {unreadCount > 0 && (
@@ -76,38 +76,38 @@ export default function Notifications() {
         {notifications.length === 0 ? (
           <Card className="p-12 text-center border-dashed">
             <div className="flex justify-center mb-4">
-              <div className="h-12 w-12 rounded-full bg-gray-100 flex items-center justify-center">
-                <Bell className="h-6 w-6 text-gray-400" />
+              <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center">
+                <Bell className="h-6 w-6 text-muted-foreground" />
               </div>
             </div>
-            <h3 className="text-lg font-medium text-gray-900">All caught up!</h3>
-            <p className="text-gray-500 mt-1">You have no notifications right now.</p>
+            <h3 className="text-lg font-medium text-foreground">All caught up!</h3>
+            <p className="text-muted-foreground mt-1">You have no notifications right now.</p>
           </Card>
         ) : (
           notifications.map((notification) => (
             <Card 
               key={notification.id} 
-              className={`p-5 transition-colors border ${!notification.isRead ? 'bg-primary/[0.02] border-primary/20 shadow-sm' : 'bg-white border-gray-200'}`}
+              className={`p-5 transition-colors border ${!notification.isRead ? 'bg-primary/[0.02] border-primary/20 shadow-sm' : 'bg-card border-border'}`}
               data-testid={`card-notification-${notification.id}`}
             >
               <div className="flex items-start gap-4">
-                <div className={`mt-1 p-2 rounded-full shrink-0 ${!notification.isRead ? 'bg-primary/10 text-primary' : 'bg-gray-100 text-gray-400'}`}>
+                <div className={`mt-1 p-2 rounded-full shrink-0 ${!notification.isRead ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
                   {!notification.isRead ? <BellRing className="w-4 h-4" /> : <Bell className="w-4 h-4" />}
                 </div>
                 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-4">
                     <div>
-                      <h4 className={`text-base font-semibold ${!notification.isRead ? 'text-gray-900' : 'text-gray-700'}`}>
+                      <h4 className={`text-base font-semibold ${!notification.isRead ? 'text-foreground' : 'text-foreground'}`}>
                         {notification.title}
                       </h4>
-                      <p className="text-gray-600 mt-1">{notification.body}</p>
+                      <p className="text-muted-foreground mt-1">{notification.body}</p>
                       
                       <div className="flex items-center gap-4 mt-3">
-                        <span className="text-xs font-medium text-gray-400 uppercase tracking-wider">
+                        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                           {notification.type.replace('_', ' ')}
                         </span>
-                        <span className="text-xs text-gray-400">
+                        <span className="text-xs text-muted-foreground">
                           {new Date(notification.createdAt).toLocaleString()}
                         </span>
                       </div>
@@ -119,7 +119,7 @@ export default function Notifications() {
                         size="sm"
                         onClick={() => handleMarkRead(notification.id)}
                         disabled={markRead.isPending}
-                        className="shrink-0 text-gray-500 hover:text-primary hover:bg-primary/10"
+                        className="shrink-0 text-muted-foreground hover:text-primary hover:bg-primary/10"
                         data-testid={`button-mark-read-${notification.id}`}
                       >
                         <Check className="h-4 w-4 mr-2" />

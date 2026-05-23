@@ -26,10 +26,10 @@ type EquipmentItem = {
 };
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.ComponentType<{className?: string}> }> = {
-  active:     { label: "Active",      color: "bg-green-100 text-green-700",  icon: CheckCircle2 },
-  inactive:   { label: "Inactive",    color: "bg-gray-100 text-gray-500",    icon: Package },
-  in_service: { label: "In Service",  color: "bg-blue-100 text-blue-700",    icon: Wrench },
-  retired:    { label: "Retired",     color: "bg-red-100 text-red-600",      icon: AlertTriangle },
+  active:     { label: "Active",      color: "bg-success/15 text-success",  icon: CheckCircle2 },
+  inactive:   { label: "Inactive",    color: "bg-muted text-muted-foreground",    icon: Package },
+  in_service: { label: "In Service",  color: "bg-info/15 text-info",    icon: Wrench },
+  retired:    { label: "Retired",     color: "bg-destructive/15 text-destructive",      icon: AlertTriangle },
 };
 
 const SERVICE_TYPE_LABELS: Record<string, string> = {
@@ -41,13 +41,13 @@ const SERVICE_TYPE_LABELS: Record<string, string> = {
 };
 
 function warrantyStatus(expiry: string | null): { label: string; color: string; icon: React.ComponentType<{className?: string}> } {
-  if (!expiry) return { label: "No Warranty", color: "text-gray-400", icon: ShieldX };
+  if (!expiry) return { label: "No Warranty", color: "text-muted-foreground", icon: ShieldX };
   const now = new Date();
   const exp = new Date(expiry);
   const daysLeft = Math.round((exp.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
   if (daysLeft < 0) return { label: "Expired", color: "text-red-500", icon: ShieldX };
   if (daysLeft <= 60) return { label: `Expires in ${daysLeft}d`, color: "text-amber-500", icon: ShieldAlert };
-  return { label: `${Math.floor(daysLeft / 30)}mo left`, color: "text-green-600", icon: ShieldCheck };
+  return { label: `${Math.floor(daysLeft / 30)}mo left`, color: "text-success", icon: ShieldCheck };
 }
 
 function maintenanceStatus(next: string | null): { label: string; urgent: boolean } {
@@ -78,8 +78,8 @@ export default function Equipment() {
   if (isLoading) {
     return (
       <div className="max-w-4xl mx-auto space-y-4">
-        <div className="h-8 w-56 bg-gray-200 rounded animate-pulse" />
-        {[1,2,3].map(i => <div key={i} className="h-36 bg-gray-100 rounded-xl animate-pulse" />)}
+        <div className="h-8 w-56 bg-border rounded animate-pulse" />
+        {[1,2,3].map(i => <div key={i} className="h-36 bg-muted rounded-xl animate-pulse" />)}
       </div>
     );
   }
@@ -89,8 +89,8 @@ export default function Equipment() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">My Equipment</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Track your photobooth units, warranties, and service history</p>
+          <h1 className="text-2xl font-bold text-foreground">My Equipment</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">Track your photobooth units, warranties, and service history</p>
         </div>
         <Button variant="outline" size="sm" className="gap-1.5" disabled>
           <Plus className="w-4 h-4" />
@@ -115,15 +115,15 @@ export default function Equipment() {
       {items.length > 0 && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
-            { label: "Total Units", value: items.length, color: "text-gray-700" },
-            { label: "Active", value: items.filter(e => e.status === "active").length, color: "text-green-600" },
-            { label: "In Service", value: items.filter(e => e.status === "in_service").length, color: "text-blue-600" },
+            { label: "Total Units", value: items.length, color: "text-foreground" },
+            { label: "Active", value: items.filter(e => e.status === "active").length, color: "text-success" },
+            { label: "In Service", value: items.filter(e => e.status === "in_service").length, color: "text-info" },
             { label: "Alerts", value: alerts.length, color: "text-amber-500" },
           ].map(s => (
             <Card key={s.label}>
               <CardContent className="p-4 text-center">
                 <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
-                <p className="text-xs text-gray-500 mt-0.5">{s.label}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{s.label}</p>
               </CardContent>
             </Card>
           ))}
@@ -134,9 +134,9 @@ export default function Equipment() {
       {items.length === 0 ? (
         <Card>
           <CardContent className="py-16 text-center">
-            <Monitor className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-            <p className="text-gray-500 font-medium">No equipment registered yet</p>
-            <p className="text-sm text-gray-400 mt-1">Your photobooth units will appear here once registered</p>
+            <Monitor className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
+            <p className="text-muted-foreground font-medium">No equipment registered yet</p>
+            <p className="text-sm text-muted-foreground mt-1">Your photobooth units will appear here once registered</p>
           </CardContent>
         </Card>
       ) : (
@@ -158,33 +158,33 @@ export default function Equipment() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <h3 className="font-semibold text-gray-900 text-base">{item.productModel}</h3>
+                          <h3 className="font-semibold text-foreground text-base">{item.productModel}</h3>
                           <span className={`text-xs px-2 py-0.5 rounded-full font-medium flex items-center gap-1 ${statusCfg.color}`}>
                             <StatusIcon className="w-3 h-3" />
                             {statusCfg.label}
                           </span>
                         </div>
-                        <p className="text-xs text-gray-400 mt-0.5">S/N: {item.serialNumber}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">S/N: {item.serialNumber}</p>
 
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3">
                           <div>
-                            <p className="text-xs text-gray-400">Purchased</p>
-                            <p className="text-xs font-medium text-gray-700">{fmtDate(item.purchaseDate)}</p>
+                            <p className="text-xs text-muted-foreground">Purchased</p>
+                            <p className="text-xs font-medium text-foreground">{fmtDate(item.purchaseDate)}</p>
                           </div>
                           <div>
-                            <p className="text-xs text-gray-400">Warranty</p>
+                            <p className="text-xs text-muted-foreground">Warranty</p>
                             <p className={`text-xs font-medium flex items-center gap-1 ${w.color}`}>
                               <WarrantyIcon className="w-3 h-3" />
                               {w.label}
                             </p>
                           </div>
                           <div>
-                            <p className="text-xs text-gray-400">Last Service</p>
-                            <p className="text-xs font-medium text-gray-700">{fmtDate(item.lastMaintenanceDate)}</p>
+                            <p className="text-xs text-muted-foreground">Last Service</p>
+                            <p className="text-xs font-medium text-foreground">{fmtDate(item.lastMaintenanceDate)}</p>
                           </div>
                           <div>
-                            <p className="text-xs text-gray-400">Next Service</p>
-                            <p className={`text-xs font-medium flex items-center gap-1 ${m.urgent ? "text-amber-500" : "text-gray-700"}`}>
+                            <p className="text-xs text-muted-foreground">Next Service</p>
+                            <p className={`text-xs font-medium flex items-center gap-1 ${m.urgent ? "text-amber-500" : "text-foreground"}`}>
                               {m.urgent && <AlertTriangle className="w-3 h-3" />}
                               {m.label}
                             </p>
@@ -192,13 +192,13 @@ export default function Equipment() {
                         </div>
 
                         {item.maintenanceNotes && (
-                          <div className="mt-3 bg-gray-50 rounded-lg px-3 py-2 flex items-start gap-2">
-                            <Info className="w-3.5 h-3.5 text-gray-400 mt-0.5 shrink-0" />
-                            <p className="text-xs text-gray-500 line-clamp-2">{item.maintenanceNotes}</p>
+                          <div className="mt-3 bg-muted rounded-lg px-3 py-2 flex items-start gap-2">
+                            <Info className="w-3.5 h-3.5 text-muted-foreground mt-0.5 shrink-0" />
+                            <p className="text-xs text-muted-foreground line-clamp-2">{item.maintenanceNotes}</p>
                           </div>
                         )}
                       </div>
-                      <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-primary transition-colors shrink-0 mt-1" />
+                      <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0 mt-1" />
                     </div>
                   </CardContent>
                 </Card>

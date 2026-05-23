@@ -32,27 +32,34 @@ function NavLink({ item, location, onClose }: { item: NavItem; location: string;
         <button
           onClick={() => setOpen(!open)}
           className={cn(
-            "flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer w-full group",
-            isGroupActive ? "text-gray-100" : "text-gray-400 hover:bg-sidebar-accent/50 hover:text-gray-200"
+            "flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 cursor-pointer w-full group",
+            isGroupActive
+              ? "text-foreground"
+              : "text-muted-foreground hover:bg-accent/10 hover:text-foreground"
           )}
         >
           <div className="flex items-center gap-3">
-            <item.icon className={cn("w-5 h-5", isGroupActive ? "text-primary" : "text-gray-400 group-hover:text-gray-300")} />
-            {item.title}
+            <item.icon className={cn(
+              "w-4 h-4 shrink-0",
+              isGroupActive ? "text-accent-foreground" : "text-muted-foreground group-hover:text-foreground"
+            )} />
+            <span>{item.title}</span>
           </div>
-          <ChevronDown className={cn("w-4 h-4 transition-transform text-gray-500", open ? "rotate-180" : "")} />
+          <ChevronDown className={cn("w-3.5 h-3.5 transition-transform text-muted-foreground", open ? "rotate-180" : "")} />
         </button>
         {open && (
-          <div className="ml-4 mt-1 space-y-0.5 border-l border-sidebar-border pl-3">
+          <div className="ml-4 mt-0.5 space-y-0.5 border-l border-border pl-3">
             {item.children.map((child) => {
               const isActive = location === child.href;
               return (
                 <Link key={child.href} href={child.href} onClick={onClose}>
                   <div className={cn(
-                    "flex items-center gap-2.5 px-2 py-2 rounded-lg text-sm font-medium transition-all cursor-pointer",
-                    isActive ? "bg-sidebar-accent text-sidebar-accent-foreground" : "text-gray-400 hover:text-gray-200 hover:bg-sidebar-accent/30"
+                    "flex items-center gap-2.5 px-2 py-2 rounded-lg text-sm font-medium transition-all duration-150 cursor-pointer",
+                    isActive
+                      ? "bg-accent/15 text-foreground"
+                      : "text-muted-foreground hover:text-foreground hover:bg-accent/8"
                   )}>
-                    <child.icon className={cn("w-4 h-4", isActive ? "text-primary" : "text-gray-400")} />
+                    <child.icon className={cn("w-3.5 h-3.5 shrink-0", isActive ? "text-foreground" : "text-muted-foreground")} />
                     {child.title}
                   </div>
                 </Link>
@@ -67,22 +74,31 @@ function NavLink({ item, location, onClose }: { item: NavItem; location: string;
   const isActive = location === item.href;
   return (
     <Link href={item.href} onClick={onClose}>
-      <div className={cn(
-        "flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer group",
-        isActive ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-sm" : "text-gray-400 hover:bg-sidebar-accent/50 hover:text-gray-200"
-      )}
+      <div
+        className={cn(
+          "flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 cursor-pointer group",
+          isActive
+            ? "bg-accent/15 text-foreground shadow-sm"
+            : "text-muted-foreground hover:bg-accent/10 hover:text-foreground"
+        )}
         data-testid={`link-sidebar-${item.title.toLowerCase()}`}
       >
         <div className="flex items-center gap-3">
-          <item.icon className={cn("w-5 h-5", isActive ? "text-primary" : "text-gray-400 group-hover:text-gray-300")} />
-          {item.title}
+          <item.icon className={cn(
+            "w-4 h-4 shrink-0",
+            isActive ? "text-foreground" : "text-muted-foreground group-hover:text-foreground"
+          )} />
+          <span>{item.title}</span>
         </div>
         {item.badge && unreadData?.count ? (
-          <span className="bg-primary text-primary-foreground text-xs font-bold px-2 py-0.5 rounded-full min-w-[20px] text-center">
+          <span className="bg-accent text-foreground text-xs font-bold px-2 py-0.5 rounded-full min-w-[20px] text-center">
             {unreadData.count}
           </span>
         ) : (
-          <ChevronRight className={cn("w-4 h-4 opacity-0 transition-opacity", isActive ? "opacity-100 text-primary" : "group-hover:opacity-100 text-gray-500")} />
+          <ChevronRight className={cn(
+            "w-3.5 h-3.5 opacity-0 transition-opacity",
+            isActive ? "opacity-60" : "group-hover:opacity-40"
+          )} />
         )}
       </div>
     </Link>
@@ -163,29 +179,31 @@ export function Sidebar() {
   };
 
   const SidebarContent = ({ onClose }: { onClose?: () => void }) => (
-    <div className="flex flex-col h-full bg-sidebar border-r border-sidebar-border text-sidebar-foreground">
-      <div className="p-6">
-        <div className="flex items-center gap-3">
-          <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold shadow-sm">
-            HL
-          </div>
-          <span className="font-semibold text-lg tracking-tight">HaloLight OS</span>
+    <div className="flex flex-col h-full bg-background border-r border-border">
+      {/* Logo */}
+      <div className="px-5 py-5 border-b border-border">
+        <div className="flex items-center gap-2.5">
+          <img src="/logo-dark.png" alt="HaloLight" className="h-7 w-auto object-contain dark:hidden" />
+          <img src="/logo-white.png" alt="HaloLight" className="h-7 w-auto object-contain hidden dark:block" />
+          <span className="font-semibold text-base tracking-tight text-foreground">HaloLight OS</span>
         </div>
       </div>
 
-      <div className="flex-1 px-4 py-2 space-y-1 overflow-y-auto">
+      {/* Navigation */}
+      <div className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
         {allItems.map((item) => (
           <NavLink key={item.href} item={item} location={location} onClose={onClose} />
         ))}
       </div>
 
-      <div className="p-4 mt-auto">
+      {/* Sign Out */}
+      <div className="px-3 py-4 border-t border-border">
         <button
           onClick={handleSignOut}
-          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-400 hover:bg-sidebar-accent hover:text-red-400 transition-colors w-full cursor-pointer"
+          className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:bg-destructive/8 hover:text-destructive transition-colors w-full cursor-pointer"
           data-testid="button-signout-sidebar"
         >
-          <LogOut className="w-5 h-5" />
+          <LogOut className="w-4 h-4 shrink-0" />
           Sign Out
         </button>
       </div>
@@ -194,25 +212,26 @@ export function Sidebar() {
 
   return (
     <>
-      <div className="hidden md:flex w-[260px] flex-col h-screen sticky top-0 shrink-0">
+      {/* Desktop sidebar */}
+      <div className="hidden md:flex w-[240px] flex-col h-screen sticky top-0 shrink-0">
         <SidebarContent />
       </div>
 
-      <div className="md:hidden flex items-center p-4 border-b bg-white">
+      {/* Mobile header */}
+      <div className="md:hidden flex items-center p-4 border-b border-border bg-background">
         <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
           <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" className="mr-2" data-testid="button-mobile-menu">
+            <Button variant="ghost" size="icon" className="mr-3" data-testid="button-mobile-menu">
               <Menu className="h-5 w-5" />
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="p-0 w-[260px] bg-sidebar border-sidebar-border">
+          <SheetContent side="left" className="p-0 w-[240px] bg-background border-border">
             <SidebarContent onClose={() => setMobileOpen(false)} />
           </SheetContent>
         </Sheet>
-        <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold shadow-sm mr-3">
-          HL
-        </div>
-        <span className="font-semibold text-lg tracking-tight">HaloLight OS</span>
+        <img src="/logo-dark.png" alt="HaloLight" className="h-7 w-auto object-contain dark:hidden" />
+        <img src="/logo-white.png" alt="HaloLight" className="h-7 w-auto object-contain hidden dark:block" />
+        <span className="ml-2.5 font-semibold text-base tracking-tight text-foreground">HaloLight OS</span>
       </div>
     </>
   );

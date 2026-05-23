@@ -8,10 +8,10 @@ import {
 } from "lucide-react";
 
 const tierColors: Record<string, { bg: string; text: string; icon: React.ComponentType<{ className?: string }> }> = {
-  at_risk: { bg: "bg-red-100", text: "text-red-700", icon: AlertTriangle },
-  developing: { bg: "bg-yellow-100", text: "text-yellow-700", icon: Activity },
-  healthy: { bg: "bg-green-100", text: "text-green-700", icon: Heart },
-  champion: { bg: "bg-purple-100", text: "text-purple-700", icon: Award },
+  at_risk: { bg: "bg-destructive/15", text: "text-destructive", icon: AlertTriangle },
+  developing: { bg: "bg-warning/15", text: "text-yellow-700", icon: Activity },
+  healthy: { bg: "bg-success/15", text: "text-success", icon: Heart },
+  champion: { bg: "bg-muted", text: "text-foreground", icon: Award },
 };
 
 function StatCard({ title, value, sub, icon: Icon, color = "text-primary" }: {
@@ -23,11 +23,11 @@ function StatCard({ title, value, sub, icon: Icon, color = "text-primary" }: {
       <CardContent className="p-5">
         <div className="flex items-start justify-between">
           <div>
-            <p className="text-sm text-gray-500 mb-1">{title}</p>
+            <p className="text-sm text-muted-foreground mb-1">{title}</p>
             <p className={`text-2xl font-bold ${color}`}>{value}</p>
-            {sub && <p className="text-xs text-gray-400 mt-1">{sub}</p>}
+            {sub && <p className="text-xs text-muted-foreground mt-1">{sub}</p>}
           </div>
-          <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center">
             <Icon className={`w-5 h-5 ${color}`} />
           </div>
         </div>
@@ -39,7 +39,7 @@ function StatCard({ title, value, sub, icon: Icon, color = "text-primary" }: {
 function ProgressBar({ value, max = 100, color = "bg-primary" }: { value: number; max?: number; color?: string }) {
   const pct = Math.min(Math.round((value / max) * 100), 100);
   return (
-    <div className="w-full bg-gray-100 rounded-full h-2">
+    <div className="w-full bg-muted rounded-full h-2">
       <div className={`${color} h-2 rounded-full transition-all`} style={{ width: `${pct}%` }} />
     </div>
   );
@@ -51,12 +51,12 @@ export default function AdminAnalytics() {
   if (isLoading) {
     return (
       <div className="max-w-6xl mx-auto space-y-6">
-        <div className="h-8 w-64 bg-gray-200 rounded animate-pulse" />
+        <div className="h-8 w-64 bg-border rounded animate-pulse" />
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map((i) => <div key={i} className="h-28 bg-gray-100 rounded-xl animate-pulse" />)}
+          {[1, 2, 3, 4].map((i) => <div key={i} className="h-28 bg-muted rounded-xl animate-pulse" />)}
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {[1, 2, 3, 4].map((i) => <div key={i} className="h-40 bg-gray-100 rounded-xl animate-pulse" />)}
+          {[1, 2, 3, 4].map((i) => <div key={i} className="h-40 bg-muted rounded-xl animate-pulse" />)}
         </div>
       </div>
     );
@@ -71,24 +71,24 @@ export default function AdminAnalytics() {
   return (
     <div className="max-w-6xl mx-auto space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Analytics Dashboard</h1>
-        <p className="text-sm text-gray-500 mt-0.5">Platform-wide metrics and insights</p>
+        <h1 className="text-2xl font-bold text-foreground">Analytics Dashboard</h1>
+        <p className="text-sm text-muted-foreground mt-0.5">Platform-wide metrics and insights</p>
       </div>
 
       {/* Users */}
       <section>
-        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Users</h2>
+        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Users</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <StatCard title="Total Clients" value={users?.total ?? 0} icon={Users} />
-          <StatCard title="Active (30 days)" value={users?.active ?? 0} sub={`${users?.activeRate ?? 0}% of total`} icon={Activity} color="text-green-600" />
+          <StatCard title="Active (30 days)" value={users?.active ?? 0} sub={`${users?.activeRate ?? 0}% of total`} icon={Activity} color="text-success" />
           <StatCard title="Inactive" value={users?.inactive ?? 0} icon={AlertTriangle} color="text-orange-500" />
-          <StatCard title="Avg Success Score" value={successScores?.avgScore ?? 0} sub="/ 100" icon={Award} color="text-purple-600" />
+          <StatCard title="Avg Success Score" value={successScores?.avgScore ?? 0} sub="/ 100" icon={Award} color="text-muted-foreground" />
         </div>
       </section>
 
       {/* Score Distribution */}
       <section>
-        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Success Score Distribution</h2>
+        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Success Score Distribution</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {(["champion", "healthy", "developing", "at_risk"] as const).map((tier) => {
             const { bg, text, icon: TierIcon } = tierColors[tier]!;
@@ -103,7 +103,7 @@ export default function AdminAnalytics() {
                     <span className={`text-xs font-medium ${text}`}>{labels[tier]}</span>
                   </div>
                   <div className={`text-3xl font-bold ${text} mb-1`}>{count}</div>
-                  <div className="text-xs text-gray-500">{pct}% of scored users</div>
+                  <div className="text-xs text-muted-foreground">{pct}% of scored users</div>
                   <ProgressBar value={count} max={totalWithScores || 1} color={text.replace("text-", "bg-")} />
                 </CardContent>
               </Card>
@@ -114,13 +114,13 @@ export default function AdminAnalytics() {
 
       {/* Sales & Revenue */}
       <section>
-        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Sales & Revenue</h2>
+        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Sales & Revenue</h2>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-          <StatCard title="Total Revenue" value={`$${((sales?.totalRevenue ?? 0) / 100).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}` } sub="from paid invoices" icon={DollarSign} color="text-green-600" />
+          <StatCard title="Total Revenue" value={`$${((sales?.totalRevenue ?? 0) / 100).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}` } sub="from paid invoices" icon={DollarSign} color="text-success" />
           <StatCard title="Events" value={sales?.totalEvents ?? 0} icon={Calendar} />
           <StatCard title="Quotes" value={sales?.totalQuotes ?? 0} icon={FileText} />
           <StatCard title="Invoices" value={sales?.totalInvoices ?? 0} sub={`${sales?.paidInvoices ?? 0} paid`} icon={ReceiptText} />
-          <StatCard title="Quote→Invoice Rate" value={`${sales?.conversionRate ?? 0}%`} icon={TrendingUp} color="text-blue-600" />
+          <StatCard title="Quote→Invoice Rate" value={`${sales?.conversionRate ?? 0}%`} icon={TrendingUp} color="text-info" />
         </div>
       </section>
 
@@ -136,11 +136,11 @@ export default function AdminAnalytics() {
           </CardHeader>
           <CardContent>
             <div className="flex items-end gap-2 mb-3">
-              <span className="text-3xl font-bold text-gray-900">{onboarding?.avgCompletionPct ?? 0}%</span>
-              <span className="text-sm text-gray-400 mb-1">average completion</span>
+              <span className="text-3xl font-bold text-foreground">{onboarding?.avgCompletionPct ?? 0}%</span>
+              <span className="text-sm text-muted-foreground mb-1">average completion</span>
             </div>
             <ProgressBar value={onboarding?.avgCompletionPct ?? 0} color="bg-primary" />
-            <p className="text-xs text-gray-400 mt-2">{onboarding?.usersWithProgress ?? 0} users have started onboarding</p>
+            <p className="text-xs text-muted-foreground mt-2">{onboarding?.usersWithProgress ?? 0} users have started onboarding</p>
           </CardContent>
         </Card>
 
@@ -155,16 +155,16 @@ export default function AdminAnalytics() {
           <CardContent>
             <div className="grid grid-cols-3 gap-4 text-center">
               <div>
-                <p className="text-2xl font-bold text-gray-900">{academy?.engagedLearners ?? 0}</p>
-                <p className="text-xs text-gray-400">Active learners</p>
+                <p className="text-2xl font-bold text-foreground">{academy?.engagedLearners ?? 0}</p>
+                <p className="text-xs text-muted-foreground">Active learners</p>
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">{academy?.totalLessonsCompleted ?? 0}</p>
-                <p className="text-xs text-gray-400">Lessons completed</p>
+                <p className="text-2xl font-bold text-foreground">{academy?.totalLessonsCompleted ?? 0}</p>
+                <p className="text-xs text-muted-foreground">Lessons completed</p>
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">{academy?.avgLessonsPerLearner ?? 0}</p>
-                <p className="text-xs text-gray-400">Avg per learner</p>
+                <p className="text-2xl font-bold text-foreground">{academy?.avgLessonsPerLearner ?? 0}</p>
+                <p className="text-xs text-muted-foreground">Avg per learner</p>
               </div>
             </div>
           </CardContent>
@@ -181,16 +181,16 @@ export default function AdminAnalytics() {
           <CardContent>
             <div className="grid grid-cols-3 gap-4 text-center">
               <div>
-                <p className="text-2xl font-bold text-gray-900">{community?.totalPosts ?? 0}</p>
-                <p className="text-xs text-gray-400">Total posts</p>
+                <p className="text-2xl font-bold text-foreground">{community?.totalPosts ?? 0}</p>
+                <p className="text-xs text-muted-foreground">Total posts</p>
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">{community?.totalReplies ?? 0}</p>
-                <p className="text-xs text-gray-400">Replies</p>
+                <p className="text-2xl font-bold text-foreground">{community?.totalReplies ?? 0}</p>
+                <p className="text-xs text-muted-foreground">Replies</p>
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">{community?.recentPosts ?? 0}</p>
-                <p className="text-xs text-gray-400">Last 30 days</p>
+                <p className="text-2xl font-bold text-foreground">{community?.recentPosts ?? 0}</p>
+                <p className="text-xs text-muted-foreground">Last 30 days</p>
               </div>
             </div>
           </CardContent>
@@ -207,20 +207,20 @@ export default function AdminAnalytics() {
           <CardContent>
             <div className="grid grid-cols-3 gap-4 text-center mb-3">
               <div>
-                <p className="text-2xl font-bold text-gray-900">{support?.totalTickets ?? 0}</p>
-                <p className="text-xs text-gray-400">Total tickets</p>
+                <p className="text-2xl font-bold text-foreground">{support?.totalTickets ?? 0}</p>
+                <p className="text-xs text-muted-foreground">Total tickets</p>
               </div>
               <div>
                 <p className="text-2xl font-bold text-orange-500">{support?.openTickets ?? 0}</p>
-                <p className="text-xs text-gray-400">Open</p>
+                <p className="text-xs text-muted-foreground">Open</p>
               </div>
               <div>
-                <p className="text-2xl font-bold text-green-600">{support?.resolvedTickets ?? 0}</p>
-                <p className="text-xs text-gray-400">Resolved</p>
+                <p className="text-2xl font-bold text-success">{support?.resolvedTickets ?? 0}</p>
+                <p className="text-xs text-muted-foreground">Resolved</p>
               </div>
             </div>
             <div className="space-y-1">
-              <div className="flex justify-between text-xs text-gray-500">
+              <div className="flex justify-between text-xs text-muted-foreground">
                 <span>Resolution rate</span>
                 <span className="font-medium">{support?.resolutionRate ?? 0}%</span>
               </div>

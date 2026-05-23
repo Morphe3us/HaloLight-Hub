@@ -96,12 +96,12 @@ const ACTION_LABELS: Record<string, string> = {
 const TRIGGER_COLORS: Record<string, string> = {
   onboarding_stalled: "bg-amber-100 text-amber-800",
   inactive_user: "bg-slate-100 text-slate-700",
-  low_academy_progress: "bg-blue-100 text-blue-800",
-  no_events_created: "bg-purple-100 text-purple-800",
-  no_quotes_created: "bg-indigo-100 text-indigo-800",
+  low_academy_progress: "bg-info/15 text-info",
+  no_events_created: "bg-muted text-foreground",
+  no_quotes_created: "bg-info/15 text-info",
   low_consumable_stock: "bg-orange-100 text-orange-800",
-  warranty_expiring: "bg-red-100 text-red-800",
-  high_performer_detected: "bg-green-100 text-green-800",
+  warranty_expiring: "bg-destructive/15 text-red-800",
+  high_performer_detected: "bg-success/15 text-green-800",
   upsell_opportunity_detected: "bg-teal-100 text-teal-800",
   coaching_recommendation_generated: "bg-violet-100 text-violet-800",
 };
@@ -116,11 +116,11 @@ const ACTION_ICONS: Record<string, React.ElementType> = {
 };
 
 const STATUS_CONFIG: Record<string, { icon: React.ElementType; color: string; label: string }> = {
-  action_taken: { icon: CheckCircle2, color: "text-green-600", label: "Action Taken" },
+  action_taken: { icon: CheckCircle2, color: "text-success", label: "Action Taken" },
   no_match: { icon: SkipForward, color: "text-slate-400", label: "No Match" },
   skipped_cooldown: { icon: Clock, color: "text-amber-500", label: "Cooldown" },
   error: { icon: XCircle, color: "text-red-500", label: "Error" },
-  matched: { icon: CheckCircle2, color: "text-blue-500", label: "Matched" },
+  matched: { icon: CheckCircle2, color: "text-info", label: "Matched" },
 };
 
 // ─── Main Component ───────────────────────────────────────────────────────────
@@ -223,8 +223,8 @@ export default function AdminAutomation() {
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
         {[
           { label: "Total Rules", value: stats?.totalRules ?? 0, icon: Zap, color: "text-primary" },
-          { label: "Enabled", value: stats?.enabledRules ?? 0, icon: CheckCircle2, color: "text-green-600" },
-          { label: "Runs Today", value: stats?.todayExecutions ?? 0, icon: Activity, color: "text-blue-600" },
+          { label: "Enabled", value: stats?.enabledRules ?? 0, icon: CheckCircle2, color: "text-success" },
+          { label: "Runs Today", value: stats?.todayExecutions ?? 0, icon: Activity, color: "text-info" },
           { label: "Total Runs", value: stats?.totalExecutions ?? 0, icon: RefreshCw, color: "text-slate-600" },
           { label: "Actions Today", value: stats?.actionsToday ?? 0, icon: Zap, color: "text-violet-600" },
           { label: "Total Actions", value: stats?.totalActions ?? 0, icon: BarChart3, color: "text-teal-600" },
@@ -385,12 +385,12 @@ export default function AdminAutomation() {
                     <CardContent className="p-4">
                       <div className="flex items-center gap-4">
                         <div className={`h-8 w-8 rounded-full flex items-center justify-center shrink-0 ${
-                          hasFailed ? "bg-red-100" : isOk ? "bg-green-100" : "bg-amber-100"
+                          hasFailed ? "bg-destructive/15" : isOk ? "bg-success/15" : "bg-amber-100"
                         }`}>
                           {hasFailed ? (
                             <XCircle className="h-4 w-4 text-red-500" />
                           ) : isOk ? (
-                            <CheckCircle2 className="h-4 w-4 text-green-600" />
+                            <CheckCircle2 className="h-4 w-4 text-success" />
                           ) : (
                             <AlertTriangle className="h-4 w-4 text-amber-500" />
                           )}
@@ -425,7 +425,7 @@ export default function AdminAutomation() {
                             <p className="text-xs text-muted-foreground">Rules</p>
                           </div>
                           <div className="text-center">
-                            <p className="font-semibold text-green-600">{exec.actionsFired}</p>
+                            <p className="font-semibold text-success">{exec.actionsFired}</p>
                             <p className="text-xs text-muted-foreground">Actions</p>
                           </div>
                           <div className="text-center">

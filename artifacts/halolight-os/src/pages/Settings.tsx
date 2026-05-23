@@ -85,8 +85,8 @@ export default function Settings() {
   return (
     <div className="max-w-3xl mx-auto space-y-8" data-testid="page-settings">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight text-gray-900">Settings</h1>
-        <p className="text-gray-500 mt-1">Manage your account preferences and profile.</p>
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">Settings</h1>
+        <p className="text-muted-foreground mt-1">Manage your account preferences and profile.</p>
       </div>
 
       <Card className="shadow-sm">
@@ -104,8 +104,8 @@ export default function Settings() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" value={user?.email} disabled className="bg-gray-50" />
-                <p className="text-xs text-gray-500">Managed via Clerk</p>
+                <Input id="email" value={user?.email} disabled className="bg-muted" />
+                <p className="text-xs text-muted-foreground">Managed via Clerk</p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="companyName">Company Name</Label>
@@ -152,7 +152,7 @@ export default function Settings() {
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
               <Label className="text-base">Email Notifications</Label>
-              <p className="text-sm text-gray-500">Receive daily summaries and critical alerts via email.</p>
+              <p className="text-sm text-muted-foreground">Receive daily summaries and critical alerts via email.</p>
             </div>
             <Switch 
               checked={prefs?.emailEnabled} 
@@ -161,11 +161,11 @@ export default function Settings() {
               data-testid="switch-email-notif"
             />
           </div>
-          <div className="h-px bg-gray-100 w-full" />
+          <div className="h-px bg-muted w-full" />
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
               <Label className="text-base">In-App Notifications</Label>
-              <p className="text-sm text-gray-500">Show alerts inside the dashboard.</p>
+              <p className="text-sm text-muted-foreground">Show alerts inside the dashboard.</p>
             </div>
             <Switch 
               checked={prefs?.inAppEnabled} 

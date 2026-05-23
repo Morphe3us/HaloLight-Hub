@@ -14,18 +14,18 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Plus, Search, Ticket, AlertCircle, Clock, CheckCircle2, ChevronRight } from "lucide-react";
 
 const statusColors: Record<string, string> = {
-  open: "bg-blue-100 text-blue-700",
-  in_progress: "bg-purple-100 text-purple-700",
-  waiting_on_client: "bg-yellow-100 text-yellow-700",
-  resolved: "bg-green-100 text-green-700",
-  closed: "bg-gray-100 text-gray-600",
+  open: "bg-info/15 text-info",
+  in_progress: "bg-muted text-foreground",
+  waiting_on_client: "bg-warning/15 text-yellow-700",
+  resolved: "bg-success/15 text-success",
+  closed: "bg-muted text-muted-foreground",
 };
 
 const priorityColors: Record<string, string> = {
-  low: "bg-gray-100 text-gray-600",
-  medium: "bg-blue-100 text-blue-700",
+  low: "bg-muted text-muted-foreground",
+  medium: "bg-info/15 text-info",
   high: "bg-orange-100 text-orange-700",
-  urgent: "bg-red-100 text-red-700",
+  urgent: "bg-destructive/15 text-destructive",
 };
 
 const statusLabels: Record<string, string> = {
@@ -78,8 +78,8 @@ export default function Support() {
     <div className="max-w-5xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Support Center</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Submit and track your support requests</p>
+          <h1 className="text-2xl font-bold text-foreground">Support Center</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">Submit and track your support requests</p>
         </div>
         <Button onClick={() => setShowCreate(true)} className="gap-2">
           <Plus className="w-4 h-4" />
@@ -89,14 +89,14 @@ export default function Support() {
 
       <div className="grid grid-cols-3 gap-4">
         {[
-          { label: "Open", value: stats.open, color: "text-blue-600", bg: "bg-blue-50" },
-          { label: "In Progress", value: stats.inProgress, color: "text-purple-600", bg: "bg-purple-50" },
-          { label: "Resolved", value: stats.resolved, color: "text-green-600", bg: "bg-green-50" },
+          { label: "Open", value: stats.open, color: "text-info", bg: "bg-info/10" },
+          { label: "In Progress", value: stats.inProgress, color: "text-muted-foreground", bg: "bg-muted" },
+          { label: "Resolved", value: stats.resolved, color: "text-success", bg: "bg-success/10" },
         ].map((s) => (
           <Card key={s.label} className={`${s.bg} border-0`}>
             <CardContent className="p-4">
               <div className={`text-2xl font-bold ${s.color}`}>{s.value}</div>
-              <div className="text-sm text-gray-600 mt-0.5">{s.label}</div>
+              <div className="text-sm text-muted-foreground mt-0.5">{s.label}</div>
             </CardContent>
           </Card>
         ))}
@@ -104,7 +104,7 @@ export default function Support() {
 
       <div className="flex gap-3">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
             placeholder="Search tickets..."
             value={search}
@@ -129,14 +129,14 @@ export default function Support() {
 
       {isLoading ? (
         <div className="space-y-3">
-          {[1, 2, 3].map((i) => <div key={i} className="h-20 bg-gray-100 rounded-lg animate-pulse" />)}
+          {[1, 2, 3].map((i) => <div key={i} className="h-20 bg-muted rounded-lg animate-pulse" />)}
         </div>
       ) : filtered.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-            <Ticket className="w-12 h-12 text-gray-300 mb-3" />
-            <p className="text-gray-500 font-medium">No tickets found</p>
-            <p className="text-sm text-gray-400 mt-1">Create your first support ticket to get help</p>
+            <Ticket className="w-12 h-12 text-muted-foreground mb-3" />
+            <p className="text-muted-foreground font-medium">No tickets found</p>
+            <p className="text-sm text-muted-foreground mt-1">Create your first support ticket to get help</p>
           </CardContent>
         </Card>
       ) : (
@@ -148,7 +148,7 @@ export default function Support() {
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="text-xs font-mono text-gray-400">{ticket.ticketNumber}</span>
+                        <span className="text-xs font-mono text-muted-foreground">{ticket.ticketNumber}</span>
                         <Badge className={`text-xs px-2 py-0 ${statusColors[ticket.status ?? "open"] ?? ""}`}>
                           {statusLabels[ticket.status ?? "open"]}
                         </Badge>
@@ -157,14 +157,14 @@ export default function Support() {
                           {ticket.priority ?? "medium"}
                         </Badge>
                       </div>
-                      <p className="font-medium text-gray-900 truncate">{ticket.title}</p>
-                      <p className="text-sm text-gray-500 truncate mt-0.5">{ticket.description}</p>
+                      <p className="font-medium text-foreground truncate">{ticket.title}</p>
+                      <p className="text-sm text-muted-foreground truncate mt-0.5">{ticket.description}</p>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
-                      <span className="text-xs text-gray-400">
+                      <span className="text-xs text-muted-foreground">
                         {ticket.createdAt ? new Date(ticket.createdAt).toLocaleDateString() : ""}
                       </span>
-                      <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-gray-500 transition-colors" />
+                      <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-muted-foreground transition-colors" />
                     </div>
                   </div>
                 </CardContent>

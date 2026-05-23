@@ -15,9 +15,9 @@ import { cn } from "@/lib/utils";
 
 const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   draft: { label: "Draft", color: "bg-slate-100 text-slate-700 border-slate-200" },
-  sent: { label: "Sent", color: "bg-blue-50 text-blue-700 border-blue-200" },
+  sent: { label: "Sent", color: "bg-info/10 text-info border-info/30" },
   paid: { label: "Paid", color: "bg-emerald-50 text-emerald-700 border-emerald-200" },
-  overdue: { label: "Overdue", color: "bg-red-50 text-red-700 border-red-200" },
+  overdue: { label: "Overdue", color: "bg-destructive/10 text-destructive border-destructive/30" },
   cancelled: { label: "Cancelled", color: "bg-slate-50 text-slate-500 border-slate-200" },
 };
 
@@ -126,13 +126,13 @@ export default function Invoices() {
           <p className="text-xs text-emerald-700 font-medium flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> Paid</p>
           <p className="text-xl font-bold mt-1 text-emerald-700">{formatCurrency(paidTotal)}</p>
         </div>
-        <div className="rounded-xl border bg-blue-50 border-blue-200 p-4">
-          <p className="text-xs text-blue-700 font-medium">Pending</p>
-          <p className="text-xl font-bold mt-1 text-blue-700">{formatCurrency(pendingTotal)}</p>
+        <div className="rounded-xl border bg-info/10 border-info/30 p-4">
+          <p className="text-xs text-info font-medium">Pending</p>
+          <p className="text-xl font-bold mt-1 text-info">{formatCurrency(pendingTotal)}</p>
         </div>
-        <div className="rounded-xl border bg-red-50 border-red-200 p-4">
-          <p className="text-xs text-red-700 font-medium flex items-center gap-1"><AlertCircle className="w-3 h-3" /> Overdue</p>
-          <p className="text-xl font-bold mt-1 text-red-700">{formatCurrency(overdueTotal)}</p>
+        <div className="rounded-xl border bg-destructive/10 border-destructive/30 p-4">
+          <p className="text-xs text-destructive font-medium flex items-center gap-1"><AlertCircle className="w-3 h-3" /> Overdue</p>
+          <p className="text-xl font-bold mt-1 text-destructive">{formatCurrency(overdueTotal)}</p>
         </div>
       </div>
 
@@ -175,7 +175,7 @@ export default function Invoices() {
                 const effectiveStatus = overdue && inv.status === "sent" ? "overdue" : inv.status;
                 const cfg = STATUS_CONFIG[effectiveStatus] ?? STATUS_CONFIG[inv.status];
                 return (
-                  <tr key={inv.id} className={cn("hover:bg-muted/20 transition-colors group", overdue && "bg-red-50/30")}>
+                  <tr key={inv.id} className={cn("hover:bg-muted/20 transition-colors group", overdue && "bg-destructive/10/30")}>
                     <td className="px-4 py-3">
                       <Link href={`/invoices/${inv.id}`}>
                         <span className="font-mono text-sm font-medium hover:text-primary cursor-pointer">{inv.invoiceNumber}</span>
@@ -187,10 +187,10 @@ export default function Invoices() {
                       {cfg && <Badge variant="outline" className={cn("text-xs", cfg.color)}>{cfg.label}</Badge>}
                     </td>
                     <td className="px-4 py-3 hidden md:table-cell text-xs">
-                      <span className={cn(overdue ? "text-red-600 font-medium" : "text-muted-foreground")}>{formatDate(inv.dueDate)}</span>
+                      <span className={cn(overdue ? "text-destructive font-medium" : "text-muted-foreground")}>{formatDate(inv.dueDate)}</span>
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <span className={cn("font-bold", inv.status === "paid" ? "text-emerald-600" : overdue ? "text-red-600" : "")}>{formatCurrency(inv.total)}</span>
+                      <span className={cn("font-bold", inv.status === "paid" ? "text-emerald-600" : overdue ? "text-destructive" : "")}>{formatCurrency(inv.total)}</span>
                     </td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">

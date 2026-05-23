@@ -18,8 +18,8 @@ function formatDuration(seconds: number): string {
 
 const LEVEL_COLORS: Record<string, string> = {
   beginner: "bg-emerald-100 text-emerald-700 border-emerald-200",
-  intermediate: "bg-blue-100 text-blue-700 border-blue-200",
-  advanced: "bg-purple-100 text-purple-700 border-purple-200",
+  intermediate: "bg-info/15 text-info border-info/30",
+  advanced: "bg-muted text-foreground border-border",
 };
 
 export default function AcademyCourse() {
@@ -41,7 +41,7 @@ export default function AcademyCourse() {
 
   if (!course) {
     return (
-      <div className="text-center py-16 text-gray-400">
+      <div className="text-center py-16 text-muted-foreground">
         <p>Course not found.</p>
         <Link href="/academy">
           <Button variant="outline" className="mt-4">{t("academy.back_to_academy")}</Button>
@@ -73,14 +73,14 @@ export default function AcademyCourse() {
     <div className="space-y-8" data-testid="page-academy-course">
       {/* Back */}
       <Link href="/academy">
-        <button className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-800 transition-colors">
+        <button className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
           <ArrowLeft className="w-4 h-4" />
           {t("academy.back_to_academy")}
         </button>
       </Link>
 
       {/* Hero */}
-      <div className="relative rounded-2xl overflow-hidden shadow-sm border border-gray-100">
+      <div className="relative rounded-2xl overflow-hidden shadow-sm border border-border">
         <div className="absolute inset-0">
           <img
             src={course.thumbnailUrl}
@@ -94,15 +94,15 @@ export default function AcademyCourse() {
             <Badge variant="outline" className={cn("text-xs font-medium", LEVEL_COLORS[course.level])}>
               {t(`academy.level_${course.level}`)}
             </Badge>
-            <Badge variant="outline" className="text-xs bg-white/10 text-white border-white/20">
+            <Badge variant="outline" className="text-xs bg-card/10 text-white border-white/20">
               {course.category}
             </Badge>
           </div>
           <h1 className="text-3xl md:text-4xl font-bold text-white leading-tight max-w-2xl">
             {course.title}
           </h1>
-          <p className="text-gray-300 max-w-2xl">{course.description}</p>
-          <div className="flex items-center gap-6 text-sm text-gray-300">
+          <p className="text-muted-foreground max-w-2xl">{course.description}</p>
+          <div className="flex items-center gap-6 text-sm text-muted-foreground">
             <span className="flex items-center gap-1.5">
               <BookOpen className="w-4 h-4" />
               {totalLessons} {t("academy.lessons")}
@@ -133,9 +133,9 @@ export default function AcademyCourse() {
 
       {/* Progress bar */}
       {progress > 0 && (
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+        <div className="bg-card rounded-xl border border-border shadow-sm p-5">
           <div className="flex justify-between mb-2">
-            <span className="text-sm font-medium text-gray-700">{t("academy.your_progress")}</span>
+            <span className="text-sm font-medium text-foreground">{t("academy.your_progress")}</span>
             <span className="text-sm font-medium text-primary">{completedLessons} / {totalLessons} {t("academy.lessons")}</span>
           </div>
           <Progress value={progress} className="h-3" />
@@ -144,7 +144,7 @@ export default function AcademyCourse() {
 
       {/* Curriculum */}
       <div>
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">{t("academy.course_overview")}</h2>
+        <h2 className="text-xl font-semibold text-foreground mb-4">{t("academy.course_overview")}</h2>
         <Accordion type="multiple" defaultValue={course.modules.map((m) => m.id)} className="space-y-3">
           {course.modules.map((mod) => {
             const modCompleted = mod.lessons.filter((l) => l.completedAt).length;
@@ -152,12 +152,12 @@ export default function AcademyCourse() {
               <AccordionItem
                 key={mod.id}
                 value={mod.id}
-                className="border border-gray-100 rounded-xl bg-white shadow-sm overflow-hidden px-0"
+                className="border border-border rounded-xl bg-card shadow-sm overflow-hidden px-0"
               >
-                <AccordionTrigger className="px-5 py-4 hover:no-underline hover:bg-gray-50 transition-colors">
+                <AccordionTrigger className="px-5 py-4 hover:no-underline hover:bg-muted transition-colors">
                   <div className="flex items-center justify-between w-full pr-2">
-                    <span className="font-semibold text-gray-900 text-left">{mod.title}</span>
-                    <span className="text-xs text-gray-400 font-medium shrink-0 ml-4">
+                    <span className="font-semibold text-foreground text-left">{mod.title}</span>
+                    <span className="text-xs text-muted-foreground font-medium shrink-0 ml-4">
                       {modCompleted}/{mod.lessons.length} lessons
                     </span>
                   </div>
@@ -168,20 +168,20 @@ export default function AcademyCourse() {
                       const isCompleted = !!lesson.completedAt;
                       return (
                         <Link key={lesson.id} href={`/academy/${course.id}/${lesson.id}`}>
-                          <div className="flex items-center gap-4 px-5 py-3.5 hover:bg-gray-50 transition-colors cursor-pointer group">
+                          <div className="flex items-center gap-4 px-5 py-3.5 hover:bg-muted transition-colors cursor-pointer group">
                             <div className={cn(
                               "h-8 w-8 rounded-full flex items-center justify-center flex-shrink-0 transition-colors",
-                              isCompleted ? "bg-emerald-100" : "bg-gray-100 group-hover:bg-primary/10"
+                              isCompleted ? "bg-emerald-100" : "bg-muted group-hover:bg-primary/10"
                             )}>
                               {isCompleted
                                 ? <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                                : <PlayCircle className={cn("w-4 h-4", "text-gray-400 group-hover:text-primary")} />
+                                : <PlayCircle className={cn("w-4 h-4", "text-muted-foreground group-hover:text-primary")} />
                               }
                             </div>
                             <div className="flex-1 min-w-0">
                               <p className={cn(
                                 "text-sm font-medium truncate",
-                                isCompleted ? "text-gray-500" : "text-gray-900"
+                                isCompleted ? "text-muted-foreground" : "text-foreground"
                               )}>
                                 {lesson.title}
                               </p>
@@ -189,7 +189,7 @@ export default function AcademyCourse() {
                                 <p className="text-xs text-primary mt-0.5">{lesson.watchPercent}% watched</p>
                               )}
                             </div>
-                            <span className="text-xs text-gray-400 flex-shrink-0">
+                            <span className="text-xs text-muted-foreground flex-shrink-0">
                               {formatDuration(lesson.durationSeconds)}
                             </span>
                           </div>

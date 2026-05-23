@@ -18,9 +18,9 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Plus, Pencil, Trash2, Eye, ArrowLeft, ExternalLink, FileText } from "lucide-react";
 
 const statusColors: Record<string, string> = {
-  draft: "bg-yellow-100 text-yellow-700",
-  published: "bg-green-100 text-green-700",
-  archived: "bg-gray-100 text-gray-600",
+  draft: "bg-warning/15 text-yellow-700",
+  published: "bg-success/15 text-success",
+  archived: "bg-muted text-muted-foreground",
 };
 
 type ArticleForm = {
@@ -123,8 +123,8 @@ export default function KBAdmin() {
               Knowledge Base
             </Button>
           </Link>
-          <span className="text-gray-400">/</span>
-          <h1 className="text-xl font-semibold text-gray-900">Manage Articles</h1>
+          <span className="text-muted-foreground">/</span>
+          <h1 className="text-xl font-semibold text-foreground">Manage Articles</h1>
         </div>
         <Button onClick={() => { setEditId(null); setForm(emptyForm); setShowForm(true); }} className="gap-2">
           <Plus className="w-4 h-4" />
@@ -148,13 +148,13 @@ export default function KBAdmin() {
 
       {isLoading ? (
         <div className="space-y-2">
-          {[1, 2, 3].map((i) => <div key={i} className="h-16 bg-gray-100 rounded animate-pulse" />)}
+          {[1, 2, 3].map((i) => <div key={i} className="h-16 bg-muted rounded animate-pulse" />)}
         </div>
       ) : articles.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center py-12 text-center">
-            <FileText className="w-10 h-10 text-gray-300 mb-2" />
-            <p className="text-gray-500">No articles yet</p>
+            <FileText className="w-10 h-10 text-muted-foreground mb-2" />
+            <p className="text-muted-foreground">No articles yet</p>
           </CardContent>
         </Card>
       ) : (
@@ -165,12 +165,12 @@ export default function KBAdmin() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-0.5">
                     <Badge className={`text-xs ${statusColors[article.status ?? "draft"] ?? ""}`}>{article.status}</Badge>
-                    <span className="text-xs text-gray-400">{categories.find((c) => c.id === article.categoryId)?.name}</span>
+                    <span className="text-xs text-muted-foreground">{categories.find((c) => c.id === article.categoryId)?.name}</span>
                   </div>
-                  <p className="font-medium text-gray-900 truncate">{article.title}</p>
-                  {article.excerpt && <p className="text-xs text-gray-500 truncate">{article.excerpt}</p>}
+                  <p className="font-medium text-foreground truncate">{article.title}</p>
+                  {article.excerpt && <p className="text-xs text-muted-foreground truncate">{article.excerpt}</p>}
                 </div>
-                <div className="flex items-center gap-1 text-xs text-gray-400 shrink-0">
+                <div className="flex items-center gap-1 text-xs text-muted-foreground shrink-0">
                   <Eye className="w-3 h-3" />{article.views}
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
@@ -180,7 +180,7 @@ export default function KBAdmin() {
                   <Button variant="ghost" size="sm" onClick={() => handleEdit(article)} title="Edit">
                     <Pencil className="w-4 h-4" />
                   </Button>
-                  <Button variant="ghost" size="sm" className="text-red-500 hover:text-red-700" onClick={() => setDeleteId(article.id ?? null)} title="Delete">
+                  <Button variant="ghost" size="sm" className="text-red-500 hover:text-destructive" onClick={() => setDeleteId(article.id ?? null)} title="Delete">
                     <Trash2 className="w-4 h-4" />
                   </Button>
                 </div>

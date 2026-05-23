@@ -53,16 +53,16 @@ type AdminConsumableItem = {
 };
 
 const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
-  active:     { label: "Active",     color: "bg-green-100 text-green-700" },
-  inactive:   { label: "Inactive",   color: "bg-gray-100 text-gray-500" },
-  in_service: { label: "In Service", color: "bg-blue-100 text-blue-700" },
-  retired:    { label: "Retired",    color: "bg-red-100 text-red-600" },
+  active:     { label: "Active",     color: "bg-success/15 text-success" },
+  inactive:   { label: "Inactive",   color: "bg-muted text-muted-foreground" },
+  in_service: { label: "In Service", color: "bg-info/15 text-info" },
+  retired:    { label: "Retired",    color: "bg-destructive/15 text-destructive" },
 };
 
 const MODEL_COLORS: Record<string, string> = {
-  "HaloLight Pro 2":       "bg-blue-100 text-blue-700",
-  "HaloLight Elite":       "bg-purple-100 text-purple-700",
-  "HaloLight Open Air":    "bg-green-100 text-green-700",
+  "HaloLight Pro 2":       "bg-info/15 text-info",
+  "HaloLight Elite":       "bg-muted text-foreground",
+  "HaloLight Open Air":    "bg-success/15 text-success",
   "HaloLight Studio 360":  "bg-orange-100 text-orange-700",
 };
 
@@ -121,8 +121,8 @@ export default function AdminEquipment() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Equipment Dashboard</h1>
-          <p className="text-sm text-gray-500 mt-0.5">All client photobooths, warranties, and consumable stock</p>
+          <h1 className="text-2xl font-bold text-foreground">Equipment Dashboard</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">All client photobooths, warranties, and consumable stock</p>
         </div>
         <Link href="/admin/analytics">
           <Button variant="outline" size="sm" className="gap-2">
@@ -133,7 +133,7 @@ export default function AdminEquipment() {
       </div>
 
       {/* Tab Toggle */}
-      <div className="flex gap-1 bg-gray-100 p-1 rounded-lg w-fit">
+      <div className="flex gap-1 bg-muted p-1 rounded-lg w-fit">
         {([
           { key: "equipment",   label: "Equipment",   count: equipment.length,   alert: false },
           { key: "consumables", label: "Consumables", count: criticalConsumables.length + lowConsumables.length, alert: criticalConsumables.length + lowConsumables.length > 0 },
@@ -141,13 +141,13 @@ export default function AdminEquipment() {
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
-            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all flex items-center gap-1.5 ${tab === t.key ? "bg-white shadow-sm text-gray-900" : "text-gray-500 hover:text-gray-700"}`}
+            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all flex items-center gap-1.5 ${tab === t.key ? "bg-card shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
           >
             {t.label}
             {t.alert ? (
               <span className="w-4 h-4 bg-amber-500 text-white rounded-full text-xs flex items-center justify-center">{t.count}</span>
             ) : (
-              <span className="text-xs text-gray-400">({t.count})</span>
+              <span className="text-xs text-muted-foreground">({t.count})</span>
             )}
           </button>
         ))}
@@ -158,18 +158,18 @@ export default function AdminEquipment() {
           {/* Alert Summary Cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              { label: "Warranty Expired",   value: alertCounts.warrantyExpired,    color: "text-red-500",   bg: "bg-red-50 border-red-200",    filter: "warranty_expired" },
+              { label: "Warranty Expired",   value: alertCounts.warrantyExpired,    color: "text-red-500",   bg: "bg-destructive/10 border-destructive/30",    filter: "warranty_expired" },
               { label: "Warranty Expiring",  value: alertCounts.warrantySoon,       color: "text-amber-500", bg: "bg-amber-50 border-amber-200", filter: "warranty_soon" },
-              { label: "Maintenance Overdue",value: alertCounts.maintenanceOverdue, color: "text-red-500",   bg: "bg-red-50 border-red-200",    filter: "maintenance_overdue" },
+              { label: "Maintenance Overdue",value: alertCounts.maintenanceOverdue, color: "text-red-500",   bg: "bg-destructive/10 border-destructive/30",    filter: "maintenance_overdue" },
               { label: "Service Due Soon",   value: alertCounts.maintenanceDue,     color: "text-amber-500", bg: "bg-amber-50 border-amber-200", filter: "maintenance_due" },
             ].map(s => (
               <button
                 key={s.label}
                 onClick={() => setAlertFilter(alertFilter === s.filter ? "all" : s.filter)}
-                className={`rounded-xl border p-4 text-left transition-all ${s.value > 0 ? s.bg : "bg-white border-gray-200 opacity-50"} ${alertFilter === s.filter ? "ring-2 ring-primary/40" : ""}`}
+                className={`rounded-xl border p-4 text-left transition-all ${s.value > 0 ? s.bg : "bg-card border-border opacity-50"} ${alertFilter === s.filter ? "ring-2 ring-primary/40" : ""}`}
               >
-                <p className={`text-2xl font-bold ${s.value > 0 ? s.color : "text-gray-400"}`}>{s.value}</p>
-                <p className="text-xs text-gray-500 mt-0.5">{s.label}</p>
+                <p className={`text-2xl font-bold ${s.value > 0 ? s.color : "text-muted-foreground"}`}>{s.value}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{s.label}</p>
               </button>
             ))}
           </div>
@@ -177,7 +177,7 @@ export default function AdminEquipment() {
           {/* Filters */}
           <div className="flex flex-wrap gap-3 items-center">
             <div className="relative flex-1 min-w-48 max-w-72">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder="Search clients, model, serial..."
                 value={search}
@@ -186,7 +186,7 @@ export default function AdminEquipment() {
               />
             </div>
             <select
-              className="h-9 px-3 rounded-md border border-gray-200 text-sm bg-white text-gray-700"
+              className="h-9 px-3 rounded-md border border-border text-sm bg-card text-foreground"
               value={modelFilter}
               onChange={e => setModelFilter(e.target.value)}
             >
@@ -194,7 +194,7 @@ export default function AdminEquipment() {
               {models.map(m => <option key={m} value={m}>{m}</option>)}
             </select>
             <select
-              className="h-9 px-3 rounded-md border border-gray-200 text-sm bg-white text-gray-700"
+              className="h-9 px-3 rounded-md border border-border text-sm bg-card text-foreground"
               value={statusFilter}
               onChange={e => setStatusFilter(e.target.value)}
             >
@@ -209,35 +209,35 @@ export default function AdminEquipment() {
                 Clear filters
               </Button>
             )}
-            <span className="text-xs text-gray-400 ml-auto">{filtered.length} of {equipment.length} units</span>
+            <span className="text-xs text-muted-foreground ml-auto">{filtered.length} of {equipment.length} units</span>
           </div>
 
           {/* Equipment Table */}
           {equipLoading ? (
-            <div className="space-y-2">{[1,2,3,4].map(i => <div key={i} className="h-16 bg-gray-100 rounded-xl animate-pulse" />)}</div>
+            <div className="space-y-2">{[1,2,3,4].map(i => <div key={i} className="h-16 bg-muted rounded-xl animate-pulse" />)}</div>
           ) : (
             <Card>
               <CardContent className="p-0">
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="border-b border-gray-100 bg-gray-50/50">
-                        <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Unit</th>
-                        <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide hidden md:table-cell">Client</th>
-                        <th className="text-center px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Status</th>
-                        <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide hidden lg:table-cell">Warranty</th>
-                        <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide hidden lg:table-cell">Next Service</th>
-                        <th className="text-center px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Alerts</th>
+                      <tr className="border-b border-border bg-muted/50">
+                        <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Unit</th>
+                        <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide hidden md:table-cell">Client</th>
+                        <th className="text-center px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Status</th>
+                        <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide hidden lg:table-cell">Warranty</th>
+                        <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide hidden lg:table-cell">Next Service</th>
+                        <th className="text-center px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Alerts</th>
                         <th className="w-8" />
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-50">
                       {filtered.map(item => {
                         const statusCfg = STATUS_CONFIG[item.status] ?? STATUS_CONFIG.active!;
-                        const modelColor = MODEL_COLORS[item.productModel] ?? "bg-gray-100 text-gray-700";
+                        const modelColor = MODEL_COLORS[item.productModel] ?? "bg-muted text-foreground";
                         const hasAlert = item.warrantyExpired || item.warrantyExpiringSoon || item.maintenanceOverdue || item.maintenanceDueSoon;
                         return (
-                          <tr key={item.id} className="hover:bg-gray-50/50 transition-colors">
+                          <tr key={item.id} className="hover:bg-muted/50 transition-colors">
                             <td className="px-4 py-3">
                               <div className="flex items-center gap-2.5">
                                 <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
@@ -245,13 +245,13 @@ export default function AdminEquipment() {
                                 </div>
                                 <div>
                                   <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${modelColor}`}>{item.productModel}</span>
-                                  <p className="text-xs text-gray-400 mt-0.5">S/N: {item.serialNumber}</p>
+                                  <p className="text-xs text-muted-foreground mt-0.5">S/N: {item.serialNumber}</p>
                                 </div>
                               </div>
                             </td>
                             <td className="px-4 py-3 hidden md:table-cell">
-                              <p className="font-medium text-gray-800 text-sm">{item.ownerName}</p>
-                              <p className="text-xs text-gray-400">{item.ownerCompany || item.ownerEmail}</p>
+                              <p className="font-medium text-foreground text-sm">{item.ownerName}</p>
+                              <p className="text-xs text-muted-foreground">{item.ownerCompany || item.ownerEmail}</p>
                             </td>
                             <td className="px-4 py-3 text-center">
                               <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusCfg.color}`}>{statusCfg.label}</span>
@@ -262,9 +262,9 @@ export default function AdminEquipment() {
                               ) : item.warrantyExpiringSoon ? (
                                 <span className="text-xs text-amber-500 flex items-center gap-1"><ShieldAlert className="w-3 h-3" />{fmtDate(item.warrantyExpiration)}</span>
                               ) : item.warrantyExpiration ? (
-                                <span className="text-xs text-green-600 flex items-center gap-1"><ShieldCheck className="w-3 h-3" />{fmtDate(item.warrantyExpiration)}</span>
+                                <span className="text-xs text-success flex items-center gap-1"><ShieldCheck className="w-3 h-3" />{fmtDate(item.warrantyExpiration)}</span>
                               ) : (
-                                <span className="text-xs text-gray-400">—</span>
+                                <span className="text-xs text-muted-foreground">—</span>
                               )}
                             </td>
                             <td className="px-4 py-3 hidden lg:table-cell">
@@ -273,7 +273,7 @@ export default function AdminEquipment() {
                               ) : item.maintenanceDueSoon ? (
                                 <span className="text-xs text-amber-500 flex items-center gap-1"><Clock className="w-3 h-3" />{fmtDate(item.nextMaintenanceDate)}</span>
                               ) : (
-                                <span className="text-xs text-gray-500">{fmtDate(item.nextMaintenanceDate)}</span>
+                                <span className="text-xs text-muted-foreground">{fmtDate(item.nextMaintenanceDate)}</span>
                               )}
                             </td>
                             <td className="px-4 py-3 text-center">
@@ -295,14 +295,14 @@ export default function AdminEquipment() {
                               )}
                             </td>
                             <td className="px-4 py-3">
-                              <ChevronRight className="w-4 h-4 text-gray-300" />
+                              <ChevronRight className="w-4 h-4 text-muted-foreground" />
                             </td>
                           </tr>
                         );
                       })}
                       {filtered.length === 0 && (
                         <tr>
-                          <td colSpan={7} className="py-10 text-center text-gray-400 text-sm">No equipment matches your filters</td>
+                          <td colSpan={7} className="py-10 text-center text-muted-foreground text-sm">No equipment matches your filters</td>
                         </tr>
                       )}
                     </tbody>
@@ -320,13 +320,13 @@ export default function AdminEquipment() {
           {(criticalConsumables.length > 0 || lowConsumables.length > 0) && (
             <div className="space-y-3">
               {criticalConsumables.map(c => (
-                <div key={c.id} className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-center gap-3">
+                <div key={c.id} className="bg-destructive/10 border border-destructive/30 rounded-xl p-4 flex items-center gap-3">
                   <AlertTriangle className="w-5 h-5 text-red-500 shrink-0" />
                   <div className="flex-1">
                     <p className="text-sm font-semibold text-red-800">Out of stock: {c.name}</p>
-                    <p className="text-xs text-red-600">{c.ownerName} ({c.ownerCompany}) — 0 {c.unitType} remaining</p>
+                    <p className="text-xs text-destructive">{c.ownerName} ({c.ownerCompany}) — 0 {c.unitType} remaining</p>
                   </div>
-                  <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-medium">Critical</span>
+                  <span className="text-xs bg-destructive/15 text-destructive px-2 py-0.5 rounded-full font-medium">Critical</span>
                 </div>
               ))}
               {lowConsumables.map(c => (
@@ -355,52 +355,52 @@ export default function AdminEquipment() {
             </CardHeader>
             <CardContent className="p-0">
               {consumLoading ? (
-                <div className="p-6 space-y-2">{[1,2,3].map(i => <div key={i} className="h-12 bg-gray-100 rounded animate-pulse" />)}</div>
+                <div className="p-6 space-y-2">{[1,2,3].map(i => <div key={i} className="h-12 bg-muted rounded animate-pulse" />)}</div>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="border-b border-gray-100 bg-gray-50/50">
-                        <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Item</th>
-                        <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide hidden md:table-cell">Client</th>
-                        <th className="text-center px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Stock</th>
-                        <th className="text-center px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide hidden sm:table-cell">Days Left</th>
-                        <th className="text-center px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Status</th>
+                      <tr className="border-b border-border bg-muted/50">
+                        <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Item</th>
+                        <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide hidden md:table-cell">Client</th>
+                        <th className="text-center px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Stock</th>
+                        <th className="text-center px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide hidden sm:table-cell">Days Left</th>
+                        <th className="text-center px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Status</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-50">
                       {consumables.map(c => (
-                        <tr key={c.id} className="hover:bg-gray-50/50">
+                        <tr key={c.id} className="hover:bg-muted/50">
                           <td className="px-4 py-3">
-                            <p className="font-medium text-gray-800">{c.name}</p>
-                            <p className="text-xs text-gray-400">{c.sku}</p>
+                            <p className="font-medium text-foreground">{c.name}</p>
+                            <p className="text-xs text-muted-foreground">{c.sku}</p>
                           </td>
                           <td className="px-4 py-3 hidden md:table-cell">
-                            <p className="text-sm text-gray-700">{c.ownerName}</p>
-                            <p className="text-xs text-gray-400">{c.ownerCompany}</p>
+                            <p className="text-sm text-foreground">{c.ownerName}</p>
+                            <p className="text-xs text-muted-foreground">{c.ownerCompany}</p>
                           </td>
                           <td className="px-4 py-3 text-center">
-                            <span className={`font-bold ${c.isCritical ? "text-red-500" : c.isLow ? "text-amber-500" : "text-gray-800"}`}>
+                            <span className={`font-bold ${c.isCritical ? "text-red-500" : c.isLow ? "text-amber-500" : "text-foreground"}`}>
                               {c.currentQuantity}
                             </span>
-                            <span className="text-xs text-gray-400 ml-1">{c.unitType}</span>
+                            <span className="text-xs text-muted-foreground ml-1">{c.unitType}</span>
                           </td>
-                          <td className="px-4 py-3 text-center hidden sm:table-cell text-xs text-gray-500">
+                          <td className="px-4 py-3 text-center hidden sm:table-cell text-xs text-muted-foreground">
                             {c.daysRemaining !== null ? `~${c.daysRemaining}d` : "—"}
                           </td>
                           <td className="px-4 py-3 text-center">
                             {c.isCritical ? (
-                              <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-600 font-medium">Out of Stock</span>
+                              <span className="text-xs px-2 py-0.5 rounded-full bg-destructive/15 text-destructive font-medium">Out of Stock</span>
                             ) : c.isLow ? (
                               <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-600 font-medium">Low</span>
                             ) : (
-                              <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-medium">OK</span>
+                              <span className="text-xs px-2 py-0.5 rounded-full bg-success/15 text-success font-medium">OK</span>
                             )}
                           </td>
                         </tr>
                       ))}
                       {consumables.length === 0 && (
-                        <tr><td colSpan={5} className="py-10 text-center text-gray-400 text-sm">No consumable stock data</td></tr>
+                        <tr><td colSpan={5} className="py-10 text-center text-muted-foreground text-sm">No consumable stock data</td></tr>
                       )}
                     </tbody>
                   </table>

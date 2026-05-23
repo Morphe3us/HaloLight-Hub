@@ -98,7 +98,20 @@ An all-in-one SaaS customer portal for HaloLight — a professional photobooth a
 - Admin dashboard at `/admin/automation`: 7-stat header, rules list with enable toggle + manual run, execution timeline, filterable log table
 - Seeded 10 default rules (one per trigger type) via `pnpm --filter @workspace/scripts run seed-automation`
 
-### Planned Phases (9–10)
+### Phase 9 — Brand & Design System Overhaul (complete)
+- **Design system**: Full CSS variable replacement in `index.css` — Plus Jakarta Sans font, warm palette (#FAF8F5 bg, #DDB398 accent, #111111 primary, semantic success/warning/danger/info tokens)
+- **Dark mode**: Complete warm-dark palette (#1A1714 bg, #242018 surface, #F5F0E8 text) via `ThemeProvider` + localStorage persistence; toggle in Topbar
+- **Typography**: Plus Jakarta Sans (Google Fonts) with Inter fallback; applied across all pages
+- **Shadows**: Warm accent-tinted shadow system (rgba(221,179,152,...)) replacing cold blue shadows
+- **Border radius**: Increased to 0.75rem (cards 12–16px feel)
+- **Landing page**: Rewritten with brand tokens, HaloLight logo, terracotta accent hero, 6-feature grid, dark CTA section
+- **Sidebar**: Updated with HaloLight logo (dark/light variants), semantic `text-muted-foreground` nav items, warm accent active states, cleaner layout
+- **Topbar**: Added dark mode toggle (Sun/Moon), brand token colors throughout
+- **All 36+ pages**: Systematic hardcoded color replacement — `gray-*` → `foreground/muted-foreground/border`, `blue-*` → `info`, `red-*` → `destructive`, `green-*` → `success`, `yellow-*` → `warning`
+- **Clerk auth pages**: Rebranded with new colors (primary dark, accent terracotta, Plus Jakarta Sans font, warm card styling, logo-dark.png)
+- **Zero hardcoded colors remaining**: All pages and components use CSS design tokens
+
+### Planned Phases (10)
 See architecture document for full 30-module scope.
 
 ## User preferences
