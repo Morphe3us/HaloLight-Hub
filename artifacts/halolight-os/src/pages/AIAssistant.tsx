@@ -19,9 +19,13 @@ import {
   Send, Plus, Trash2, Bot, User, Sparkles, MessageSquare, Loader2,
   BookOpen, GraduationCap, Ticket, ArrowRight, Package, Wrench,
   AlertTriangle, ChevronRight, Cpu, StopCircle, ExternalLink,
+  Volume2, VolumeX, Volume1,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Link } from "wouter";
+import { useVoiceInput } from "@/hooks/useVoiceInput";
+import { useVoiceOutput } from "@/hooks/useVoiceOutput";
+import { VoiceButton } from "@/components/voice/VoiceButton";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -186,16 +190,21 @@ function MessageBubble({
   message,
   onEscalate,
   stream,
+  onSpeak,
+  isSpeaking,
 }: {
   message: StoredMessage;
   onEscalate: () => void;
   stream?: StreamState;
+  onSpeak?: (text: string, id: string) => void;
+  isSpeaking?: boolean;
 }) {
   const isUser = message.role === "user";
   const displayContent = stream ? stream.content : message.content;
   const sources = stream ? stream.sources : (message.sources ?? []);
   const actions = stream ? stream.actions : (message.suggestedActions ?? []);
   const isStreaming = !!stream;
+  const canSpeak = !isUser && !isStreaming && !!displayContent && !!onSpeak;
 
   return (
     <div className={cn("flex gap-3", isUser ? "flex-row-reverse" : "flex-row")}>
@@ -242,12 +251,31 @@ function MessageBubble({
           <SuggestedActions actions={actions} onEscalate={onEscalate} />
         )}
 
-        <p className={cn(
-          "text-[11px] text-muted-foreground px-1 mt-1",
-          isUser ? "text-right" : "text-left"
+        <div className={cn(
+          "flex items-center gap-2 px-1 mt-1",
+          isUser ? "justify-end" : "justify-start"
         )}>
-          {formatTime(message.createdAt)}
-        </p>
+          <p className="text-[11px] text-muted-foreground">
+            {formatTime(message.createdAt)}
+          </p>
+          {canSpeak && (
+            <button
+              type="button"
+              onClick={() => onSpeak(displayContent, message.id)}
+              aria-label={isSpeaking ? "Stop speaking" : "Read aloud"}
+              className={cn(
+                "w-5 h-5 flex items-center justify-center rounded-full transition-colors",
+                "text-muted-foreground/50 hover:text-muted-foreground focus:outline-none",
+                isSpeaking && "text-violet-500 hover:text-violet-600"
+              )}
+            >
+              {isSpeaking
+                ? <Volume2 className="w-3.5 h-3.5" />
+                : <Volume1 className="w-3.5 h-3.5" />
+              }
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -273,8 +301,11 @@ export default function AIAssistant() {
   const [pendingUserMsg, setPendingUserMsg] = useState<string | null>(null);
   const [abortCtrl, setAbortCtrl] = useState<AbortController | null>(null);
   const [escalateOpen, setEscalateOpen] = useState(false);
+  const [autoPlay, setAutoPlay] = useState(false);
+  const [pendingVoiceSend, setPendingVoiceSend] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const streamFinalContentRef = useRef("");
 
   const { data: convsData, isLoading: convsLoading } = useListAiConversations();
   const { data: activeConv, isLoading: convLoading } = useGetAiConversation(
@@ -319,7 +350,12 @@ export default function AIAssistant() {
     },
   });
 
-  // Auto-scroll
+  // ─── Voice output ─────────────────────────────────────────────────────────
+
+  const voiceOutput = useVoiceOutput();
+
+  // ─── Auto-scroll ─────────────────────────────────────────────────────────
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [(activeConv as { messages?: unknown[] } | undefined)?.messages?.length, stream?.content]);
@@ -332,6 +368,7 @@ export default function AIAssistant() {
       if (!msg || !activeConvId || stream) return;
       setInput("");
       setPendingUserMsg(msg);
+      streamFinalContentRef.current = "";
 
       const ac = new AbortController();
       setAbortCtrl(ac);
@@ -374,9 +411,14 @@ export default function AIAssistant() {
                 error?: string;
               };
               if (evt.type === "user_message") {
-                // User message persisted; will show via query refresh
+                // no-op: persisted server-side
               } else if (evt.type === "content") {
-                setStream((prev) => prev ? { ...prev, content: prev.content + (evt.content ?? "") } : null);
+                setStream((prev) => {
+                  if (!prev) return null;
+                  const updated = { ...prev, content: prev.content + (evt.content ?? "") };
+                  streamFinalContentRef.current = updated.content;
+                  return updated;
+                });
               } else if (evt.type === "sources") {
                 setStream((prev) => prev ? { ...prev, sources: evt.sources ?? [] } : null);
               } else if (evt.type === "actions") {
@@ -401,14 +443,19 @@ export default function AIAssistant() {
           variant: "destructive",
         });
       } finally {
+        const finalContent = streamFinalContentRef.current;
+        streamFinalContentRef.current = "";
         setStream(null);
         setAbortCtrl(null);
         setPendingUserMsg(null);
         qc.invalidateQueries({ queryKey: [`/api/ai/conversations/${activeConvId}`] });
         qc.invalidateQueries({ queryKey: ["/api/ai/conversations"] });
+        if (autoPlay && finalContent) {
+          voiceOutput.speak(finalContent, "latest-response");
+        }
       }
     },
-    [input, activeConvId, stream, qc, toast]
+    [input, activeConvId, stream, qc, toast, autoPlay, voiceOutput]
   );
 
   const stopStreaming = () => {
@@ -437,14 +484,45 @@ export default function AIAssistant() {
     });
   };
 
+  // ─── Pending voice send: fires after a new conversation is activated ──────
+
+  useEffect(() => {
+    if (activeConvId && pendingVoiceSend && !stream) {
+      const text = pendingVoiceSend;
+      setPendingVoiceSend(null);
+      void sendMessage(text);
+    }
+  }, [activeConvId, pendingVoiceSend, stream, sendMessage]);
+
+  // ─── Voice input ──────────────────────────────────────────────────────────
+
+  const handleVoiceTranscript = useCallback(
+    (text: string) => {
+      if (activeConvId) {
+        void sendMessage(text);
+      } else {
+        setPendingVoiceSend(text);
+        newConv();
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [activeConvId, sendMessage]
+  );
+
+  const voiceInput = useVoiceInput({
+    onTranscript: handleVoiceTranscript,
+    onError: (msg) =>
+      toast({ title: "Voice input error", description: msg, variant: "destructive" }),
+  });
+
+  // ─── Derived state ────────────────────────────────────────────────────────
+
   const messages = ((activeConv as unknown as { messages?: StoredMessage[] })?.messages ?? []);
   const conversations = convsData?.items ?? [];
   const suggestions = suggestionsData?.items ?? [];
   const convTitle = (activeConv as unknown as { title?: string })?.title ?? "Conversation";
   const providerName = providerData?.name ?? "AI Assistant";
   const isStreaming = !!stream;
-
-  // ─── Build display messages (persisted + optimistic pending) ─────────────
 
   const displayMessages: Array<StoredMessage & { isOptimistic?: boolean }> = [
     ...messages,
@@ -486,6 +564,7 @@ export default function AIAssistant() {
                     setActiveConvId(c.id ?? null);
                     setStream(null);
                     setPendingUserMsg(null);
+                    voiceOutput.stop();
                   }}
                   className={cn(
                     "w-full text-left rounded-lg px-3 py-2.5 text-sm transition-colors group",
@@ -551,10 +630,19 @@ export default function AIAssistant() {
               ))}
             </div>
 
-            <Button onClick={() => newConv()} disabled={isCreating} size="lg" className="gap-2">
-              {isCreating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-              Start a conversation
-            </Button>
+            <div className="flex items-center gap-3">
+              <Button onClick={() => newConv()} disabled={isCreating} size="lg" className="gap-2">
+                {isCreating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                Start a conversation
+              </Button>
+              {voiceInput.isSupported && (
+                <VoiceButton
+                  state={voiceInput.state}
+                  onClick={() => void voiceInput.start()}
+                  partialTranscript={voiceInput.partialTranscript}
+                />
+              )}
+            </div>
           </div>
         ) : (
           <>
@@ -579,6 +667,26 @@ export default function AIAssistant() {
                 </div>
               </div>
               <div className="flex items-center gap-1.5">
+                {/* TTS auto-play toggle */}
+                {voiceOutput.isSupported && (
+                  <Button
+                    size="sm"
+                    variant={autoPlay ? "secondary" : "ghost"}
+                    className={cn(
+                      "h-8 w-8 p-0 transition-colors",
+                      autoPlay
+                        ? "text-violet-600 bg-violet-50 hover:bg-violet-100"
+                        : "text-muted-foreground hover:text-foreground"
+                    )}
+                    onClick={() => {
+                      if (autoPlay) voiceOutput.stop();
+                      setAutoPlay((v) => !v);
+                    }}
+                    title={autoPlay ? "Disable auto-read responses" : "Enable auto-read responses"}
+                  >
+                    {autoPlay ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+                  </Button>
+                )}
                 <Button
                   size="sm"
                   variant="outline"
@@ -630,6 +738,11 @@ export default function AIAssistant() {
                         key={m.id}
                         message={m}
                         onEscalate={() => setEscalateOpen(true)}
+                        onSpeak={voiceOutput.isSupported
+                          ? (text, id) => voiceOutput.toggle(text, id)
+                          : undefined
+                        }
+                        isSpeaking={voiceOutput.speakingId === m.id && voiceOutput.isPlaying}
                       />
                     ))}
                     {/* Streaming assistant response */}
@@ -655,17 +768,40 @@ export default function AIAssistant() {
             {/* ── Input ────────────────────────────────────────────────── */}
             <div className="border-t bg-background px-4 py-4 shrink-0">
               <div className="max-w-3xl mx-auto">
+                {/* Listening indicator bar */}
+                {voiceInput.isListening && (
+                  <div className="flex items-center gap-2 mb-2 px-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse shrink-0" />
+                    <span className="text-xs text-red-600 font-medium">
+                      {voiceInput.partialTranscript
+                        ? voiceInput.partialTranscript
+                        : "Listening… speak your question"}
+                    </span>
+                  </div>
+                )}
                 <div className="flex gap-2">
                   <Input
                     ref={inputRef}
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    placeholder="Ask about equipment, consumables, bookings…"
-                    disabled={isStreaming}
+                    placeholder={
+                      voiceInput.isListening
+                        ? "Listening…"
+                        : "Ask about equipment, consumables, bookings…"
+                    }
+                    disabled={isStreaming || voiceInput.isActive}
                     className="flex-1 h-11"
                     autoComplete="off"
                   />
+                  {voiceInput.isSupported && (
+                    <VoiceButton
+                      state={voiceInput.state}
+                      onClick={() => void voiceInput.start()}
+                      disabled={isStreaming}
+                      partialTranscript={voiceInput.partialTranscript}
+                    />
+                  )}
                   {isStreaming ? (
                     <Button
                       variant="destructive"
@@ -680,7 +816,7 @@ export default function AIAssistant() {
                       size="icon"
                       className="h-11 w-11 shrink-0"
                       onClick={() => void sendMessage()}
-                      disabled={!input.trim()}
+                      disabled={!input.trim() || voiceInput.isActive}
                     >
                       <Send className="w-4 h-4" />
                     </Button>
