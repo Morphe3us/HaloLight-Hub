@@ -1,0 +1,147 @@
+import { Link } from "wouter";
+import { useListCommunityChannels } from "@workspace/api-client-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+  Hash, Lock, Megaphone, MessageSquare, ChevronRight,
+  Users, TrendingUp,
+} from "lucide-react";
+
+const channelTypeIcons: Record<string, React.ComponentType<{ className?: string }>> = {
+  public: Hash,
+  private: Lock,
+  announcement: Megaphone,
+};
+
+const channelTypeColors: Record<string, string> = {
+  public: "text-blue-600 bg-blue-50",
+  private: "text-gray-600 bg-gray-100",
+  announcement: "text-amber-600 bg-amber-50",
+};
+
+const channelTypeBadge: Record<string, string> = {
+  public: "bg-blue-100 text-blue-700",
+  private: "bg-gray-100 text-gray-600",
+  announcement: "bg-amber-100 text-amber-700",
+};
+
+const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
+  Hash, Lock, Megaphone, MessageSquare, TrendingUp, Users,
+};
+
+function getChannelIcon(icon: string) {
+  return iconMap[icon] ?? Hash;
+}
+
+export default function Community() {
+  const { data, isLoading } = useListCommunityChannels();
+  const channels = data?.items ?? [];
+
+  const publicChannels = channels.filter((c) => c.type !== "announcement");
+  const announcementChannels = channels.filter((c) => c.type === "announcement");
+
+  return (
+    <div className="max-w-4xl mx-auto space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">Community</h1>
+        <p className="text-sm text-gray-500 mt-0.5">Connect with other HaloLight partners and operators</p>
+      </div>
+
+      {isLoading ? (
+        <div className="space-y-3">
+          {[1, 2, 3, 4].map((i) => <div key={i} className="h-20 bg-gray-100 rounded-xl animate-pulse" />)}
+        </div>
+      ) : (
+        <>
+          {announcementChannels.length > 0 && (
+            <div>
+              <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">Announcements</h2>
+              <div className="space-y-2">
+                {announcementChannels.map((channel) => {
+                  const TypeIcon = channelTypeIcons[channel.type ?? "public"] ?? Hash;
+                  const CustomIcon = getChannelIcon(channel.icon ?? "Hash");
+                  return (
+                    <Link key={channel.id} href={`/community/${channel.id}`}>
+                      <Card className="hover:shadow-md transition-all cursor-pointer group border-amber-100 bg-amber-50/30">
+                        <CardContent className="p-4 flex items-center gap-4">
+                          <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center shrink-0">
+                            <CustomIcon className="w-5 h-5 text-amber-600" />
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-0.5">
+                              <h3 className="font-semibold text-gray-900">{channel.name}</h3>
+                              <Badge className={`text-xs px-1.5 py-0 ${channelTypeBadge[channel.type ?? "public"] ?? ""}`}>
+                                <TypeIcon className="w-2.5 h-2.5 mr-0.5" />
+                                {channel.type}
+                              </Badge>
+                            </div>
+                            {channel.description && <p className="text-sm text-gray-500">{channel.description}</p>}
+                          </div>
+                          <div className="flex items-center gap-2 text-sm text-gray-400 shrink-0">
+                            <MessageSquare className="w-4 h-4" />
+                            <span>{(channel as unknown as { postCount?: number }).postCount ?? 0}</span>
+                            <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-gray-500 transition-colors" />
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {publicChannels.length > 0 && (
+            <div>
+              <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">Channels</h2>
+              <div className="grid gap-3">
+                {publicChannels.map((channel) => {
+                  const TypeIcon = channelTypeIcons[channel.type ?? "public"] ?? Hash;
+                  const CustomIcon = getChannelIcon(channel.icon ?? "Hash");
+                  return (
+                    <Link key={channel.id} href={`/community/${channel.id}`}>
+                      <Card className="hover:shadow-md transition-all cursor-pointer group">
+                        <CardContent className="p-4 flex items-center gap-4">
+                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${channelTypeColors[channel.type ?? "public"] ?? ""}`}>
+                            <CustomIcon className="w-5 h-5" />
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-0.5">
+                              <h3 className="font-semibold text-gray-900">{channel.name}</h3>
+                              {channel.type === "private" && (
+                                <Badge className={`text-xs px-1.5 py-0 ${channelTypeBadge[channel.type] ?? ""}`}>
+                                  <Lock className="w-2.5 h-2.5 mr-0.5" />
+                                  Private
+                                </Badge>
+                              )}
+                            </div>
+                            {channel.description && <p className="text-sm text-gray-500">{channel.description}</p>}
+                          </div>
+                          <div className="flex items-center gap-2 text-sm text-gray-400 shrink-0">
+                            <MessageSquare className="w-4 h-4" />
+                            <span>{(channel as unknown as { postCount?: number }).postCount ?? 0} posts</span>
+                            <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-gray-500 transition-colors" />
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {channels.length === 0 && (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-16 text-center">
+                <Users className="w-12 h-12 text-gray-300 mb-3" />
+                <p className="text-gray-500 font-medium">Community channels coming soon</p>
+                <p className="text-sm text-gray-400 mt-1">Check back after seeding demo data</p>
+              </CardContent>
+            </Card>
+          )}
+        </>
+      )}
+    </div>
+  );
+}

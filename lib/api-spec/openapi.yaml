@@ -30,6 +30,14 @@ tags:
     description: Contract generation and management
   - name: invoices
     description: Invoice management and payment tracking
+  - name: support
+    description: Support ticket management
+  - name: kb
+    description: Knowledge base articles and categories
+  - name: ai
+    description: AI assistant conversations
+  - name: community
+    description: Community channels, posts, and replies
 
 paths:
   /healthz:
@@ -1116,6 +1124,571 @@ paths:
               schema:
                 $ref: "#/components/schemas/InvoiceDetail"
 
+  # ─── Support ──────────────────────────────────────────────────────────────
+  /support/tickets:
+    get:
+      operationId: listSupportTickets
+      tags: [support]
+      summary: List support tickets
+      parameters:
+        - name: status
+          in: query
+          schema: { type: string }
+        - name: priority
+          in: query
+          schema: { type: string }
+        - name: limit
+          in: query
+          schema: { type: integer }
+        - name: offset
+          in: query
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Ticket list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SupportTicketList"
+    post:
+      operationId: createSupportTicket
+      tags: [support]
+      summary: Create a support ticket
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SupportTicketInput"
+      responses:
+        "201":
+          description: Created ticket
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SupportTicket"
+
+  /support/tickets/{id}:
+    get:
+      operationId: getSupportTicket
+      tags: [support]
+      summary: Get ticket with replies
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Ticket detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SupportTicketDetail"
+    put:
+      operationId: updateSupportTicket
+      tags: [support]
+      summary: Update ticket
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SupportTicketInput"
+      responses:
+        "200":
+          description: Updated ticket
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SupportTicket"
+
+  /support/tickets/{id}/replies:
+    post:
+      operationId: createTicketReply
+      tags: [support]
+      summary: Add reply to ticket
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SupportTicketReplyInput"
+      responses:
+        "201":
+          description: Created reply
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SupportTicketReply"
+
+  /support/tickets/{id}/status:
+    patch:
+      operationId: updateTicketStatus
+      tags: [support]
+      summary: Update ticket status
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SupportTicketStatusUpdate"
+      responses:
+        "200":
+          description: Updated ticket
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SupportTicket"
+
+  # ─── Knowledge Base ────────────────────────────────────────────────────────
+  /kb/categories:
+    get:
+      operationId: listKbCategories
+      tags: [kb]
+      summary: List knowledge base categories
+      responses:
+        "200":
+          description: Category list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/KbCategoryList"
+    post:
+      operationId: createKbCategory
+      tags: [kb]
+      summary: Create a KB category (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, slug]
+              properties:
+                name: { type: string }
+                slug: { type: string }
+                description: { type: string }
+                icon: { type: string }
+                order: { type: integer }
+      responses:
+        "201":
+          description: Created category
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/KbCategory"
+
+  /kb/articles:
+    get:
+      operationId: listKbArticles
+      tags: [kb]
+      summary: List knowledge base articles
+      parameters:
+        - name: categoryId
+          in: query
+          schema: { type: string }
+        - name: status
+          in: query
+          schema: { type: string }
+        - name: search
+          in: query
+          schema: { type: string }
+        - name: limit
+          in: query
+          schema: { type: integer }
+        - name: offset
+          in: query
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Article list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/KbArticleList"
+    post:
+      operationId: createKbArticle
+      tags: [kb]
+      summary: Create a KB article (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/KbArticleInput"
+      responses:
+        "201":
+          description: Created article
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/KbArticle"
+
+  /kb/articles/{id}:
+    get:
+      operationId: getKbArticle
+      tags: [kb]
+      summary: Get a KB article
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Article detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/KbArticle"
+    put:
+      operationId: updateKbArticle
+      tags: [kb]
+      summary: Update a KB article (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/KbArticleInput"
+      responses:
+        "200":
+          description: Updated article
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/KbArticle"
+    delete:
+      operationId: deleteKbArticle
+      tags: [kb]
+      summary: Delete a KB article (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "204":
+          description: Deleted
+
+  # ─── AI Assistant ──────────────────────────────────────────────────────────
+  /ai/conversations:
+    get:
+      operationId: listAiConversations
+      tags: [ai]
+      summary: List AI conversations
+      responses:
+        "200":
+          description: Conversation list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AiConversationList"
+    post:
+      operationId: createAiConversation
+      tags: [ai]
+      summary: Create a new AI conversation
+      responses:
+        "201":
+          description: Created conversation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AiConversation"
+
+  /ai/conversations/{id}:
+    get:
+      operationId: getAiConversation
+      tags: [ai]
+      summary: Get conversation with messages
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Conversation with messages
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AiConversationDetail"
+    delete:
+      operationId: deleteAiConversation
+      tags: [ai]
+      summary: Delete a conversation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "204":
+          description: Deleted
+
+  /ai/conversations/{id}/messages:
+    post:
+      operationId: sendAiMessage
+      tags: [ai]
+      summary: Send a message in a conversation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AiMessageInput"
+      responses:
+        "201":
+          description: Message + AI reply
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AiMessagePair"
+
+  /ai/suggested-questions:
+    get:
+      operationId: listAiSuggestedQuestions
+      tags: [ai]
+      summary: List suggested questions
+      responses:
+        "200":
+          description: Suggested questions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/AiSuggestedQuestion"
+
+  # ─── Community ─────────────────────────────────────────────────────────────
+  /community/channels:
+    get:
+      operationId: listCommunityChannels
+      tags: [community]
+      summary: List community channels
+      responses:
+        "200":
+          description: Channel list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CommunityChannelList"
+    post:
+      operationId: createCommunityChannel
+      tags: [community]
+      summary: Create a channel (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, slug]
+              properties:
+                name: { type: string }
+                slug: { type: string }
+                description: { type: string }
+                type: { type: string }
+                icon: { type: string }
+                order: { type: integer }
+      responses:
+        "201":
+          description: Created channel
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CommunityChannel"
+
+  /community/channels/{id}/posts:
+    get:
+      operationId: listChannelPosts
+      tags: [community]
+      summary: List posts in a channel
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+        - name: limit
+          in: query
+          schema: { type: integer }
+        - name: offset
+          in: query
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Post list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CommunityPostList"
+    post:
+      operationId: createPost
+      tags: [community]
+      summary: Create a post in a channel
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CommunityPostInput"
+      responses:
+        "201":
+          description: Created post
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CommunityPost"
+
+  /community/posts/{id}:
+    get:
+      operationId: getCommunityPost
+      tags: [community]
+      summary: Get post with replies and reactions
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Post detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CommunityPostDetail"
+    delete:
+      operationId: deleteCommunityPost
+      tags: [community]
+      summary: Delete a post (author or admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "204":
+          description: Deleted
+
+  /community/posts/{id}/replies:
+    post:
+      operationId: createCommunityReply
+      tags: [community]
+      summary: Reply to a post
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CommunityReplyInput"
+      responses:
+        "201":
+          description: Created reply
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CommunityReply"
+
+  /community/posts/{id}/reactions:
+    post:
+      operationId: togglePostReaction
+      tags: [community]
+      summary: Toggle reaction on a post
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [emoji]
+              properties:
+                emoji: { type: string }
+      responses:
+        "200":
+          description: Reaction toggled
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  added: { type: boolean }
+
+  /community/posts/{id}/pin:
+    patch:
+      operationId: togglePostPin
+      tags: [community]
+      summary: Pin/unpin a post (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Updated post
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CommunityPost"
+
+  /community/replies/{id}:
+    delete:
+      operationId: deleteCommunityReply
+      tags: [community]
+      summary: Delete a reply (author or admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "204":
+          description: Deleted
+
 components:
   schemas:
     HealthStatus:
@@ -2196,3 +2769,494 @@ components:
           type: string
         paymentReference:
           type: string
+
+    # ─── Support ────────────────────────────────────────────────────────────
+    SupportTicket:
+      type: object
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        assignedTo:
+          type: string
+          nullable: true
+        ticketNumber:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: [open, in_progress, waiting_on_client, resolved, closed]
+        priority:
+          type: string
+          enum: [low, medium, high, urgent]
+        category:
+          type: string
+          enum: [billing, technical, general, feature_request, bug_report]
+        resolvedAt:
+          type: string
+          format: date-time
+          nullable: true
+        closedAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    SupportTicketReply:
+      type: object
+      properties:
+        id:
+          type: string
+        ticketId:
+          type: string
+        userId:
+          type: string
+        content:
+          type: string
+        isStaff:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    SupportTicketInput:
+      type: object
+      required: [title, description]
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        priority:
+          type: string
+          enum: [low, medium, high, urgent]
+        category:
+          type: string
+          enum: [billing, technical, general, feature_request, bug_report]
+
+    SupportTicketReplyInput:
+      type: object
+      required: [content]
+      properties:
+        content:
+          type: string
+        isStaff:
+          type: integer
+
+    SupportTicketStatusUpdate:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [open, in_progress, waiting_on_client, resolved, closed]
+
+    SupportTicketList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/SupportTicket"
+        total:
+          type: integer
+
+    # ─── Knowledge Base ─────────────────────────────────────────────────────
+    KbCategory:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        slug:
+          type: string
+        description:
+          type: string
+          nullable: true
+        icon:
+          type: string
+        order:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+
+    KbArticle:
+      type: object
+      properties:
+        id:
+          type: string
+        categoryId:
+          type: string
+        authorId:
+          type: string
+        title:
+          type: string
+        slug:
+          type: string
+        content:
+          type: string
+        excerpt:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [draft, published, archived]
+        views:
+          type: integer
+        order:
+          type: integer
+        tags:
+          type: array
+          items:
+            type: string
+          nullable: true
+        publishedAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    KbArticleInput:
+      type: object
+      required: [title, content, categoryId]
+      properties:
+        categoryId:
+          type: string
+        title:
+          type: string
+        content:
+          type: string
+        excerpt:
+          type: string
+        status:
+          type: string
+          enum: [draft, published, archived]
+        tags:
+          type: array
+          items:
+            type: string
+
+    KbArticleList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/KbArticle"
+        total:
+          type: integer
+
+    KbCategoryList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/KbCategory"
+
+    # ─── AI Assistant ────────────────────────────────────────────────────────
+    AiConversation:
+      type: object
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        title:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    AiMessage:
+      type: object
+      properties:
+        id:
+          type: string
+        conversationId:
+          type: string
+        role:
+          type: string
+          enum: [user, assistant]
+        content:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    AiSuggestedQuestion:
+      type: object
+      properties:
+        id:
+          type: string
+        question:
+          type: string
+        category:
+          type: string
+        order:
+          type: integer
+
+    AiMessageInput:
+      type: object
+      required: [content]
+      properties:
+        content:
+          type: string
+
+    AiConversationList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/AiConversation"
+
+    # ─── Community ───────────────────────────────────────────────────────────
+    CommunityChannel:
+      type: object
+      properties:
+        id:
+          type: string
+        createdBy:
+          type: string
+        name:
+          type: string
+        slug:
+          type: string
+        description:
+          type: string
+          nullable: true
+        type:
+          type: string
+          enum: [public, private, announcement]
+        icon:
+          type: string
+        order:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+
+    CommunityPost:
+      type: object
+      properties:
+        id:
+          type: string
+        channelId:
+          type: string
+        userId:
+          type: string
+        title:
+          type: string
+        content:
+          type: string
+        isPinned:
+          type: integer
+        isLocked:
+          type: integer
+        views:
+          type: integer
+        replyCount:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CommunityReply:
+      type: object
+      properties:
+        id:
+          type: string
+        postId:
+          type: string
+        userId:
+          type: string
+        content:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CommunityReaction:
+      type: object
+      properties:
+        id:
+          type: string
+        postId:
+          type: string
+          nullable: true
+        replyId:
+          type: string
+          nullable: true
+        userId:
+          type: string
+        emoji:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    CommunityPostInput:
+      type: object
+      required: [title, content]
+      properties:
+        title:
+          type: string
+        content:
+          type: string
+
+    CommunityReplyInput:
+      type: object
+      required: [content]
+      properties:
+        content:
+          type: string
+
+    CommunityChannelList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/CommunityChannel"
+
+    CommunityPostList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/CommunityPost"
+        total:
+          type: integer
+
+    SupportTicketDetail:
+      type: object
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        assignedTo:
+          type: string
+          nullable: true
+        ticketNumber:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+        priority:
+          type: string
+        category:
+          type: string
+        resolvedAt:
+          type: string
+          format: date-time
+          nullable: true
+        closedAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        replies:
+          type: array
+          items:
+            $ref: "#/components/schemas/SupportTicketReply"
+
+    AiConversationDetail:
+      type: object
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        title:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/AiMessage"
+
+    AiMessagePair:
+      type: object
+      properties:
+        userMessage:
+          $ref: "#/components/schemas/AiMessage"
+        assistantMessage:
+          $ref: "#/components/schemas/AiMessage"
+
+    CommunityPostDetail:
+      type: object
+      properties:
+        id:
+          type: string
+        channelId:
+          type: string
+        userId:
+          type: string
+        title:
+          type: string
+        content:
+          type: string
+        isPinned:
+          type: integer
+        isLocked:
+          type: integer
+        views:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        replies:
+          type: array
+          items:
+            $ref: "#/components/schemas/CommunityReply"
+        reactions:
+          type: array
+          items:
+            $ref: "#/components/schemas/CommunityReaction"

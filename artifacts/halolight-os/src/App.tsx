@@ -24,6 +24,15 @@ import Contracts from "./pages/Contracts";
 import ContractDetail from "./pages/ContractDetail";
 import Invoices from "./pages/Invoices";
 import InvoiceDetail from "./pages/InvoiceDetail";
+import Support from "./pages/Support";
+import TicketDetail from "./pages/TicketDetail";
+import KnowledgeBase from "./pages/KnowledgeBase";
+import KBArticle from "./pages/KBArticle";
+import KBAdmin from "./pages/KBAdmin";
+import AIAssistant from "./pages/AIAssistant";
+import Community from "./pages/Community";
+import CommunityChannel from "./pages/CommunityChannel";
+import PostDetail from "./pages/PostDetail";
 import { AppShell } from "./components/layout/AppShell";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -207,6 +216,15 @@ function ClerkProviderWithRoutes() {
             <ProtectedRoute path="/contracts" component={Contracts} />
             <ProtectedRoute path="/invoices/:id" component={InvoiceDetail} />
             <ProtectedRoute path="/invoices" component={Invoices} />
+            <ProtectedRoute path="/support/tickets/:id" component={TicketDetail} />
+            <ProtectedRoute path="/support" component={Support} />
+            <ProtectedRoute path="/kb/admin" component={KBAdmin} />
+            <ProtectedRoute path="/kb/articles/:id" component={KBArticle} />
+            <ProtectedRoute path="/kb" component={KnowledgeBase} />
+            <ProtectedRoute path="/ai" component={AIAssistant} />
+            <ProtectedRoute path="/community/posts/:id" component={PostDetail} />
+            <ProtectedRoute path="/community/:id" component={CommunityChannel} />
+            <ProtectedRoute path="/community" component={Community} />
             <ProtectedRoute path="/notifications" component={Notifications} />
             <ProtectedRoute path="/onboarding" component={Onboarding} />
             <ProtectedRoute path="/settings" component={Settings} />

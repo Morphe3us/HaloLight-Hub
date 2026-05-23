@@ -4,7 +4,8 @@ import { useTranslation } from "react-i18next";
 import {
   LayoutDashboard, Bell, Settings as SettingsIcon, Shield, CheckCircle2,
   ChevronRight, LogOut, Menu, GraduationCap, Calendar, TrendingUp,
-  FileText, FileSignature, ReceiptText, ChevronDown,
+  FileText, FileSignature, ReceiptText, ChevronDown, LifeBuoy, BookOpen,
+  Sparkles, Users, Hash,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useClerk } from "@clerk/react";
@@ -112,6 +113,17 @@ export function Sidebar() {
         { title: "Invoices", href: "/invoices", icon: ReceiptText },
       ],
     },
+    {
+      title: "Support",
+      href: "/support",
+      icon: LifeBuoy,
+      children: [
+        { title: "Tickets", href: "/support", icon: LifeBuoy },
+        { title: "Knowledge Base", href: "/kb", icon: BookOpen },
+      ],
+    },
+    { title: "AI Assistant", href: "/ai", icon: Sparkles },
+    { title: "Community", href: "/community", icon: Users },
     { title: t("nav.onboarding"), href: "/onboarding", icon: CheckCircle2 },
     { title: t("nav.notifications"), href: "/notifications", icon: Bell, badge: true },
     { title: t("nav.settings"), href: "/settings", icon: SettingsIcon },

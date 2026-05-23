@@ -1351,3 +1351,536 @@ export const UpdateInvoiceStatusResponse = zod.object({
 }))
 
 
+/**
+ * @summary List support tickets
+ */
+export const ListSupportTicketsQueryParams = zod.object({
+  "status": zod.coerce.string().optional(),
+  "priority": zod.coerce.string().optional(),
+  "limit": zod.coerce.number().optional(),
+  "offset": zod.coerce.number().optional()
+})
+
+export const ListSupportTicketsResponse = zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.string().optional(),
+  "userId": zod.string().optional(),
+  "assignedTo": zod.string().nullish(),
+  "ticketNumber": zod.string().optional(),
+  "title": zod.string().optional(),
+  "description": zod.string().optional(),
+  "status": zod.enum(['open', 'in_progress', 'waiting_on_client', 'resolved', 'closed']).optional(),
+  "priority": zod.enum(['low', 'medium', 'high', 'urgent']).optional(),
+  "category": zod.enum(['billing', 'technical', 'general', 'feature_request', 'bug_report']).optional(),
+  "resolvedAt": zod.coerce.date().nullish(),
+  "closedAt": zod.coerce.date().nullish(),
+  "createdAt": zod.coerce.date().optional(),
+  "updatedAt": zod.coerce.date().optional()
+})).optional(),
+  "total": zod.number().optional()
+})
+
+
+/**
+ * @summary Create a support ticket
+ */
+export const CreateSupportTicketBody = zod.object({
+  "title": zod.string(),
+  "description": zod.string(),
+  "priority": zod.enum(['low', 'medium', 'high', 'urgent']).optional(),
+  "category": zod.enum(['billing', 'technical', 'general', 'feature_request', 'bug_report']).optional()
+})
+
+
+/**
+ * @summary Get ticket with replies
+ */
+export const GetSupportTicketParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const GetSupportTicketResponse = zod.object({
+  "id": zod.string().optional(),
+  "userId": zod.string().optional(),
+  "assignedTo": zod.string().nullish(),
+  "ticketNumber": zod.string().optional(),
+  "title": zod.string().optional(),
+  "description": zod.string().optional(),
+  "status": zod.string().optional(),
+  "priority": zod.string().optional(),
+  "category": zod.string().optional(),
+  "resolvedAt": zod.coerce.date().nullish(),
+  "closedAt": zod.coerce.date().nullish(),
+  "createdAt": zod.coerce.date().optional(),
+  "updatedAt": zod.coerce.date().optional(),
+  "replies": zod.array(zod.object({
+  "id": zod.string().optional(),
+  "ticketId": zod.string().optional(),
+  "userId": zod.string().optional(),
+  "content": zod.string().optional(),
+  "isStaff": zod.number().optional(),
+  "createdAt": zod.coerce.date().optional(),
+  "updatedAt": zod.coerce.date().optional()
+})).optional()
+})
+
+
+/**
+ * @summary Update ticket
+ */
+export const UpdateSupportTicketParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const UpdateSupportTicketBody = zod.object({
+  "title": zod.string(),
+  "description": zod.string(),
+  "priority": zod.enum(['low', 'medium', 'high', 'urgent']).optional(),
+  "category": zod.enum(['billing', 'technical', 'general', 'feature_request', 'bug_report']).optional()
+})
+
+export const UpdateSupportTicketResponse = zod.object({
+  "id": zod.string().optional(),
+  "userId": zod.string().optional(),
+  "assignedTo": zod.string().nullish(),
+  "ticketNumber": zod.string().optional(),
+  "title": zod.string().optional(),
+  "description": zod.string().optional(),
+  "status": zod.enum(['open', 'in_progress', 'waiting_on_client', 'resolved', 'closed']).optional(),
+  "priority": zod.enum(['low', 'medium', 'high', 'urgent']).optional(),
+  "category": zod.enum(['billing', 'technical', 'general', 'feature_request', 'bug_report']).optional(),
+  "resolvedAt": zod.coerce.date().nullish(),
+  "closedAt": zod.coerce.date().nullish(),
+  "createdAt": zod.coerce.date().optional(),
+  "updatedAt": zod.coerce.date().optional()
+})
+
+
+/**
+ * @summary Add reply to ticket
+ */
+export const CreateTicketReplyParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const CreateTicketReplyBody = zod.object({
+  "content": zod.string(),
+  "isStaff": zod.number().optional()
+})
+
+
+/**
+ * @summary Update ticket status
+ */
+export const UpdateTicketStatusParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const UpdateTicketStatusBody = zod.object({
+  "status": zod.enum(['open', 'in_progress', 'waiting_on_client', 'resolved', 'closed'])
+})
+
+export const UpdateTicketStatusResponse = zod.object({
+  "id": zod.string().optional(),
+  "userId": zod.string().optional(),
+  "assignedTo": zod.string().nullish(),
+  "ticketNumber": zod.string().optional(),
+  "title": zod.string().optional(),
+  "description": zod.string().optional(),
+  "status": zod.enum(['open', 'in_progress', 'waiting_on_client', 'resolved', 'closed']).optional(),
+  "priority": zod.enum(['low', 'medium', 'high', 'urgent']).optional(),
+  "category": zod.enum(['billing', 'technical', 'general', 'feature_request', 'bug_report']).optional(),
+  "resolvedAt": zod.coerce.date().nullish(),
+  "closedAt": zod.coerce.date().nullish(),
+  "createdAt": zod.coerce.date().optional(),
+  "updatedAt": zod.coerce.date().optional()
+})
+
+
+/**
+ * @summary List knowledge base categories
+ */
+export const ListKbCategoriesResponse = zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.string().optional(),
+  "name": zod.string().optional(),
+  "slug": zod.string().optional(),
+  "description": zod.string().nullish(),
+  "icon": zod.string().optional(),
+  "order": zod.number().optional(),
+  "createdAt": zod.coerce.date().optional()
+})).optional()
+})
+
+
+/**
+ * @summary Create a KB category (admin)
+ */
+export const CreateKbCategoryBody = zod.object({
+  "name": zod.string(),
+  "slug": zod.string(),
+  "description": zod.string().optional(),
+  "icon": zod.string().optional(),
+  "order": zod.number().optional()
+})
+
+
+/**
+ * @summary List knowledge base articles
+ */
+export const ListKbArticlesQueryParams = zod.object({
+  "categoryId": zod.coerce.string().optional(),
+  "status": zod.coerce.string().optional(),
+  "search": zod.coerce.string().optional(),
+  "limit": zod.coerce.number().optional(),
+  "offset": zod.coerce.number().optional()
+})
+
+export const ListKbArticlesResponse = zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.string().optional(),
+  "categoryId": zod.string().optional(),
+  "authorId": zod.string().optional(),
+  "title": zod.string().optional(),
+  "slug": zod.string().optional(),
+  "content": zod.string().optional(),
+  "excerpt": zod.string().nullish(),
+  "status": zod.enum(['draft', 'published', 'archived']).optional(),
+  "views": zod.number().optional(),
+  "order": zod.number().optional(),
+  "tags": zod.array(zod.string()).nullish(),
+  "publishedAt": zod.coerce.date().nullish(),
+  "createdAt": zod.coerce.date().optional(),
+  "updatedAt": zod.coerce.date().optional()
+})).optional(),
+  "total": zod.number().optional()
+})
+
+
+/**
+ * @summary Create a KB article (admin)
+ */
+export const CreateKbArticleBody = zod.object({
+  "categoryId": zod.string(),
+  "title": zod.string(),
+  "content": zod.string(),
+  "excerpt": zod.string().optional(),
+  "status": zod.enum(['draft', 'published', 'archived']).optional(),
+  "tags": zod.array(zod.string()).optional()
+})
+
+
+/**
+ * @summary Get a KB article
+ */
+export const GetKbArticleParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const GetKbArticleResponse = zod.object({
+  "id": zod.string().optional(),
+  "categoryId": zod.string().optional(),
+  "authorId": zod.string().optional(),
+  "title": zod.string().optional(),
+  "slug": zod.string().optional(),
+  "content": zod.string().optional(),
+  "excerpt": zod.string().nullish(),
+  "status": zod.enum(['draft', 'published', 'archived']).optional(),
+  "views": zod.number().optional(),
+  "order": zod.number().optional(),
+  "tags": zod.array(zod.string()).nullish(),
+  "publishedAt": zod.coerce.date().nullish(),
+  "createdAt": zod.coerce.date().optional(),
+  "updatedAt": zod.coerce.date().optional()
+})
+
+
+/**
+ * @summary Update a KB article (admin)
+ */
+export const UpdateKbArticleParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const UpdateKbArticleBody = zod.object({
+  "categoryId": zod.string(),
+  "title": zod.string(),
+  "content": zod.string(),
+  "excerpt": zod.string().optional(),
+  "status": zod.enum(['draft', 'published', 'archived']).optional(),
+  "tags": zod.array(zod.string()).optional()
+})
+
+export const UpdateKbArticleResponse = zod.object({
+  "id": zod.string().optional(),
+  "categoryId": zod.string().optional(),
+  "authorId": zod.string().optional(),
+  "title": zod.string().optional(),
+  "slug": zod.string().optional(),
+  "content": zod.string().optional(),
+  "excerpt": zod.string().nullish(),
+  "status": zod.enum(['draft', 'published', 'archived']).optional(),
+  "views": zod.number().optional(),
+  "order": zod.number().optional(),
+  "tags": zod.array(zod.string()).nullish(),
+  "publishedAt": zod.coerce.date().nullish(),
+  "createdAt": zod.coerce.date().optional(),
+  "updatedAt": zod.coerce.date().optional()
+})
+
+
+/**
+ * @summary Delete a KB article (admin)
+ */
+export const DeleteKbArticleParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+
+/**
+ * @summary List AI conversations
+ */
+export const ListAiConversationsResponse = zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.string().optional(),
+  "userId": zod.string().optional(),
+  "title": zod.string().optional(),
+  "createdAt": zod.coerce.date().optional(),
+  "updatedAt": zod.coerce.date().optional()
+})).optional()
+})
+
+
+/**
+ * @summary Get conversation with messages
+ */
+export const GetAiConversationParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const GetAiConversationResponse = zod.object({
+  "id": zod.string().optional(),
+  "userId": zod.string().optional(),
+  "title": zod.string().optional(),
+  "createdAt": zod.coerce.date().optional(),
+  "updatedAt": zod.coerce.date().optional(),
+  "messages": zod.array(zod.object({
+  "id": zod.string().optional(),
+  "conversationId": zod.string().optional(),
+  "role": zod.enum(['user', 'assistant']).optional(),
+  "content": zod.string().optional(),
+  "createdAt": zod.coerce.date().optional()
+})).optional()
+})
+
+
+/**
+ * @summary Delete a conversation
+ */
+export const DeleteAiConversationParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+
+/**
+ * @summary Send a message in a conversation
+ */
+export const SendAiMessageParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const SendAiMessageBody = zod.object({
+  "content": zod.string()
+})
+
+
+/**
+ * @summary List suggested questions
+ */
+export const ListAiSuggestedQuestionsResponse = zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.string().optional(),
+  "question": zod.string().optional(),
+  "category": zod.string().optional(),
+  "order": zod.number().optional()
+})).optional()
+})
+
+
+/**
+ * @summary List community channels
+ */
+export const ListCommunityChannelsResponse = zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.string().optional(),
+  "createdBy": zod.string().optional(),
+  "name": zod.string().optional(),
+  "slug": zod.string().optional(),
+  "description": zod.string().nullish(),
+  "type": zod.enum(['public', 'private', 'announcement']).optional(),
+  "icon": zod.string().optional(),
+  "order": zod.number().optional(),
+  "createdAt": zod.coerce.date().optional()
+})).optional()
+})
+
+
+/**
+ * @summary Create a channel (admin)
+ */
+export const CreateCommunityChannelBody = zod.object({
+  "name": zod.string(),
+  "slug": zod.string(),
+  "description": zod.string().optional(),
+  "type": zod.string().optional(),
+  "icon": zod.string().optional(),
+  "order": zod.number().optional()
+})
+
+
+/**
+ * @summary List posts in a channel
+ */
+export const ListChannelPostsParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const ListChannelPostsQueryParams = zod.object({
+  "limit": zod.coerce.number().optional(),
+  "offset": zod.coerce.number().optional()
+})
+
+export const ListChannelPostsResponse = zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.string().optional(),
+  "channelId": zod.string().optional(),
+  "userId": zod.string().optional(),
+  "title": zod.string().optional(),
+  "content": zod.string().optional(),
+  "isPinned": zod.number().optional(),
+  "isLocked": zod.number().optional(),
+  "views": zod.number().optional(),
+  "replyCount": zod.number().optional(),
+  "createdAt": zod.coerce.date().optional(),
+  "updatedAt": zod.coerce.date().optional()
+})).optional(),
+  "total": zod.number().optional()
+})
+
+
+/**
+ * @summary Create a post in a channel
+ */
+export const CreatePostParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const CreatePostBody = zod.object({
+  "title": zod.string(),
+  "content": zod.string()
+})
+
+
+/**
+ * @summary Get post with replies and reactions
+ */
+export const GetCommunityPostParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const GetCommunityPostResponse = zod.object({
+  "id": zod.string().optional(),
+  "channelId": zod.string().optional(),
+  "userId": zod.string().optional(),
+  "title": zod.string().optional(),
+  "content": zod.string().optional(),
+  "isPinned": zod.number().optional(),
+  "isLocked": zod.number().optional(),
+  "views": zod.number().optional(),
+  "createdAt": zod.coerce.date().optional(),
+  "updatedAt": zod.coerce.date().optional(),
+  "replies": zod.array(zod.object({
+  "id": zod.string().optional(),
+  "postId": zod.string().optional(),
+  "userId": zod.string().optional(),
+  "content": zod.string().optional(),
+  "createdAt": zod.coerce.date().optional(),
+  "updatedAt": zod.coerce.date().optional()
+})).optional(),
+  "reactions": zod.array(zod.object({
+  "id": zod.string().optional(),
+  "postId": zod.string().nullish(),
+  "replyId": zod.string().nullish(),
+  "userId": zod.string().optional(),
+  "emoji": zod.string().optional(),
+  "createdAt": zod.coerce.date().optional()
+})).optional()
+})
+
+
+/**
+ * @summary Delete a post (author or admin)
+ */
+export const DeleteCommunityPostParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+
+/**
+ * @summary Reply to a post
+ */
+export const CreateCommunityReplyParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const CreateCommunityReplyBody = zod.object({
+  "content": zod.string()
+})
+
+
+/**
+ * @summary Toggle reaction on a post
+ */
+export const TogglePostReactionParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const TogglePostReactionBody = zod.object({
+  "emoji": zod.string()
+})
+
+export const TogglePostReactionResponse = zod.object({
+  "added": zod.boolean().optional()
+})
+
+
+/**
+ * @summary Pin/unpin a post (admin)
+ */
+export const TogglePostPinParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const TogglePostPinResponse = zod.object({
+  "id": zod.string().optional(),
+  "channelId": zod.string().optional(),
+  "userId": zod.string().optional(),
+  "title": zod.string().optional(),
+  "content": zod.string().optional(),
+  "isPinned": zod.number().optional(),
+  "isLocked": zod.number().optional(),
+  "views": zod.number().optional(),
+  "replyCount": zod.number().optional(),
+  "createdAt": zod.coerce.date().optional(),
+  "updatedAt": zod.coerce.date().optional()
+})
+
+
+/**
+ * @summary Delete a reply (author or admin)
+ */
+export const DeleteCommunityReplyParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+

@@ -774,6 +774,336 @@ export interface InvoiceStatusUpdate {
   paymentReference?: string;
 }
 
+export type SupportTicketStatus = typeof SupportTicketStatus[keyof typeof SupportTicketStatus];
+
+
+export const SupportTicketStatus = {
+  open: 'open',
+  in_progress: 'in_progress',
+  waiting_on_client: 'waiting_on_client',
+  resolved: 'resolved',
+  closed: 'closed',
+} as const;
+
+export type SupportTicketPriority = typeof SupportTicketPriority[keyof typeof SupportTicketPriority];
+
+
+export const SupportTicketPriority = {
+  low: 'low',
+  medium: 'medium',
+  high: 'high',
+  urgent: 'urgent',
+} as const;
+
+export type SupportTicketCategory = typeof SupportTicketCategory[keyof typeof SupportTicketCategory];
+
+
+export const SupportTicketCategory = {
+  billing: 'billing',
+  technical: 'technical',
+  general: 'general',
+  feature_request: 'feature_request',
+  bug_report: 'bug_report',
+} as const;
+
+export interface SupportTicket {
+  id?: string;
+  userId?: string;
+  assignedTo?: string | null;
+  ticketNumber?: string;
+  title?: string;
+  description?: string;
+  status?: SupportTicketStatus;
+  priority?: SupportTicketPriority;
+  category?: SupportTicketCategory;
+  resolvedAt?: string | null;
+  closedAt?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface SupportTicketReply {
+  id?: string;
+  ticketId?: string;
+  userId?: string;
+  content?: string;
+  isStaff?: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export type SupportTicketInputPriority = typeof SupportTicketInputPriority[keyof typeof SupportTicketInputPriority];
+
+
+export const SupportTicketInputPriority = {
+  low: 'low',
+  medium: 'medium',
+  high: 'high',
+  urgent: 'urgent',
+} as const;
+
+export type SupportTicketInputCategory = typeof SupportTicketInputCategory[keyof typeof SupportTicketInputCategory];
+
+
+export const SupportTicketInputCategory = {
+  billing: 'billing',
+  technical: 'technical',
+  general: 'general',
+  feature_request: 'feature_request',
+  bug_report: 'bug_report',
+} as const;
+
+export interface SupportTicketInput {
+  title: string;
+  description: string;
+  priority?: SupportTicketInputPriority;
+  category?: SupportTicketInputCategory;
+}
+
+export interface SupportTicketReplyInput {
+  content: string;
+  isStaff?: number;
+}
+
+export type SupportTicketStatusUpdateStatus = typeof SupportTicketStatusUpdateStatus[keyof typeof SupportTicketStatusUpdateStatus];
+
+
+export const SupportTicketStatusUpdateStatus = {
+  open: 'open',
+  in_progress: 'in_progress',
+  waiting_on_client: 'waiting_on_client',
+  resolved: 'resolved',
+  closed: 'closed',
+} as const;
+
+export interface SupportTicketStatusUpdate {
+  status: SupportTicketStatusUpdateStatus;
+}
+
+export interface SupportTicketList {
+  items?: SupportTicket[];
+  total?: number;
+}
+
+export interface KbCategory {
+  id?: string;
+  name?: string;
+  slug?: string;
+  description?: string | null;
+  icon?: string;
+  order?: number;
+  createdAt?: string;
+}
+
+export type KbArticleStatus = typeof KbArticleStatus[keyof typeof KbArticleStatus];
+
+
+export const KbArticleStatus = {
+  draft: 'draft',
+  published: 'published',
+  archived: 'archived',
+} as const;
+
+export interface KbArticle {
+  id?: string;
+  categoryId?: string;
+  authorId?: string;
+  title?: string;
+  slug?: string;
+  content?: string;
+  excerpt?: string | null;
+  status?: KbArticleStatus;
+  views?: number;
+  order?: number;
+  tags?: string[] | null;
+  publishedAt?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export type KbArticleInputStatus = typeof KbArticleInputStatus[keyof typeof KbArticleInputStatus];
+
+
+export const KbArticleInputStatus = {
+  draft: 'draft',
+  published: 'published',
+  archived: 'archived',
+} as const;
+
+export interface KbArticleInput {
+  categoryId: string;
+  title: string;
+  content: string;
+  excerpt?: string;
+  status?: KbArticleInputStatus;
+  tags?: string[];
+}
+
+export interface KbArticleList {
+  items?: KbArticle[];
+  total?: number;
+}
+
+export interface KbCategoryList {
+  items?: KbCategory[];
+}
+
+export interface AiConversation {
+  id?: string;
+  userId?: string;
+  title?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export type AiMessageRole = typeof AiMessageRole[keyof typeof AiMessageRole];
+
+
+export const AiMessageRole = {
+  user: 'user',
+  assistant: 'assistant',
+} as const;
+
+export interface AiMessage {
+  id?: string;
+  conversationId?: string;
+  role?: AiMessageRole;
+  content?: string;
+  createdAt?: string;
+}
+
+export interface AiSuggestedQuestion {
+  id?: string;
+  question?: string;
+  category?: string;
+  order?: number;
+}
+
+export interface AiMessageInput {
+  content: string;
+}
+
+export interface AiConversationList {
+  items?: AiConversation[];
+}
+
+export type CommunityChannelType = typeof CommunityChannelType[keyof typeof CommunityChannelType];
+
+
+export const CommunityChannelType = {
+  public: 'public',
+  private: 'private',
+  announcement: 'announcement',
+} as const;
+
+export interface CommunityChannel {
+  id?: string;
+  createdBy?: string;
+  name?: string;
+  slug?: string;
+  description?: string | null;
+  type?: CommunityChannelType;
+  icon?: string;
+  order?: number;
+  createdAt?: string;
+}
+
+export interface CommunityPost {
+  id?: string;
+  channelId?: string;
+  userId?: string;
+  title?: string;
+  content?: string;
+  isPinned?: number;
+  isLocked?: number;
+  views?: number;
+  replyCount?: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface CommunityReply {
+  id?: string;
+  postId?: string;
+  userId?: string;
+  content?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface CommunityReaction {
+  id?: string;
+  postId?: string | null;
+  replyId?: string | null;
+  userId?: string;
+  emoji?: string;
+  createdAt?: string;
+}
+
+export interface CommunityPostInput {
+  title: string;
+  content: string;
+}
+
+export interface CommunityReplyInput {
+  content: string;
+}
+
+export interface CommunityChannelList {
+  items?: CommunityChannel[];
+}
+
+export interface CommunityPostList {
+  items?: CommunityPost[];
+  total?: number;
+}
+
+export interface SupportTicketDetail {
+  id?: string;
+  userId?: string;
+  assignedTo?: string | null;
+  ticketNumber?: string;
+  title?: string;
+  description?: string;
+  status?: string;
+  priority?: string;
+  category?: string;
+  resolvedAt?: string | null;
+  closedAt?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+  replies?: SupportTicketReply[];
+}
+
+export interface AiConversationDetail {
+  id?: string;
+  userId?: string;
+  title?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  messages?: AiMessage[];
+}
+
+export interface AiMessagePair {
+  userMessage?: AiMessage;
+  assistantMessage?: AiMessage;
+}
+
+export interface CommunityPostDetail {
+  id?: string;
+  channelId?: string;
+  userId?: string;
+  title?: string;
+  content?: string;
+  isPinned?: number;
+  isLocked?: number;
+  views?: number;
+  createdAt?: string;
+  updatedAt?: string;
+  replies?: CommunityReply[];
+  reactions?: CommunityReaction[];
+}
+
 export type ListUsersParams = {
 role?: string;
 limit?: number;
@@ -917,4 +1247,53 @@ export const ListInvoicesStatus = {
   overdue: 'overdue',
   cancelled: 'cancelled',
 } as const;
+
+export type ListSupportTicketsParams = {
+status?: string;
+priority?: string;
+limit?: number;
+offset?: number;
+};
+
+export type CreateKbCategoryBody = {
+  name: string;
+  slug: string;
+  description?: string;
+  icon?: string;
+  order?: number;
+};
+
+export type ListKbArticlesParams = {
+categoryId?: string;
+status?: string;
+search?: string;
+limit?: number;
+offset?: number;
+};
+
+export type ListAiSuggestedQuestions200 = {
+  items?: AiSuggestedQuestion[];
+};
+
+export type CreateCommunityChannelBody = {
+  name: string;
+  slug: string;
+  description?: string;
+  type?: string;
+  icon?: string;
+  order?: number;
+};
+
+export type ListChannelPostsParams = {
+limit?: number;
+offset?: number;
+};
+
+export type TogglePostReactionBody = {
+  emoji: string;
+};
+
+export type TogglePostReaction200 = {
+  added?: boolean;
+};
 

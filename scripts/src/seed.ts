@@ -2,6 +2,7 @@ import { db, onboardingStepsTable, usersTable, notificationsTable } from "@works
 import { eq } from "drizzle-orm";
 import { seedAcademy } from "./seed-academy";
 import { seedCrm } from "./seed-crm";
+import { seedPhase4 } from "./seed-phase4";
 
 async function seed() {
   console.log("Seeding Phase 1 demo data...");
@@ -101,6 +102,7 @@ async function seed() {
   // after first login. This is a placeholder that gets replaced by JIT provisioning.
   await seedAcademy();
   await seedCrm();
+  await seedPhase4();
 
   console.log("\n✅ Seed complete.");
   console.log("   Note: User records are created automatically on first login via JIT provisioning.");

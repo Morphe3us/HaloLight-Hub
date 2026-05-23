@@ -7,3 +7,7 @@ export * from "./crm";
 export * from "./quotes";
 export * from "./contracts";
 export * from "./invoices";
+export * from "./support";
+export * from "./kb";
+export * from "./ai";
+export * from "./community";
