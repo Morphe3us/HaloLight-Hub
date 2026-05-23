@@ -3,7 +3,7 @@
  * Do not edit manually.
  * Api
  * HaloLight OS API specification
- * OpenAPI spec version: 0.1.0
+ * OpenAPI spec version: 0.2.0
  */
 export interface HealthStatus {
   status: string;
@@ -146,20 +146,265 @@ export interface OnboardingSummary {
   percentComplete: number;
 }
 
+export interface NextLesson {
+  lessonId: string;
+  lessonTitle: string;
+  courseId: string;
+  courseTitle: string;
+  courseThumbnailUrl: string;
+  moduleTitle: string;
+  durationSeconds: number;
+  watchPercent: number;
+}
+
+export interface DashboardSummary {
+  unreadNotifications: number;
+  onboardingPercent: number;
+  academyCoursesCompleted: number;
+  academyLessonsCompleted: number;
+  academyTotalLessons: number;
+  upcomingEventsCount: number;
+  totalEventsCount: number;
+  nextLesson: NextLesson;
+}
+
+export type CourseLevel = typeof CourseLevel[keyof typeof CourseLevel];
+
+
+export const CourseLevel = {
+  beginner: 'beginner',
+  intermediate: 'intermediate',
+  advanced: 'advanced',
+} as const;
+
+export interface Course {
+  id: string;
+  slug: string;
+  title: string;
+  description: string;
+  category: string;
+  level: CourseLevel;
+  order: number;
+  thumbnailUrl: string;
+  moduleCount: number;
+  lessonCount: number;
+  totalDurationSeconds: number;
+  completedLessons: number;
+}
+
+export interface CourseList {
+  items: Course[];
+}
+
+export interface LessonSummary {
+  id: string;
+  moduleId: string;
+  title: string;
+  durationSeconds: number;
+  order: number;
+  isPublished: boolean;
+  /** @nullable */
+  completedAt: string | null;
+  /** @nullable */
+  watchPercent?: number | null;
+}
+
+export interface CourseModule {
+  id: string;
+  courseId: string;
+  title: string;
+  order: number;
+  lessons: LessonSummary[];
+}
+
+export interface CourseDetail {
+  id: string;
+  slug: string;
+  title: string;
+  description: string;
+  category: string;
+  level: string;
+  order: number;
+  thumbnailUrl: string;
+  completedLessons: number;
+  lessonCount: number;
+  totalDurationSeconds: number;
+  modules: CourseModule[];
+}
+
+export type LessonResourceType = typeof LessonResourceType[keyof typeof LessonResourceType];
+
+
+export const LessonResourceType = {
+  pdf: 'pdf',
+  link: 'link',
+  download: 'download',
+  video: 'video',
+} as const;
+
+export interface LessonResource {
+  id: string;
+  lessonId: string;
+  title: string;
+  type: LessonResourceType;
+  url: string;
+}
+
+export interface QuizQuestion {
+  id: string;
+  question: string;
+  options: string[];
+  correctOption: number;
+}
+
+export interface LessonDetail {
+  id: string;
+  moduleId: string;
+  title: string;
+  videoUrl: string;
+  durationSeconds: number;
+  order: number;
+  resources: LessonResource[];
+  quizQuestions: QuizQuestion[];
+  /** @nullable */
+  completedAt: string | null;
+  /** @nullable */
+  watchPercent: number | null;
+}
+
+export interface LessonProgress {
+  lessonId: string;
+  watchPercent: number;
+  /** @nullable */
+  completedAt: string | null;
+}
+
+export interface LessonProgressUpdate {
+  watchPercent: number;
+  completed?: boolean;
+}
+
+export interface QuizSubmission {
+  answers: number[];
+}
+
+export type QuizResultAnswersItem = {
+  questionId: string;
+  correct: boolean;
+  selectedOption: number;
+  correctOption: number;
+};
+
+export interface QuizResult {
+  score: number;
+  total: number;
+  passed: boolean;
+  answers: QuizResultAnswersItem[];
+}
+
+export interface AcademyProgressSummary {
+  totalCourses: number;
+  completedCourses: number;
+  totalLessons: number;
+  completedLessons: number;
+  totalDurationSeconds: number;
+  watchedDurationSeconds: number;
+  percentComplete: number;
+}
+
+export type EventStatus = typeof EventStatus[keyof typeof EventStatus];
+
+
+export const EventStatus = {
+  upcoming: 'upcoming',
+  active: 'active',
+  completed: 'completed',
+  cancelled: 'cancelled',
+} as const;
+
+export interface Event {
+  id: string;
+  userId: string;
+  title: string;
+  /** @nullable */
+  description?: string | null;
+  eventDate: string;
+  /** @nullable */
+  location?: string | null;
+  /** @nullable */
+  type?: string | null;
+  status: EventStatus;
+  /** @nullable */
+  notes?: string | null;
+  createdAt: string;
+}
+
+export interface EventList {
+  items: Event[];
+  total: number;
+}
+
+export interface EventInput {
+  title: string;
+  description?: string;
+  eventDate: string;
+  location?: string;
+  type?: string;
+  notes?: string;
+}
+
+export type EventUpdateStatus = typeof EventUpdateStatus[keyof typeof EventUpdateStatus];
+
+
+export const EventUpdateStatus = {
+  upcoming: 'upcoming',
+  active: 'active',
+  completed: 'completed',
+  cancelled: 'cancelled',
+} as const;
+
+export interface EventUpdate {
+  title?: string;
+  description?: string;
+  eventDate?: string;
+  location?: string;
+  type?: string;
+  status?: EventUpdateStatus;
+  notes?: string;
+}
+
 export type ListUsersParams = {
-/**
- * Filter by role
- */
 role?: string;
 limit?: number;
 offset?: number;
 };
 
 export type ListNotificationsParams = {
-/**
- * Filter to unread only
- */
 unread_only?: boolean;
+limit?: number;
+offset?: number;
+};
+
+export type ListCoursesParams = {
+category?: string;
+level?: string;
+lang?: string;
+};
+
+export type GetCourseParams = {
+lang?: string;
+};
+
+export type GetLessonParams = {
+lang?: string;
+};
+
+export type GetNextLessonParams = {
+lang?: string;
+};
+
+export type ListEventsParams = {
+status?: string;
 limit?: number;
 offset?: number;
 };

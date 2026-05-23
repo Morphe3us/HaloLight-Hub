@@ -77,6 +77,8 @@
   "dependencies": {
     "@clerk/react": "^6.7.0",
     "@clerk/themes": "^2.4.57",
-    "internal": "link:@clerk/react/internal"
+    "i18next": "^26.2.0",
+    "internal": "link:@clerk/react/internal",
+    "react-i18next": "^17.0.8"
   }
 }

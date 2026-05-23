@@ -1,45 +1,36 @@
 import { Link, useLocation } from "wouter";
 import { useGetCurrentUser, useGetUnreadNotificationCount } from "@workspace/api-client-react";
-import { LayoutDashboard, Bell, Settings as SettingsIcon, Shield, CheckCircle2, ChevronRight, LogOut, Menu } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { LayoutDashboard, Bell, Settings as SettingsIcon, Shield, CheckCircle2, ChevronRight, LogOut, Menu, GraduationCap, Calendar } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useClerk } from "@clerk/react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
-const navItems = [
-  {
-    title: "Dashboard",
-    href: "/dashboard",
-    icon: LayoutDashboard
-  },
-  {
-    title: "Onboarding",
-    href: "/onboarding",
-    icon: CheckCircle2
-  },
-  {
-    title: "Notifications",
-    href: "/notifications",
-    icon: Bell,
-    badge: true
-  },
-  {
-    title: "Settings",
-    href: "/settings",
-    icon: SettingsIcon
-  }
-];
-
 export function Sidebar() {
   const [location] = useLocation();
+  const { t } = useTranslation();
   const { data: user } = useGetCurrentUser();
   const { data: unreadData } = useGetUnreadNotificationCount();
   const { signOut } = useClerk();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const isAdmin = user?.role === "admin";
-  const allItems = [...navItems, ...(isAdmin ? [{ title: "Admin", href: "/admin", icon: Shield }] : [])];
+
+  const navItems = [
+    { title: t("nav.dashboard"), href: "/dashboard", icon: LayoutDashboard },
+    { title: t("nav.academy"), href: "/academy", icon: GraduationCap },
+    { title: t("nav.events"), href: "/events", icon: Calendar },
+    { title: t("nav.onboarding"), href: "/onboarding", icon: CheckCircle2 },
+    { title: t("nav.notifications"), href: "/notifications", icon: Bell, badge: true },
+    { title: t("nav.settings"), href: "/settings", icon: SettingsIcon },
+  ];
+
+  const allItems = [
+    ...navItems,
+    ...(isAdmin ? [{ title: t("nav.admin"), href: "/admin", icon: Shield }] : []),
+  ];
 
   const handleSignOut = () => {
     signOut({ redirectUrl: "/" });

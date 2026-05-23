@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
-  version: 0.1.0
+  version: 0.2.0
   description: HaloLight OS API specification
 servers:
   - url: /api
@@ -16,6 +16,12 @@ tags:
     description: Notification inbox and preferences
   - name: onboarding
     description: Client onboarding progress
+  - name: academy
+    description: Video courses and learning progress
+  - name: events
+    description: Event management
+  - name: dashboard
+    description: Dashboard aggregations
 
 paths:
   /healthz:
@@ -23,7 +29,6 @@ paths:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -65,8 +70,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/User"
-        "401":
-          description: Unauthorized
 
   /users:
     get:
@@ -78,7 +81,6 @@ paths:
           name: role
           schema:
             type: string
-          description: Filter by role
         - in: query
           name: limit
           schema:
@@ -96,10 +98,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/UserList"
-        "401":
-          description: Unauthorized
-        "403":
-          description: Forbidden
 
   /users/{id}:
     get:
@@ -133,7 +131,6 @@ paths:
           name: unread_only
           schema:
             type: boolean
-          description: Filter to unread only
         - in: query
           name: limit
           schema:
@@ -151,8 +148,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/NotificationList"
-        "401":
-          description: Unauthorized
 
   /notifications/unread-count:
     get:
@@ -166,8 +161,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/UnreadCount"
-        "401":
-          description: Unauthorized
 
   /notifications/{id}/read:
     patch:
@@ -187,8 +180,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Notification"
-        "404":
-          description: Not found
 
   /notifications/read-all:
     patch:
@@ -202,14 +193,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/UpdatedCount"
-        "401":
-          description: Unauthorized
 
   /notifications/preferences:
     get:
       operationId: getNotificationPreferences
       tags: [notifications]
-      summary: Get notification preferences for current user
+      summary: Get notification preferences
       responses:
         "200":
           description: Notification preferences
@@ -217,8 +206,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/NotificationPreferences"
-        "401":
-          description: Unauthorized
 
     put:
       operationId: updateNotificationPreferences
@@ -237,8 +224,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/NotificationPreferences"
-        "401":
-          description: Unauthorized
 
   # ─── Onboarding ─────────────────────────────────────────────────────────
   /onboarding/steps:
@@ -253,8 +238,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/OnboardingStepList"
-        "401":
-          description: Unauthorized
 
   /onboarding/steps/{stepId}/complete:
     patch:
@@ -274,14 +257,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/OnboardingStep"
-        "404":
-          description: Not found
 
   /onboarding/summary:
     get:
       operationId: getOnboardingSummary
       tags: [onboarding]
-      summary: Get onboarding completion summary for current user
+      summary: Get onboarding completion summary
       responses:
         "200":
           description: Onboarding summary
@@ -289,8 +270,290 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/OnboardingSummary"
+
+  # ─── Dashboard ───────────────────────────────────────────────────────────
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      summary: Get dashboard KPI summary for current user
+      responses:
+        "200":
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
         "401":
           description: Unauthorized
+
+  # ─── Academy ─────────────────────────────────────────────────────────────
+  /academy/courses:
+    get:
+      operationId: listCourses
+      tags: [academy]
+      summary: List all published courses
+      parameters:
+        - in: query
+          name: category
+          schema:
+            type: string
+        - in: query
+          name: level
+          schema:
+            type: string
+        - in: query
+          name: lang
+          schema:
+            type: string
+            default: en
+      responses:
+        "200":
+          description: List of courses
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CourseList"
+
+  /academy/courses/{id}:
+    get:
+      operationId: getCourse
+      tags: [academy]
+      summary: Get course detail with modules and lessons
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: lang
+          schema:
+            type: string
+            default: en
+      responses:
+        "200":
+          description: Course detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CourseDetail"
+        "404":
+          description: Not found
+
+  /academy/lessons/{id}:
+    get:
+      operationId: getLesson
+      tags: [academy]
+      summary: Get lesson detail with resources and quiz
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: lang
+          schema:
+            type: string
+            default: en
+      responses:
+        "200":
+          description: Lesson detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LessonDetail"
+        "404":
+          description: Not found
+
+  /academy/lessons/{id}/progress:
+    patch:
+      operationId: updateLessonProgress
+      tags: [academy]
+      summary: Update watch progress for a lesson
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LessonProgressUpdate"
+      responses:
+        "200":
+          description: Updated progress
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LessonProgress"
+
+  /academy/lessons/{id}/quiz:
+    post:
+      operationId: submitQuiz
+      tags: [academy]
+      summary: Submit quiz answers for a lesson
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/QuizSubmission"
+      responses:
+        "200":
+          description: Quiz result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuizResult"
+
+  /academy/progress/summary:
+    get:
+      operationId: getAcademyProgressSummary
+      tags: [academy]
+      summary: Get academy progress summary for current user
+      responses:
+        "200":
+          description: Academy progress summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AcademyProgressSummary"
+
+  /academy/progress/next-lesson:
+    get:
+      operationId: getNextLesson
+      tags: [academy]
+      summary: Get the next recommended lesson for current user
+      parameters:
+        - in: query
+          name: lang
+          schema:
+            type: string
+            default: en
+      responses:
+        "200":
+          description: Next lesson recommendation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NextLesson"
+
+  # ─── Events ──────────────────────────────────────────────────────────────
+  /events:
+    get:
+      operationId: listEvents
+      tags: [events]
+      summary: List events for current user
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 20
+        - in: query
+          name: offset
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: List of events
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EventList"
+
+    post:
+      operationId: createEvent
+      tags: [events]
+      summary: Create a new event
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EventInput"
+      responses:
+        "201":
+          description: Created event
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Event"
+
+  /events/{id}:
+    get:
+      operationId: getEvent
+      tags: [events]
+      summary: Get event by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Event detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Event"
+        "404":
+          description: Not found
+
+    patch:
+      operationId: updateEvent
+      tags: [events]
+      summary: Update an event
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EventUpdate"
+      responses:
+        "200":
+          description: Updated event
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Event"
+
+    delete:
+      operationId: deleteEvent
+      tags: [events]
+      summary: Delete an event
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
 
 components:
   schemas:
@@ -483,3 +746,369 @@ components:
           type: integer
         percentComplete:
           type: integer
+
+    # ─── Dashboard ───────────────────────────────────────────────────────────
+    DashboardSummary:
+      type: object
+      required: [unreadNotifications, onboardingPercent, academyCoursesCompleted, academyLessonsCompleted, academyTotalLessons, upcomingEventsCount, totalEventsCount, nextLesson]
+      properties:
+        unreadNotifications:
+          type: integer
+        onboardingPercent:
+          type: integer
+        academyCoursesCompleted:
+          type: integer
+        academyLessonsCompleted:
+          type: integer
+        academyTotalLessons:
+          type: integer
+        upcomingEventsCount:
+          type: integer
+        totalEventsCount:
+          type: integer
+        nextLesson:
+          $ref: "#/components/schemas/NextLesson"
+
+    # ─── Academy ─────────────────────────────────────────────────────────────
+    Course:
+      type: object
+      required: [id, slug, title, description, category, level, order, thumbnailUrl, moduleCount, lessonCount, totalDurationSeconds, completedLessons]
+      properties:
+        id:
+          type: string
+        slug:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        level:
+          type: string
+          enum: [beginner, intermediate, advanced]
+        order:
+          type: integer
+        thumbnailUrl:
+          type: string
+        moduleCount:
+          type: integer
+        lessonCount:
+          type: integer
+        totalDurationSeconds:
+          type: integer
+        completedLessons:
+          type: integer
+
+    CourseList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Course"
+
+    CourseModule:
+      type: object
+      required: [id, courseId, title, order, lessons]
+      properties:
+        id:
+          type: string
+        courseId:
+          type: string
+        title:
+          type: string
+        order:
+          type: integer
+        lessons:
+          type: array
+          items:
+            $ref: "#/components/schemas/LessonSummary"
+
+    LessonSummary:
+      type: object
+      required: [id, moduleId, title, durationSeconds, order, isPublished, completedAt]
+      properties:
+        id:
+          type: string
+        moduleId:
+          type: string
+        title:
+          type: string
+        durationSeconds:
+          type: integer
+        order:
+          type: integer
+        isPublished:
+          type: boolean
+        completedAt:
+          type: ["string", "null"]
+          format: date-time
+        watchPercent:
+          type: ["integer", "null"]
+
+    CourseDetail:
+      type: object
+      required: [id, slug, title, description, category, level, order, thumbnailUrl, completedLessons, lessonCount, totalDurationSeconds, modules]
+      properties:
+        id:
+          type: string
+        slug:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        level:
+          type: string
+        order:
+          type: integer
+        thumbnailUrl:
+          type: string
+        completedLessons:
+          type: integer
+        lessonCount:
+          type: integer
+        totalDurationSeconds:
+          type: integer
+        modules:
+          type: array
+          items:
+            $ref: "#/components/schemas/CourseModule"
+
+    LessonResource:
+      type: object
+      required: [id, lessonId, title, type, url]
+      properties:
+        id:
+          type: string
+        lessonId:
+          type: string
+        title:
+          type: string
+        type:
+          type: string
+          enum: [pdf, link, download, video]
+        url:
+          type: string
+
+    QuizQuestion:
+      type: object
+      required: [id, question, options, correctOption]
+      properties:
+        id:
+          type: string
+        question:
+          type: string
+        options:
+          type: array
+          items:
+            type: string
+        correctOption:
+          type: integer
+
+    LessonDetail:
+      type: object
+      required: [id, moduleId, title, videoUrl, durationSeconds, order, resources, quizQuestions, completedAt, watchPercent]
+      properties:
+        id:
+          type: string
+        moduleId:
+          type: string
+        title:
+          type: string
+        videoUrl:
+          type: string
+        durationSeconds:
+          type: integer
+        order:
+          type: integer
+        resources:
+          type: array
+          items:
+            $ref: "#/components/schemas/LessonResource"
+        quizQuestions:
+          type: array
+          items:
+            $ref: "#/components/schemas/QuizQuestion"
+        completedAt:
+          type: ["string", "null"]
+          format: date-time
+        watchPercent:
+          type: ["integer", "null"]
+
+    LessonProgress:
+      type: object
+      required: [lessonId, watchPercent, completedAt]
+      properties:
+        lessonId:
+          type: string
+        watchPercent:
+          type: integer
+        completedAt:
+          type: ["string", "null"]
+          format: date-time
+
+    LessonProgressUpdate:
+      type: object
+      required: [watchPercent]
+      properties:
+        watchPercent:
+          type: integer
+        completed:
+          type: boolean
+
+    QuizSubmission:
+      type: object
+      required: [answers]
+      properties:
+        answers:
+          type: array
+          items:
+            type: integer
+
+    QuizResult:
+      type: object
+      required: [score, total, passed, answers]
+      properties:
+        score:
+          type: integer
+        total:
+          type: integer
+        passed:
+          type: boolean
+        answers:
+          type: array
+          items:
+            type: object
+            required: [questionId, correct, selectedOption, correctOption]
+            properties:
+              questionId:
+                type: string
+              correct:
+                type: boolean
+              selectedOption:
+                type: integer
+              correctOption:
+                type: integer
+
+    AcademyProgressSummary:
+      type: object
+      required: [totalCourses, completedCourses, totalLessons, completedLessons, totalDurationSeconds, watchedDurationSeconds, percentComplete]
+      properties:
+        totalCourses:
+          type: integer
+        completedCourses:
+          type: integer
+        totalLessons:
+          type: integer
+        completedLessons:
+          type: integer
+        totalDurationSeconds:
+          type: integer
+        watchedDurationSeconds:
+          type: integer
+        percentComplete:
+          type: integer
+
+    NextLesson:
+      type: object
+      required: [lessonId, lessonTitle, courseId, courseTitle, courseThumbnailUrl, moduleTitle, durationSeconds, watchPercent]
+      properties:
+        lessonId:
+          type: string
+        lessonTitle:
+          type: string
+        courseId:
+          type: string
+        courseTitle:
+          type: string
+        courseThumbnailUrl:
+          type: string
+        moduleTitle:
+          type: string
+        durationSeconds:
+          type: integer
+        watchPercent:
+          type: integer
+
+    # ─── Events ──────────────────────────────────────────────────────────────
+    Event:
+      type: object
+      required: [id, userId, title, eventDate, status, createdAt]
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        title:
+          type: string
+        description:
+          type: ["string", "null"]
+        eventDate:
+          type: string
+          format: date-time
+        location:
+          type: ["string", "null"]
+        type:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [upcoming, active, completed, cancelled]
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+
+    EventList:
+      type: object
+      required: [items, total]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Event"
+        total:
+          type: integer
+
+    EventInput:
+      type: object
+      required: [title, eventDate]
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        eventDate:
+          type: string
+          format: date-time
+        location:
+          type: string
+        type:
+          type: string
+        notes:
+          type: string
+
+    EventUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        eventDate:
+          type: string
+          format: date-time
+        location:
+          type: string
+        type:
+          type: string
+        status:
+          type: string
+          enum: [upcoming, active, completed, cancelled]
+        notes:
+          type: string

@@ -12,7 +12,7 @@ export default function Onboarding() {
   const completeStep = useCompleteOnboardingStep();
 
   const handleComplete = (id: string) => {
-    completeStep.mutate({ id }, {
+    completeStep.mutate({ stepId: id }, {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: getListOnboardingStepsQueryKey() });
         queryClient.invalidateQueries({ queryKey: getGetOnboardingSummaryQueryKey() });

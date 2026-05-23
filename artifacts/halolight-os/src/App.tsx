@@ -12,6 +12,10 @@ import Notifications from "./pages/Notifications";
 import Settings from "./pages/Settings";
 import Admin from "./pages/Admin";
 import Onboarding from "./pages/Onboarding";
+import Academy from "./pages/Academy";
+import AcademyCourse from "./pages/AcademyCourse";
+import AcademyLesson from "./pages/AcademyLesson";
+import Events from "./pages/Events";
 import { AppShell } from "./components/layout/AppShell";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -183,6 +187,10 @@ function ClerkProviderWithRoutes() {
             <Route path="/sign-in/*?" component={SignInPage} />
             <Route path="/sign-up/*?" component={SignUpPage} />
             <ProtectedRoute path="/dashboard" component={Dashboard} />
+            <ProtectedRoute path="/academy" component={Academy} />
+            <ProtectedRoute path="/academy/:courseId/:lessonId" component={AcademyLesson} />
+            <ProtectedRoute path="/academy/:courseId" component={AcademyCourse} />
+            <ProtectedRoute path="/events" component={Events} />
             <ProtectedRoute path="/notifications" component={Notifications} />
             <ProtectedRoute path="/onboarding" component={Onboarding} />
             <ProtectedRoute path="/settings" component={Settings} />

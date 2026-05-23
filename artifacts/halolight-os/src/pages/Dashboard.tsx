@@ -1,135 +1,332 @@
-import { useGetCurrentUser, useGetUnreadNotificationCount, useGetOnboardingSummary, useListNotifications } from "@workspace/api-client-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useTranslation } from "react-i18next";
+import {
+  useGetCurrentUser,
+  useGetUnreadNotificationCount,
+  useGetOnboardingSummary,
+  useListNotifications,
+  useGetDashboardSummary,
+  useListEvents,
+} from "@workspace/api-client-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Bell, ArrowRight, Activity, Calendar, Trophy } from "lucide-react";
-import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
+import { Bell, ArrowRight, Trophy, PlayCircle, Calendar, BookOpen, Clock, MapPin, GraduationCap } from "lucide-react";
+import { Link } from "wouter";
+import { format, parseISO } from "date-fns";
+import { cn } from "@/lib/utils";
+
+function formatDuration(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  if (m < 60) return `${m}m`;
+  return `${Math.floor(m / 60)}h ${m % 60}m`;
+}
 
 export default function Dashboard() {
-  const { data: user, isLoading: isLoadingUser } = useGetCurrentUser();
-  const { data: unreadData, isLoading: isLoadingUnread } = useGetUnreadNotificationCount();
-  const { data: onboardingSummary, isLoading: isLoadingOnboarding } = useGetOnboardingSummary();
-  const { data: notificationsData, isLoading: isLoadingNotifications } = useListNotifications({ limit: 3 });
+  const { t } = useTranslation();
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? t("dashboard.greeting_morning") : hour < 18 ? t("dashboard.greeting_afternoon") : t("dashboard.greeting_evening");
 
-  if (isLoadingUser || isLoadingUnread || isLoadingOnboarding || isLoadingNotifications) {
+  const { data: user, isLoading: loadingUser } = useGetCurrentUser();
+  const { data: summary, isLoading: loadingSummary } = useGetDashboardSummary();
+  const { data: notifications, isLoading: loadingNotifs } = useListNotifications({ limit: 3 });
+  const { data: eventsData, isLoading: loadingEvents } = useListEvents({ status: "upcoming", limit: 4 });
+
+  const isLoading = loadingUser || loadingSummary;
+
+  if (isLoading) {
     return (
       <div className="space-y-6">
-        <div className="space-y-2">
-          <Skeleton className="h-10 w-64" />
-          <Skeleton className="h-5 w-96" />
+        <Skeleton className="h-10 w-72" />
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-28 rounded-xl" />)}
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Skeleton className="h-32 w-full rounded-xl" />
-          <Skeleton className="h-32 w-full rounded-xl" />
-          <Skeleton className="h-32 w-full rounded-xl" />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <Skeleton className="h-48 col-span-2 rounded-xl" />
+          <Skeleton className="h-48 rounded-xl" />
         </div>
-        <Skeleton className="h-64 w-full rounded-xl" />
       </div>
     );
   }
 
+  const firstName = user?.fullName?.split(" ")[0] || "Partner";
+
   return (
     <div className="space-y-8" data-testid="page-dashboard">
+      {/* Header */}
       <div>
         <h1 className="text-3xl font-bold tracking-tight text-gray-900">
-          Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 18 ? 'afternoon' : 'evening'}, {user?.fullName?.split(' ')[0] || 'Partner'}
+          {greeting}, {firstName}
         </h1>
-        <p className="text-gray-500 mt-1">Here is what's happening with your operations today.</p>
+        <p className="text-gray-500 mt-1">{t("dashboard.subtitle")}</p>
       </div>
 
-      {onboardingSummary && onboardingSummary.percentComplete < 100 && (
-        <Card className="border-primary/20 shadow-sm bg-primary/5">
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Trophy className="w-5 h-5 text-primary" />
-                Setup Your Account
-              </CardTitle>
-              <span className="text-sm font-medium text-primary">{onboardingSummary.percentComplete}% Complete</span>
-            </div>
-            <CardDescription>
-              Complete the onboarding steps to unlock all features of HaloLight OS.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Progress value={onboardingSummary.percentComplete} className="h-2 mb-4" />
-            <div className="flex justify-end">
-              <Link href="/onboarding">
-                <Button size="sm" className="shadow-sm" data-testid="button-continue-onboarding">
-                  Continue Setup <ArrowRight className="ml-2 w-4 h-4" />
-                </Button>
-              </Link>
-            </div>
-          </CardContent>
-        </Card>
+      {/* KPI Cards */}
+      {summary && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-blue-50 to-indigo-50">
+            <CardContent className="p-5">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="h-9 w-9 rounded-lg bg-blue-500 flex items-center justify-center">
+                  <Bell className="w-4 h-4 text-white" />
+                </div>
+                <span className="text-xs font-medium text-blue-600 uppercase tracking-wide leading-tight">{t("dashboard.kpi_notifications")}</span>
+              </div>
+              <p className="text-3xl font-bold text-blue-900">{summary.unreadNotifications}</p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-amber-50 to-orange-50">
+            <CardContent className="p-5">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="h-9 w-9 rounded-lg bg-amber-500 flex items-center justify-center">
+                  <Trophy className="w-4 h-4 text-white" />
+                </div>
+                <span className="text-xs font-medium text-amber-600 uppercase tracking-wide leading-tight">{t("dashboard.kpi_onboarding")}</span>
+              </div>
+              <p className="text-3xl font-bold text-amber-900">{summary.onboardingPercent}%</p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-emerald-50 to-teal-50">
+            <CardContent className="p-5">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="h-9 w-9 rounded-lg bg-emerald-500 flex items-center justify-center">
+                  <GraduationCap className="w-4 h-4 text-white" />
+                </div>
+                <span className="text-xs font-medium text-emerald-600 uppercase tracking-wide leading-tight">{t("dashboard.kpi_lessons")}</span>
+              </div>
+              <p className="text-3xl font-bold text-emerald-900">
+                {summary.academyLessonsCompleted}
+                <span className="text-base font-normal text-emerald-600 ml-1">/ {summary.academyTotalLessons}</span>
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-violet-50 to-purple-50">
+            <CardContent className="p-5">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="h-9 w-9 rounded-lg bg-violet-500 flex items-center justify-center">
+                  <Calendar className="w-4 h-4 text-white" />
+                </div>
+                <span className="text-xs font-medium text-violet-600 uppercase tracking-wide leading-tight">{t("dashboard.kpi_events")}</span>
+              </div>
+              <p className="text-3xl font-bold text-violet-900">{summary.upcomingEventsCount}</p>
+            </CardContent>
+          </Card>
+        </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="shadow-sm border-gray-200">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-gray-500">Unread Notifications</CardTitle>
-            <Bell className="w-4 h-4 text-gray-400" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-gray-900">{unreadData?.count || 0}</div>
-          </CardContent>
-        </Card>
-        <Card className="shadow-sm border-gray-200">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-gray-500">System Status</CardTitle>
-            <Activity className="w-4 h-4 text-green-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-gray-900">Optimal</div>
-            <p className="text-xs text-green-600 font-medium mt-1">All systems operational</p>
-          </CardContent>
-        </Card>
-        <Card className="shadow-sm border-gray-200">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-gray-500">Account Type</CardTitle>
-            <Calendar className="w-4 h-4 text-gray-400" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-gray-900 capitalize">{user?.role.replace('_', ' ')}</div>
-            <p className="text-xs text-gray-500 mt-1">Member since {new Date(user?.createdAt || '').toLocaleDateString()}</p>
-          </CardContent>
-        </Card>
-      </div>
+      {/* Main content grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left — 2/3 */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Next Lesson */}
+          {summary?.nextLesson ? (
+            <Card className="border border-primary/10 bg-gradient-to-br from-primary/5 via-white to-white shadow-sm overflow-hidden">
+              <CardContent className="p-6">
+                <div className="flex items-start gap-4">
+                  <div className="h-16 w-16 rounded-xl overflow-hidden flex-shrink-0 shadow-sm">
+                    <img
+                      src={summary.nextLesson.courseThumbnailUrl}
+                      alt={summary.nextLesson.courseTitle}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium text-primary uppercase tracking-wide mb-0.5">
+                      {t("dashboard.next_lesson")}
+                    </p>
+                    <h3 className="font-semibold text-gray-900 text-lg leading-snug truncate">
+                      {summary.nextLesson.lessonTitle}
+                    </h3>
+                    <p className="text-sm text-gray-500 truncate">{summary.nextLesson.courseTitle}</p>
+                    <div className="flex items-center gap-3 mt-2">
+                      <span className="text-xs text-gray-400 flex items-center gap-1">
+                        <Clock className="w-3.5 h-3.5" />
+                        {formatDuration(summary.nextLesson.durationSeconds)}
+                      </span>
+                      {summary.nextLesson.watchPercent > 0 && (
+                        <span className="text-xs text-primary font-medium">
+                          {summary.nextLesson.watchPercent}% watched
+                        </span>
+                      )}
+                    </div>
+                    {summary.nextLesson.watchPercent > 0 && (
+                      <Progress value={summary.nextLesson.watchPercent} className="h-1.5 mt-2" />
+                    )}
+                  </div>
+                  <Link href={`/academy/${summary.nextLesson.courseId}/${summary.nextLesson.lessonId}`}>
+                    <Button size="sm" className="shrink-0 shadow-sm gap-1.5">
+                      <PlayCircle className="w-4 h-4" />
+                      {summary.nextLesson.watchPercent > 0 ? t("dashboard.resume") : t("dashboard.start")}
+                    </Button>
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card className="border border-dashed border-gray-200 shadow-sm">
+              <CardContent className="p-6 text-center">
+                <BookOpen className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+                <p className="text-gray-500 font-medium">{t("dashboard.no_lessons")}</p>
+                <Link href="/academy">
+                  <Button variant="outline" size="sm" className="mt-3">
+                    {t("academy.all_courses")} <ArrowRight className="w-4 h-4 ml-1.5" />
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+          )}
 
-      <Card className="shadow-sm border-gray-200">
-        <CardHeader className="flex flex-row items-center justify-between border-b pb-4">
-          <div>
-            <CardTitle className="text-lg">Recent Notifications</CardTitle>
-            <CardDescription>Stay updated on your operations</CardDescription>
-          </div>
-          <Link href="/notifications">
-            <Button variant="ghost" size="sm" className="text-primary" data-testid="button-view-all-notifications">
-              View All
-            </Button>
-          </Link>
-        </CardHeader>
-        <CardContent className="p-0">
-          {notificationsData?.items && notificationsData.items.length > 0 ? (
-            <div className="divide-y divide-gray-100">
-              {notificationsData.items.map((notification) => (
-                <div key={notification.id} className={`p-4 flex gap-4 ${!notification.isRead ? 'bg-primary/5' : ''}`}>
-                  <div className={`mt-1 h-2 w-2 rounded-full shrink-0 ${!notification.isRead ? 'bg-primary' : 'bg-transparent'}`} />
-                  <div>
-                    <h4 className="text-sm font-semibold text-gray-900">{notification.title}</h4>
-                    <p className="text-sm text-gray-600 mt-1">{notification.body}</p>
-                    <p className="text-xs text-gray-400 mt-2">{new Date(notification.createdAt).toLocaleString()}</p>
+          {/* Onboarding */}
+          {summary && summary.onboardingPercent < 100 && (
+            <Card className="border border-amber-100 bg-amber-50/40 shadow-sm">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Trophy className="w-4 h-4 text-amber-500" />
+                    {t("dashboard.onboarding_card")}
+                  </CardTitle>
+                  <span className="text-sm font-semibold text-amber-600">{summary.onboardingPercent}%</span>
+                </div>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <Progress value={summary.onboardingPercent} className="h-2 mb-3" />
+                <p className="text-sm text-gray-500 mb-3">{t("dashboard.onboarding_desc")}</p>
+                <Link href="/onboarding">
+                  <Button size="sm" variant="outline" className="border-amber-300 text-amber-700 hover:bg-amber-100">
+                    {t("dashboard.continue_setup")} <ArrowRight className="w-4 h-4 ml-1.5" />
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Recent Notifications */}
+          <Card className="border border-gray-100 shadow-sm">
+            <CardHeader className="pb-3 flex flex-row items-center justify-between">
+              <CardTitle className="text-base">{t("dashboard.recent_notifications")}</CardTitle>
+              <Link href="/notifications">
+                <button className="text-xs text-primary hover:underline font-medium">{t("dashboard.view_all")}</button>
+              </Link>
+            </CardHeader>
+            <CardContent className="pt-0">
+              {loadingNotifs ? (
+                <div className="space-y-3">{[...Array(3)].map((_, i) => <Skeleton key={i} className="h-10" />)}</div>
+              ) : notifications?.items.length === 0 ? (
+                <p className="text-sm text-gray-400 py-4 text-center">{t("dashboard.no_notifications")}</p>
+              ) : (
+                <div className="space-y-2">
+                  {notifications?.items.map((n) => (
+                    <div key={n.id} className={cn(
+                      "flex items-start gap-3 p-3 rounded-lg transition-colors",
+                      !n.isRead ? "bg-primary/5" : "hover:bg-gray-50"
+                    )}>
+                      {!n.isRead && <div className="h-2 w-2 rounded-full bg-primary mt-1.5 flex-shrink-0" />}
+                      <div className={cn("flex-1 min-w-0", n.isRead && "pl-5")}>
+                        <p className="text-sm font-medium text-gray-900 truncate">{n.title}</p>
+                        <p className="text-xs text-gray-400 truncate">{n.body}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Right — 1/3 */}
+        <div className="space-y-6">
+          {/* Upcoming Events */}
+          <Card className="border border-gray-100 shadow-sm">
+            <CardHeader className="pb-3 flex flex-row items-center justify-between">
+              <CardTitle className="text-base">{t("dashboard.upcoming_events")}</CardTitle>
+              <Link href="/events">
+                <button className="text-xs text-primary hover:underline font-medium">{t("dashboard.view_all")}</button>
+              </Link>
+            </CardHeader>
+            <CardContent className="pt-0">
+              {loadingEvents ? (
+                <div className="space-y-3">{[...Array(3)].map((_, i) => <Skeleton key={i} className="h-14" />)}</div>
+              ) : eventsData?.items.length === 0 ? (
+                <div className="text-center py-6">
+                  <Calendar className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+                  <p className="text-sm text-gray-400 mb-3">{t("dashboard.no_events")}</p>
+                  <Link href="/events">
+                    <Button variant="outline" size="sm">{t("dashboard.add_event")}</Button>
+                  </Link>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {eventsData?.items.map((ev) => (
+                    <div key={ev.id} className="flex gap-3 items-start p-2 rounded-lg hover:bg-gray-50 transition-colors">
+                      <div className="h-10 w-10 rounded-lg bg-primary/10 flex flex-col items-center justify-center flex-shrink-0">
+                        <span className="text-[10px] font-medium text-primary uppercase leading-tight">
+                          {format(parseISO(ev.eventDate), "MMM")}
+                        </span>
+                        <span className="text-base font-bold text-primary leading-none">
+                          {format(parseISO(ev.eventDate), "d")}
+                        </span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 truncate">{ev.title}</p>
+                        {ev.location && (
+                          <p className="text-xs text-gray-400 flex items-center gap-1 truncate">
+                            <MapPin className="w-3 h-3" /> {ev.location}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Academy Stats */}
+          {summary && (
+            <Card className="border border-gray-100 shadow-sm">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">{t("academy.your_progress")}</CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0 space-y-4">
+                <div>
+                  <div className="flex justify-between text-sm mb-1.5">
+                    <span className="text-gray-600">{t("academy.total_progress")}</span>
+                    <span className="font-semibold text-gray-900">
+                      {summary.academyTotalLessons > 0
+                        ? Math.round((summary.academyLessonsCompleted / summary.academyTotalLessons) * 100)
+                        : 0}%
+                    </span>
+                  </div>
+                  <Progress
+                    value={summary.academyTotalLessons > 0
+                      ? (summary.academyLessonsCompleted / summary.academyTotalLessons) * 100
+                      : 0}
+                    className="h-2"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-gray-50 rounded-lg p-3 text-center">
+                    <p className="text-2xl font-bold text-gray-900">{summary.academyCoursesCompleted}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">{t("academy.courses_completed")}</p>
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-3 text-center">
+                    <p className="text-2xl font-bold text-gray-900">{summary.academyLessonsCompleted}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">{t("academy.lessons")}</p>
                   </div>
                 </div>
-              ))}
-            </div>
-          ) : (
-            <div className="p-8 text-center text-gray-500">
-              No recent notifications.
-            </div>
+                <Link href="/academy">
+                  <Button variant="outline" size="sm" className="w-full">
+                    {t("academy.all_courses")} <ArrowRight className="w-4 h-4 ml-1.5" />
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }

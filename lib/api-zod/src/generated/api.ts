@@ -3,13 +3,12 @@
  * Do not edit manually.
  * Api
  * HaloLight OS API specification
- * OpenAPI spec version: 0.1.0
+ * OpenAPI spec version: 0.2.0
  */
 import * as zod from 'zod';
 
 
 /**
- * Returns server health status
  * @summary Health check
  */
 export const HealthCheckResponse = zod.object({
@@ -65,7 +64,7 @@ export const listUsersQueryLimitDefault = 50;
 export const listUsersQueryOffsetDefault = 0;
 
 export const ListUsersQueryParams = zod.object({
-  "role": zod.coerce.string().optional().describe('Filter by role'),
+  "role": zod.coerce.string().optional(),
   "limit": zod.coerce.number().default(listUsersQueryLimitDefault),
   "offset": zod.coerce.number().default(listUsersQueryOffsetDefault)
 })
@@ -115,7 +114,7 @@ export const listNotificationsQueryLimitDefault = 20;
 export const listNotificationsQueryOffsetDefault = 0;
 
 export const ListNotificationsQueryParams = zod.object({
-  "unread_only": zod.coerce.boolean().optional().describe('Filter to unread only'),
+  "unread_only": zod.coerce.boolean().optional(),
   "limit": zod.coerce.number().default(listNotificationsQueryLimitDefault),
   "offset": zod.coerce.number().default(listNotificationsQueryOffsetDefault)
 })
@@ -175,7 +174,7 @@ export const MarkAllNotificationsReadResponse = zod.object({
 
 
 /**
- * @summary Get notification preferences for current user
+ * @summary Get notification preferences
  */
 export const GetNotificationPreferencesResponse = zod.object({
   "userId": zod.string(),
@@ -243,7 +242,7 @@ export const CompleteOnboardingStepResponse = zod.object({
 
 
 /**
- * @summary Get onboarding completion summary for current user
+ * @summary Get onboarding completion summary
  */
 export const GetOnboardingSummaryResponse = zod.object({
   "totalSteps": zod.number(),
@@ -251,6 +250,321 @@ export const GetOnboardingSummaryResponse = zod.object({
   "requiredSteps": zod.number(),
   "completedRequired": zod.number(),
   "percentComplete": zod.number()
+})
+
+
+/**
+ * @summary Get dashboard KPI summary for current user
+ */
+export const GetDashboardSummaryResponse = zod.object({
+  "unreadNotifications": zod.number(),
+  "onboardingPercent": zod.number(),
+  "academyCoursesCompleted": zod.number(),
+  "academyLessonsCompleted": zod.number(),
+  "academyTotalLessons": zod.number(),
+  "upcomingEventsCount": zod.number(),
+  "totalEventsCount": zod.number(),
+  "nextLesson": zod.object({
+  "lessonId": zod.string(),
+  "lessonTitle": zod.string(),
+  "courseId": zod.string(),
+  "courseTitle": zod.string(),
+  "courseThumbnailUrl": zod.string(),
+  "moduleTitle": zod.string(),
+  "durationSeconds": zod.number(),
+  "watchPercent": zod.number()
+})
+})
+
+
+/**
+ * @summary List all published courses
+ */
+export const listCoursesQueryLangDefault = `en`;
+
+export const ListCoursesQueryParams = zod.object({
+  "category": zod.coerce.string().optional(),
+  "level": zod.coerce.string().optional(),
+  "lang": zod.coerce.string().default(listCoursesQueryLangDefault)
+})
+
+export const ListCoursesResponse = zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.string(),
+  "slug": zod.string(),
+  "title": zod.string(),
+  "description": zod.string(),
+  "category": zod.string(),
+  "level": zod.enum(['beginner', 'intermediate', 'advanced']),
+  "order": zod.number(),
+  "thumbnailUrl": zod.string(),
+  "moduleCount": zod.number(),
+  "lessonCount": zod.number(),
+  "totalDurationSeconds": zod.number(),
+  "completedLessons": zod.number()
+}))
+})
+
+
+/**
+ * @summary Get course detail with modules and lessons
+ */
+export const GetCourseParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const getCourseQueryLangDefault = `en`;
+
+export const GetCourseQueryParams = zod.object({
+  "lang": zod.coerce.string().default(getCourseQueryLangDefault)
+})
+
+export const GetCourseResponse = zod.object({
+  "id": zod.string(),
+  "slug": zod.string(),
+  "title": zod.string(),
+  "description": zod.string(),
+  "category": zod.string(),
+  "level": zod.string(),
+  "order": zod.number(),
+  "thumbnailUrl": zod.string(),
+  "completedLessons": zod.number(),
+  "lessonCount": zod.number(),
+  "totalDurationSeconds": zod.number(),
+  "modules": zod.array(zod.object({
+  "id": zod.string(),
+  "courseId": zod.string(),
+  "title": zod.string(),
+  "order": zod.number(),
+  "lessons": zod.array(zod.object({
+  "id": zod.string(),
+  "moduleId": zod.string(),
+  "title": zod.string(),
+  "durationSeconds": zod.number(),
+  "order": zod.number(),
+  "isPublished": zod.boolean(),
+  "completedAt": zod.coerce.date().nullable(),
+  "watchPercent": zod.number().nullish()
+}))
+}))
+})
+
+
+/**
+ * @summary Get lesson detail with resources and quiz
+ */
+export const GetLessonParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const getLessonQueryLangDefault = `en`;
+
+export const GetLessonQueryParams = zod.object({
+  "lang": zod.coerce.string().default(getLessonQueryLangDefault)
+})
+
+export const GetLessonResponse = zod.object({
+  "id": zod.string(),
+  "moduleId": zod.string(),
+  "title": zod.string(),
+  "videoUrl": zod.string(),
+  "durationSeconds": zod.number(),
+  "order": zod.number(),
+  "resources": zod.array(zod.object({
+  "id": zod.string(),
+  "lessonId": zod.string(),
+  "title": zod.string(),
+  "type": zod.enum(['pdf', 'link', 'download', 'video']),
+  "url": zod.string()
+})),
+  "quizQuestions": zod.array(zod.object({
+  "id": zod.string(),
+  "question": zod.string(),
+  "options": zod.array(zod.string()),
+  "correctOption": zod.number()
+})),
+  "completedAt": zod.coerce.date().nullable(),
+  "watchPercent": zod.number().nullable()
+})
+
+
+/**
+ * @summary Update watch progress for a lesson
+ */
+export const UpdateLessonProgressParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const UpdateLessonProgressBody = zod.object({
+  "watchPercent": zod.number(),
+  "completed": zod.boolean().optional()
+})
+
+export const UpdateLessonProgressResponse = zod.object({
+  "lessonId": zod.string(),
+  "watchPercent": zod.number(),
+  "completedAt": zod.coerce.date().nullable()
+})
+
+
+/**
+ * @summary Submit quiz answers for a lesson
+ */
+export const SubmitQuizParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const SubmitQuizBody = zod.object({
+  "answers": zod.array(zod.number())
+})
+
+export const SubmitQuizResponse = zod.object({
+  "score": zod.number(),
+  "total": zod.number(),
+  "passed": zod.boolean(),
+  "answers": zod.array(zod.object({
+  "questionId": zod.string(),
+  "correct": zod.boolean(),
+  "selectedOption": zod.number(),
+  "correctOption": zod.number()
+}))
+})
+
+
+/**
+ * @summary Get academy progress summary for current user
+ */
+export const GetAcademyProgressSummaryResponse = zod.object({
+  "totalCourses": zod.number(),
+  "completedCourses": zod.number(),
+  "totalLessons": zod.number(),
+  "completedLessons": zod.number(),
+  "totalDurationSeconds": zod.number(),
+  "watchedDurationSeconds": zod.number(),
+  "percentComplete": zod.number()
+})
+
+
+/**
+ * @summary Get the next recommended lesson for current user
+ */
+export const getNextLessonQueryLangDefault = `en`;
+
+export const GetNextLessonQueryParams = zod.object({
+  "lang": zod.coerce.string().default(getNextLessonQueryLangDefault)
+})
+
+export const GetNextLessonResponse = zod.object({
+  "lessonId": zod.string(),
+  "lessonTitle": zod.string(),
+  "courseId": zod.string(),
+  "courseTitle": zod.string(),
+  "courseThumbnailUrl": zod.string(),
+  "moduleTitle": zod.string(),
+  "durationSeconds": zod.number(),
+  "watchPercent": zod.number()
+})
+
+
+/**
+ * @summary List events for current user
+ */
+export const listEventsQueryLimitDefault = 20;
+export const listEventsQueryOffsetDefault = 0;
+
+export const ListEventsQueryParams = zod.object({
+  "status": zod.coerce.string().optional(),
+  "limit": zod.coerce.number().default(listEventsQueryLimitDefault),
+  "offset": zod.coerce.number().default(listEventsQueryOffsetDefault)
+})
+
+export const ListEventsResponse = zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.string(),
+  "userId": zod.string(),
+  "title": zod.string(),
+  "description": zod.string().nullish(),
+  "eventDate": zod.coerce.date(),
+  "location": zod.string().nullish(),
+  "type": zod.string().nullish(),
+  "status": zod.enum(['upcoming', 'active', 'completed', 'cancelled']),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+})),
+  "total": zod.number()
+})
+
+
+/**
+ * @summary Create a new event
+ */
+export const CreateEventBody = zod.object({
+  "title": zod.string(),
+  "description": zod.string().optional(),
+  "eventDate": zod.coerce.date(),
+  "location": zod.string().optional(),
+  "type": zod.string().optional(),
+  "notes": zod.string().optional()
+})
+
+
+/**
+ * @summary Get event by ID
+ */
+export const GetEventParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const GetEventResponse = zod.object({
+  "id": zod.string(),
+  "userId": zod.string(),
+  "title": zod.string(),
+  "description": zod.string().nullish(),
+  "eventDate": zod.coerce.date(),
+  "location": zod.string().nullish(),
+  "type": zod.string().nullish(),
+  "status": zod.enum(['upcoming', 'active', 'completed', 'cancelled']),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Update an event
+ */
+export const UpdateEventParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const UpdateEventBody = zod.object({
+  "title": zod.string().optional(),
+  "description": zod.string().optional(),
+  "eventDate": zod.coerce.date().optional(),
+  "location": zod.string().optional(),
+  "type": zod.string().optional(),
+  "status": zod.enum(['upcoming', 'active', 'completed', 'cancelled']).optional(),
+  "notes": zod.string().optional()
+})
+
+export const UpdateEventResponse = zod.object({
+  "id": zod.string(),
+  "userId": zod.string(),
+  "title": zod.string(),
+  "description": zod.string().nullish(),
+  "eventDate": zod.coerce.date(),
+  "location": zod.string().nullish(),
+  "type": zod.string().nullish(),
+  "status": zod.enum(['upcoming', 'active', 'completed', 'cancelled']),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Delete an event
+ */
+export const DeleteEventParams = zod.object({
+  "id": zod.coerce.string()
 })
 
 

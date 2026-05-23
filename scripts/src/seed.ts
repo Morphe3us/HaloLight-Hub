@@ -1,5 +1,6 @@
 import { db, onboardingStepsTable, usersTable, notificationsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
+import { seedAcademy } from "./seed-academy";
 
 async function seed() {
   console.log("Seeding Phase 1 demo data...");
@@ -97,7 +98,9 @@ async function seed() {
   // ─── Demo Admin User ─────────────────────────────────────────────────────
   // Note: The clerk_id for the demo admin needs to be updated with a real Clerk user ID
   // after first login. This is a placeholder that gets replaced by JIT provisioning.
-  console.log("\n✅ Phase 1 seed complete.");
+  await seedAcademy();
+
+  console.log("\n✅ Seed complete.");
   console.log("   Note: User records are created automatically on first login via JIT provisioning.");
   console.log("   To make a user an admin, update their role in the database after first login.");
 
