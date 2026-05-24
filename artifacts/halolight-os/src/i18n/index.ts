@@ -12,11 +12,15 @@ import nl from "./locales/nl.json";
 
 const resources = { en: { translation: en }, fr: { translation: fr }, es: { translation: es }, de: { translation: de }, it: { translation: it }, pl: { translation: pl }, pt: { translation: pt }, nl: { translation: nl } };
 
+const LANG_KEY = "halolight-lang";
+const storedLang = localStorage.getItem(LANG_KEY) || "en";
+
 i18n.use(initReactI18next).init({
   resources,
-  lng: "en",
+  lng: storedLang,
   fallbackLng: "en",
   interpolation: { escapeValue: false },
 });
 
+export const LANG_STORAGE_KEY = LANG_KEY;
 export default i18n;

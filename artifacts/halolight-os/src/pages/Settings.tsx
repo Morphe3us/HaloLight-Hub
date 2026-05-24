@@ -12,6 +12,8 @@ import { z } from "zod";
 import { useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
+import i18n, { LANG_STORAGE_KEY } from "@/i18n";
 
 const profileSchema = z.object({
   fullName: z.string().min(2, "Name is too short").optional().or(z.literal("")),
@@ -23,6 +25,7 @@ const profileSchema = z.object({
 type ProfileFormValues = z.infer<typeof profileSchema>;
 
 export default function Settings() {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { data: user, isLoading: isLoadingUser } = useGetCurrentUser();
   const { data: prefs, isLoading: isLoadingPrefs } = useGetNotificationPreferences();
@@ -55,11 +58,13 @@ export default function Settings() {
   const onSubmitProfile = (data: ProfileFormValues) => {
     updateUser.mutate({ data }, {
       onSuccess: () => {
-        toast({ title: "Profile updated successfully" });
+        i18n.changeLanguage(data.language);
+        localStorage.setItem(LANG_STORAGE_KEY, data.language);
+        toast({ title: t("settings.saved") });
         queryClient.invalidateQueries({ queryKey: getGetCurrentUserQueryKey() });
       },
       onError: () => {
-        toast({ title: "Failed to update profile", variant: "destructive" });
+        toast({ title: t("common.error"), variant: "destructive" });
       }
     });
   };
@@ -85,58 +90,58 @@ export default function Settings() {
   return (
     <div className="max-w-3xl mx-auto space-y-8" data-testid="page-settings">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight text-foreground">Settings</h1>
-        <p className="text-muted-foreground mt-1">Manage your account preferences and profile.</p>
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">{t("settings.title")}</h1>
+        <p className="text-muted-foreground mt-1">{t("settings.subtitle", { defaultValue: "Manage your account preferences and profile." })}</p>
       </div>
 
       <Card className="shadow-sm">
         <CardHeader>
-          <CardTitle>Partner Profile</CardTitle>
-          <CardDescription>Update your personal and company information.</CardDescription>
+          <CardTitle>{t("settings.profile")}</CardTitle>
+          <CardDescription>{t("settings.profile_desc", { defaultValue: "Update your personal and company information." })}</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit(onSubmitProfile)} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label htmlFor="fullName">Full Name</Label>
+                <Label htmlFor="fullName">{t("settings.full_name")}</Label>
                 <Input id="fullName" {...register("fullName")} data-testid="input-fullname" />
                 {errors.fullName && <p className="text-xs text-destructive">{errors.fullName.message}</p>}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">{t("settings.email")}</Label>
                 <Input id="email" value={user?.email} disabled className="bg-muted" />
-                <p className="text-xs text-muted-foreground">Managed via Clerk</p>
+                <p className="text-xs text-muted-foreground">{t("settings.email_managed", { defaultValue: "Managed via Clerk" })}</p>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="companyName">Company Name</Label>
+                <Label htmlFor="companyName">{t("settings.company_name")}</Label>
                 <Input id="companyName" {...register("companyName")} data-testid="input-companyname" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="phone">Phone Number</Label>
+                <Label htmlFor="phone">{t("settings.phone")}</Label>
                 <Input id="phone" {...register("phone")} data-testid="input-phone" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="language">Language</Label>
+                <Label htmlFor="language">{t("settings.language")}</Label>
                 <Select value={languageValue} onValueChange={(v) => setValue("language", v as any)}>
                   <SelectTrigger data-testid="select-language">
-                    <SelectValue placeholder="Select Language" />
+                    <SelectValue placeholder={t("settings.language_select")} />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="en">English</SelectItem>
-                    <SelectItem value="fr">French</SelectItem>
-                    <SelectItem value="es">Spanish</SelectItem>
-                    <SelectItem value="de">German</SelectItem>
-                    <SelectItem value="it">Italian</SelectItem>
-                    <SelectItem value="pl">Polish</SelectItem>
-                    <SelectItem value="pt">Portuguese</SelectItem>
-                    <SelectItem value="nl">Dutch</SelectItem>
+                    <SelectItem value="fr">Français</SelectItem>
+                    <SelectItem value="es">Español</SelectItem>
+                    <SelectItem value="de">Deutsch</SelectItem>
+                    <SelectItem value="it">Italiano</SelectItem>
+                    <SelectItem value="pl">Polski</SelectItem>
+                    <SelectItem value="pt">Português</SelectItem>
+                    <SelectItem value="nl">Nederlands</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
             <div className="flex justify-end">
               <Button type="submit" disabled={updateUser.isPending} data-testid="button-save-profile">
-                Save Changes
+                {updateUser.isPending ? t("settings.saving") : t("settings.save")}
               </Button>
             </div>
           </form>
@@ -145,14 +150,14 @@ export default function Settings() {
 
       <Card className="shadow-sm">
         <CardHeader>
-          <CardTitle>Notifications</CardTitle>
-          <CardDescription>Control how you receive alerts and updates.</CardDescription>
+          <CardTitle>{t("settings.notifications")}</CardTitle>
+          <CardDescription>{t("settings.notifications_desc", { defaultValue: "Control how you receive alerts and updates." })}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label className="text-base">Email Notifications</Label>
-              <p className="text-sm text-muted-foreground">Receive daily summaries and critical alerts via email.</p>
+              <Label className="text-base">{t("settings.email_notifications")}</Label>
+              <p className="text-sm text-muted-foreground">{t("settings.email_notifications_desc", { defaultValue: "Receive daily summaries and critical alerts via email." })}</p>
             </div>
             <Switch 
               checked={prefs?.emailEnabled} 
@@ -164,8 +169,8 @@ export default function Settings() {
           <div className="h-px bg-muted w-full" />
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label className="text-base">In-App Notifications</Label>
-              <p className="text-sm text-muted-foreground">Show alerts inside the dashboard.</p>
+              <Label className="text-base">{t("settings.in_app_notifications")}</Label>
+              <p className="text-sm text-muted-foreground">{t("settings.in_app_notifications_desc", { defaultValue: "Show alerts inside the dashboard." })}</p>
             </div>
             <Switch 
               checked={prefs?.inAppEnabled} 

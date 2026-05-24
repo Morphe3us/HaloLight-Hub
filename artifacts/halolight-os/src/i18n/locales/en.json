@@ -299,7 +299,13 @@
     "email": "Email",
     "email_notifications": "Email Notifications",
     "in_app_notifications": "In-App Notifications",
-    "language_select": "Select Language"
+    "language_select": "Select Language",
+    "subtitle": "Manage your account preferences and profile.",
+    "profile_desc": "Update your personal and company information.",
+    "notifications_desc": "Control how you receive alerts and updates.",
+    "email_managed": "Managed via Clerk",
+    "email_notifications_desc": "Receive daily summaries and critical alerts via email.",
+    "in_app_notifications_desc": "Show alerts inside the dashboard."
   },
   "common": {
     "loading": "Loading...",

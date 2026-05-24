@@ -52,6 +52,7 @@ import Equipment from "./pages/Equipment";
 import EquipmentDetail from "./pages/EquipmentDetail";
 import Consumables from "./pages/Consumables";
 import { AppShell } from "./components/layout/AppShell";
+import { LanguageSync } from "./components/LanguageSync";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
@@ -226,6 +227,7 @@ function ClerkProviderWithRoutes() {
       <QueryClientProvider client={queryClient}>
         <ClerkAuthTokenSync />
         <ClerkQueryClientCacheInvalidator />
+        <LanguageSync />
         <TooltipProvider>
           <Switch>
             <Route path="/" component={HomeRedirect} />
