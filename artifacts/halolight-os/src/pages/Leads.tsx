@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Search, LayoutGrid, List, ChevronRight, Trash2, TrendingUp } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useCurrency } from "@/lib/currency";
 
 const PIPELINE_STAGES = [
   { key: "new", color: "bg-slate-100 text-slate-700 border-slate-200" },
@@ -36,16 +37,13 @@ const STATUS_DOT: Record<string, string> = {
 
 const SOURCE_KEYS = ["website", "referral", "social_media", "trade_show", "cold_outreach", "inbound_call", "other"];
 
-function formatCurrency(val: string | number) {
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 0 }).format(Number(val));
-}
-
 type ViewMode = "pipeline" | "list";
 
 export default function Leads() {
   const { t } = useTranslation();
   const { toast } = useToast();
   const qc = useQueryClient();
+  const { format: formatCurrency } = useCurrency();
 
   const [view, setView] = useState<ViewMode>("pipeline");
   const [search, setSearch] = useState("");

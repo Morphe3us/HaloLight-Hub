@@ -19,7 +19,7 @@ import {
   Send, Plus, Trash2, Bot, User, Sparkles, Loader2,
   BookOpen, GraduationCap, Ticket, ArrowRight, Package, Wrench,
   AlertTriangle, Cpu, StopCircle, ExternalLink,
-  Volume2, VolumeX, Volume1,
+  Volume2, VolumeX, Volume1, Menu, X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Link } from "wouter";
@@ -633,6 +633,7 @@ export default function AIAssistant() {
   const convTitle = (activeConv as unknown as { title?: string })?.title ?? "Conversation";
   const providerName = providerData?.name ?? "AI Assistant";
   const isStreaming = !!stream;
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const pills = suggestions.length > 0
     ? suggestions.slice(0, 4).map((s) => s.question)
@@ -646,20 +647,35 @@ export default function AIAssistant() {
   ];
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] overflow-hidden" data-testid="page-ai-assistant">
+    <div className="relative flex h-[calc(100vh-4rem)] overflow-hidden" data-testid="page-ai-assistant">
+
+      {/* ── Mobile backdrop ────────────────────────────────────────────────── */}
+      {sidebarOpen && (
+        <div className="absolute inset-0 z-30 bg-black/30 lg:hidden" onClick={() => setSidebarOpen(false)} />
+      )}
 
       {/* ── Conversation sidebar ──────────────────────────────────────────── */}
-      <div className="w-60 border-r bg-muted/10 flex flex-col shrink-0">
-        <div className="p-3 border-b">
+      <div className={cn(
+        "flex flex-col border-r bg-background lg:bg-muted/10 shrink-0",
+        "absolute lg:relative inset-y-0 left-0 z-40 w-72 lg:w-60",
+        sidebarOpen ? "flex" : "hidden lg:flex"
+      )}>
+        <div className="relative p-3 border-b">
           <button
             onClick={() => newConv()}
             disabled={isCreating}
-            className="w-full flex items-center justify-center gap-2 rounded-xl border border-border bg-card hover:bg-muted py-2 text-sm font-medium text-foreground transition-colors disabled:opacity-50"
+            className="w-full flex items-center justify-center gap-2 rounded-xl border border-border bg-card hover:bg-muted py-2 text-sm font-medium text-foreground transition-colors disabled:opacity-50 pr-10 lg:pr-2"
           >
             {isCreating
               ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
               : <Plus className="w-3.5 h-3.5" />}
             {t("ai.new_chat")}
+          </button>
+          <button
+            className="lg:hidden absolute top-1/2 -translate-y-1/2 right-4 p-1 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted"
+            onClick={() => setSidebarOpen(false)}
+          >
+            <X className="w-4 h-4" />
           </button>
         </div>
 
@@ -675,16 +691,20 @@ export default function AIAssistant() {
               </p>
             ) : (
               conversations.map((c) => (
-                <button
+                <div
                   key={c.id}
+                  role="button"
+                  tabIndex={0}
                   onClick={() => {
                     setActiveConvId(c.id ?? null);
                     setStream(null);
                     setPendingUserMsg(null);
                     voiceOutput.stop();
+                    setSidebarOpen(false);
                   }}
+                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { setActiveConvId(c.id ?? null); setSidebarOpen(false); } }}
                   className={cn(
-                    "w-full text-left rounded-lg px-3 py-2.5 text-sm transition-colors group",
+                    "w-full text-left rounded-lg px-3 py-2.5 text-sm transition-colors group cursor-pointer",
                     activeConvId === c.id
                       ? "bg-primary/8 text-primary"
                       : "hover:bg-muted/60 text-foreground"
@@ -701,7 +721,7 @@ export default function AIAssistant() {
                     </button>
                   </div>
                   <p className="text-[11px] text-muted-foreground/70 mt-0.5">{formatDate(c.updatedAt)}</p>
-                </button>
+                </div>
               ))
             )}
           </div>
@@ -720,7 +740,13 @@ export default function AIAssistant() {
 
         {!activeConvId ? (
           /* ── Welcome / empty state ──────────────────────────────────────── */
-          <div className="flex-1 flex flex-col items-center justify-center px-6 py-12 overflow-auto">
+          <div className="flex-1 flex flex-col items-center justify-center px-4 md:px-6 py-8 md:py-12 overflow-auto relative">
+            <button
+              className="lg:hidden absolute top-4 left-4 p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted"
+              onClick={() => setSidebarOpen(true)}
+            >
+              <Menu className="w-4 h-4" />
+            </button>
             <div className="w-full max-w-2xl flex flex-col items-center">
 
               {/* Icon + title */}
@@ -769,8 +795,14 @@ export default function AIAssistant() {
           /* ── Active conversation ──────────────────────────────────────────── */
           <>
             {/* Chat header */}
-            <div className="flex items-center justify-between px-5 py-2.5 border-b bg-background/95 backdrop-blur-sm shrink-0">
-              <div className="flex items-center gap-2.5 min-w-0">
+            <div className="flex items-center justify-between px-3 md:px-5 py-2.5 border-b bg-background/95 backdrop-blur-sm shrink-0">
+              <div className="flex items-center gap-2 md:gap-2.5 min-w-0">
+                <button
+                  className="lg:hidden p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted shrink-0"
+                  onClick={() => setSidebarOpen(true)}
+                >
+                  <Menu className="w-4 h-4" />
+                </button>
                 <div className="w-7 h-7 rounded-full bg-foreground flex items-center justify-center shrink-0">
                   <Bot className="w-3.5 h-3.5 text-background" />
                 </div>

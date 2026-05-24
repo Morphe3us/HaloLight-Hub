@@ -19,15 +19,33 @@ export const HealthCheckResponse = zod.object({
 /**
  * @summary Get current authenticated user
  */
+export const getCurrentUserResponseCurrencyDefault = `EUR`;
+
 export const GetCurrentUserResponse = zod.object({
   "id": zod.string(),
   "clerkId": zod.string(),
   "email": zod.string(),
+  "firstName": zod.string().nullish(),
+  "lastName": zod.string().nullish(),
   "fullName": zod.string().nullish(),
   "companyName": zod.string().nullish(),
   "phone": zod.string().nullish(),
+  "country": zod.string().nullish(),
+  "city": zod.string().nullish(),
   "role": zod.enum(['admin', 'client', 'coach', 'sales_rep']),
   "language": zod.enum(['en', 'fr', 'es', 'de', 'it', 'pl', 'pt', 'nl']),
+  "currency": zod.string().default(getCurrentUserResponseCurrencyDefault),
+  "birthday": zod.string().nullish(),
+  "website": zod.string().nullish(),
+  "instagram": zod.string().nullish(),
+  "facebook": zod.string().nullish(),
+  "pinterest": zod.string().nullish(),
+  "tiktok": zod.string().nullish(),
+  "linkedin": zod.string().nullish(),
+  "businessType": zod.string().nullish(),
+  "mainMarket": zod.string().nullish(),
+  "photobooths": zod.number().nullish(),
+  "businessGoal": zod.string().nullish(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date().optional()
 })
@@ -37,21 +55,55 @@ export const GetCurrentUserResponse = zod.object({
  * @summary Update current user profile
  */
 export const UpdateCurrentUserBody = zod.object({
+  "firstName": zod.string().optional(),
+  "lastName": zod.string().optional(),
   "fullName": zod.string().optional(),
   "companyName": zod.string().optional(),
   "phone": zod.string().optional(),
-  "language": zod.enum(['en', 'fr', 'es', 'de', 'it', 'pl', 'pt', 'nl']).optional()
+  "country": zod.string().optional(),
+  "city": zod.string().optional(),
+  "language": zod.enum(['en', 'fr', 'es', 'de', 'it', 'pl', 'pt', 'nl']).optional(),
+  "currency": zod.string().optional(),
+  "birthday": zod.string().optional(),
+  "website": zod.string().optional(),
+  "instagram": zod.string().optional(),
+  "facebook": zod.string().optional(),
+  "pinterest": zod.string().optional(),
+  "tiktok": zod.string().optional(),
+  "linkedin": zod.string().optional(),
+  "businessType": zod.string().optional(),
+  "mainMarket": zod.string().optional(),
+  "photobooths": zod.number().optional(),
+  "businessGoal": zod.string().optional()
 })
+
+export const updateCurrentUserResponseCurrencyDefault = `EUR`;
 
 export const UpdateCurrentUserResponse = zod.object({
   "id": zod.string(),
   "clerkId": zod.string(),
   "email": zod.string(),
+  "firstName": zod.string().nullish(),
+  "lastName": zod.string().nullish(),
   "fullName": zod.string().nullish(),
   "companyName": zod.string().nullish(),
   "phone": zod.string().nullish(),
+  "country": zod.string().nullish(),
+  "city": zod.string().nullish(),
   "role": zod.enum(['admin', 'client', 'coach', 'sales_rep']),
   "language": zod.enum(['en', 'fr', 'es', 'de', 'it', 'pl', 'pt', 'nl']),
+  "currency": zod.string().default(updateCurrentUserResponseCurrencyDefault),
+  "birthday": zod.string().nullish(),
+  "website": zod.string().nullish(),
+  "instagram": zod.string().nullish(),
+  "facebook": zod.string().nullish(),
+  "pinterest": zod.string().nullish(),
+  "tiktok": zod.string().nullish(),
+  "linkedin": zod.string().nullish(),
+  "businessType": zod.string().nullish(),
+  "mainMarket": zod.string().nullish(),
+  "photobooths": zod.number().nullish(),
+  "businessGoal": zod.string().nullish(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date().optional()
 })
@@ -69,16 +121,34 @@ export const ListUsersQueryParams = zod.object({
   "offset": zod.coerce.number().default(listUsersQueryOffsetDefault)
 })
 
+export const listUsersResponseItemsItemCurrencyDefault = `EUR`;
+
 export const ListUsersResponse = zod.object({
   "items": zod.array(zod.object({
   "id": zod.string(),
   "clerkId": zod.string(),
   "email": zod.string(),
+  "firstName": zod.string().nullish(),
+  "lastName": zod.string().nullish(),
   "fullName": zod.string().nullish(),
   "companyName": zod.string().nullish(),
   "phone": zod.string().nullish(),
+  "country": zod.string().nullish(),
+  "city": zod.string().nullish(),
   "role": zod.enum(['admin', 'client', 'coach', 'sales_rep']),
   "language": zod.enum(['en', 'fr', 'es', 'de', 'it', 'pl', 'pt', 'nl']),
+  "currency": zod.string().default(listUsersResponseItemsItemCurrencyDefault),
+  "birthday": zod.string().nullish(),
+  "website": zod.string().nullish(),
+  "instagram": zod.string().nullish(),
+  "facebook": zod.string().nullish(),
+  "pinterest": zod.string().nullish(),
+  "tiktok": zod.string().nullish(),
+  "linkedin": zod.string().nullish(),
+  "businessType": zod.string().nullish(),
+  "mainMarket": zod.string().nullish(),
+  "photobooths": zod.number().nullish(),
+  "businessGoal": zod.string().nullish(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date().optional()
 })),
@@ -93,15 +163,33 @@ export const GetUserParams = zod.object({
   "id": zod.coerce.string()
 })
 
+export const getUserResponseCurrencyDefault = `EUR`;
+
 export const GetUserResponse = zod.object({
   "id": zod.string(),
   "clerkId": zod.string(),
   "email": zod.string(),
+  "firstName": zod.string().nullish(),
+  "lastName": zod.string().nullish(),
   "fullName": zod.string().nullish(),
   "companyName": zod.string().nullish(),
   "phone": zod.string().nullish(),
+  "country": zod.string().nullish(),
+  "city": zod.string().nullish(),
   "role": zod.enum(['admin', 'client', 'coach', 'sales_rep']),
   "language": zod.enum(['en', 'fr', 'es', 'de', 'it', 'pl', 'pt', 'nl']),
+  "currency": zod.string().default(getUserResponseCurrencyDefault),
+  "birthday": zod.string().nullish(),
+  "website": zod.string().nullish(),
+  "instagram": zod.string().nullish(),
+  "facebook": zod.string().nullish(),
+  "pinterest": zod.string().nullish(),
+  "tiktok": zod.string().nullish(),
+  "linkedin": zod.string().nullish(),
+  "businessType": zod.string().nullish(),
+  "mainMarket": zod.string().nullish(),
+  "photobooths": zod.number().nullish(),
+  "businessGoal": zod.string().nullish(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date().optional()
 })

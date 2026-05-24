@@ -17,6 +17,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Building2, Phone, Mail, CalendarDays, MessageSquare, PhoneCall, AtSign, Users, FileText, Send, ReceiptText, Edit2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useCurrency } from "@/lib/currency";
 
 const PIPELINE_STAGES = [
   { key: "new", color: "bg-slate-100 text-slate-700 border-slate-200" },
@@ -52,10 +53,6 @@ const ACTIVITY_COLORS: Record<string, string> = {
 
 const ACTIVITY_TYPES = ["note", "call", "email", "meeting", "status_change", "quote_sent", "contract_sent", "invoice_sent"];
 
-function formatCurrency(val: string | number) {
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 0 }).format(Number(val));
-}
-
 function formatDate(d: string | null | undefined) {
   if (!d) return "—";
   return new Date(d).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
@@ -72,6 +69,7 @@ export default function LeadDetail() {
   const { t } = useTranslation();
   const { toast } = useToast();
   const qc = useQueryClient();
+  const { format: formatCurrency } = useCurrency();
 
   const [editing, setEditing] = useState(false);
   const [showActivity, setShowActivity] = useState(false);

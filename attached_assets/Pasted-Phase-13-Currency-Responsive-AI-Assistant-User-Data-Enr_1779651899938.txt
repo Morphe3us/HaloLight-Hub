@@ -1,0 +1,141 @@
+Phase 13 — Currency, Responsive AI Assistant & User Data Enrichment.
+
+Do not add unrelated features.
+
+==================================================
+1. MULTI-CURRENCY SUPPORT
+==================================================
+
+Add user currency preference.
+
+Supported currencies:
+- EUR
+- USD
+- GBP
+- JPY
+- CNY
+- PLN
+- SEK
+- NOK
+- DKK
+- CHF
+- CAD
+- AUD
+
+User must be able to select preferred currency in Settings.
+
+Currency must apply across:
+- Leads estimated value
+- Quotes
+- Contracts
+- Invoices
+- Revenue dashboard
+- Client 360
+- Analytics
+- Events revenue
+- Any financial KPI
+
+Requirements:
+- Store currency preference in user profile.
+- Format amounts using Intl.NumberFormat.
+- Do not convert currencies yet.
+- Only display selected currency symbol/format.
+- Keep existing numeric values unchanged.
+- Add currency selector to Settings.
+- Add locale-aware formatting.
+
+==================================================
+2. AI ASSISTANT RESPONSIVE FIX
+==================================================
+
+AI Assistant is currently not usable enough on mobile/responsive layouts.
+
+Audit and fix:
+- mobile layout
+- chat sidebar
+- message area
+- input bar
+- voice button
+- suggested prompts
+- source citations
+- escalation modal
+
+Requirements:
+- On mobile, conversation list should collapse or become a drawer.
+- Chat input must stay fixed/accessible at bottom.
+- Messages must be readable.
+- No horizontal overflow.
+- Voice button must remain usable.
+- Suggested prompts must wrap cleanly.
+- Source citations must not break layout.
+- Test desktop, tablet, mobile.
+
+==================================================
+3. PROFILE DATA ENRICHMENT
+==================================================
+
+Improve Settings → Profile.
+
+Required fields:
+- First name
+- Last name
+- Company name
+- Phone number
+- Country
+- Preferred language
+- Preferred currency
+
+Additional optional fields:
+- Birthday
+- Website
+- Instagram
+- Facebook
+- Pinterest
+- TikTok
+- LinkedIn
+- Business type
+- Main market/country
+- City
+- How many photobooths owned
+- Business goal
+
+Requirements:
+- First name, last name, company name, phone, language and currency should be required.
+- Add validation.
+- Store all fields in user profile.
+- Do not break existing users.
+- If existing users are missing required fields, show a profile completion prompt.
+- Use this data for admin Client 360 where relevant.
+
+==================================================
+4. ADMIN USER DATA VISIBILITY
+==================================================
+
+In Admin → Clients / Client 360, show enriched user fields:
+- full name
+- company
+- phone
+- country
+- currency
+- birthday
+- social media links
+- business goal
+- business type
+- number of photobooths owned
+
+==================================================
+5. VERIFICATION
+==================================================
+
+Run:
+- database migration/schema push
+- OpenAPI/codegen if needed
+- typecheck
+- mobile responsive check
+
+Provide:
+- files changed
+- new DB fields
+- currency formatting strategy
+- responsive AI fixes completed
+- profile fields added

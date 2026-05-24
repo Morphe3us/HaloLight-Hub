@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Printer, Building2, Mail, Phone } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLocation } from "wouter";
+import { useCurrency } from "@/lib/currency";
 
 const STATUS_COLORS: Record<string, string> = {
   draft: "bg-slate-100 text-slate-700 border-slate-200",
@@ -19,10 +20,6 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 const STATUS_KEYS = ["draft", "sent", "accepted", "declined", "expired"];
-
-function formatCurrency(val: string | number) {
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(Number(val));
-}
 
 function formatDate(d: string | null | undefined) {
   if (!d) return "—";
@@ -36,6 +33,7 @@ function PrintPreview({ quoteNumber, title, clientName, clientEmail, items, subt
   notes?: string | null; terms?: string | null; validUntil?: string | null;
 }) {
   const { t } = useTranslation();
+  const { format: formatCurrency } = useCurrency();
   const handlePrint = () => {
     const html = `<!DOCTYPE html><html><head><title>${quoteNumber}</title>
     <style>
@@ -99,6 +97,7 @@ export default function QuoteDetail() {
   const { t } = useTranslation();
   const { toast } = useToast();
   const qc = useQueryClient();
+  const { format: formatCurrency } = useCurrency();
 
   const { data: quote, isLoading } = useGetQuote(id, {
     query: { queryKey: ["quote", id], enabled: !!id },

@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, FileText, Trash2, ChevronRight, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useCurrency } from "@/lib/currency";
 
 const STATUS_COLORS: Record<string, string> = {
   draft: "bg-slate-100 text-slate-700 border-slate-200",
@@ -23,10 +24,6 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 const STATUS_KEYS = ["draft", "sent", "accepted", "declined", "expired"];
-
-function formatCurrency(val: string | number) {
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(Number(val));
-}
 
 function formatDate(d: string | null | undefined) {
   if (!d) return "—";
@@ -39,6 +36,7 @@ export default function Quotes() {
   const { t } = useTranslation();
   const { toast } = useToast();
   const qc = useQueryClient();
+  const { format: formatCurrency } = useCurrency();
   const [filterStatus, setFilterStatus] = useState("all");
   const [showCreate, setShowCreate] = useState(false);
   const [form, setForm] = useState({ title: "", clientName: "", clientEmail: "", taxRate: "10", notes: "", terms: "" });

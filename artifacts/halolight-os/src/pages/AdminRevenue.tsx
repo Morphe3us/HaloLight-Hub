@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { Link } from "wouter";
+import { useCurrency } from "@/lib/currency";
 import { useGetAdminRevenue } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -19,11 +20,6 @@ const TIER_CONFIG: Record<string, { color: string; bg: string; text: string }> =
   at_risk:    { color: "#ef4444", bg: "bg-destructive/15",  text: "text-destructive" },
 };
 
-function fmtFull(v: number) {
-  if (!v) return "$0";
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 0 }).format(v / 100);
-}
-
 function RankBadge({ rank }: { rank: number }) {
   if (rank === 1) return <Crown className="w-4 h-4 text-yellow-400" />;
   return <span className="text-sm text-muted-foreground">#{rank}</span>;
@@ -31,6 +27,7 @@ function RankBadge({ rank }: { rank: number }) {
 
 export default function AdminRevenue() {
   const { t } = useTranslation();
+  const { format, formatCents: fmtFull } = useCurrency();
   const { data, isLoading } = useGetAdminRevenue();
 
   const tierLabels: Record<string, string> = {
@@ -106,7 +103,7 @@ export default function AdminRevenue() {
               <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
               <XAxis dataKey="month" tick={{ fontSize: 11 }} />
               <YAxis tickFormatter={v => `$${(Number(v) / 1000).toFixed(0)}K`} tick={{ fontSize: 11 }} />
-              <Tooltip formatter={(v: any) => [`$${Number(v).toLocaleString()}`, t("admin_revenue.stat_total")]} />
+              <Tooltip formatter={(v: any) => [format(Number(v)), t("admin_revenue.stat_total")]} />
               <Line type="monotone" dataKey="revenue" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 3 }} />
             </LineChart>
           </ResponsiveContainer>

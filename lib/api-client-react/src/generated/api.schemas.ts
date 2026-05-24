@@ -38,13 +38,44 @@ export interface User {
   clerkId: string;
   email: string;
   /** @nullable */
+  firstName?: string | null;
+  /** @nullable */
+  lastName?: string | null;
+  /** @nullable */
   fullName?: string | null;
   /** @nullable */
   companyName?: string | null;
   /** @nullable */
   phone?: string | null;
+  /** @nullable */
+  country?: string | null;
+  /** @nullable */
+  city?: string | null;
   role: UserRole;
   language: UserLanguage;
+  currency: string;
+  /** @nullable */
+  birthday?: string | null;
+  /** @nullable */
+  website?: string | null;
+  /** @nullable */
+  instagram?: string | null;
+  /** @nullable */
+  facebook?: string | null;
+  /** @nullable */
+  pinterest?: string | null;
+  /** @nullable */
+  tiktok?: string | null;
+  /** @nullable */
+  linkedin?: string | null;
+  /** @nullable */
+  businessType?: string | null;
+  /** @nullable */
+  mainMarket?: string | null;
+  /** @nullable */
+  photobooths?: number | null;
+  /** @nullable */
+  businessGoal?: string | null;
   createdAt: string;
   updatedAt?: string;
 }
@@ -64,10 +95,26 @@ export const UserUpdateLanguage = {
 } as const;
 
 export interface UserUpdate {
+  firstName?: string;
+  lastName?: string;
   fullName?: string;
   companyName?: string;
   phone?: string;
+  country?: string;
+  city?: string;
   language?: UserUpdateLanguage;
+  currency?: string;
+  birthday?: string;
+  website?: string;
+  instagram?: string;
+  facebook?: string;
+  pinterest?: string;
+  tiktok?: string;
+  linkedin?: string;
+  businessType?: string;
+  mainMarket?: string;
+  photobooths?: number;
+  businessGoal?: string;
 }
 
 export interface UserList {

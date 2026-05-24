@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Printer, Building2, Mail, CheckCircle2, AlertCircle, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useCurrency } from "@/lib/currency";
 
 const STATUS_COLORS: Record<string, string> = {
   draft: "bg-slate-100 text-slate-700 border-slate-200",
@@ -31,10 +32,6 @@ const STATUS_ICONS: Record<string, React.ComponentType<{ className?: string }>> 
 
 const STATUS_KEYS = ["draft", "sent", "paid", "overdue", "cancelled"];
 
-function formatCurrency(val: string | number) {
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(Number(val));
-}
-
 function formatDate(d: string | null | undefined) {
   if (!d) return "—";
   return new Date(d).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
@@ -42,6 +39,7 @@ function formatDate(d: string | null | undefined) {
 
 function PrintButton({ invoice, items }: { invoice: any; items: any[] }) {
   const { t } = useTranslation();
+  const { format: formatCurrency } = useCurrency();
   const handlePrint = () => {
     const html = `<!DOCTYPE html><html><head><title>${invoice.invoiceNumber}</title>
     <style>
@@ -96,6 +94,7 @@ export default function InvoiceDetail() {
   const { t } = useTranslation();
   const { toast } = useToast();
   const qc = useQueryClient();
+  const { format: formatCurrency } = useCurrency();
 
   const [showMarkPaid, setShowMarkPaid] = useState(false);
   const [paymentForm, setPaymentForm] = useState({ paidAmount: "", paymentMethod: "Bank Transfer", paymentReference: "" });

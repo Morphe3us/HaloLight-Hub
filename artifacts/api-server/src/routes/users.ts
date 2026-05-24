@@ -25,13 +25,33 @@ router.patch("/users/me", requireAuth, async (req: Request, res: Response): Prom
     return;
   }
 
-  const { fullName, companyName, phone, language } = req.body;
+  const {
+    firstName, lastName, fullName, companyName, phone, language, currency,
+    country, city, birthday, website, instagram, facebook, pinterest, tiktok, linkedin,
+    businessType, mainMarket, photobooths, businessGoal,
+  } = req.body;
   const updates: Partial<typeof usersTable.$inferInsert> = {};
 
+  if (firstName !== undefined) updates.firstName = firstName;
+  if (lastName !== undefined) updates.lastName = lastName;
   if (fullName !== undefined) updates.fullName = fullName;
   if (companyName !== undefined) updates.companyName = companyName;
   if (phone !== undefined) updates.phone = phone;
   if (language !== undefined) updates.language = language;
+  if (currency !== undefined) updates.currency = currency;
+  if (country !== undefined) updates.country = country;
+  if (city !== undefined) updates.city = city;
+  if (birthday !== undefined) updates.birthday = birthday;
+  if (website !== undefined) updates.website = website;
+  if (instagram !== undefined) updates.instagram = instagram;
+  if (facebook !== undefined) updates.facebook = facebook;
+  if (pinterest !== undefined) updates.pinterest = pinterest;
+  if (tiktok !== undefined) updates.tiktok = tiktok;
+  if (linkedin !== undefined) updates.linkedin = linkedin;
+  if (businessType !== undefined) updates.businessType = businessType;
+  if (mainMarket !== undefined) updates.mainMarket = mainMarket;
+  if (photobooths !== undefined) updates.photobooths = photobooths;
+  if (businessGoal !== undefined) updates.businessGoal = businessGoal;
 
   const [updated] = await db
     .update(usersTable)

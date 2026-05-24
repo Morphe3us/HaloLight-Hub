@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { Link, useParams } from "wouter";
+import { useCurrency } from "@/lib/currency";
 import { useGetAdminClient } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -48,6 +49,7 @@ export default function Client360() {
   const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const { data, isLoading } = useGetAdminClient(id!);
+  const { format: fmtCurrency } = useCurrency();
 
   if (isLoading) {
     return (
@@ -60,7 +62,17 @@ export default function Client360() {
   if (!data) return null;
 
   type ClientData = {
-    client: { id: string; email: string; fullName?: string | null; companyName?: string | null; phone?: string | null; role: string; createdAt: string; updatedAt: string };
+    client: {
+      id: string; email: string;
+      firstName?: string | null; lastName?: string | null; fullName?: string | null;
+      companyName?: string | null; phone?: string | null; country?: string | null;
+      city?: string | null; currency?: string | null; birthday?: string | null;
+      website?: string | null; instagram?: string | null; facebook?: string | null;
+      pinterest?: string | null; tiktok?: string | null; linkedin?: string | null;
+      businessType?: string | null; mainMarket?: string | null;
+      photobooths?: number | null; businessGoal?: string | null;
+      role: string; createdAt: string; updatedAt: string;
+    };
     score: { score: number; tier: string; loginScore: number; onboardingScore: number; academyScore: number; eventsScore: number; quotesScore: number; invoicesScore: number; communityScore: number; supportScore: number; computedAt: string } | null;
     coaching: Array<{ id: string; type: string; title: string; description: string; priority: number }>;
     upsells: Array<{ id: string; type: string; title: string; description: string; confidence: string; estimatedValue?: number | null }>;
@@ -120,6 +132,20 @@ export default function Client360() {
                   {client.phone && <span className="flex items-center gap-1.5"><Phone className="w-3.5 h-3.5" />{client.phone}</span>}
                   <span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" />{t("client360.joined", { date: formatDate(client.createdAt) })}</span>
                 </div>
+                {(client.country || client.city || client.businessType || client.currency || client.website) && (
+                  <div className="flex flex-wrap gap-3 mt-1.5 text-xs text-muted-foreground">
+                    {(client.city || client.country) && (
+                      <span>📍 {[client.city, client.country].filter(Boolean).join(", ")}</span>
+                    )}
+                    {client.businessType && <span>🏢 {client.businessType}</span>}
+                    {client.currency && <span>💱 {client.currency}</span>}
+                    {client.website && (
+                      <a href={client.website} target="_blank" rel="noopener noreferrer" className="hover:text-primary underline">
+                        🌐 {client.website.replace(/^https?:\/\//, "")}
+                      </a>
+                    )}
+                  </div>
+                )}
               </div>
               <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm font-semibold ${tierCfg.bg} ${tierCfg.text} border ${tierCfg.border}`}>
                 <TierIcon className="w-4 h-4" />
@@ -132,7 +158,7 @@ export default function Client360() {
                 { label: t("client360.stat_events"),   value: events?.length ?? 0,                              icon: Calendar },
                 { label: t("client360.stat_quotes"),   value: quotes?.length ?? 0,                              icon: FileText },
                 { label: t("client360.stat_invoices"), value: invoices?.length ?? 0,                            icon: ReceiptText },
-                { label: t("client360.stat_revenue"),  value: `$${Math.round(revenue ?? 0).toLocaleString()}`, icon: DollarSign },
+                { label: t("client360.stat_revenue"),  value: fmtCurrency(Math.round(revenue ?? 0)), icon: DollarSign },
               ].map((s) => (
                 <div key={s.label} className="text-center">
                   <p className="text-xl font-bold text-foreground">{s.value}</p>

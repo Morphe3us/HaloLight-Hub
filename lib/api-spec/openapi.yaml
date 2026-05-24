@@ -2914,7 +2914,7 @@ components:
     # ─── Users ─────────────────────────────────────────────────────────────
     User:
       type: object
-      required: [id, clerkId, email, role, language, createdAt]
+      required: [id, clerkId, email, role, language, currency, createdAt]
       properties:
         id:
           type: string
@@ -2922,11 +2922,19 @@ components:
           type: string
         email:
           type: string
+        firstName:
+          type: ["string", "null"]
+        lastName:
+          type: ["string", "null"]
         fullName:
           type: ["string", "null"]
         companyName:
           type: ["string", "null"]
         phone:
+          type: ["string", "null"]
+        country:
+          type: ["string", "null"]
+        city:
           type: ["string", "null"]
         role:
           type: string
@@ -2934,6 +2942,31 @@ components:
         language:
           type: string
           enum: [en, fr, es, de, it, pl, pt, nl]
+        currency:
+          type: string
+          default: EUR
+        birthday:
+          type: ["string", "null"]
+        website:
+          type: ["string", "null"]
+        instagram:
+          type: ["string", "null"]
+        facebook:
+          type: ["string", "null"]
+        pinterest:
+          type: ["string", "null"]
+        tiktok:
+          type: ["string", "null"]
+        linkedin:
+          type: ["string", "null"]
+        businessType:
+          type: ["string", "null"]
+        mainMarket:
+          type: ["string", "null"]
+        photobooths:
+          type: ["integer", "null"]
+        businessGoal:
+          type: ["string", "null"]
         createdAt:
           type: string
           format: date-time
@@ -2944,15 +2977,47 @@ components:
     UserUpdate:
       type: object
       properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
         fullName:
           type: string
         companyName:
           type: string
         phone:
           type: string
+        country:
+          type: string
+        city:
+          type: string
         language:
           type: string
           enum: [en, fr, es, de, it, pl, pt, nl]
+        currency:
+          type: string
+        birthday:
+          type: string
+        website:
+          type: string
+        instagram:
+          type: string
+        facebook:
+          type: string
+        pinterest:
+          type: string
+        tiktok:
+          type: string
+        linkedin:
+          type: string
+        businessType:
+          type: string
+        mainMarket:
+          type: string
+        photobooths:
+          type: integer
+        businessGoal:
+          type: string
 
     UserList:
       type: object

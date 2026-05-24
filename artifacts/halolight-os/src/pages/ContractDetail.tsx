@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Printer, Building2, Mail, Edit2, FileSignature } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useCurrency } from "@/lib/currency";
 
 const STATUS_COLORS: Record<string, string> = {
   draft: "bg-slate-100 text-slate-700 border-slate-200",
@@ -25,10 +26,6 @@ const STATUS_COLORS: Record<string, string> = {
 
 const STATUS_KEYS = ["draft", "sent", "signed", "active", "expired", "cancelled"];
 
-function formatCurrency(val: string | number) {
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 0 }).format(Number(val));
-}
-
 function formatDate(d: string | null | undefined) {
   if (!d) return "—";
   return new Date(d).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
@@ -38,6 +35,7 @@ function PrintButton({ contractNumber, title, clientName, content, value }: {
   contractNumber: string; title: string; clientName: string; content: string; value: string;
 }) {
   const { t } = useTranslation();
+  const { format: formatCurrency } = useCurrency();
   const handlePrint = () => {
     const html = `<!DOCTYPE html><html><head><title>${contractNumber}</title>
     <style>
@@ -57,7 +55,7 @@ function PrintButton({ contractNumber, title, clientName, content, value }: {
     </div>
     <div class="meta">
       <div><div class="meta-label">Client</div><div style="font-weight:600">${clientName}</div></div>
-      <div><div class="meta-label">Contract Value</div><div style="font-weight:600">${new Intl.NumberFormat("en-US",{style:"currency",currency:"USD",minimumFractionDigits:0}).format(Number(value))}</div></div>
+      <div><div class="meta-label">Contract Value</div><div style="font-weight:600">${formatCurrency(Number(value))}</div></div>
       <div><div class="meta-label">Date</div><div>${new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"})}</div></div>
     </div>
     <div class="content">${content.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</div>
@@ -75,6 +73,7 @@ export default function ContractDetail() {
   const { t } = useTranslation();
   const { toast } = useToast();
   const qc = useQueryClient();
+  const { format: formatCurrency } = useCurrency();
 
   const [editing, setEditing] = useState(false);
   const [editForm, setEditForm] = useState<Record<string, string>>({});
