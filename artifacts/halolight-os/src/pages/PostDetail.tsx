@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Link, useParams } from "wouter";
 import {
   useGetCommunityPost, useCreateCommunityReply, useTogglePostReaction,
@@ -30,6 +31,7 @@ function Avatar({ name, role }: { name?: string; role?: string }) {
 }
 
 export default function PostDetail() {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const [, navigate] = useLocation();
   const { toast } = useToast();
@@ -47,7 +49,7 @@ export default function PostDetail() {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: [`/api/community/posts/${id}`] });
         setReply("");
-        toast({ title: "Reply posted" });
+        toast({ title: t("post_detail.toast_reply_posted") });
       },
     },
   });
@@ -61,7 +63,7 @@ export default function PostDetail() {
   const { mutate: deletePost } = useDeleteCommunityPost({
     mutation: {
       onSuccess: () => {
-        toast({ title: "Post deleted" });
+        toast({ title: t("post_detail.toast_post_deleted") });
         navigate("/community");
       },
     },
@@ -85,8 +87,8 @@ export default function PostDetail() {
   if (!post) {
     return (
       <div className="max-w-3xl mx-auto text-center py-16">
-        <p className="text-muted-foreground">Post not found.</p>
-        <Link href="/community"><Button variant="outline" className="mt-4">Back to Community</Button></Link>
+        <p className="text-muted-foreground">{t("post_detail.not_found")}</p>
+        <Link href="/community"><Button variant="outline" className="mt-4">{t("post_detail.back_to_community")}</Button></Link>
       </div>
     );
   }
@@ -122,7 +124,7 @@ export default function PostDetail() {
         <Link href={postData.channelId ? `/community/${postData.channelId}` : "/community"}>
           <Button variant="ghost" size="sm" className="gap-2">
             <ArrowLeft className="w-4 h-4" />
-            Back
+            {t("post_detail.back")}
           </Button>
         </Link>
       </div>
@@ -136,7 +138,7 @@ export default function PostDetail() {
                 <div className="flex items-center gap-2 mb-0.5">
                   <span className="font-medium text-foreground">{postData.userName ?? "User"}</span>
                   {postData.userRole === "admin" && (
-                    <Badge className="text-xs bg-primary/10 text-primary px-1.5 py-0">Staff</Badge>
+                    <Badge className="text-xs bg-primary/10 text-primary px-1.5 py-0">{t("post_detail.staff_badge")}</Badge>
                   )}
                   <span className="text-xs text-muted-foreground">{formatDate(post.createdAt)}</span>
                 </div>
@@ -179,7 +181,7 @@ export default function PostDetail() {
                 className="flex items-center gap-1 px-3 py-1 rounded-full text-sm border border-dashed border-border text-muted-foreground hover:bg-muted transition-colors"
               >
                 <ThumbsUp className="w-3.5 h-3.5" />
-                React
+                {t("post_detail.react")}
               </button>
               {showEmojiPicker && (
                 <div className="absolute bottom-full left-0 mb-1 bg-card border rounded-xl p-2 shadow-lg flex gap-1 z-20">
@@ -203,7 +205,7 @@ export default function PostDetail() {
         <div className="space-y-3">
           <h3 className="font-medium text-foreground flex items-center gap-2">
             <MessageSquare className="w-4 h-4" />
-            {replies.length} {replies.length === 1 ? "Reply" : "Replies"}
+            {replies.length === 1 ? `${replies.length} ${t("post_detail.reply_one")}` : `${replies.length} ${t("post_detail.replies_many")}`}
           </h3>
           {replies.map((r) => (
             <div key={r.id} className="flex gap-3">
@@ -213,7 +215,7 @@ export default function PostDetail() {
                   <div className="flex items-center gap-2">
                     <span className="font-medium text-sm text-foreground">{r.userName ?? "User"}</span>
                     {r.userRole === "admin" && (
-                      <Badge className="text-xs bg-primary/10 text-primary px-1.5 py-0">Staff</Badge>
+                      <Badge className="text-xs bg-primary/10 text-primary px-1.5 py-0">{t("post_detail.staff_badge")}</Badge>
                     )}
                   </div>
                   <div className="flex items-center gap-2">
@@ -240,14 +242,14 @@ export default function PostDetail() {
       {isLocked && !isAdmin ? (
         <div className="flex items-center justify-center gap-2 py-6 text-muted-foreground bg-muted rounded-xl border border-dashed">
           <Lock className="w-4 h-4" />
-          <span className="text-sm">This post is locked</span>
+          <span className="text-sm">{t("post_detail.locked_msg")}</span>
         </div>
       ) : (
         <Card>
           <CardContent className="p-4">
-            <h3 className="font-medium text-foreground mb-3">Write a Reply</h3>
+            <h3 className="font-medium text-foreground mb-3">{t("post_detail.write_reply")}</h3>
             <Textarea
-              placeholder="Share your thoughts..."
+              placeholder={t("post_detail.reply_placeholder")}
               value={reply}
               onChange={(e) => setReply(e.target.value)}
               rows={3}
@@ -260,7 +262,7 @@ export default function PostDetail() {
                 className="gap-2"
               >
                 <Send className="w-4 h-4" />
-                Reply
+                {t("post_detail.reply_btn")}
               </Button>
             </div>
           </CardContent>

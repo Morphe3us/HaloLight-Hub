@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useParams, Link } from "wouter";
 import { useGetSupportTicket, useCreateTicketReply, useUpdateTicketStatus, useGetCurrentUser } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
@@ -11,17 +12,17 @@ import { useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Send, Shield, User, Clock, CheckCircle2, AlertCircle, Tag } from "lucide-react";
 
 const statusColors: Record<string, string> = {
-  open: "bg-info/15 text-info",
-  in_progress: "bg-muted text-foreground",
+  open:              "bg-info/15 text-info",
+  in_progress:       "bg-muted text-foreground",
   waiting_on_client: "bg-warning/15 text-yellow-700",
-  resolved: "bg-success/15 text-success",
-  closed: "bg-muted text-muted-foreground",
+  resolved:          "bg-success/15 text-success",
+  closed:            "bg-muted text-muted-foreground",
 };
 
 const priorityColors: Record<string, string> = {
-  low: "bg-muted text-muted-foreground",
+  low:    "bg-muted text-muted-foreground",
   medium: "bg-info/15 text-info",
-  high: "bg-warning/15 text-warning",
+  high:   "bg-warning/15 text-warning",
   urgent: "bg-destructive/15 text-destructive",
 };
 
@@ -31,6 +32,7 @@ function formatDate(d: string | Date | null | undefined) {
 }
 
 export default function TicketDetail() {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -41,12 +43,19 @@ export default function TicketDetail() {
   const { data: currentUser } = useGetCurrentUser();
   const isAdmin = currentUser?.role === "admin";
 
+  const priorityLabels: Record<string, string> = {
+    low:    t("ticket_detail.priority_low"),
+    medium: t("ticket_detail.priority_medium"),
+    high:   t("ticket_detail.priority_high"),
+    urgent: t("ticket_detail.priority_urgent"),
+  };
+
   const { mutate: addReply, isPending: isReplying } = useCreateTicketReply({
     mutation: {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: [`/api/support/tickets/${id}`] });
         setReply("");
-        toast({ title: "Reply sent" });
+        toast({ title: t("ticket_detail.toast_reply_sent") });
       },
     },
   });
@@ -56,7 +65,7 @@ export default function TicketDetail() {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: [`/api/support/tickets/${id}`] });
         queryClient.invalidateQueries({ queryKey: ["/api/support/tickets"] });
-        toast({ title: "Status updated" });
+        toast({ title: t("ticket_detail.toast_status_updated") });
         setStatusUpdate("");
       },
     },
@@ -74,9 +83,9 @@ export default function TicketDetail() {
   if (!ticket) {
     return (
       <div className="max-w-3xl mx-auto text-center py-16">
-        <p className="text-muted-foreground">Ticket not found.</p>
+        <p className="text-muted-foreground">{t("ticket_detail.not_found")}</p>
         <Link href="/support">
-          <Button variant="outline" className="mt-4">Back to Support</Button>
+          <Button variant="outline" className="mt-4">{t("ticket_detail.back_btn")}</Button>
         </Link>
       </div>
     );
@@ -90,7 +99,7 @@ export default function TicketDetail() {
         <Link href="/support">
           <Button variant="ghost" size="sm" className="gap-2">
             <ArrowLeft className="w-4 h-4" />
-            Support
+            {t("ticket_detail.back")}
           </Button>
         </Link>
         <span className="text-muted-foreground">/</span>
@@ -108,7 +117,7 @@ export default function TicketDetail() {
                 </Badge>
                 <Badge className={`text-xs ${priorityColors[ticket.priority ?? "medium"] ?? ""}`}>
                   <AlertCircle className="w-3 h-3 mr-1" />
-                  {ticket.priority ?? "medium"} priority
+                  {t("ticket_detail.priority_suffix", { level: priorityLabels[ticket.priority ?? "medium"] ?? (ticket.priority ?? "medium") })}
                 </Badge>
                 <Badge variant="outline" className="text-xs">
                   <Tag className="w-3 h-3 mr-1" />
@@ -123,14 +132,14 @@ export default function TicketDetail() {
                   updateStatus({ id: id!, data: { status: v as "open" } });
                 }}>
                   <SelectTrigger className="w-48 h-8 text-xs">
-                    <SelectValue placeholder="Change status" />
+                    <SelectValue placeholder={t("ticket_detail.change_status")} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="open">Open</SelectItem>
-                    <SelectItem value="in_progress">In Progress</SelectItem>
-                    <SelectItem value="waiting_on_client">Waiting on Client</SelectItem>
-                    <SelectItem value="resolved">Resolved</SelectItem>
-                    <SelectItem value="closed">Closed</SelectItem>
+                    <SelectItem value="open">{t("ticket_detail.status_open")}</SelectItem>
+                    <SelectItem value="in_progress">{t("ticket_detail.status_in_progress")}</SelectItem>
+                    <SelectItem value="waiting_on_client">{t("ticket_detail.status_waiting")}</SelectItem>
+                    <SelectItem value="resolved">{t("ticket_detail.status_resolved")}</SelectItem>
+                    <SelectItem value="closed">{t("ticket_detail.status_closed")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -140,7 +149,7 @@ export default function TicketDetail() {
         <CardContent>
           <div className="flex items-center gap-2 text-xs text-muted-foreground mb-4">
             <Clock className="w-3.5 h-3.5" />
-            Opened {formatDate(ticket.createdAt)}
+            {t("ticket_detail.opened", { date: formatDate(ticket.createdAt) })}
           </div>
           <div className="bg-muted rounded-lg p-4">
             <p className="text-foreground whitespace-pre-wrap">{ticket.description}</p>
@@ -150,7 +159,7 @@ export default function TicketDetail() {
 
       {replies.length > 0 && (
         <div className="space-y-3">
-          <h3 className="font-medium text-foreground">Conversation ({replies.length})</h3>
+          <h3 className="font-medium text-foreground">{t("ticket_detail.conversation", { count: replies.length })}</h3>
           {replies.map((r) => (
             <div key={r.id} className={`flex gap-3 ${r.isStaff ? "flex-row-reverse" : ""}`}>
               <div className={`h-8 w-8 rounded-full flex items-center justify-center shrink-0 ${r.isStaff ? "bg-primary text-white" : "bg-border text-muted-foreground"}`}>
@@ -160,9 +169,9 @@ export default function TicketDetail() {
                 <div className={`rounded-xl px-4 py-3 ${r.isStaff ? "bg-primary text-white rounded-tr-none" : "bg-card border rounded-tl-none"}`}>
                   <div className="flex items-center gap-2 mb-1">
                     <span className={`text-xs font-medium ${r.isStaff ? "text-primary-foreground/80" : "text-muted-foreground"}`}>
-                      {r.isStaff ? "Support Team" : (r.userName ?? "You")}
+                      {r.isStaff ? t("ticket_detail.support_team") : (r.userName ?? t("ticket_detail.you"))}
                     </span>
-                    {r.isStaff && <Badge className="text-xs bg-card/20 text-white px-1 py-0">Staff</Badge>}
+                    {r.isStaff && <Badge className="text-xs bg-card/20 text-white px-1 py-0">{t("ticket_detail.staff_badge")}</Badge>}
                   </div>
                   <p className={`text-sm whitespace-pre-wrap ${r.isStaff ? "text-white" : "text-foreground"}`}>{r.content}</p>
                 </div>
@@ -177,10 +186,10 @@ export default function TicketDetail() {
         <Card>
           <CardContent className="p-4">
             <h3 className="font-medium text-foreground mb-3">
-              {isAdmin ? "Reply as Support Staff" : "Add a Reply"}
+              {isAdmin ? t("ticket_detail.reply_as_staff") : t("ticket_detail.add_reply")}
             </h3>
             <Textarea
-              placeholder="Type your message..."
+              placeholder={t("ticket_detail.reply_placeholder")}
               value={reply}
               onChange={(e) => setReply(e.target.value)}
               rows={4}
@@ -193,7 +202,7 @@ export default function TicketDetail() {
                 className="gap-2"
               >
                 <Send className="w-4 h-4" />
-                Send Reply
+                {t("ticket_detail.send_reply")}
               </Button>
             </div>
           </CardContent>
@@ -203,7 +212,7 @@ export default function TicketDetail() {
       {ticket.status === "closed" && (
         <div className="flex items-center justify-center gap-2 py-6 text-success">
           <CheckCircle2 className="w-5 h-5" />
-          <span className="font-medium">This ticket is closed</span>
+          <span className="font-medium">{t("ticket_detail.ticket_closed")}</span>
         </div>
       )}
     </div>

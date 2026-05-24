@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   useListAdminCourses, useCreateAdminCourse, useUpdateAdminCourse,
   useDeleteAdminCourse, useDuplicateAdminCourse, useGetAdminCourseDetail,
@@ -28,9 +29,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import {
-  Plus, Pencil, Trash2, Copy, Eye, EyeOff, ChevronDown,
+  Plus, Pencil, Trash2, Copy, ChevronDown,
   ChevronRight, GraduationCap, BookOpen, Loader2,
-  MoreHorizontal, ArrowLeft, Star, Users,
+  MoreHorizontal, ArrowLeft, Star,
 } from "lucide-react";
 
 const LANGS = ["en", "fr", "de", "nl", "es", "it", "pt", "pl"] as const;
@@ -55,8 +56,6 @@ type AdminLesson = {
   videoUrl: string; durationSeconds: number; order: number; isPublished: boolean; notes?: string | null;
 };
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
 function mlObj(langs: string[], val: string): Record<string, string> {
   return Object.fromEntries(langs.map(l => [l, val]));
 }
@@ -68,7 +67,7 @@ function fmtDuration(s: number) {
   return h > 0 ? `${h}h ${m % 60}m` : `${m}m`;
 }
 
-// ─── Course Form Modal ────────────────────────────────────────────────────────
+// ─── Course Form Modal ─────────────────────────────────────────────────────────
 
 const EMPTY_COURSE = {
   titleEn: "", descEn: "", category: "", level: "beginner",
@@ -82,10 +81,9 @@ const EMPTY_COURSE = {
 function CourseFormModal({
   open, onClose, course,
 }: {
-  open: boolean;
-  onClose: () => void;
-  course?: AdminCourse | null;
+  open: boolean; onClose: () => void; course?: AdminCourse | null;
 }) {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const qc = useQueryClient();
   const isEdit = !!course;
@@ -116,15 +114,15 @@ function CourseFormModal({
 
   const { mutate: create, isPending: creating } = useCreateAdminCourse({
     mutation: {
-      onSuccess: () => { toast({ title: "Course created" }); invalidate(); onClose(); },
-      onError: () => toast({ title: "Failed to create course", variant: "destructive" }),
+      onSuccess: () => { toast({ title: t("admin_academy.toast_course_created") }); invalidate(); onClose(); },
+      onError: () => toast({ title: t("admin_academy.toast_course_create_fail"), variant: "destructive" }),
     },
   });
 
   const { mutate: update, isPending: updating } = useUpdateAdminCourse({
     mutation: {
-      onSuccess: () => { toast({ title: "Course updated" }); invalidate(); onClose(); },
-      onError: () => toast({ title: "Failed to update course", variant: "destructive" }),
+      onSuccess: () => { toast({ title: t("admin_academy.toast_course_updated") }); invalidate(); onClose(); },
+      onError: () => toast({ title: t("admin_academy.toast_course_update_fail"), variant: "destructive" }),
     },
   });
 
@@ -159,10 +157,9 @@ function CourseFormModal({
     <Dialog open={open} onOpenChange={o => { if (!o) onClose(); }}>
       <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{isEdit ? "Edit Course" : "Create Course"}</DialogTitle>
+          <DialogTitle>{isEdit ? t("admin_academy.course_form_edit") : t("admin_academy.course_form_create")}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 pt-1">
-          {/* Language tabs */}
           <div className="flex gap-1 flex-wrap">
             {LANGS.map(l => (
               <button key={l} type="button"
@@ -174,37 +171,38 @@ function CourseFormModal({
           </div>
 
           <div className="space-y-1.5">
-            <Label>Title ({LANG_LABELS[form.activeLang]}) <span className="text-destructive">*</span></Label>
+            <Label>{t("admin_academy.label_title")} ({LANG_LABELS[form.activeLang]}) <span className="text-destructive">*</span></Label>
             <Input
               value={form.activeLang === "en" ? form.titleEn : (form.titlesByLang[form.activeLang] ?? "")}
               onChange={e => {
                 if (form.activeLang === "en") setForm(f => ({ ...f, titleEn: e.target.value }));
                 else setForm(f => ({ ...f, titlesByLang: { ...f.titlesByLang, [f.activeLang]: e.target.value } }));
               }}
-              placeholder={`Course title in ${LANG_LABELS[form.activeLang]}…`}
+              placeholder={t("admin_academy.course_title_placeholder", { lang: LANG_LABELS[form.activeLang] })}
               required={form.activeLang === "en"}
             />
           </div>
 
           <div className="space-y-1.5">
-            <Label>Description ({LANG_LABELS[form.activeLang]})</Label>
+            <Label>{t("admin_academy.label_desc")} ({LANG_LABELS[form.activeLang]})</Label>
             <Textarea rows={3}
               value={form.activeLang === "en" ? form.descEn : (form.descsByLang[form.activeLang] ?? "")}
               onChange={e => {
                 if (form.activeLang === "en") setForm(f => ({ ...f, descEn: e.target.value }));
                 else setForm(f => ({ ...f, descsByLang: { ...f.descsByLang, [f.activeLang]: e.target.value } }));
               }}
-              placeholder="Course description…"
+              placeholder={t("admin_academy.desc_placeholder")}
             />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label>Category <span className="text-destructive">*</span></Label>
-              <Input value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))} placeholder="e.g. Business, Technical" required />
+              <Label>{t("admin_academy.label_category")} <span className="text-destructive">*</span></Label>
+              <Input value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))}
+                placeholder="e.g. Business, Technical" required />
             </div>
             <div className="space-y-1.5">
-              <Label>Level <span className="text-destructive">*</span></Label>
+              <Label>{t("admin_academy.label_level")} <span className="text-destructive">*</span></Label>
               <Select value={form.level} onValueChange={v => setForm(f => ({ ...f, level: v }))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -213,34 +211,39 @@ function CourseFormModal({
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label>Instructor Name</Label>
-              <Input value={form.instructorName} onChange={e => setForm(f => ({ ...f, instructorName: e.target.value }))} placeholder="e.g. Marie Dupont" />
+              <Label>{t("admin_academy.label_instructor")}</Label>
+              <Input value={form.instructorName} onChange={e => setForm(f => ({ ...f, instructorName: e.target.value }))}
+                placeholder="e.g. Marie Dupont" />
             </div>
             <div className="space-y-1.5">
-              <Label>Estimated Duration</Label>
-              <Input value={form.estimatedDuration} onChange={e => setForm(f => ({ ...f, estimatedDuration: e.target.value }))} placeholder="e.g. 2h 30m" />
+              <Label>{t("admin_academy.label_duration")}</Label>
+              <Input value={form.estimatedDuration} onChange={e => setForm(f => ({ ...f, estimatedDuration: e.target.value }))}
+                placeholder="e.g. 2h 30m" />
             </div>
             <div className="col-span-2 space-y-1.5">
-              <Label>Thumbnail URL</Label>
-              <Input value={form.thumbnailUrl} onChange={e => setForm(f => ({ ...f, thumbnailUrl: e.target.value }))} placeholder="https://…" />
+              <Label>{t("admin_academy.label_thumbnail")}</Label>
+              <Input value={form.thumbnailUrl} onChange={e => setForm(f => ({ ...f, thumbnailUrl: e.target.value }))}
+                placeholder="https://…" />
             </div>
           </div>
 
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-2">
               <Switch checked={form.isPublished} onCheckedChange={v => setForm(f => ({ ...f, isPublished: v }))} />
-              <Label>Published</Label>
+              <Label>{t("admin_academy.label_published")}</Label>
             </div>
             <div className="flex items-center gap-2">
               <Switch checked={form.isFeatured} onCheckedChange={v => setForm(f => ({ ...f, isFeatured: v }))} />
-              <Label>Featured</Label>
+              <Label>{t("admin_academy.label_featured")}</Label>
             </div>
           </div>
 
           <DialogFooter className="pt-2">
-            <Button type="button" variant="outline" onClick={onClose} disabled={isPending}>Cancel</Button>
+            <Button type="button" variant="outline" onClick={onClose} disabled={isPending}>{t("admin_academy.cancel")}</Button>
             <Button type="submit" disabled={isPending || !form.titleEn || !form.category}>
-              {isPending ? <><Loader2 className="w-4 h-4 mr-1.5 animate-spin" />Saving…</> : isEdit ? "Save Changes" : "Create Course"}
+              {isPending
+                ? <><Loader2 className="w-4 h-4 mr-1.5 animate-spin" />{t("admin_academy.saving")}</>
+                : isEdit ? t("admin_academy.save_changes") : t("admin_academy.create_course")}
             </Button>
           </DialogFooter>
         </form>
@@ -249,13 +252,14 @@ function CourseFormModal({
   );
 }
 
-// ─── Lesson Form Modal ────────────────────────────────────────────────────────
+// ─── Lesson Form Modal ─────────────────────────────────────────────────────────
 
 function LessonFormModal({
   open, onClose, moduleId, lesson,
 }: {
   open: boolean; onClose: () => void; moduleId: string; lesson?: AdminLesson | null;
 }) {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const qc = useQueryClient();
   const isEdit = !!lesson;
@@ -274,15 +278,15 @@ function LessonFormModal({
 
   const { mutate: create, isPending: creating } = useCreateAdminLesson({
     mutation: {
-      onSuccess: () => { toast({ title: "Lesson created" }); invalidate(); onClose(); },
-      onError: () => toast({ title: "Failed to create lesson", variant: "destructive" }),
+      onSuccess: () => { toast({ title: t("admin_academy.toast_lesson_created") }); invalidate(); onClose(); },
+      onError: () => toast({ title: t("admin_academy.toast_lesson_create_fail"), variant: "destructive" }),
     },
   });
 
   const { mutate: update, isPending: updating } = useUpdateAdminLesson({
     mutation: {
-      onSuccess: () => { toast({ title: "Lesson updated" }); invalidate(); onClose(); },
-      onError: () => toast({ title: "Failed to update lesson", variant: "destructive" }),
+      onSuccess: () => { toast({ title: t("admin_academy.toast_lesson_updated") }); invalidate(); onClose(); },
+      onError: () => toast({ title: t("admin_academy.toast_lesson_update_fail"), variant: "destructive" }),
     },
   });
 
@@ -306,7 +310,7 @@ function LessonFormModal({
     <Dialog open={open} onOpenChange={o => { if (!o) onClose(); }}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>{isEdit ? "Edit Lesson" : "Create Lesson"}</DialogTitle>
+          <DialogTitle>{isEdit ? t("admin_academy.lesson_form_edit") : t("admin_academy.lesson_form_create")}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 pt-1">
           <div className="flex gap-1 flex-wrap">
@@ -320,44 +324,49 @@ function LessonFormModal({
           </div>
 
           <div className="space-y-1.5">
-            <Label>Title ({LANG_LABELS[form.activeLang]}) <span className="text-destructive">*</span></Label>
+            <Label>{t("admin_academy.label_title")} ({LANG_LABELS[form.activeLang]}) <span className="text-destructive">*</span></Label>
             <Input
               value={form.activeLang === "en" ? form.titleEn : (form.titlesByLang[form.activeLang] ?? "")}
               onChange={e => {
                 if (form.activeLang === "en") setForm(f => ({ ...f, titleEn: e.target.value }));
                 else setForm(f => ({ ...f, titlesByLang: { ...f.titlesByLang, [f.activeLang]: e.target.value } }));
               }}
-              placeholder={`Lesson title…`}
+              placeholder={t("admin_academy.lesson_title_placeholder")}
               required={form.activeLang === "en"}
             />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div className="col-span-2 space-y-1.5">
-              <Label>Video URL (Vimeo)</Label>
-              <Input value={form.videoUrl} onChange={e => setForm(f => ({ ...f, videoUrl: e.target.value }))} placeholder="https://vimeo.com/…" />
+              <Label>{t("admin_academy.label_video_url")}</Label>
+              <Input value={form.videoUrl} onChange={e => setForm(f => ({ ...f, videoUrl: e.target.value }))}
+                placeholder="https://vimeo.com/…" />
             </div>
             <div className="space-y-1.5">
-              <Label>Duration (seconds)</Label>
-              <Input type="number" min="0" value={form.durationSeconds} onChange={e => setForm(f => ({ ...f, durationSeconds: e.target.value }))} />
+              <Label>{t("admin_academy.label_duration_sec")}</Label>
+              <Input type="number" min="0" value={form.durationSeconds}
+                onChange={e => setForm(f => ({ ...f, durationSeconds: e.target.value }))} />
             </div>
             <div className="flex items-end pb-1">
               <div className="flex items-center gap-2">
                 <Switch checked={form.isPublished} onCheckedChange={v => setForm(f => ({ ...f, isPublished: v }))} />
-                <Label>Published</Label>
+                <Label>{t("admin_academy.label_published")}</Label>
               </div>
             </div>
           </div>
 
           <div className="space-y-1.5">
-            <Label>Notes</Label>
-            <Textarea rows={2} value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} placeholder="Internal notes for this lesson…" />
+            <Label>{t("admin_academy.label_notes")}</Label>
+            <Textarea rows={2} value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
+              placeholder={t("admin_academy.notes_placeholder")} />
           </div>
 
           <DialogFooter className="pt-2">
-            <Button type="button" variant="outline" onClick={onClose} disabled={isPending}>Cancel</Button>
+            <Button type="button" variant="outline" onClick={onClose} disabled={isPending}>{t("admin_academy.cancel")}</Button>
             <Button type="submit" disabled={isPending || !form.titleEn}>
-              {isPending ? <><Loader2 className="w-4 h-4 mr-1.5 animate-spin" />Saving…</> : isEdit ? "Save Changes" : "Create Lesson"}
+              {isPending
+                ? <><Loader2 className="w-4 h-4 mr-1.5 animate-spin" />{t("admin_academy.saving")}</>
+                : isEdit ? t("admin_academy.save_changes") : t("admin_academy.create_lesson")}
             </Button>
           </DialogFooter>
         </form>
@@ -366,13 +375,14 @@ function LessonFormModal({
   );
 }
 
-// ─── Course Detail View (modules + lessons) ────────────────────────────────────
+// ─── Course Detail View ────────────────────────────────────────────────────────
 
 function CourseDetailView({
   courseId, onBack,
 }: {
   courseId: string; onBack: () => void;
 }) {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const qc = useQueryClient();
   const [lessonModal, setLessonModal] = useState<{ open: boolean; moduleId: string; lesson?: AdminLesson | null }>({ open: false, moduleId: "" });
@@ -393,26 +403,26 @@ function CourseDetailView({
 
   const { mutate: createMod, isPending: creatingMod } = useCreateAdminModule({
     mutation: {
-      onSuccess: () => { toast({ title: "Module added" }); invalidate(); setAddingModule(false); setNewModuleTitle(""); },
-      onError: () => toast({ title: "Failed to add module", variant: "destructive" }),
+      onSuccess: () => { toast({ title: t("admin_academy.toast_module_added") }); invalidate(); setAddingModule(false); setNewModuleTitle(""); },
+      onError: () => toast({ title: t("admin_academy.toast_module_add_fail"), variant: "destructive" }),
     },
   });
 
   const { mutate: updateMod } = useUpdateAdminModule({
     mutation: {
-      onSuccess: () => { toast({ title: "Module updated" }); invalidate(); setModuleEditId(null); },
+      onSuccess: () => { toast({ title: t("admin_academy.toast_module_updated") }); invalidate(); setModuleEditId(null); },
     },
   });
 
   const { mutate: deleteMod } = useDeleteAdminModule({
     mutation: {
-      onSuccess: () => { toast({ title: "Module deleted" }); invalidate(); setDeleteTarget(null); },
+      onSuccess: () => { toast({ title: t("admin_academy.toast_module_deleted") }); invalidate(); setDeleteTarget(null); },
     },
   });
 
   const { mutate: deleteLesson } = useDeleteAdminLesson({
     mutation: {
-      onSuccess: () => { toast({ title: "Lesson deleted" }); invalidate(); setDeleteTarget(null); },
+      onSuccess: () => { toast({ title: t("admin_academy.toast_lesson_deleted") }); invalidate(); setDeleteTarget(null); },
     },
   });
 
@@ -430,9 +440,13 @@ function CourseDetailView({
     </div>
   );
 
-  if (!course) return <div className="text-muted-foreground">Course not found</div>;
+  if (!course) return <div className="text-muted-foreground">{t("admin_academy.course_not_found")}</div>;
 
   const titleEn = (course.title as Record<string, string>).en ?? "Untitled";
+
+  const deleteTypeLabel = deleteTarget?.type === "module"
+    ? t("admin_academy.type_module")
+    : t("admin_academy.type_lesson");
 
   return (
     <div className="space-y-4">
@@ -446,31 +460,33 @@ function CourseDetailView({
       <AlertDialog open={!!deleteTarget} onOpenChange={o => { if (!o) setDeleteTarget(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete {deleteTarget?.type}?</AlertDialogTitle>
-            <AlertDialogDescription>"{deleteTarget?.name}" will be permanently deleted.</AlertDialogDescription>
+            <AlertDialogTitle>{t("admin_academy.delete_item_title", { type: deleteTypeLabel })}</AlertDialogTitle>
+            <AlertDialogDescription>"{deleteTarget?.name}" {t("admin_academy.delete_item_desc")}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t("admin_academy.cancel")}</AlertDialogCancel>
             <AlertDialogAction className="bg-destructive text-destructive-foreground" onClick={() => {
               if (!deleteTarget) return;
               if (deleteTarget.type === "module") deleteMod({ id: deleteTarget.id });
               if (deleteTarget.type === "lesson") deleteLesson({ id: deleteTarget.id });
-            }}>Delete</AlertDialogAction>
+            }}>{t("admin_academy.delete")}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
       <Button variant="ghost" size="sm" className="gap-1.5 -ml-1" onClick={onBack}>
-        <ArrowLeft className="w-4 h-4" /> Back to Courses
+        <ArrowLeft className="w-4 h-4" /> {t("admin_academy.back_to_courses")}
       </Button>
 
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-bold text-foreground">{titleEn}</h2>
-          <p className="text-sm text-muted-foreground">{course.moduleCount} modules · {course.lessonCount} lessons</p>
+          <p className="text-sm text-muted-foreground">
+            {t("admin_academy.modules_lessons", { modules: course.moduleCount, lessons: course.lessonCount })}
+          </p>
         </div>
         <Button size="sm" className="gap-1.5" onClick={() => setAddingModule(true)}>
-          <Plus className="w-4 h-4" /> Add Module
+          <Plus className="w-4 h-4" /> {t("admin_academy.add_module")}
         </Button>
       </div>
 
@@ -479,7 +495,7 @@ function CourseDetailView({
           <CardContent className="p-3 flex gap-2">
             <Input
               autoFocus
-              placeholder="Module title (English)…"
+              placeholder={t("admin_academy.module_placeholder")}
               value={newModuleTitle}
               onChange={e => setNewModuleTitle(e.target.value)}
               onKeyDown={e => {
@@ -492,9 +508,9 @@ function CourseDetailView({
             <Button size="sm" disabled={creatingMod || !newModuleTitle.trim()} onClick={() =>
               createMod({ data: { courseId, title: mlObj(["en"], newModuleTitle.trim()), order: (course.modules?.length ?? 0) + 1 } })
             }>
-              {creatingMod ? <Loader2 className="w-4 h-4 animate-spin" /> : "Add"}
+              {creatingMod ? <Loader2 className="w-4 h-4 animate-spin" /> : t("admin_academy.add")}
             </Button>
-            <Button variant="ghost" size="sm" onClick={() => { setAddingModule(false); setNewModuleTitle(""); }}>Cancel</Button>
+            <Button variant="ghost" size="sm" onClick={() => { setAddingModule(false); setNewModuleTitle(""); }}>{t("admin_academy.cancel")}</Button>
           </CardContent>
         </Card>
       )}
@@ -502,7 +518,7 @@ function CourseDetailView({
       {(course.modules ?? []).length === 0 ? (
         <div className="text-center py-12 text-muted-foreground">
           <BookOpen className="w-8 h-8 mx-auto mb-2 opacity-30" />
-          <p>No modules yet — add one to get started</p>
+          <p>{t("admin_academy.no_modules")}</p>
         </div>
       ) : (
         (course.modules ?? []).map((mod) => {
@@ -529,10 +545,13 @@ function CourseDetailView({
                     ) : (
                       <span className="font-semibold text-sm text-foreground">{modTitle}</span>
                     )}
-                    <span className="text-xs text-muted-foreground ml-1">({mod.lessons.length} lessons)</span>
+                    <span className="text-xs text-muted-foreground ml-1">
+                      {t("admin_academy.module_lesson_count", { count: mod.lessons.length })}
+                    </span>
                   </button>
                   <div className="flex gap-1">
-                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setModuleEditId(mod.id); setModuleTitle(modTitle); }}>
+                    <Button variant="ghost" size="icon" className="h-7 w-7"
+                      onClick={() => { setModuleEditId(mod.id); setModuleTitle(modTitle); }}>
                       <Pencil className="w-3 h-3" />
                     </Button>
                     <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive"
@@ -553,7 +572,7 @@ function CourseDetailView({
                           <div className="flex items-center gap-2 flex-1 min-w-0">
                             <span className="text-sm font-medium text-foreground truncate">{lTitle}</span>
                             <span className={`text-xs px-1.5 py-0.5 rounded-full ${lesson.isPublished ? "bg-success/15 text-success" : "bg-muted text-muted-foreground"}`}>
-                              {lesson.isPublished ? "Published" : "Draft"}
+                              {lesson.isPublished ? t("admin_academy.published_badge") : t("admin_academy.draft_badge")}
                             </span>
                             {lesson.durationSeconds > 0 && (
                               <span className="text-xs text-muted-foreground">{fmtDuration(lesson.durationSeconds)}</span>
@@ -575,7 +594,7 @@ function CourseDetailView({
                   </div>
                   <Button size="sm" variant="outline" className="gap-1.5 w-full"
                     onClick={() => setLessonModal({ open: true, moduleId: mod.id })}>
-                    <Plus className="w-3.5 h-3.5" /> Add Lesson
+                    <Plus className="w-3.5 h-3.5" /> {t("admin_academy.add_lesson")}
                   </Button>
                 </CardContent>
               )}
@@ -587,9 +606,10 @@ function CourseDetailView({
   );
 }
 
-// ─── Main Page ────────────────────────────────────────────────────────────────
+// ─── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function AdminAcademy() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
@@ -605,19 +625,25 @@ export default function AdminAcademy() {
 
   const { mutate: deleteCourse } = useDeleteAdminCourse({
     mutation: {
-      onSuccess: () => { toast({ title: "Course deleted" }); invalidate(); setDeleteId(null); },
+      onSuccess: () => { toast({ title: t("admin_academy.toast_course_deleted") }); invalidate(); setDeleteId(null); },
     },
   });
 
   const { mutate: duplicate } = useDuplicateAdminCourse({
     mutation: {
-      onSuccess: () => { toast({ title: "Course duplicated as draft" }); invalidate(); },
+      onSuccess: () => { toast({ title: t("admin_academy.toast_course_dup") }); invalidate(); },
     },
   });
 
   if (selectedCourseId) {
     return <CourseDetailView courseId={selectedCourseId} onBack={() => setSelectedCourseId(null)} />;
   }
+
+  const filterLabels: Record<string, string> = {
+    all: t("admin_academy.filter_all"),
+    published: t("admin_academy.filter_published"),
+    draft: t("admin_academy.filter_draft"),
+  };
 
   return (
     <div className="space-y-5">
@@ -630,56 +656,57 @@ export default function AdminAcademy() {
       <AlertDialog open={!!deleteId} onOpenChange={o => { if (!o) setDeleteId(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete course?</AlertDialogTitle>
-            <AlertDialogDescription>This will permanently delete the course and all its modules and lessons.</AlertDialogDescription>
+            <AlertDialogTitle>{t("admin_academy.delete_course_title")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("admin_academy.delete_course_desc")}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction className="bg-destructive text-destructive-foreground" onClick={() => deleteId && deleteCourse({ id: deleteId })}>Delete</AlertDialogAction>
+            <AlertDialogCancel>{t("admin_academy.cancel")}</AlertDialogCancel>
+            <AlertDialogAction className="bg-destructive text-destructive-foreground"
+              onClick={() => deleteId && deleteCourse({ id: deleteId })}>
+              {t("admin_academy.delete")}
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Academy Manager</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Manage courses, modules, and lessons</p>
+          <h1 className="text-2xl font-bold text-foreground">{t("admin_academy.title")}</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">{t("admin_academy.subtitle")}</p>
         </div>
         <Button className="gap-1.5" onClick={() => setCourseModal({ open: true })}>
-          <Plus className="w-4 h-4" /> New Course
+          <Plus className="w-4 h-4" /> {t("admin_academy.new_course")}
         </Button>
       </div>
 
-      {/* Filters */}
       <div className="flex gap-3 items-center flex-wrap">
         <Input
           className="max-w-xs"
-          placeholder="Search courses…"
+          placeholder={t("admin_academy.search_placeholder")}
           value={search}
           onChange={e => setSearch(e.target.value)}
         />
         <div className="flex gap-1">
           {["all", "published", "draft"].map(s => (
             <button key={s} onClick={() => setStatusFilter(s)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium capitalize transition-colors ${statusFilter === s ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}>
-              {s === "all" ? "All" : s}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${statusFilter === s ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}>
+              {filterLabels[s] ?? s}
             </button>
           ))}
         </div>
       </div>
 
-      {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: "Total Courses", value: courses.length },
-          { label: "Published", value: courses.filter(c => c.isPublished).length },
-          { label: "Drafts", value: courses.filter(c => !c.isPublished).length },
-          { label: "Total Lessons", value: courses.reduce((s, c) => s + c.lessonCount, 0) },
+          { labelKey: "admin_academy.stat_total",     value: courses.length },
+          { labelKey: "admin_academy.stat_published",  value: courses.filter(c => c.isPublished).length },
+          { labelKey: "admin_academy.stat_drafts",     value: courses.filter(c => !c.isPublished).length },
+          { labelKey: "admin_academy.stat_lessons",    value: courses.reduce((s, c) => s + c.lessonCount, 0) },
         ].map(s => (
-          <Card key={s.label}>
+          <Card key={s.labelKey}>
             <CardContent className="p-4 text-center">
               <p className="text-2xl font-bold text-foreground">{s.value}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">{s.label}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{t(s.labelKey as Parameters<typeof t>[0])}</p>
             </CardContent>
           </Card>
         ))}
@@ -691,9 +718,9 @@ export default function AdminAcademy() {
         <Card>
           <CardContent className="py-16 text-center">
             <GraduationCap className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
-            <p className="font-medium text-muted-foreground">No courses found</p>
+            <p className="font-medium text-muted-foreground">{t("admin_academy.no_courses")}</p>
             <Button size="sm" className="gap-1.5 mt-3" onClick={() => setCourseModal({ open: true })}>
-              <Plus className="w-4 h-4" /> Create first course
+              <Plus className="w-4 h-4" /> {t("admin_academy.create_first")}
             </Button>
           </CardContent>
         </Card>
@@ -717,20 +744,21 @@ export default function AdminAcademy() {
                       {course.isFeatured && <Star className="w-3.5 h-3.5 text-warning fill-warning" />}
                       <Badge className={`text-xs ${LEVEL_COLORS[course.level] ?? ""}`}>{course.level}</Badge>
                       <Badge className={`text-xs ${course.isPublished ? "bg-success/15 text-success" : "bg-muted text-muted-foreground"}`}>
-                        {course.isPublished ? "Published" : "Draft"}
+                        {course.isPublished ? t("admin_academy.published_badge") : t("admin_academy.draft_badge")}
                       </Badge>
                     </div>
                     <p className="text-xs text-muted-foreground mt-0.5">
                       {course.category}
                       {course.instructorName ? ` · ${course.instructorName}` : ""}
-                      {` · ${course.moduleCount} modules · ${course.lessonCount} lessons`}
+                      {` · `}
+                      {t("admin_academy.modules_lessons", { modules: course.moduleCount, lessons: course.lessonCount })}
                       {course.estimatedDuration ? ` · ${course.estimatedDuration}` : ""}
                     </p>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
                     <Button variant="outline" size="sm" className="gap-1.5 hidden sm:flex"
                       onClick={() => setSelectedCourseId(course.id)}>
-                      <BookOpen className="w-3.5 h-3.5" /> Manage
+                      <BookOpen className="w-3.5 h-3.5" /> {t("admin_academy.manage")}
                     </Button>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -738,16 +766,16 @@ export default function AdminAcademy() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem onClick={() => setSelectedCourseId(course.id)}>
-                          <BookOpen className="w-4 h-4 mr-2" /> Manage modules
+                          <BookOpen className="w-4 h-4 mr-2" /> {t("admin_academy.manage_modules")}
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => setCourseModal({ open: true, course })}>
-                          <Pencil className="w-4 h-4 mr-2" /> Edit
+                          <Pencil className="w-4 h-4 mr-2" /> {t("admin_academy.edit")}
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => duplicate({ id: course.id })}>
-                          <Copy className="w-4 h-4 mr-2" /> Duplicate
+                          <Copy className="w-4 h-4 mr-2" /> {t("admin_academy.duplicate")}
                         </DropdownMenuItem>
                         <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setDeleteId(course.id)}>
-                          <Trash2 className="w-4 h-4 mr-2" /> Delete
+                          <Trash2 className="w-4 h-4 mr-2" /> {t("admin_academy.delete")}
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>

@@ -1,9 +1,10 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   useListResources, useCreateResource, useUpdateResource, useDeleteResource,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -32,23 +33,19 @@ type ResourceItem = {
 };
 
 const CATEGORIES = [
-  { value: "pdf", label: "PDF", icon: FileText, color: "text-destructive" },
-  { value: "marketing", label: "Marketing", icon: Megaphone, color: "text-info" },
-  { value: "template", label: "Template", icon: Layout, color: "text-primary" },
-  { value: "contract", label: "Contract", icon: Scroll, color: "text-warning" },
+  { value: "pdf",       label: "PDF",       icon: FileText,   color: "text-destructive" },
+  { value: "marketing", label: "Marketing", icon: Megaphone,  color: "text-info" },
+  { value: "template",  label: "Template",  icon: Layout,     color: "text-primary" },
+  { value: "contract",  label: "Contract",  icon: Scroll,     color: "text-warning" },
   { value: "checklist", label: "Checklist", icon: ListChecks, color: "text-success" },
-  { value: "guide", label: "Guide", icon: BookMarked, color: "text-muted-foreground" },
+  { value: "guide",     label: "Guide",     icon: BookMarked, color: "text-muted-foreground" },
 ];
 
 const LANGUAGES = [
-  { value: "en", label: "English" },
-  { value: "fr", label: "Français" },
-  { value: "de", label: "Deutsch" },
-  { value: "nl", label: "Nederlands" },
-  { value: "es", label: "Español" },
-  { value: "it", label: "Italiano" },
-  { value: "pt", label: "Português" },
-  { value: "pl", label: "Polski" },
+  { value: "en", label: "English" }, { value: "fr", label: "Français" },
+  { value: "de", label: "Deutsch" }, { value: "nl", label: "Nederlands" },
+  { value: "es", label: "Español" }, { value: "it", label: "Italiano" },
+  { value: "pt", label: "Português" }, { value: "pl", label: "Polski" },
 ];
 
 function catCfg(cat: string) {
@@ -62,37 +59,33 @@ function ResourceFormModal({
 }: {
   open: boolean; onClose: () => void; resource?: ResourceItem | null;
 }) {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const qc = useQueryClient();
   const isEdit = !!resource;
 
   const [form, setForm] = useState(resource ? {
-    title: resource.title,
-    category: resource.category,
-    language: resource.language,
-    fileUrl: resource.fileUrl,
-    description: resource.description ?? "",
-    status: resource.status,
+    title: resource.title, category: resource.category, language: resource.language,
+    fileUrl: resource.fileUrl, description: resource.description ?? "", status: resource.status,
   } : { ...EMPTY_FORM });
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ["/api/admin/resources"] });
 
   const { mutate: create, isPending: creating } = useCreateResource({
     mutation: {
-      onSuccess: () => { toast({ title: "Resource created" }); invalidate(); onClose(); },
-      onError: () => toast({ title: "Failed to create resource", variant: "destructive" }),
+      onSuccess: () => { toast({ title: t("admin_resources.toast_created") }); invalidate(); onClose(); },
+      onError: () => toast({ title: t("admin_resources.toast_create_failed"), variant: "destructive" }),
     },
   });
 
   const { mutate: update, isPending: updating } = useUpdateResource({
     mutation: {
-      onSuccess: () => { toast({ title: "Resource updated" }); invalidate(); onClose(); },
-      onError: () => toast({ title: "Failed to update resource", variant: "destructive" }),
+      onSuccess: () => { toast({ title: t("admin_resources.toast_updated") }); invalidate(); onClose(); },
+      onError: () => toast({ title: t("admin_resources.toast_update_failed"), variant: "destructive" }),
     },
   });
 
   const isPending = creating || updating;
-
   const set = (k: keyof typeof EMPTY_FORM) => (v: string) => setForm(f => ({ ...f, [k]: v }));
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -100,14 +93,7 @@ function ResourceFormModal({
     if (!form.title || !form.category || !form.language || !form.fileUrl) return;
     const category = form.category as "pdf" | "marketing" | "template" | "contract" | "checklist" | "guide";
     const status = form.status as "draft" | "published";
-    const payload = {
-      title: form.title,
-      category,
-      language: form.language,
-      fileUrl: form.fileUrl,
-      description: form.description || null,
-      status,
-    };
+    const payload = { title: form.title, category, language: form.language, fileUrl: form.fileUrl, description: form.description || null, status };
     if (isEdit) update({ id: resource!.id, data: payload });
     else create({ data: payload });
   };
@@ -116,64 +102,60 @@ function ResourceFormModal({
     <Dialog open={open} onOpenChange={o => { if (!o) onClose(); }}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>{isEdit ? "Edit Resource" : "Add Resource"}</DialogTitle>
+          <DialogTitle>{isEdit ? t("admin_resources.form_edit_title") : t("admin_resources.form_add_title")}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 pt-1">
           <div className="space-y-1.5">
-            <Label>Title <span className="text-destructive">*</span></Label>
-            <Input value={form.title} onChange={e => set("title")(e.target.value)} placeholder="Resource title…" required />
+            <Label>{t("admin_resources.label_title_field")} <span className="text-destructive">*</span></Label>
+            <Input value={form.title} onChange={e => set("title")(e.target.value)} placeholder={t("admin_resources.placeholder_title")} required />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label>Category <span className="text-destructive">*</span></Label>
+              <Label>{t("admin_resources.label_category")} <span className="text-destructive">*</span></Label>
               <Select value={form.category} onValueChange={set("category")}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {CATEGORIES.map(c => (
-                    <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
-                  ))}
+                  {CATEGORIES.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label>Language <span className="text-destructive">*</span></Label>
+              <Label>{t("admin_resources.label_language")} <span className="text-destructive">*</span></Label>
               <Select value={form.language} onValueChange={set("language")}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {LANGUAGES.map(l => (
-                    <SelectItem key={l.value} value={l.value}>{l.label}</SelectItem>
-                  ))}
+                  {LANGUAGES.map(l => <SelectItem key={l.value} value={l.value}>{l.label}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
           </div>
 
           <div className="space-y-1.5">
-            <Label>File URL <span className="text-destructive">*</span></Label>
-            <Input value={form.fileUrl} onChange={e => set("fileUrl")(e.target.value)} placeholder="https://…" required />
+            <Label>{t("admin_resources.label_file_url")} <span className="text-destructive">*</span></Label>
+            <Input value={form.fileUrl} onChange={e => set("fileUrl")(e.target.value)} placeholder={t("admin_resources.placeholder_url")} required />
           </div>
 
           <div className="space-y-1.5">
-            <Label>Description</Label>
-            <Textarea rows={2} value={form.description} onChange={e => set("description")(e.target.value)} placeholder="Brief description…" />
+            <Label>{t("admin_resources.label_description")}</Label>
+            <Textarea rows={2} value={form.description} onChange={e => set("description")(e.target.value)} placeholder={t("admin_resources.placeholder_desc")} />
           </div>
 
           <div className="space-y-1.5">
-            <Label>Status</Label>
+            <Label>{t("admin_resources.label_status")}</Label>
             <Select value={form.status} onValueChange={set("status")}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="draft">Draft</SelectItem>
-                <SelectItem value="published">Published</SelectItem>
+                <SelectItem value="draft">{t("admin_resources.filter_draft")}</SelectItem>
+                <SelectItem value="published">{t("admin_resources.filter_published")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <DialogFooter className="pt-2">
-            <Button type="button" variant="outline" onClick={onClose} disabled={isPending}>Cancel</Button>
+            <Button type="button" variant="outline" onClick={onClose} disabled={isPending}>{t("admin_resources.cancel_btn")}</Button>
             <Button type="submit" disabled={isPending || !form.title || !form.fileUrl}>
-              {isPending ? <><Loader2 className="w-4 h-4 mr-1.5 animate-spin" />Saving…</> : isEdit ? "Save Changes" : "Add Resource"}
+              {isPending ? <><Loader2 className="w-4 h-4 mr-1.5 animate-spin" />{t("admin_resources.saving")}</> : isEdit ? t("admin_resources.save_changes") : t("admin_resources.add_resource_btn")}
             </Button>
           </DialogFooter>
         </form>
@@ -183,6 +165,7 @@ function ResourceFormModal({
 }
 
 export default function AdminResources() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
@@ -203,7 +186,7 @@ export default function AdminResources() {
 
   const { mutate: deleteResource } = useDeleteResource({
     mutation: {
-      onSuccess: () => { toast({ title: "Resource deleted" }); qc.invalidateQueries({ queryKey: ["/api/admin/resources"] }); setDeleteId(null); },
+      onSuccess: () => { toast({ title: t("admin_resources.toast_deleted") }); qc.invalidateQueries({ queryKey: ["/api/admin/resources"] }); setDeleteId(null); },
     },
   });
 
@@ -214,27 +197,28 @@ export default function AdminResources() {
       <AlertDialog open={!!deleteId} onOpenChange={o => { if (!o) setDeleteId(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete resource?</AlertDialogTitle>
-            <AlertDialogDescription>This resource will be permanently removed.</AlertDialogDescription>
+            <AlertDialogTitle>{t("admin_resources.delete_title")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("admin_resources.delete_desc")}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction className="bg-destructive text-destructive-foreground" onClick={() => deleteId && deleteResource({ id: deleteId })}>Delete</AlertDialogAction>
+            <AlertDialogCancel>{t("admin_resources.cancel")}</AlertDialogCancel>
+            <AlertDialogAction className="bg-destructive text-destructive-foreground" onClick={() => deleteId && deleteResource({ id: deleteId })}>
+              {t("admin_resources.delete_btn")}
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Resource Library</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">PDFs, templates, contracts, and marketing assets</p>
+          <h1 className="text-2xl font-bold text-foreground">{t("admin_resources.title")}</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">{t("admin_resources.subtitle")}</p>
         </div>
         <Button className="gap-1.5" onClick={() => setModal({ open: true })}>
-          <Plus className="w-4 h-4" /> Add Resource
+          <Plus className="w-4 h-4" /> {t("admin_resources.add_btn")}
         </Button>
       </div>
 
-      {/* KPI row */}
       <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
         {CATEGORIES.map(cat => {
           const CatIcon = cat.icon;
@@ -251,26 +235,25 @@ export default function AdminResources() {
         })}
       </div>
 
-      {/* Filters */}
       <div className="flex gap-3 flex-wrap items-center">
         <Input
           className="max-w-xs"
-          placeholder="Search resources…"
+          placeholder={t("admin_resources.search_placeholder")}
           value={search}
           onChange={e => setSearch(e.target.value)}
         />
         <Select value={langFilter} onValueChange={setLangFilter}>
-          <SelectTrigger className="w-36"><SelectValue placeholder="Language" /></SelectTrigger>
+          <SelectTrigger className="w-36"><SelectValue placeholder={t("admin_resources.all_languages")} /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Languages</SelectItem>
+            <SelectItem value="all">{t("admin_resources.all_languages")}</SelectItem>
             {LANGUAGES.map(l => <SelectItem key={l.value} value={l.value}>{l.label}</SelectItem>)}
           </SelectContent>
         </Select>
         <div className="flex gap-1">
           {["all", "published", "draft"].map(s => (
             <button key={s} onClick={() => setStatusFilter(s)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium capitalize transition-colors ${statusFilter === s ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}>
-              {s === "all" ? "All" : s}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${statusFilter === s ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}>
+              {s === "all" ? t("admin_resources.filter_all") : s === "published" ? t("admin_resources.filter_published") : t("admin_resources.filter_draft")}
             </button>
           ))}
         </div>
@@ -282,9 +265,9 @@ export default function AdminResources() {
         <Card>
           <CardContent className="py-16 text-center">
             <FileCheck className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
-            <p className="font-medium text-muted-foreground">No resources found</p>
+            <p className="font-medium text-muted-foreground">{t("admin_resources.no_resources")}</p>
             <Button size="sm" className="gap-1.5 mt-3" onClick={() => setModal({ open: true })}>
-              <Plus className="w-4 h-4" /> Add first resource
+              <Plus className="w-4 h-4" /> {t("admin_resources.add_first")}
             </Button>
           </CardContent>
         </Card>
@@ -294,10 +277,10 @@ export default function AdminResources() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border text-xs text-muted-foreground">
-                  <th className="text-left px-4 py-3 font-medium">Title</th>
-                  <th className="text-left px-4 py-3 font-medium hidden sm:table-cell">Category</th>
-                  <th className="text-left px-4 py-3 font-medium hidden md:table-cell">Language</th>
-                  <th className="text-left px-4 py-3 font-medium">Status</th>
+                  <th className="text-left px-4 py-3 font-medium">{t("admin_resources.col_title")}</th>
+                  <th className="text-left px-4 py-3 font-medium hidden sm:table-cell">{t("admin_resources.col_category")}</th>
+                  <th className="text-left px-4 py-3 font-medium hidden md:table-cell">{t("admin_resources.col_language")}</th>
+                  <th className="text-left px-4 py-3 font-medium">{t("admin_resources.col_status")}</th>
                   <th className="px-4 py-3" />
                 </tr>
               </thead>
@@ -325,7 +308,7 @@ export default function AdminResources() {
                       <td className="px-4 py-3 hidden md:table-cell text-muted-foreground text-xs">{langLabel}</td>
                       <td className="px-4 py-3">
                         <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${item.status === "published" ? "bg-success/15 text-success" : "bg-muted text-muted-foreground"}`}>
-                          {item.status === "published" ? "Published" : "Draft"}
+                          {item.status === "published" ? t("admin_resources.status_published") : t("admin_resources.status_draft")}
                         </span>
                       </td>
                       <td className="px-4 py-3">

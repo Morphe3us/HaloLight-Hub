@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useRoute, Link, useLocation } from "wouter";
+import { useTranslation } from "react-i18next";
 import { useGetContract, useUpdateContractStatus, useDeleteContract, useUpdateContract } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -10,17 +11,19 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Printer, Building2, Mail, CalendarDays, Edit2, FileSignature } from "lucide-react";
+import { ArrowLeft, Printer, Building2, Mail, Edit2, FileSignature } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
-  draft: { label: "Draft", color: "bg-slate-100 text-slate-700 border-slate-200" },
-  sent: { label: "Sent", color: "bg-info/10 text-info border-info/30" },
-  signed: { label: "Signed", color: "bg-success/8 text-success border-success/20" },
-  active: { label: "Active", color: "bg-success/10 text-success border-green-200" },
-  expired: { label: "Expired", color: "bg-warning/8 text-warning border-warning/20" },
-  cancelled: { label: "Cancelled", color: "bg-destructive/10 text-destructive border-destructive/30" },
+const STATUS_COLORS: Record<string, string> = {
+  draft: "bg-slate-100 text-slate-700 border-slate-200",
+  sent: "bg-info/10 text-info border-info/30",
+  signed: "bg-success/8 text-success border-success/20",
+  active: "bg-success/10 text-success border-green-200",
+  expired: "bg-warning/8 text-warning border-warning/20",
+  cancelled: "bg-destructive/10 text-destructive border-destructive/30",
 };
+
+const STATUS_KEYS = ["draft", "sent", "signed", "active", "expired", "cancelled"];
 
 function formatCurrency(val: string | number) {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 0 }).format(Number(val));
@@ -34,6 +37,7 @@ function formatDate(d: string | null | undefined) {
 function PrintButton({ contractNumber, title, clientName, content, value }: {
   contractNumber: string; title: string; clientName: string; content: string; value: string;
 }) {
+  const { t } = useTranslation();
   const handlePrint = () => {
     const html = `<!DOCTYPE html><html><head><title>${contractNumber}</title>
     <style>
@@ -61,13 +65,14 @@ function PrintButton({ contractNumber, title, clientName, content, value }: {
     const w = window.open("", "_blank");
     if (w) { w.document.write(html); w.document.close(); w.focus(); w.print(); }
   };
-  return <Button variant="outline" onClick={handlePrint} className="gap-2"><Printer className="w-4 h-4" /> Print / PDF</Button>;
+  return <Button variant="outline" onClick={handlePrint} className="gap-2"><Printer className="w-4 h-4" /> {t("quotes.print_btn")}</Button>;
 }
 
 export default function ContractDetail() {
   const [, params] = useRoute("/contracts/:id");
   const id = params?.id ?? "";
   const [, navigate] = useLocation();
+  const { t } = useTranslation();
   const { toast } = useToast();
   const qc = useQueryClient();
 
@@ -80,19 +85,19 @@ export default function ContractDetail() {
 
   const statusMutation = useUpdateContractStatus({
     mutation: {
-      onSuccess: () => { qc.invalidateQueries({ queryKey: ["contract", id] }); qc.invalidateQueries({ queryKey: ["contracts"] }); toast({ title: "Status updated" }); },
+      onSuccess: () => { qc.invalidateQueries({ queryKey: ["contract", id] }); qc.invalidateQueries({ queryKey: ["contracts"] }); toast({ title: t("contracts.status_updated") }); },
     },
   });
 
   const updateMutation = useUpdateContract({
     mutation: {
-      onSuccess: () => { qc.invalidateQueries({ queryKey: ["contract", id] }); setEditing(false); toast({ title: "Contract updated" }); },
+      onSuccess: () => { qc.invalidateQueries({ queryKey: ["contract", id] }); setEditing(false); toast({ title: t("contracts.contract_updated") }); },
     },
   });
 
   const deleteMutation = useDeleteContract({
     mutation: {
-      onSuccess: () => { qc.invalidateQueries({ queryKey: ["contracts"] }); navigate("/contracts"); toast({ title: "Contract deleted" }); },
+      onSuccess: () => { qc.invalidateQueries({ queryKey: ["contracts"] }); navigate("/contracts"); toast({ title: t("contracts.contract_deleted") }); },
     },
   });
 
@@ -116,91 +121,87 @@ export default function ContractDetail() {
     });
   };
 
-  if (isLoading) return <div className="flex items-center justify-center h-40 text-muted-foreground">Loading…</div>;
-  if (!contract) return <div className="p-8 text-muted-foreground">Contract not found.</div>;
+  if (isLoading) return <div className="flex items-center justify-center h-40 text-muted-foreground">{t("contracts.loading")}</div>;
+  if (!contract) return <div className="p-8 text-muted-foreground">{t("contracts.not_found")}</div>;
 
-  const cfg = STATUS_CONFIG[contract.status];
+  const color = STATUS_COLORS[contract.status];
 
   return (
     <div className="space-y-6 max-w-4xl">
-      {/* Header */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-3">
           <Link href="/contracts"><Button variant="ghost" size="icon"><ArrowLeft className="w-4 h-4" /></Button></Link>
           <div>
             <div className="flex items-center gap-2.5 flex-wrap">
               <span className="font-mono text-lg font-bold">{contract.contractNumber}</span>
-              {cfg && <Badge variant="outline" className={cn("text-xs", cfg.color)}>{cfg.label}</Badge>}
+              {color && <Badge variant="outline" className={cn("text-xs", color)}>{t(`contracts.status_${contract.status}`)}</Badge>}
             </div>
             <p className="text-muted-foreground text-sm mt-0.5">{contract.title}</p>
           </div>
         </div>
         <div className="flex gap-2 flex-wrap">
           <PrintButton contractNumber={contract.contractNumber} title={contract.title} clientName={contract.clientName} content={contract.content} value={contract.value} />
-          <Button variant="outline" onClick={startEdit} className="gap-2"><Edit2 className="w-4 h-4" /> Edit</Button>
+          <Button variant="outline" onClick={startEdit} className="gap-2"><Edit2 className="w-4 h-4" /> {t("common.edit")}</Button>
           <Select value={contract.status} onValueChange={(s) => statusMutation.mutate({ id, data: { status: s as any } })}>
             <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
             <SelectContent>
-              {Object.entries(STATUS_CONFIG).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}
+              {STATUS_KEYS.map((k) => <SelectItem key={k} value={k}>{t(`contracts.status_${k}`)}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>
       </div>
 
-      {/* Meta Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="rounded-xl border bg-card p-5 space-y-3">
-          <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Client</h3>
+          <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">{t("contracts.client_section")}</h3>
           <div className="space-y-2 text-sm">
             <div className="flex items-center gap-2"><Building2 className="w-4 h-4 text-muted-foreground" /><span className="font-medium">{contract.clientName}</span></div>
             {contract.clientEmail && <div className="flex items-center gap-2"><Mail className="w-4 h-4 text-muted-foreground" /><a href={`mailto:${contract.clientEmail}`} className="hover:text-primary">{contract.clientEmail}</a></div>}
           </div>
         </div>
         <div className="rounded-xl border bg-card p-5 space-y-3">
-          <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Dates</h3>
+          <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">{t("contracts.dates_section")}</h3>
           <div className="space-y-1.5 text-sm">
-            <div className="flex justify-between"><span className="text-muted-foreground">Created</span><span>{formatDate(contract.createdAt)}</span></div>
-            {contract.sentAt && <div className="flex justify-between"><span className="text-muted-foreground">Sent</span><span>{formatDate(contract.sentAt)}</span></div>}
-            {contract.signedAt && <div className="flex justify-between"><span className="text-muted-foreground">Signed</span><span className="text-success font-medium">{formatDate(contract.signedAt)}</span></div>}
-            {contract.startDate && <div className="flex justify-between"><span className="text-muted-foreground">Start</span><span>{formatDate(contract.startDate)}</span></div>}
-            {contract.endDate && <div className="flex justify-between"><span className="text-muted-foreground">End</span><span>{formatDate(contract.endDate)}</span></div>}
+            <div className="flex justify-between"><span className="text-muted-foreground">{t("common.created")}</span><span>{formatDate(contract.createdAt)}</span></div>
+            {contract.sentAt && <div className="flex justify-between"><span className="text-muted-foreground">{t("contracts.sent_label")}</span><span>{formatDate(contract.sentAt)}</span></div>}
+            {contract.signedAt && <div className="flex justify-between"><span className="text-muted-foreground">{t("contracts.signed_label2")}</span><span className="text-success font-medium">{formatDate(contract.signedAt)}</span></div>}
+            {contract.startDate && <div className="flex justify-between"><span className="text-muted-foreground">{t("contracts.start_label")}</span><span>{formatDate(contract.startDate)}</span></div>}
+            {contract.endDate && <div className="flex justify-between"><span className="text-muted-foreground">{t("contracts.end_label")}</span><span>{formatDate(contract.endDate)}</span></div>}
           </div>
         </div>
         <div className="rounded-xl border bg-card p-5 space-y-3">
-          <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Value</h3>
+          <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">{t("contracts.value_section")}</h3>
           <p className="text-2xl font-bold text-success">{formatCurrency(contract.value)}</p>
           {contract.notes && <p className="text-xs text-muted-foreground">{contract.notes}</p>}
         </div>
       </div>
 
-      {/* Contract Content */}
       <div className="rounded-xl border bg-card overflow-hidden">
         <div className="px-5 py-4 border-b bg-muted/30 flex items-center gap-2">
           <FileSignature className="w-4 h-4 text-muted-foreground" />
-          <h3 className="font-semibold">Contract Document</h3>
+          <h3 className="font-semibold">{t("contracts.document_section")}</h3>
         </div>
         <div className="p-6">
           <pre className="text-sm text-foreground whitespace-pre-wrap font-sans leading-relaxed">{contract.content}</pre>
         </div>
       </div>
 
-      {/* Edit Dialog */}
       <Dialog open={editing} onOpenChange={setEditing}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>Edit Contract</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{t("contracts.edit_contract")}</DialogTitle></DialogHeader>
           <div className="space-y-4 py-2">
             <div className="grid grid-cols-2 gap-4">
-              <div className="col-span-2 space-y-1.5"><Label>Title</Label><Input value={editForm.title ?? ""} onChange={(e) => setEditForm({ ...editForm, title: e.target.value })} /></div>
-              <div className="space-y-1.5"><Label>Client Name</Label><Input value={editForm.clientName ?? ""} onChange={(e) => setEditForm({ ...editForm, clientName: e.target.value })} /></div>
-              <div className="space-y-1.5"><Label>Client Email</Label><Input value={editForm.clientEmail ?? ""} onChange={(e) => setEditForm({ ...editForm, clientEmail: e.target.value })} /></div>
-              <div className="space-y-1.5"><Label>Value ($)</Label><Input type="number" value={editForm.value ?? ""} onChange={(e) => setEditForm({ ...editForm, value: e.target.value })} /></div>
+              <div className="col-span-2 space-y-1.5"><Label>{t("contracts.title_label")}</Label><Input value={editForm.title ?? ""} onChange={(e) => setEditForm({ ...editForm, title: e.target.value })} /></div>
+              <div className="space-y-1.5"><Label>{t("contracts.client_name_label")}</Label><Input value={editForm.clientName ?? ""} onChange={(e) => setEditForm({ ...editForm, clientName: e.target.value })} /></div>
+              <div className="space-y-1.5"><Label>{t("contracts.client_email_label")}</Label><Input value={editForm.clientEmail ?? ""} onChange={(e) => setEditForm({ ...editForm, clientEmail: e.target.value })} /></div>
+              <div className="space-y-1.5"><Label>{t("contracts.value_dollar_label")}</Label><Input type="number" value={editForm.value ?? ""} onChange={(e) => setEditForm({ ...editForm, value: e.target.value })} /></div>
             </div>
-            <div className="space-y-1.5"><Label>Content</Label><Textarea value={editForm.content ?? ""} onChange={(e) => setEditForm({ ...editForm, content: e.target.value })} rows={12} className="font-mono text-xs" /></div>
-            <div className="space-y-1.5"><Label>Notes</Label><Textarea value={editForm.notes ?? ""} onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })} rows={2} /></div>
+            <div className="space-y-1.5"><Label>{t("contracts.content_label")}</Label><Textarea value={editForm.content ?? ""} onChange={(e) => setEditForm({ ...editForm, content: e.target.value })} rows={12} className="font-mono text-xs" /></div>
+            <div className="space-y-1.5"><Label>{t("contracts.notes_label")}</Label><Textarea value={editForm.notes ?? ""} onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })} rows={2} /></div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditing(false)}>Cancel</Button>
-            <Button onClick={saveEdit} disabled={updateMutation.isPending}>{updateMutation.isPending ? "Saving…" : "Save Changes"}</Button>
+            <Button variant="outline" onClick={() => setEditing(false)}>{t("common.cancel")}</Button>
+            <Button onClick={saveEdit} disabled={updateMutation.isPending}>{updateMutation.isPending ? t("contracts.saving") : t("contracts.save_changes")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

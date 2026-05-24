@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Link } from "wouter";
 import { useListAdminClients } from "@workspace/api-client-react";
 import { Input } from "@/components/ui/input";
@@ -11,16 +12,23 @@ import {
   Calendar, FileText, LifeBuoy, Lightbulb, TrendingUp, Loader2,
 } from "lucide-react";
 
-const tierConfig: Record<string, { label: string; bg: string; text: string; border: string; icon: React.ComponentType<{ className?: string }> }> = {
-  champion:   { label: "Champion",   bg: "bg-muted",  text: "text-foreground",  border: "border-border", icon: Award },
-  healthy:    { label: "Healthy",    bg: "bg-success/10",   text: "text-success",   border: "border-green-200",  icon: Heart },
-  developing: { label: "Developing", bg: "bg-warning/10",  text: "text-yellow-700",  border: "border-yellow-200", icon: Activity },
-  at_risk:    { label: "At Risk",    bg: "bg-destructive/10",     text: "text-destructive",     border: "border-destructive/30",    icon: AlertTriangle },
+const tierConfig: Record<string, { bg: string; text: string; border: string; icon: React.ComponentType<{ className?: string }> }> = {
+  champion:   { bg: "bg-muted",           text: "text-foreground",  border: "border-border",         icon: Award },
+  healthy:    { bg: "bg-success/10",      text: "text-success",     border: "border-green-200",      icon: Heart },
+  developing: { bg: "bg-warning/10",      text: "text-yellow-700",  border: "border-yellow-200",     icon: Activity },
+  at_risk:    { bg: "bg-destructive/10",  text: "text-destructive", border: "border-destructive/30", icon: AlertTriangle },
 };
 
 function ScoreBadge({ score, tier }: { score?: number | null; tier?: string | null }) {
+  const { t } = useTranslation();
+  const tierLabels: Record<string, string> = {
+    champion:   t("admin_clients.tier_champion"),
+    healthy:    t("admin_clients.tier_healthy"),
+    developing: t("admin_clients.tier_developing"),
+    at_risk:    t("admin_clients.tier_at_risk"),
+  };
   if (score === null || score === undefined || !tier) {
-    return <Badge variant="secondary" className="text-xs">Unscored</Badge>;
+    return <Badge variant="secondary" className="text-xs">{t("admin_clients.unscored")}</Badge>;
   }
   const cfg = tierConfig[tier] ?? tierConfig.developing!;
   const TierIcon = cfg.icon;
@@ -28,12 +36,13 @@ function ScoreBadge({ score, tier }: { score?: number | null; tier?: string | nu
     <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${cfg.bg} ${cfg.text} border ${cfg.border}`}>
       <TierIcon className="w-3 h-3" />
       <span>{score}</span>
-      <span className="opacity-70">· {cfg.label}</span>
+      <span className="opacity-70">· {tierLabels[tier] ?? tier}</span>
     </div>
   );
 }
 
 export default function AdminClients() {
+  const { t } = useTranslation();
   const [search, setSearch] = useState("");
   const [tierFilter, setTierFilter] = useState("all");
 
@@ -50,23 +59,30 @@ export default function AdminClients() {
   });
 
   const stats = {
-    champion: clients.filter((c) => c.tier === "champion").length,
-    healthy: clients.filter((c) => c.tier === "healthy").length,
+    champion:   clients.filter((c) => c.tier === "champion").length,
+    healthy:    clients.filter((c) => c.tier === "healthy").length,
     developing: clients.filter((c) => c.tier === "developing").length,
-    at_risk: clients.filter((c) => c.tier === "at_risk").length,
+    at_risk:    clients.filter((c) => c.tier === "at_risk").length,
+  };
+
+  const tierLabels: Record<string, string> = {
+    champion:   t("admin_clients.tier_champion"),
+    healthy:    t("admin_clients.tier_healthy"),
+    developing: t("admin_clients.tier_developing"),
+    at_risk:    t("admin_clients.tier_at_risk"),
   };
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Client Success</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Monitor health scores, coaching needs, and upsell opportunities</p>
+          <h1 className="text-2xl font-bold text-foreground">{t("admin_clients.title")}</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">{t("admin_clients.subtitle")}</p>
         </div>
         <Link href="/admin/analytics">
           <Button variant="outline" className="gap-2 text-sm">
             <TrendingUp className="w-4 h-4" />
-            Analytics Dashboard
+            {t("admin_clients.analytics_btn")}
           </Button>
         </Link>
       </div>
@@ -86,7 +102,7 @@ export default function AdminClients() {
                   <TierIcon className={`w-4 h-4 ${cfg.text}`} />
                   <span className={`text-2xl font-bold ${cfg.text}`}>{stats[tier]}</span>
                 </div>
-                <p className={`text-xs font-medium ${cfg.text}`}>{cfg.label}</p>
+                <p className={`text-xs font-medium ${cfg.text}`}>{tierLabels[tier]}</p>
               </CardContent>
             </Card>
           );
@@ -97,7 +113,7 @@ export default function AdminClients() {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
-            placeholder="Search clients..."
+            placeholder={t("admin_clients.search_placeholder")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-9"
@@ -105,14 +121,14 @@ export default function AdminClients() {
         </div>
         <Select value={tierFilter} onValueChange={setTierFilter}>
           <SelectTrigger className="w-44">
-            <SelectValue placeholder="All tiers" />
+            <SelectValue placeholder={t("admin_clients.all_tiers")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All tiers</SelectItem>
-            <SelectItem value="champion">Champion</SelectItem>
-            <SelectItem value="healthy">Healthy</SelectItem>
-            <SelectItem value="developing">Developing</SelectItem>
-            <SelectItem value="at_risk">At Risk</SelectItem>
+            <SelectItem value="all">{t("admin_clients.all_tiers")}</SelectItem>
+            <SelectItem value="champion">{t("admin_clients.tier_champion")}</SelectItem>
+            <SelectItem value="healthy">{t("admin_clients.tier_healthy")}</SelectItem>
+            <SelectItem value="developing">{t("admin_clients.tier_developing")}</SelectItem>
+            <SelectItem value="at_risk">{t("admin_clients.tier_at_risk")}</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -125,7 +141,7 @@ export default function AdminClients() {
         <Card>
           <CardContent className="flex flex-col items-center py-16 text-center">
             <Users className="w-12 h-12 text-muted-foreground mb-3" />
-            <p className="text-muted-foreground">No clients found</p>
+            <p className="text-muted-foreground">{t("admin_clients.no_clients")}</p>
           </CardContent>
         </Card>
       ) : (
@@ -157,13 +173,13 @@ export default function AdminClients() {
                       {(client.coachingCount ?? 0) > 0 && (
                         <Badge className="bg-warning/15 text-warning text-xs px-1.5 py-0 border-0 gap-1">
                           <Lightbulb className="w-3 h-3" />
-                          {client.coachingCount} coaching
+                          {t("admin_clients.coaching_badge", { count: client.coachingCount })}
                         </Badge>
                       )}
                       {(client.upsellCount ?? 0) > 0 && (
                         <Badge className="bg-info/15 text-info text-xs px-1.5 py-0 border-0 gap-1">
                           <TrendingUp className="w-3 h-3" />
-                          {client.upsellCount} upsell
+                          {t("admin_clients.upsell_badge", { count: client.upsellCount })}
                         </Badge>
                       )}
                     </div>

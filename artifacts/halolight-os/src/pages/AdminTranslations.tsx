@@ -1,7 +1,7 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   useListTranslations, useEnsureTranslationRecords, useUpdateTranslationRecord,
-  useGetTranslationRecord,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -42,14 +42,6 @@ const CONTENT_TYPES = [
   { value: "ai_knowledge_doc", label: "AI Knowledge Docs" },
 ];
 
-const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
-  draft:        { label: "Draft",        color: "bg-muted text-muted-foreground",       icon: <Clock className="w-3 h-3" /> },
-  needs_review: { label: "Needs Review", color: "bg-warning/10 text-warning border-warning/30", icon: <AlertCircle className="w-3 h-3" /> },
-  approved:     { label: "Approved",     color: "bg-success/10 text-success border-success/30", icon: <CheckCircle2 className="w-3 h-3" /> },
-  published:    { label: "Published",    color: "bg-info/10 text-info border-info/30",  icon: <Globe className="w-3 h-3" /> },
-  missing:      { label: "Missing",      color: "bg-destructive/10 text-destructive border-destructive/30", icon: <AlertCircle className="w-3 h-3" /> },
-};
-
 type TranslationItem = {
   contentId: string;
   contentType: string;
@@ -59,10 +51,18 @@ type TranslationItem = {
 };
 
 function StatusBadge({ status }: { status: string }) {
+  const { t } = useTranslation();
+  const STATUS_CONFIG: Record<string, { color: string; icon: React.ReactNode; key: string }> = {
+    draft:        { color: "bg-muted text-muted-foreground",                       icon: <Clock className="w-3 h-3" />,        key: "admin_translations.status_draft" },
+    needs_review: { color: "bg-warning/10 text-warning border-warning/30",         icon: <AlertCircle className="w-3 h-3" />,   key: "admin_translations.status_needs_review" },
+    approved:     { color: "bg-success/10 text-success border-success/30",         icon: <CheckCircle2 className="w-3 h-3" />,  key: "admin_translations.status_approved" },
+    published:    { color: "bg-info/10 text-info border-info/30",                  icon: <Globe className="w-3 h-3" />,         key: "admin_translations.status_published" },
+    missing:      { color: "bg-destructive/10 text-destructive border-destructive/30", icon: <AlertCircle className="w-3 h-3" />, key: "admin_translations.status_missing" },
+  };
   const cfg = STATUS_CONFIG[status] ?? STATUS_CONFIG["draft"]!;
   return (
     <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border", cfg.color)}>
-      {cfg.icon} {cfg.label}
+      {cfg.icon} {t(cfg.key as Parameters<typeof t>[0])}
     </span>
   );
 }
@@ -84,6 +84,7 @@ function CompletenessBar({ score, lang }: { score: number; lang: string }) {
 }
 
 export default function AdminTranslations() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const qc = useQueryClient();
 
@@ -98,7 +99,7 @@ export default function AdminTranslations() {
   const [saving, setSaving] = useState(false);
   const [ensuring, setEnsuring] = useState(false);
 
-  const { data, isLoading, refetch } = useListTranslations({
+  const { data, isLoading } = useListTranslations({
     contentType: contentType || undefined,
     language: language || undefined,
     status: status || undefined,
@@ -115,10 +116,10 @@ export default function AdminTranslations() {
     setEnsuring(true);
     try {
       const result = await ensureMutation.mutateAsync();
-      toast({ title: `Created ${result.created} translation records` });
+      toast({ title: t("admin_translations.toast_synced", { count: result.created }) });
       void qc.invalidateQueries({ queryKey: ["/admin/translations"] });
     } catch {
-      toast({ title: "Failed to ensure records", variant: "destructive" });
+      toast({ title: t("admin_translations.toast_sync_failed"), variant: "destructive" });
     } finally {
       setEnsuring(false);
     }
@@ -143,11 +144,11 @@ export default function AdminTranslations() {
           translatedBody: editBody || undefined,
         },
       });
-      toast({ title: "Translation updated" });
+      toast({ title: t("admin_translations.toast_updated") });
       setEditId(null);
       void qc.invalidateQueries({ queryKey: ["/admin/translations"] });
     } catch {
-      toast({ title: "Failed to update", variant: "destructive" });
+      toast({ title: t("admin_translations.toast_update_failed"), variant: "destructive" });
     } finally {
       setSaving(false);
     }
@@ -155,25 +156,23 @@ export default function AdminTranslations() {
 
   return (
     <div className="p-6 space-y-6 max-w-[1400px] mx-auto">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <Languages className="w-6 h-6 text-[var(--accent)]" /> Translation Manager
+            <Languages className="w-6 h-6 text-[var(--accent)]" /> {t("admin_translations.title")}
           </h1>
-          <p className="text-sm text-muted-foreground mt-1">Manage multilingual content across all areas</p>
+          <p className="text-sm text-muted-foreground mt-1">{t("admin_translations.subtitle")}</p>
         </div>
         <Button variant="outline" size="sm" onClick={handleEnsure} disabled={ensuring}>
           {ensuring ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <RefreshCw className="w-4 h-4 mr-2" />}
-          Sync Records
+          {t("admin_translations.sync_btn")}
         </Button>
       </div>
 
-      {/* Completeness Grid */}
       {Object.keys(completenessScore).length > 0 && (
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-base">Translation Completeness</CardTitle>
+            <CardTitle className="text-base">{t("admin_translations.completeness_title")}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-4">
@@ -185,20 +184,19 @@ export default function AdminTranslations() {
         </Card>
       )}
 
-      {/* Filters */}
       <Card>
         <CardContent className="pt-4 pb-3">
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input className="pl-9" placeholder="Search content…" value={q} onChange={e => setQ(e.target.value)} />
+              <Input className="pl-9" placeholder={t("admin_translations.search_placeholder")} value={q} onChange={e => setQ(e.target.value)} />
             </div>
             <Select value={contentType || "all"} onValueChange={v => setContentType(v === "all" ? "" : v)}>
               <SelectTrigger className="w-40">
-                <SelectValue placeholder="Content type" />
+                <SelectValue placeholder={t("admin_translations.all_types")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All types</SelectItem>
+                <SelectItem value="all">{t("admin_translations.all_types")}</SelectItem>
                 {CONTENT_TYPES.map(ct => (
                   <SelectItem key={ct.value} value={ct.value}>{ct.label}</SelectItem>
                 ))}
@@ -206,10 +204,10 @@ export default function AdminTranslations() {
             </Select>
             <Select value={language || "all"} onValueChange={v => setLanguage(v === "all" ? "" : v)}>
               <SelectTrigger className="w-36">
-                <SelectValue placeholder="Language" />
+                <SelectValue placeholder={t("admin_translations.all_languages")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All languages</SelectItem>
+                <SelectItem value="all">{t("admin_translations.all_languages")}</SelectItem>
                 {LANGUAGES.map(l => (
                   <SelectItem key={l.code} value={l.code}>{l.label}</SelectItem>
                 ))}
@@ -217,23 +215,22 @@ export default function AdminTranslations() {
             </Select>
             <Select value={status || "all"} onValueChange={v => setStatus(v === "all" ? "" : v)}>
               <SelectTrigger className="w-36">
-                <SelectValue placeholder="Status" />
+                <SelectValue placeholder={t("admin_translations.all_statuses")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All statuses</SelectItem>
+                <SelectItem value="all">{t("admin_translations.all_statuses")}</SelectItem>
                 {["draft", "needs_review", "approved", "published", "missing"].map(s => (
-                  <SelectItem key={s} value={s}>{STATUS_CONFIG[s]?.label}</SelectItem>
+                  <SelectItem key={s} value={s}>{t(`admin_translations.status_${s}` as Parameters<typeof t>[0])}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
             <Button variant="ghost" size="sm" onClick={() => { setContentType(""); setLanguage(""); setStatus(""); setQ(""); }}>
-              <Filter className="w-4 h-4 mr-1" /> Clear
+              <Filter className="w-4 h-4 mr-1" /> {t("admin_translations.clear_btn")}
             </Button>
           </div>
         </CardContent>
       </Card>
 
-      {/* Table */}
       <Card>
         <CardContent className="p-0">
           {isLoading ? (
@@ -243,16 +240,16 @@ export default function AdminTranslations() {
           ) : items.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
               <Languages className="w-10 h-10 mb-3 opacity-40" />
-              <p className="font-medium">No translation records found</p>
-              <p className="text-sm mt-1">Click "Sync Records" to generate translation records for all content</p>
+              <p className="font-medium">{t("admin_translations.no_records")}</p>
+              <p className="text-sm mt-1">{t("admin_translations.no_records_hint")}</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b bg-muted/30">
-                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">Content</th>
-                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">Type</th>
+                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">{t("admin_translations.col_content")}</th>
+                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">{t("admin_translations.col_type")}</th>
                     {LANGUAGES.map(l => (
                       <th key={l.code} className="text-center px-2 py-3 font-medium text-muted-foreground w-20">
                         {l.code.toUpperCase()}
@@ -272,15 +269,15 @@ export default function AdminTranslations() {
                         </Badge>
                       </td>
                       {LANGUAGES.map(lang => {
-                        const t = item.translations[lang.code] ?? { id: "", status: "missing" };
+                        const tr = item.translations[lang.code] ?? { id: "", status: "missing" };
                         return (
                           <td key={lang.code} className="px-2 py-3 text-center">
                             <button
-                              onClick={() => t.id ? openEdit(t.id, t.status) : undefined}
-                              disabled={!t.id}
+                              onClick={() => tr.id ? openEdit(tr.id, tr.status) : undefined}
+                              disabled={!tr.id}
                               className="disabled:cursor-default"
                             >
-                              <StatusBadge status={t.status} />
+                              <StatusBadge status={tr.status} />
                             </button>
                           </td>
                         );
@@ -294,50 +291,49 @@ export default function AdminTranslations() {
         </CardContent>
       </Card>
 
-      {/* Edit Dialog */}
       <Dialog open={!!editId} onOpenChange={open => !open && setEditId(null)}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Edit Translation</DialogTitle>
+            <DialogTitle>{t("admin_translations.edit_title")}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-1.5">
-              <Label>Status</Label>
+              <Label>{t("admin_translations.label_status")}</Label>
               <Select value={editStatus} onValueChange={setEditStatus}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="draft">Draft</SelectItem>
-                  <SelectItem value="needs_review">Needs Review</SelectItem>
-                  <SelectItem value="approved">Approved</SelectItem>
-                  <SelectItem value="published">Published</SelectItem>
+                  <SelectItem value="draft">{t("admin_translations.status_draft")}</SelectItem>
+                  <SelectItem value="needs_review">{t("admin_translations.status_needs_review")}</SelectItem>
+                  <SelectItem value="approved">{t("admin_translations.status_approved")}</SelectItem>
+                  <SelectItem value="published">{t("admin_translations.status_published")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label>Translated Title</Label>
+              <Label>{t("admin_translations.label_translated_title")}</Label>
               <Input
-                placeholder="Translated title…"
+                placeholder={t("admin_translations.placeholder_title")}
                 value={editTitle}
                 onChange={e => setEditTitle(e.target.value)}
               />
             </div>
             <div className="space-y-1.5">
-              <Label>Translated Body / Notes</Label>
+              <Label>{t("admin_translations.label_translated_body")}</Label>
               <Textarea
                 rows={5}
-                placeholder="Translated content or reviewer notes…"
+                placeholder={t("admin_translations.placeholder_body")}
                 value={editBody}
                 onChange={e => setEditBody(e.target.value)}
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditId(null)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setEditId(null)}>{t("admin_translations.cancel")}</Button>
             <Button onClick={handleSave} disabled={saving}>
               {saving && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-              Save
+              {t("admin_translations.save")}
             </Button>
           </DialogFooter>
         </DialogContent>

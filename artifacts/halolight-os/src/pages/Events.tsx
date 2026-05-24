@@ -113,11 +113,11 @@ export default function Events() {
         { id: editingId, data: { ...payload, status: form.status } },
         {
           onSuccess: () => {
-            toast({ title: "Event updated" });
+            toast({ title: t("events.toast_updated") });
             setIsDialogOpen(false);
             refetch();
           },
-          onError: () => toast({ title: "Error", variant: "destructive" }),
+          onError: () => toast({ title: t("events.toast_error"), variant: "destructive" }),
         }
       );
     } else {
@@ -125,11 +125,11 @@ export default function Events() {
         { data: payload },
         {
           onSuccess: () => {
-            toast({ title: "Event created" });
+            toast({ title: t("events.toast_created") });
             setIsDialogOpen(false);
             refetch();
           },
-          onError: () => toast({ title: "Error", variant: "destructive" }),
+          onError: () => toast({ title: t("events.toast_error"), variant: "destructive" }),
         }
       );
     }
@@ -141,11 +141,11 @@ export default function Events() {
       { id: deleteId },
       {
         onSuccess: () => {
-          toast({ title: "Event deleted" });
+          toast({ title: t("events.toast_deleted") });
           setDeleteId(null);
           refetch();
         },
-        onError: () => toast({ title: "Error", variant: "destructive" }),
+        onError: () => toast({ title: t("events.toast_error"), variant: "destructive" }),
       }
     );
   };
@@ -283,7 +283,7 @@ export default function Events() {
               <Input
                 value={form.title}
                 onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))}
-                placeholder="Wedding reception at Riverside Hotel"
+                placeholder={t("events.placeholder_title")}
               />
             </div>
             <div className="space-y-1">
@@ -300,7 +300,7 @@ export default function Events() {
                 <Input
                   value={form.location}
                   onChange={(e) => setForm((p) => ({ ...p, location: e.target.value }))}
-                  placeholder="City, Venue"
+                  placeholder={t("events.placeholder_location")}
                 />
               </div>
               <div className="space-y-1">
@@ -308,7 +308,7 @@ export default function Events() {
                 <Input
                   value={form.type}
                   onChange={(e) => setForm((p) => ({ ...p, type: e.target.value }))}
-                  placeholder="Wedding, Corporate..."
+                  placeholder={t("events.placeholder_type")}
                 />
               </div>
             </div>
@@ -333,7 +333,7 @@ export default function Events() {
                 value={form.description}
                 onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))}
                 rows={2}
-                placeholder="Optional details about the event..."
+                placeholder={t("events.placeholder_notes")}
               />
             </div>
             <div className="space-y-1">
@@ -342,7 +342,7 @@ export default function Events() {
                 value={form.notes}
                 onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))}
                 rows={2}
-                placeholder="Private notes for yourself..."
+                placeholder={t("events.placeholder_private_notes")}
               />
             </div>
           </div>

@@ -1,21 +1,24 @@
 import { useRoute, Link } from "wouter";
+import { useTranslation } from "react-i18next";
 import { useGetQuote, useUpdateQuoteStatus, useDeleteQuote } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Printer, Building2, Mail, Phone, FileText } from "lucide-react";
+import { ArrowLeft, Printer, Building2, Mail, Phone } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLocation } from "wouter";
 
-const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
-  draft: { label: "Draft", color: "bg-slate-100 text-slate-700 border-slate-200" },
-  sent: { label: "Sent", color: "bg-info/10 text-info border-info/30" },
-  accepted: { label: "Accepted", color: "bg-success/8 text-success border-success/20" },
-  declined: { label: "Declined", color: "bg-destructive/10 text-destructive border-destructive/30" },
-  expired: { label: "Expired", color: "bg-warning/8 text-warning border-warning/20" },
+const STATUS_COLORS: Record<string, string> = {
+  draft: "bg-slate-100 text-slate-700 border-slate-200",
+  sent: "bg-info/10 text-info border-info/30",
+  accepted: "bg-success/8 text-success border-success/20",
+  declined: "bg-destructive/10 text-destructive border-destructive/30",
+  expired: "bg-warning/8 text-warning border-warning/20",
 };
+
+const STATUS_KEYS = ["draft", "sent", "accepted", "declined", "expired"];
 
 function formatCurrency(val: string | number) {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(Number(val));
@@ -32,6 +35,7 @@ function PrintPreview({ quoteNumber, title, clientName, clientEmail, items, subt
   subtotal: string; taxRate: string; taxAmount: string; total: string;
   notes?: string | null; terms?: string | null; validUntil?: string | null;
 }) {
+  const { t } = useTranslation();
   const handlePrint = () => {
     const html = `<!DOCTYPE html><html><head><title>${quoteNumber}</title>
     <style>
@@ -83,7 +87,7 @@ function PrintPreview({ quoteNumber, title, clientName, clientEmail, items, subt
 
   return (
     <Button variant="outline" onClick={handlePrint} className="gap-2">
-      <Printer className="w-4 h-4" /> Print / PDF
+      <Printer className="w-4 h-4" /> {t("quotes.print_btn")}
     </Button>
   );
 }
@@ -92,6 +96,7 @@ export default function QuoteDetail() {
   const [, params] = useRoute("/quotes/:id");
   const id = params?.id ?? "";
   const [, navigate] = useLocation();
+  const { t } = useTranslation();
   const { toast } = useToast();
   const qc = useQueryClient();
 
@@ -101,31 +106,30 @@ export default function QuoteDetail() {
 
   const statusMutation = useUpdateQuoteStatus({
     mutation: {
-      onSuccess: () => { qc.invalidateQueries({ queryKey: ["quote", id] }); qc.invalidateQueries({ queryKey: ["quotes"] }); toast({ title: "Status updated" }); },
+      onSuccess: () => { qc.invalidateQueries({ queryKey: ["quote", id] }); qc.invalidateQueries({ queryKey: ["quotes"] }); toast({ title: t("quotes.status_updated") }); },
     },
   });
 
   const deleteMutation = useDeleteQuote({
     mutation: {
-      onSuccess: () => { qc.invalidateQueries({ queryKey: ["quotes"] }); navigate("/quotes"); toast({ title: "Quote deleted" }); },
+      onSuccess: () => { qc.invalidateQueries({ queryKey: ["quotes"] }); navigate("/quotes"); toast({ title: t("quotes.quote_deleted") }); },
     },
   });
 
-  if (isLoading) return <div className="flex items-center justify-center h-40 text-muted-foreground">Loading…</div>;
-  if (!quote) return <div className="p-8 text-muted-foreground">Quote not found.</div>;
+  if (isLoading) return <div className="flex items-center justify-center h-40 text-muted-foreground">{t("quotes.loading")}</div>;
+  if (!quote) return <div className="p-8 text-muted-foreground">{t("quotes.not_found")}</div>;
 
-  const cfg = STATUS_CONFIG[quote.status];
+  const color = STATUS_COLORS[quote.status];
 
   return (
     <div className="space-y-6 max-w-4xl">
-      {/* Header */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-3">
           <Link href="/quotes"><Button variant="ghost" size="icon"><ArrowLeft className="w-4 h-4" /></Button></Link>
           <div>
             <div className="flex items-center gap-2.5 flex-wrap">
               <span className="font-mono text-lg font-bold">{quote.quoteNumber}</span>
-              {cfg && <Badge variant="outline" className={cn("text-xs", cfg.color)}>{cfg.label}</Badge>}
+              {color && <Badge variant="outline" className={cn("text-xs", color)}>{t(`quotes.status_${quote.status}`)}</Badge>}
             </div>
             <p className="text-muted-foreground text-sm mt-0.5">{quote.title}</p>
           </div>
@@ -150,16 +154,15 @@ export default function QuoteDetail() {
           <Select value={quote.status} onValueChange={(s) => statusMutation.mutate({ id, data: { status: s as any } })}>
             <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
             <SelectContent>
-              {Object.entries(STATUS_CONFIG).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}
+              {STATUS_KEYS.map((k) => <SelectItem key={k} value={k}>{t(`quotes.status_${k}`)}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Client Card */}
         <div className="rounded-xl border bg-card p-5 space-y-3">
-          <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Client</h3>
+          <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">{t("quotes.client_section")}</h3>
           <div className="space-y-2 text-sm">
             <div className="flex items-center gap-2"><Building2 className="w-4 h-4 text-muted-foreground" /><span className="font-medium">{quote.clientName}</span></div>
             {quote.clientEmail && <div className="flex items-center gap-2"><Mail className="w-4 h-4 text-muted-foreground" /><a href={`mailto:${quote.clientEmail}`} className="hover:text-primary">{quote.clientEmail}</a></div>}
@@ -167,40 +170,37 @@ export default function QuoteDetail() {
           </div>
         </div>
 
-        {/* Dates Card */}
         <div className="rounded-xl border bg-card p-5 space-y-3">
-          <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Dates</h3>
+          <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">{t("quotes.dates_section")}</h3>
           <div className="space-y-2 text-sm">
-            <div className="flex justify-between"><span className="text-muted-foreground">Created</span><span>{formatDate(quote.createdAt)}</span></div>
-            <div className="flex justify-between"><span className="text-muted-foreground">Valid Until</span><span>{formatDate(quote.validUntil)}</span></div>
-            {quote.sentAt && <div className="flex justify-between"><span className="text-muted-foreground">Sent</span><span>{formatDate(quote.sentAt)}</span></div>}
-            {quote.acceptedAt && <div className="flex justify-between"><span className="text-muted-foreground">Accepted</span><span>{formatDate(quote.acceptedAt)}</span></div>}
+            <div className="flex justify-between"><span className="text-muted-foreground">{t("common.created")}</span><span>{formatDate(quote.createdAt)}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">{t("quotes.valid_until_label")}</span><span>{formatDate(quote.validUntil)}</span></div>
+            {quote.sentAt && <div className="flex justify-between"><span className="text-muted-foreground">{t("quotes.sent_label")}</span><span>{formatDate(quote.sentAt)}</span></div>}
+            {quote.acceptedAt && <div className="flex justify-between"><span className="text-muted-foreground">{t("quotes.accepted_at_label")}</span><span>{formatDate(quote.acceptedAt)}</span></div>}
           </div>
         </div>
 
-        {/* Summary Card */}
         <div className="rounded-xl border bg-card p-5 space-y-3">
-          <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Summary</h3>
+          <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">{t("quotes.summary_section")}</h3>
           <div className="space-y-2 text-sm">
-            <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span>{formatCurrency(quote.subtotal)}</span></div>
-            <div className="flex justify-between"><span className="text-muted-foreground">Tax ({quote.taxRate}%)</span><span>{formatCurrency(quote.taxAmount)}</span></div>
-            <div className="flex justify-between border-t pt-2 mt-2"><span className="font-bold">Total</span><span className="font-bold text-lg">{formatCurrency(quote.total)}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">{t("quotes.subtotal")}</span><span>{formatCurrency(quote.subtotal)}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">{t("quotes.tax_label", { rate: quote.taxRate })}</span><span>{formatCurrency(quote.taxAmount)}</span></div>
+            <div className="flex justify-between border-t pt-2 mt-2"><span className="font-bold">{t("quotes.total_col")}</span><span className="font-bold text-lg">{formatCurrency(quote.total)}</span></div>
           </div>
         </div>
       </div>
 
-      {/* Line Items */}
       <div className="rounded-xl border bg-card overflow-hidden">
         <div className="px-5 py-4 border-b bg-muted/30">
-          <h3 className="font-semibold">Line Items</h3>
+          <h3 className="font-semibold">{t("quotes.line_items_section")}</h3>
         </div>
         <table className="w-full text-sm">
           <thead className="bg-muted/20 border-b">
             <tr>
-              <th className="text-left px-5 py-3 font-medium text-muted-foreground">Description</th>
-              <th className="text-right px-4 py-3 font-medium text-muted-foreground">Qty</th>
-              <th className="text-right px-4 py-3 font-medium text-muted-foreground">Unit Price</th>
-              <th className="text-right px-5 py-3 font-medium text-muted-foreground">Total</th>
+              <th className="text-left px-5 py-3 font-medium text-muted-foreground">{t("quotes.description_col")}</th>
+              <th className="text-right px-4 py-3 font-medium text-muted-foreground">{t("quotes.qty_col")}</th>
+              <th className="text-right px-4 py-3 font-medium text-muted-foreground">{t("quotes.unit_price_col")}</th>
+              <th className="text-right px-5 py-3 font-medium text-muted-foreground">{t("quotes.total_col")}</th>
             </tr>
           </thead>
           <tbody className="divide-y">
@@ -214,25 +214,24 @@ export default function QuoteDetail() {
             ))}
           </tbody>
           <tfoot className="border-t bg-muted/20">
-            <tr><td colSpan={3} className="px-5 py-3 text-right text-muted-foreground">Subtotal</td><td className="px-5 py-3 text-right font-medium">{formatCurrency(quote.subtotal)}</td></tr>
-            <tr><td colSpan={3} className="px-5 py-2 text-right text-muted-foreground">Tax ({quote.taxRate}%)</td><td className="px-5 py-2 text-right">{formatCurrency(quote.taxAmount)}</td></tr>
-            <tr className="border-t"><td colSpan={3} className="px-5 py-3 text-right font-bold text-base">Total</td><td className="px-5 py-3 text-right font-bold text-lg">{formatCurrency(quote.total)}</td></tr>
+            <tr><td colSpan={3} className="px-5 py-3 text-right text-muted-foreground">{t("quotes.subtotal")}</td><td className="px-5 py-3 text-right font-medium">{formatCurrency(quote.subtotal)}</td></tr>
+            <tr><td colSpan={3} className="px-5 py-2 text-right text-muted-foreground">{t("quotes.tax_label", { rate: quote.taxRate })}</td><td className="px-5 py-2 text-right">{formatCurrency(quote.taxAmount)}</td></tr>
+            <tr className="border-t"><td colSpan={3} className="px-5 py-3 text-right font-bold text-base">{t("quotes.total_col")}</td><td className="px-5 py-3 text-right font-bold text-lg">{formatCurrency(quote.total)}</td></tr>
           </tfoot>
         </table>
       </div>
 
-      {/* Notes & Terms */}
       {(quote.notes || quote.terms) && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {quote.notes && (
             <div className="rounded-xl border bg-card p-5">
-              <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide mb-2">Notes</h4>
+              <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide mb-2">{t("quotes.notes_section")}</h4>
               <p className="text-sm text-muted-foreground whitespace-pre-wrap">{quote.notes}</p>
             </div>
           )}
           {quote.terms && (
             <div className="rounded-xl border bg-card p-5">
-              <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide mb-2">Terms & Conditions</h4>
+              <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide mb-2">{t("quotes.terms_section")}</h4>
               <p className="text-sm text-muted-foreground whitespace-pre-wrap">{quote.terms}</p>
             </div>
           )}

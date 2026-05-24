@@ -1,4 +1,5 @@
 import { Link, useParams } from "wouter";
+import { useTranslation } from "react-i18next";
 import { useGetKbArticle } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -66,6 +67,7 @@ function renderContent(content: string) {
 
 export default function KBArticle() {
   const { id } = useParams<{ id: string }>();
+  const { t } = useTranslation();
   const { data: article, isLoading } = useGetKbArticle(id!);
 
   if (isLoading) {
@@ -81,8 +83,8 @@ export default function KBArticle() {
   if (!article) {
     return (
       <div className="max-w-3xl mx-auto text-center py-16">
-        <p className="text-muted-foreground">Article not found.</p>
-        <Link href="/kb"><Button variant="outline" className="mt-4">Back to Knowledge Base</Button></Link>
+        <p className="text-muted-foreground">{t("kb.article_not_found")}</p>
+        <Link href="/kb"><Button variant="outline" className="mt-4">{t("kb.back_to_kb")}</Button></Link>
       </div>
     );
   }
@@ -95,7 +97,7 @@ export default function KBArticle() {
         <Link href="/kb">
           <Button variant="ghost" size="sm" className="gap-2">
             <ArrowLeft className="w-4 h-4" />
-            Knowledge Base
+            {t("kb.title")}
           </Button>
         </Link>
       </div>
@@ -109,7 +111,7 @@ export default function KBArticle() {
           {article.excerpt && <p className="text-lg text-muted-foreground mb-4">{article.excerpt}</p>}
           <div className="flex items-center gap-4 text-sm text-muted-foreground border-b pb-4">
             <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" /> {formatDate(article.publishedAt ?? article.createdAt)}</span>
-            <span className="flex items-center gap-1"><Eye className="w-3.5 h-3.5" /> {article.views} views</span>
+            <span className="flex items-center gap-1"><Eye className="w-3.5 h-3.5" /> {article.views} {t("kb.views")}</span>
           </div>
         </div>
         <div className="prose-sm max-w-none">
@@ -119,7 +121,7 @@ export default function KBArticle() {
 
       {related.length > 0 && (
         <div>
-          <h2 className="font-semibold text-foreground mb-3">Related Articles</h2>
+          <h2 className="font-semibold text-foreground mb-3">{t("kb.related_articles")}</h2>
           <div className="space-y-2">
             {related.map((r) => (
               <Link key={r.id} href={`/kb/articles/${r.id}`}>
@@ -130,7 +132,7 @@ export default function KBArticle() {
                       <p className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">{r.title}</p>
                       {r.excerpt && <p className="text-xs text-muted-foreground truncate">{r.excerpt}</p>}
                     </div>
-                    <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-muted-foreground" />
+                    <ChevronRight className="w-4 h-4 text-muted-foreground" />
                   </CardContent>
                 </Card>
               </Link>

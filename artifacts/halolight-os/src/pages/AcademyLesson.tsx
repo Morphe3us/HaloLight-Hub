@@ -104,7 +104,7 @@ export default function AcademyLesson() {
       {
         onSuccess: () => {
           refetchLesson();
-          toast({ title: "Lesson completed!", description: "Great work. Keep going!" });
+          toast({ title: t("academy_lesson.toast_completed"), description: t("academy_lesson.toast_completed_desc") });
           setIsMarkingComplete(false);
           if (nextLesson) {
             setTimeout(() => setLocation(`/academy/${courseId}/${nextLesson.id}`), 800);
@@ -112,7 +112,7 @@ export default function AcademyLesson() {
         },
         onError: () => {
           setIsMarkingComplete(false);
-          toast({ title: "Error", description: "Could not mark complete.", variant: "destructive" });
+          toast({ title: t("academy_lesson.toast_error"), description: t("academy_lesson.toast_mark_fail"), variant: "destructive" });
         },
       }
     );
@@ -131,7 +131,7 @@ export default function AcademyLesson() {
           }
         },
         onError: () => {
-          toast({ title: "Error", description: "Could not submit quiz.", variant: "destructive" });
+          toast({ title: t("academy_lesson.toast_error"), description: t("academy_lesson.toast_quiz_fail"), variant: "destructive" });
         },
       }
     );

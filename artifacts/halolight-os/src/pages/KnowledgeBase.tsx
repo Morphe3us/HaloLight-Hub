@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Link } from "wouter";
+import { useTranslation } from "react-i18next";
 import { useListKbCategories, useListKbArticles, useGetCurrentUser } from "@workspace/api-client-react";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,11 +16,11 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
 };
 
 function getIcon(name: string) {
-  const Icon = iconMap[name] ?? BookOpen;
-  return Icon;
+  return iconMap[name] ?? BookOpen;
 }
 
 export default function KnowledgeBase() {
+  const { t } = useTranslation();
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
@@ -34,21 +35,20 @@ export default function KnowledgeBase() {
 
   const categories = categoriesData?.items ?? [];
   const articles = articlesData?.items ?? [];
-
   const isSearching = search.length > 0;
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Knowledge Base</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Find answers, guides, and how-to articles</p>
+          <h1 className="text-2xl font-bold text-foreground">{t("kb.title")}</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">{t("kb.find_subtitle")}</p>
         </div>
         {isAdmin && (
           <Link href="/kb/admin">
             <Button variant="outline" className="gap-2">
               <Settings className="w-4 h-4" />
-              Manage Articles
+              {t("kb.manage_articles")}
             </Button>
           </Link>
         )}
@@ -57,7 +57,7 @@ export default function KnowledgeBase() {
       <div className="relative">
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
         <Input
-          placeholder="Search the knowledge base..."
+          placeholder={t("kb.search_placeholder2")}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="pl-11 h-12 text-base rounded-xl"
@@ -68,10 +68,12 @@ export default function KnowledgeBase() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="font-medium text-foreground">
-              {isSearching ? `Search results for "${search}"` : categories.find((c) => c.id === selectedCategory)?.name}
+              {isSearching
+                ? t("kb.search_results_for", { query: search })
+                : categories.find((c) => c.id === selectedCategory)?.name}
             </h2>
             <Button variant="ghost" size="sm" onClick={() => { setSearch(""); setSelectedCategory(null); }}>
-              Clear
+              {t("kb.clear")}
             </Button>
           </div>
           {articlesLoading ? (
@@ -82,7 +84,7 @@ export default function KnowledgeBase() {
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12 text-center">
                 <FileText className="w-10 h-10 text-muted-foreground mb-3" />
-                <p className="text-muted-foreground">No articles found</p>
+                <p className="text-muted-foreground">{t("kb.no_articles_found")}</p>
               </CardContent>
             </Card>
           ) : (
@@ -104,7 +106,7 @@ export default function KnowledgeBase() {
                         <span className="flex items-center gap-1 text-xs text-muted-foreground">
                           <Eye className="w-3 h-3" />{article.views}
                         </span>
-                        <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-muted-foreground transition-colors" />
+                        <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
                       </div>
                     </CardContent>
                   </Card>
@@ -140,7 +142,7 @@ export default function KnowledgeBase() {
                             <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{cat.description}</p>
                           )}
                           <p className="text-xs text-muted-foreground mt-1">
-                            {(cat as unknown as { articleCount?: number }).articleCount ?? 0} articles
+                            {t("kb.articles_count_label", { count: (cat as unknown as { articleCount?: number }).articleCount ?? 0 })}
                           </p>
                         </div>
                       </div>
@@ -153,7 +155,7 @@ export default function KnowledgeBase() {
 
           <div className="mt-6">
             <div className="flex items-center justify-between mb-3">
-              <h2 className="font-semibold text-foreground">Recently Published</h2>
+              <h2 className="font-semibold text-foreground">{t("kb.recently_published")}</h2>
             </div>
             {articlesLoading ? (
               <div className="space-y-2">
@@ -170,7 +172,7 @@ export default function KnowledgeBase() {
                         <span className="flex items-center gap-1 text-xs text-muted-foreground shrink-0">
                           <Eye className="w-3 h-3" />{article.views}
                         </span>
-                        <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-muted-foreground shrink-0" />
+                        <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
                       </CardContent>
                     </Card>
                   </Link>

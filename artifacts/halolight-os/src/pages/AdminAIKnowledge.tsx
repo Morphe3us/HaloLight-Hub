@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   useListAIKnowledgeDocs, useCreateAIKnowledgeDoc, useUpdateAIKnowledgeDoc,
   useDeleteAIKnowledgeDoc, useReindexAIKnowledgeDoc, useGetAIKnowledgeDoc,
@@ -43,10 +44,10 @@ const CATEGORIES = [
 ];
 
 const STATUSES = [
-  { value: "draft", label: "Draft", icon: <Clock className="w-3 h-3" />, color: "bg-muted text-muted-foreground" },
-  { value: "indexed", label: "Indexed", icon: <CheckCircle2 className="w-3 h-3" />, color: "bg-success/10 text-success border-success/30" },
-  { value: "needs_review", label: "Needs Review", icon: <AlertCircle className="w-3 h-3" />, color: "bg-warning/10 text-warning border-warning/30" },
-  { value: "archived", label: "Archived", icon: <Archive className="w-3 h-3" />, color: "bg-muted text-muted-foreground" },
+  { value: "draft",        icon: <Clock className="w-3 h-3" />,         color: "bg-muted text-muted-foreground" },
+  { value: "indexed",      icon: <CheckCircle2 className="w-3 h-3" />,  color: "bg-success/10 text-success border-success/30" },
+  { value: "needs_review", icon: <AlertCircle className="w-3 h-3" />,   color: "bg-warning/10 text-warning border-warning/30" },
+  { value: "archived",     icon: <Archive className="w-3 h-3" />,        color: "bg-muted text-muted-foreground" },
 ];
 
 const LANGUAGES = [
@@ -64,10 +65,17 @@ type AIDoc = {
 };
 
 function StatusBadge({ status }: { status: string }) {
+  const { t } = useTranslation();
+  const statusLabels: Record<string, string> = {
+    draft:        t("admin_ai.status_draft"),
+    indexed:      t("admin_ai.status_indexed"),
+    needs_review: t("admin_ai.status_needs_review"),
+    archived:     t("admin_ai.status_archived"),
+  };
   const cfg = STATUSES.find(s => s.value === status) ?? STATUSES[0]!;
   return (
     <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border", cfg.color)}>
-      {cfg.icon} {cfg.label}
+      {cfg.icon} {statusLabels[status] ?? status}
     </span>
   );
 }
@@ -78,6 +86,7 @@ const EMPTY_FORM = {
 };
 
 export default function AdminAIKnowledge() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const qc = useQueryClient();
 
@@ -136,11 +145,11 @@ export default function AdminAIKnowledge() {
 
   async function handleSave() {
     if (!form.title || !form.category) {
-      toast({ title: "Title and category are required", variant: "destructive" });
+      toast({ title: t("admin_ai.toast_required"), variant: "destructive" });
       return;
     }
     setSaving(true);
-    const tags = form.tags.split(",").map(t => t.trim()).filter(Boolean);
+    const tags = form.tags.split(",").map(s => s.trim()).filter(Boolean);
     try {
       if (editItem) {
         await updateMutation.mutateAsync({
@@ -157,7 +166,7 @@ export default function AdminAIKnowledge() {
             status: form.status as "draft",
           },
         });
-        toast({ title: "Document updated" });
+        toast({ title: t("admin_ai.toast_updated") });
       } else {
         await createMutation.mutateAsync({
           data: {
@@ -172,12 +181,12 @@ export default function AdminAIKnowledge() {
             status: form.status as "draft",
           },
         });
-        toast({ title: "Document created and indexed" });
+        toast({ title: t("admin_ai.toast_created") });
       }
       setDialogOpen(false);
       void qc.invalidateQueries({ queryKey: ["/admin/ai-knowledge"] });
     } catch {
-      toast({ title: "Failed to save", variant: "destructive" });
+      toast({ title: t("admin_ai.toast_save_fail"), variant: "destructive" });
     } finally {
       setSaving(false);
     }
@@ -187,11 +196,11 @@ export default function AdminAIKnowledge() {
     if (!deleteId) return;
     try {
       await deleteMutation.mutateAsync({ id: deleteId });
-      toast({ title: "Document deleted" });
+      toast({ title: t("admin_ai.toast_deleted") });
       setDeleteId(null);
       void qc.invalidateQueries({ queryKey: ["/admin/ai-knowledge"] });
     } catch {
-      toast({ title: "Failed to delete", variant: "destructive" });
+      toast({ title: t("admin_ai.toast_delete_fail"), variant: "destructive" });
     }
   }
 
@@ -199,10 +208,10 @@ export default function AdminAIKnowledge() {
     setReindexing(id);
     try {
       const result = await reindexMutation.mutateAsync({ id });
-      toast({ title: `Reindexed — ${result.chunksCreated} chunks created` });
+      toast({ title: t("admin_ai.toast_reindexed", { count: result.chunksCreated }) });
       void qc.invalidateQueries({ queryKey: ["/admin/ai-knowledge"] });
     } catch {
-      toast({ title: "Reindex failed", variant: "destructive" });
+      toast({ title: t("admin_ai.toast_reindex_fail"), variant: "destructive" });
     } finally {
       setReindexing(null);
     }
@@ -213,106 +222,106 @@ export default function AdminAIKnowledge() {
       await updateMutation.mutateAsync({ id: item.id, data: { aiActive: !item.aiActive } });
       void qc.invalidateQueries({ queryKey: ["/admin/ai-knowledge"] });
     } catch {
-      toast({ title: "Failed to update", variant: "destructive" });
+      toast({ title: t("admin_ai.toast_update_fail"), variant: "destructive" });
     }
   }
 
   return (
     <div className="p-6 space-y-6 max-w-[1400px] mx-auto">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <Brain className="w-6 h-6 text-[var(--accent)]" /> AI Knowledge Base
+            <Brain className="w-6 h-6 text-[var(--accent)]" /> {t("admin_ai.title")}
           </h1>
-          <p className="text-sm text-muted-foreground mt-1">Documents that power the AI Assistant's knowledge</p>
+          <p className="text-sm text-muted-foreground mt-1">{t("admin_ai.subtitle")}</p>
         </div>
         <Button onClick={openCreate} size="sm">
-          <Plus className="w-4 h-4 mr-2" /> Add Document
+          <Plus className="w-4 h-4 mr-2" /> {t("admin_ai.add_btn")}
         </Button>
       </div>
 
-      {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <Card>
           <CardContent className="pt-4 pb-3">
             <div className="text-xl font-bold text-foreground">{items.length}</div>
-            <div className="text-xs text-muted-foreground">Total Documents</div>
+            <div className="text-xs text-muted-foreground">{t("admin_ai.stat_total")}</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4 pb-3">
             <div className="text-xl font-bold text-success">{activeCount}</div>
-            <div className="text-xs text-muted-foreground">Active for AI</div>
+            <div className="text-xs text-muted-foreground">{t("admin_ai.stat_active")}</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4 pb-3">
             <div className="text-xl font-bold text-info">{indexedCount}</div>
-            <div className="text-xs text-muted-foreground">Indexed</div>
+            <div className="text-xs text-muted-foreground">{t("admin_ai.stat_indexed")}</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4 pb-3">
             <div className="text-xl font-bold text-warning">{needsReviewCount}</div>
-            <div className="text-xs text-muted-foreground">Needs Review</div>
+            <div className="text-xs text-muted-foreground">{t("admin_ai.stat_review")}</div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Filters */}
       <Card>
         <CardContent className="pt-4 pb-3">
           <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
             <div className="relative flex-1 min-w-48">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input className="pl-9" placeholder="Search documents…" value={q} onChange={e => setQ(e.target.value)} />
+              <Input className="pl-9" placeholder={t("admin_ai.search_placeholder")} value={q} onChange={e => setQ(e.target.value)} />
             </div>
             <Select value={filterCat || "all"} onValueChange={v => setFilterCat(v === "all" ? "" : v)}>
               <SelectTrigger className="w-44">
-                <SelectValue placeholder="Category" />
+                <SelectValue placeholder={t("admin_ai.label_category")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All categories</SelectItem>
+                <SelectItem value="all">{t("admin_ai.all_categories")}</SelectItem>
                 {CATEGORIES.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
               </SelectContent>
             </Select>
             <Select value={filterLang || "all"} onValueChange={v => setFilterLang(v === "all" ? "" : v)}>
               <SelectTrigger className="w-32">
-                <SelectValue placeholder="Language" />
+                <SelectValue placeholder={t("admin_ai.label_language")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All languages</SelectItem>
+                <SelectItem value="all">{t("admin_ai.all_languages")}</SelectItem>
                 {LANGUAGES.map(l => <SelectItem key={l.code} value={l.code}>{l.label}</SelectItem>)}
               </SelectContent>
             </Select>
             <Select value={filterStatus || "all"} onValueChange={v => setFilterStatus(v === "all" ? "" : v)}>
               <SelectTrigger className="w-36">
-                <SelectValue placeholder="Status" />
+                <SelectValue placeholder={t("admin_ai.label_status")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All statuses</SelectItem>
-                {STATUSES.map(s => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
+                <SelectItem value="all">{t("admin_ai.all_statuses")}</SelectItem>
+                {STATUSES.map(s => (
+                  <SelectItem key={s.value} value={s.value}>
+                    <StatusBadge status={s.value} />
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
             <Select value={filterActive || "all"} onValueChange={v => setFilterActive(v === "all" ? "" : v)}>
               <SelectTrigger className="w-32">
-                <SelectValue placeholder="AI Active" />
+                <SelectValue placeholder={t("admin_ai.ai_active_label")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All</SelectItem>
-                <SelectItem value="true">Active</SelectItem>
-                <SelectItem value="false">Inactive</SelectItem>
+                <SelectItem value="all">{t("admin_ai.filter_all")}</SelectItem>
+                <SelectItem value="true">{t("admin_ai.filter_active")}</SelectItem>
+                <SelectItem value="false">{t("admin_ai.filter_inactive")}</SelectItem>
               </SelectContent>
             </Select>
             <Button variant="ghost" size="sm" onClick={() => { setQ(""); setFilterCat(""); setFilterLang(""); setFilterStatus(""); setFilterActive(""); }}>
-              <Filter className="w-4 h-4 mr-1" /> Clear
+              <Filter className="w-4 h-4 mr-1" /> {t("admin_ai.clear")}
             </Button>
           </div>
         </CardContent>
       </Card>
 
-      {/* Document List */}
       <Card>
         <CardContent className="p-0">
           {isLoading ? (
@@ -322,29 +331,27 @@ export default function AdminAIKnowledge() {
           ) : items.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
               <Brain className="w-10 h-10 mb-3 opacity-40" />
-              <p className="font-medium">No knowledge documents yet</p>
-              <p className="text-sm mt-1">Add your first document to power the AI Assistant</p>
+              <p className="font-medium">{t("admin_ai.no_docs")}</p>
+              <p className="text-sm mt-1">{t("admin_ai.no_docs_hint")}</p>
             </div>
           ) : (
             <div className="divide-y divide-border">
               {items.map(item => (
                 <div key={item.id} className="flex items-start gap-4 px-4 py-4 hover:bg-muted/20 transition-colors">
-                  {/* AI Active Toggle */}
                   <div className="flex-shrink-0 mt-1">
                     <Switch
                       checked={item.aiActive}
                       onCheckedChange={() => handleToggleActive(item)}
-                      title={item.aiActive ? "Disable for AI" : "Enable for AI"}
+                      title={item.aiActive ? t("admin_ai.filter_inactive") : t("admin_ai.filter_active")}
                     />
                   </div>
 
-                  {/* Content */}
                   <div className="flex-1 min-w-0 cursor-pointer" onClick={() => setDetailId(detailId === item.id ? null : item.id)}>
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-medium text-foreground">{item.title}</span>
                       <StatusBadge status={item.status} />
                       {!item.aiActive && (
-                        <span className="text-xs text-muted-foreground italic">inactive</span>
+                        <span className="text-xs text-muted-foreground italic">{t("admin_ai.inactive")}</span>
                       )}
                     </div>
                     <div className="flex items-center gap-2 mt-1.5 flex-wrap">
@@ -364,7 +371,7 @@ export default function AdminAIKnowledge() {
                       )}
                       {item.lastIndexedAt && (
                         <span className="text-xs text-muted-foreground">
-                          Indexed {new Date(item.lastIndexedAt).toLocaleDateString()}
+                          {t("admin_ai.indexed_date")} {new Date(item.lastIndexedAt).toLocaleDateString()}
                         </span>
                       )}
                     </div>
@@ -373,7 +380,6 @@ export default function AdminAIKnowledge() {
                     )}
                   </div>
 
-                  {/* Actions */}
                   <div className="flex items-center gap-1 flex-shrink-0">
                     {item.sourceUrl && (
                       <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
@@ -386,7 +392,6 @@ export default function AdminAIKnowledge() {
                       variant="ghost" size="icon" className="h-8 w-8"
                       onClick={() => handleReindex(item.id)}
                       disabled={reindexing === item.id}
-                      title="Reindex chunks"
                     >
                       {reindexing === item.id
                         ? <Loader2 className="w-4 h-4 animate-spin" />
@@ -407,14 +412,13 @@ export default function AdminAIKnowledge() {
         </CardContent>
       </Card>
 
-      {/* Detail Panel */}
       {detailId && detailData && (
         <Card className="border-[var(--accent)]/30">
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
-              <Layers className="w-4 h-4" /> Chunks for: {(detailData as { title: string }).title}
+              <Layers className="w-4 h-4" /> {t("admin_ai.chunks_for")} {(detailData as { title: string }).title}
               <span className="ml-auto text-sm font-normal text-muted-foreground">
-                {((detailData as { chunks?: unknown[] }).chunks ?? []).length} chunks
+                {t("admin_ai.chunks_count", { count: ((detailData as { chunks?: unknown[] }).chunks ?? []).length })}
               </span>
             </CardTitle>
           </CardHeader>
@@ -431,30 +435,29 @@ export default function AdminAIKnowledge() {
         </Card>
       )}
 
-      {/* Create/Edit Dialog */}
+      {/* Create / Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{editItem ? "Edit Document" : "Add Knowledge Document"}</DialogTitle>
+            <DialogTitle>{editItem ? t("admin_ai.dialog_edit") : t("admin_ai.dialog_add")}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="grid grid-cols-2 gap-4">
               <div className="col-span-2 space-y-1.5">
-                <Label>Title *</Label>
-                <Input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
-                  placeholder="How to replace DNP ribbon" />
+                <Label>{t("admin_ai.label_title")} <span className="text-destructive">*</span></Label>
+                <Input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} />
               </div>
               <div className="space-y-1.5">
-                <Label>Category *</Label>
+                <Label>{t("admin_ai.label_category")} <span className="text-destructive">*</span></Label>
                 <Select value={form.category} onValueChange={v => setForm(f => ({ ...f, category: v }))}>
-                  <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {CATEGORIES.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-1.5">
-                <Label>Language</Label>
+                <Label>{t("admin_ai.label_language")}</Label>
                 <Select value={form.language} onValueChange={v => setForm(f => ({ ...f, language: v }))}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
@@ -463,57 +466,43 @@ export default function AdminAIKnowledge() {
                 </Select>
               </div>
               <div className="space-y-1.5">
-                <Label>Product Model</Label>
-                <Input value={form.productModel} onChange={e => setForm(f => ({ ...f, productModel: e.target.value }))}
-                  placeholder="DNP DS-RX1HS" />
+                <Label>{t("admin_ai.label_product_model")}</Label>
+                <Input value={form.productModel} onChange={e => setForm(f => ({ ...f, productModel: e.target.value }))} />
               </div>
               <div className="space-y-1.5">
-                <Label>Source URL</Label>
-                <Input value={form.sourceUrl} onChange={e => setForm(f => ({ ...f, sourceUrl: e.target.value }))}
-                  placeholder="https://example.com/manual.pdf" />
+                <Label>{t("admin_ai.label_source_url")}</Label>
+                <Input value={form.sourceUrl} onChange={e => setForm(f => ({ ...f, sourceUrl: e.target.value }))} placeholder="https://…" />
               </div>
               <div className="space-y-1.5">
-                <Label>Status</Label>
+                <Label>{t("admin_ai.label_status")}</Label>
                 <Select value={form.status} onValueChange={v => setForm(f => ({ ...f, status: v }))}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {STATUSES.map(s => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
+                    {STATUSES.map(s => <SelectItem key={s.value} value={s.value}><StatusBadge status={s.value} /></SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-1.5">
-                <Label>Tags (comma separated)</Label>
-                <Input value={form.tags} onChange={e => setForm(f => ({ ...f, tags: e.target.value }))}
-                  placeholder="ribbon, maintenance, dnp" />
+                <Label>{t("admin_ai.label_tags")}</Label>
+                <Input value={form.tags} onChange={e => setForm(f => ({ ...f, tags: e.target.value }))} placeholder="tag1, tag2, tag3" />
               </div>
               <div className="col-span-2 space-y-1.5">
-                <Label>Content</Label>
-                <Textarea
-                  rows={8}
-                  value={form.content}
-                  onChange={e => setForm(f => ({ ...f, content: e.target.value }))}
-                  placeholder="Paste or type the document content here. Long documents will be automatically chunked for search."
-                  className="font-mono text-xs"
-                />
-                <p className="text-xs text-muted-foreground">Content is automatically chunked into searchable segments when saved.</p>
+                <Label>{t("admin_ai.label_content")}</Label>
+                <Textarea rows={8} value={form.content} onChange={e => setForm(f => ({ ...f, content: e.target.value }))}
+                  placeholder={t("admin_ai.content_hint")} />
               </div>
-              <div className="col-span-2 flex items-center gap-3">
-                <Switch
-                  checked={form.aiActive}
-                  onCheckedChange={v => setForm(f => ({ ...f, aiActive: v }))}
-                  id="ai-active"
-                />
-                <Label htmlFor="ai-active" className="cursor-pointer">
-                  Active for AI — Include in AI Assistant knowledge retrieval
-                </Label>
-              </div>
+            </div>
+            <div className="flex items-center gap-2 pt-1">
+              <Switch checked={form.aiActive} onCheckedChange={v => setForm(f => ({ ...f, aiActive: v }))} />
+              <Label>{t("admin_ai.ai_active_label")}</Label>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleSave} disabled={saving}>
-              {saving && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-              {editItem ? "Update" : "Create & Index"}
+            <Button variant="outline" onClick={() => setDialogOpen(false)} disabled={saving}>{t("admin_ai.cancel")}</Button>
+            <Button onClick={handleSave} disabled={saving || !form.title || !form.category}>
+              {saving
+                ? <><Loader2 className="w-4 h-4 mr-1.5 animate-spin" />{t("admin_ai.saving")}</>
+                : editItem ? t("admin_ai.update") : t("admin_ai.create")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -523,12 +512,14 @@ export default function AdminAIKnowledge() {
       <AlertDialog open={!!deleteId} onOpenChange={open => !open && setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete knowledge document?</AlertDialogTitle>
-            <AlertDialogDescription>This will permanently delete the document and all its indexed chunks. The AI will no longer have access to this knowledge.</AlertDialogDescription>
+            <AlertDialogTitle>{t("admin_ai.delete_title")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("admin_ai.delete_desc")}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+            <AlertDialogCancel>{t("admin_ai.cancel")}</AlertDialogCancel>
+            <AlertDialogAction className="bg-destructive text-destructive-foreground" onClick={handleDelete}>
+              {t("admin_ai.delete_btn")}
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

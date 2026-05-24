@@ -1,9 +1,10 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import {
   useListUploads, useCreateUpload, useUpdateUpload, useDeleteUpload,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,21 +28,21 @@ import {
 import { cn } from "@/lib/utils";
 
 const CATEGORIES = [
-  { value: "academy", label: "Academy" },
-  { value: "knowledge_base", label: "Knowledge Base" },
-  { value: "resources", label: "Resources" },
-  { value: "marketing", label: "Marketing" },
-  { value: "contracts", label: "Contracts" },
-  { value: "product_manuals", label: "Product Manuals" },
-  { value: "ai_knowledge_base", label: "AI Knowledge Base" },
-  { value: "support_documentation", label: "Support Documentation" },
+  { value: "academy" },
+  { value: "knowledge_base" },
+  { value: "resources" },
+  { value: "marketing" },
+  { value: "contracts" },
+  { value: "product_manuals" },
+  { value: "ai_knowledge_base" },
+  { value: "support_documentation" },
 ];
 
 const VISIBILITY = [
-  { value: "admin_only", label: "Admin Only" },
-  { value: "client_visible", label: "Client Visible" },
-  { value: "ai_only", label: "AI Only" },
-  { value: "public_resource", label: "Public Resource" },
+  { value: "admin_only" },
+  { value: "client_visible" },
+  { value: "ai_only" },
+  { value: "public_resource" },
 ];
 
 const LANGUAGES = [
@@ -85,6 +86,7 @@ const EMPTY_FORM = {
 };
 
 export default function AdminUploads() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const qc = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -111,6 +113,17 @@ export default function AdminUploads() {
   const deleteMutation = useDeleteUpload();
 
   const items: UploadItem[] = (data?.items as UploadItem[] | undefined) ?? [];
+
+  const catLabel = (value: string): string => {
+    const key = `admin_uploads.cat_${value}` as Parameters<typeof t>[0];
+    return t(key);
+  };
+
+  const visLabel = (value: string): string => {
+    const key = `admin_uploads.vis_${value}` as Parameters<typeof t>[0];
+    const result = t(key);
+    return result === key ? value : result;
+  };
 
   function openCreate() {
     setEditItem(null);
@@ -149,7 +162,7 @@ export default function AdminUploads() {
       fileSize: String(file.size),
       title: f.title || file.name.replace(/\.[^/.]+$/, ""),
     }));
-    toast({ title: "File info captured — paste the file URL below to complete the upload" });
+    toast({ title: t("admin_uploads.toast_file_captured") });
   }
 
   function handleFileInput(e: React.ChangeEvent<HTMLInputElement>) {
@@ -162,12 +175,12 @@ export default function AdminUploads() {
       fileSize: String(file.size),
       title: f.title || file.name.replace(/\.[^/.]+$/, ""),
     }));
-    toast({ title: "File info captured — paste the file URL below to complete the upload" });
+    toast({ title: t("admin_uploads.toast_file_captured") });
   }
 
   async function handleSave() {
     if (!form.title || !form.category || !form.fileUrl) {
-      toast({ title: "Title, category and file URL are required", variant: "destructive" });
+      toast({ title: t("admin_uploads.toast_required"), variant: "destructive" });
       return;
     }
     setSaving(true);
@@ -188,7 +201,7 @@ export default function AdminUploads() {
             description: form.description || undefined,
           },
         });
-        toast({ title: "Upload updated" });
+        toast({ title: t("admin_uploads.toast_updated") });
       } else {
         await createMutation.mutateAsync({
           data: {
@@ -206,12 +219,12 @@ export default function AdminUploads() {
             description: form.description || undefined,
           },
         });
-        toast({ title: "Upload record created" });
+        toast({ title: t("admin_uploads.toast_created") });
       }
       setDialogOpen(false);
       void qc.invalidateQueries({ queryKey: ["/admin/uploads"] });
     } catch {
-      toast({ title: "Failed to save", variant: "destructive" });
+      toast({ title: t("admin_uploads.toast_save_failed"), variant: "destructive" });
     } finally {
       setSaving(false);
     }
@@ -221,11 +234,11 @@ export default function AdminUploads() {
     if (!deleteId) return;
     try {
       await deleteMutation.mutateAsync({ id: deleteId });
-      toast({ title: "Upload deleted" });
+      toast({ title: t("admin_uploads.toast_deleted") });
       setDeleteId(null);
       void qc.invalidateQueries({ queryKey: ["/admin/uploads"] });
     } catch {
-      toast({ title: "Failed to delete", variant: "destructive" });
+      toast({ title: t("admin_uploads.toast_delete_failed"), variant: "destructive" });
     }
   }
 
@@ -238,20 +251,18 @@ export default function AdminUploads() {
 
   return (
     <div className="p-6 space-y-6 max-w-[1400px] mx-auto">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <FolderUp className="w-6 h-6 text-[var(--accent)]" /> Upload Manager
+            <FolderUp className="w-6 h-6 text-[var(--accent)]" /> {t("admin_uploads.title")}
           </h1>
-          <p className="text-sm text-muted-foreground mt-1">Manage files and documents across all content areas</p>
+          <p className="text-sm text-muted-foreground mt-1">{t("admin_uploads.subtitle")}</p>
         </div>
         <Button onClick={openCreate} size="sm">
-          <Plus className="w-4 h-4 mr-2" /> Add Upload
+          <Plus className="w-4 h-4 mr-2" /> {t("admin_uploads.add_btn")}
         </Button>
       </div>
 
-      {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {CATEGORIES.slice(0, 4).map(cat => {
           const count = (data?.items as UploadItem[] | undefined)?.filter(i => i.category === cat.value).length ?? 0;
@@ -260,56 +271,54 @@ export default function AdminUploads() {
               onClick={() => setFilterCat(filterCat === cat.value ? "" : cat.value)}>
               <CardContent className="pt-4 pb-3">
                 <div className="text-xl font-bold text-foreground">{count}</div>
-                <div className="text-xs text-muted-foreground">{cat.label}</div>
+                <div className="text-xs text-muted-foreground">{catLabel(cat.value)}</div>
               </CardContent>
             </Card>
           );
         })}
       </div>
 
-      {/* Filters */}
       <Card>
         <CardContent className="pt-4 pb-3">
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input className="pl-9" placeholder="Search uploads…" value={q} onChange={e => setQ(e.target.value)} />
+              <Input className="pl-9" placeholder={t("admin_uploads.search_placeholder")} value={q} onChange={e => setQ(e.target.value)} />
             </div>
             <Select value={filterCat || "all"} onValueChange={v => setFilterCat(v === "all" ? "" : v)}>
               <SelectTrigger className="w-44">
-                <SelectValue placeholder="Category" />
+                <SelectValue placeholder={t("admin_uploads.label_category")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All categories</SelectItem>
-                {CATEGORIES.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
+                <SelectItem value="all">{t("admin_uploads.all_categories")}</SelectItem>
+                {CATEGORIES.map(c => <SelectItem key={c.value} value={c.value}>{catLabel(c.value)}</SelectItem>)}
               </SelectContent>
             </Select>
             <Select value={filterVis || "all"} onValueChange={v => setFilterVis(v === "all" ? "" : v)}>
               <SelectTrigger className="w-40">
-                <SelectValue placeholder="Visibility" />
+                <SelectValue placeholder={t("admin_uploads.label_visibility")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All visibility</SelectItem>
-                {VISIBILITY.map(v => <SelectItem key={v.value} value={v.value}>{v.label}</SelectItem>)}
+                <SelectItem value="all">{t("admin_uploads.all_visibility")}</SelectItem>
+                {VISIBILITY.map(v => <SelectItem key={v.value} value={v.value}>{visLabel(v.value)}</SelectItem>)}
               </SelectContent>
             </Select>
             <Select value={filterLang || "all"} onValueChange={v => setFilterLang(v === "all" ? "" : v)}>
               <SelectTrigger className="w-32">
-                <SelectValue placeholder="Language" />
+                <SelectValue placeholder={t("admin_uploads.all_languages")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All languages</SelectItem>
+                <SelectItem value="all">{t("admin_uploads.all_languages")}</SelectItem>
                 {LANGUAGES.map(l => <SelectItem key={l.code} value={l.code}>{l.label}</SelectItem>)}
               </SelectContent>
             </Select>
             <Button variant="ghost" size="sm" onClick={() => { setQ(""); setFilterCat(""); setFilterVis(""); setFilterLang(""); }}>
-              <Filter className="w-4 h-4 mr-1" /> Clear
+              <Filter className="w-4 h-4 mr-1" /> {t("admin_uploads.clear")}
             </Button>
           </div>
         </CardContent>
       </Card>
 
-      {/* List */}
       <Card>
         <CardContent className="p-0">
           {isLoading ? (
@@ -319,8 +328,8 @@ export default function AdminUploads() {
           ) : items.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
               <Upload className="w-10 h-10 mb-3 opacity-40" />
-              <p className="font-medium">No uploads yet</p>
-              <p className="text-sm mt-1">Add your first upload using the button above</p>
+              <p className="font-medium">{t("admin_uploads.no_uploads")}</p>
+              <p className="text-sm mt-1">{t("admin_uploads.no_uploads_hint")}</p>
             </div>
           ) : (
             <div className="divide-y divide-border">
@@ -335,11 +344,11 @@ export default function AdminUploads() {
                       )}
                     </div>
                     <div className="flex items-center gap-2 mt-1 flex-wrap">
-                      <Badge variant="outline" className="text-xs capitalize">
-                        {item.category.replace("_", " ")}
+                      <Badge variant="outline" className="text-xs">
+                        {catLabel(item.category)}
                       </Badge>
                       <span className={cn("text-xs px-2 py-0.5 rounded-full border font-medium", visibilityColor(item.visibility))}>
-                        {VISIBILITY.find(v => v.value === item.visibility)?.label ?? item.visibility}
+                        {visLabel(item.visibility)}
                       </span>
                       <span className="text-xs text-muted-foreground">{item.language.toUpperCase()}</span>
                       {item.fileSize && (
@@ -368,14 +377,12 @@ export default function AdminUploads() {
         </CardContent>
       </Card>
 
-      {/* Create/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{editItem ? "Edit Upload" : "Add Upload"}</DialogTitle>
+            <DialogTitle>{editItem ? t("admin_uploads.dialog_edit") : t("admin_uploads.dialog_add")}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
-            {/* Drop zone (create only) */}
             {!editItem && (
               <div
                 onDragOver={e => { e.preventDefault(); setDragOver(true); }}
@@ -388,28 +395,29 @@ export default function AdminUploads() {
                 )}
               >
                 <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
-                <p className="text-sm font-medium text-foreground">Drop a file here or click to browse</p>
-                <p className="text-xs text-muted-foreground mt-1">Captures file metadata — enter the URL below</p>
+                <p className="text-sm font-medium text-foreground">{t("admin_uploads.dropzone_title")}</p>
+                <p className="text-xs text-muted-foreground mt-1">{t("admin_uploads.dropzone_hint")}</p>
                 <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileInput} />
               </div>
             )}
 
             <div className="grid grid-cols-2 gap-4">
               <div className="col-span-2 space-y-1.5">
-                <Label>Title *</Label>
-                <Input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="Document title" />
+                <Label>{t("admin_uploads.label_title")} <span className="text-destructive">*</span></Label>
+                <Input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
+                  placeholder={t("admin_uploads.placeholder_title")} />
               </div>
               <div className="space-y-1.5">
-                <Label>Category *</Label>
+                <Label>{t("admin_uploads.label_category")} <span className="text-destructive">*</span></Label>
                 <Select value={form.category} onValueChange={v => setForm(f => ({ ...f, category: v }))}>
-                  <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {CATEGORIES.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
+                    {CATEGORIES.map(c => <SelectItem key={c.value} value={c.value}>{catLabel(c.value)}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-1.5">
-                <Label>Language</Label>
+                <Label>{t("admin_uploads.label_language")}</Label>
                 <Select value={form.language} onValueChange={v => setForm(f => ({ ...f, language: v }))}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
@@ -418,61 +426,62 @@ export default function AdminUploads() {
                 </Select>
               </div>
               <div className="col-span-2 space-y-1.5">
-                <Label>File URL *</Label>
+                <Label>{t("admin_uploads.label_file_url")} <span className="text-destructive">*</span></Label>
                 <Input value={form.fileUrl} onChange={e => setForm(f => ({ ...f, fileUrl: e.target.value }))}
-                  placeholder="https://files.example.com/document.pdf" />
+                  placeholder={t("admin_uploads.placeholder_url")} />
               </div>
               <div className="space-y-1.5">
-                <Label>File Name</Label>
+                <Label>{t("admin_uploads.label_file_name")}</Label>
                 <Input value={form.fileName} onChange={e => setForm(f => ({ ...f, fileName: e.target.value }))}
                   placeholder="document.pdf" />
               </div>
               <div className="space-y-1.5">
-                <Label>MIME Type</Label>
+                <Label>{t("admin_uploads.label_mime")}</Label>
                 <Input value={form.mimeType} onChange={e => setForm(f => ({ ...f, mimeType: e.target.value }))}
                   placeholder="application/pdf" />
               </div>
               <div className="space-y-1.5">
-                <Label>Visibility</Label>
+                <Label>{t("admin_uploads.label_visibility")}</Label>
                 <Select value={form.visibility} onValueChange={v => setForm(f => ({ ...f, visibility: v }))}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {VISIBILITY.map(v => <SelectItem key={v.value} value={v.value}>{v.label}</SelectItem>)}
+                    {VISIBILITY.map(v => <SelectItem key={v.value} value={v.value}>{visLabel(v.value)}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-1.5">
-                <Label>Related Product</Label>
+                <Label>{t("admin_uploads.label_product")}</Label>
                 <Input value={form.relatedProduct} onChange={e => setForm(f => ({ ...f, relatedProduct: e.target.value }))}
                   placeholder="DNP DS-RX1HS" />
               </div>
               <div className="col-span-2 space-y-1.5">
-                <Label>Description</Label>
+                <Label>{t("admin_uploads.label_description")}</Label>
                 <Textarea rows={2} value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
-                  placeholder="Brief description of the file…" />
+                  placeholder={t("admin_uploads.placeholder_desc")} />
               </div>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>{t("admin_uploads.cancel")}</Button>
             <Button onClick={handleSave} disabled={saving}>
               {saving && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-              {editItem ? "Update" : "Create"}
+              {saving ? t("admin_uploads.saving") : editItem ? t("admin_uploads.update") : t("admin_uploads.create")}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirm */}
       <AlertDialog open={!!deleteId} onOpenChange={open => !open && setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete upload record?</AlertDialogTitle>
-            <AlertDialogDescription>This will remove the record. The actual file at the URL will not be deleted.</AlertDialogDescription>
+            <AlertDialogTitle>{t("admin_uploads.delete_title")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("admin_uploads.delete_desc")}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+            <AlertDialogCancel>{t("admin_uploads.cancel")}</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">
+              {t("admin_uploads.delete_btn")}
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

@@ -4,7 +4,6 @@ import { useTranslation } from "react-i18next";
 import {
   useGetLead,
   useUpdateLead,
-  useDeleteLead,
   useCreateLeadActivity,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -16,17 +15,17 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Building2, Phone, Mail, CalendarDays, MessageSquare, PhoneCall, AtSign, Users, FileText, Send, ReceiptText, Edit2, Trash2 } from "lucide-react";
+import { ArrowLeft, Building2, Phone, Mail, CalendarDays, MessageSquare, PhoneCall, AtSign, Users, FileText, Send, ReceiptText, Edit2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const PIPELINE_STAGES = [
-  { key: "new", label: "New", color: "bg-slate-100 text-slate-700 border-slate-200" },
-  { key: "contacted", label: "Contacted", color: "bg-info/10 text-info border-info/30" },
-  { key: "qualified", label: "Qualified", color: "bg-info/8 text-info border-info/20" },
-  { key: "proposal", label: "Proposal", color: "bg-warning/8 text-warning border-warning/20" },
-  { key: "negotiation", label: "Negotiation", color: "bg-warning/8 text-warning border-warning/20" },
-  { key: "won", label: "Won", color: "bg-success/8 text-success border-success/20" },
-  { key: "lost", label: "Lost", color: "bg-destructive/10 text-destructive border-destructive/30" },
+  { key: "new", color: "bg-slate-100 text-slate-700 border-slate-200" },
+  { key: "contacted", color: "bg-info/10 text-info border-info/30" },
+  { key: "qualified", color: "bg-info/8 text-info border-info/20" },
+  { key: "proposal", color: "bg-warning/8 text-warning border-warning/20" },
+  { key: "negotiation", color: "bg-warning/8 text-warning border-warning/20" },
+  { key: "won", color: "bg-success/8 text-success border-success/20" },
+  { key: "lost", color: "bg-destructive/10 text-destructive border-destructive/30" },
 ] as const;
 
 const ACTIVITY_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -51,6 +50,8 @@ const ACTIVITY_COLORS: Record<string, string> = {
   invoice_sent: "bg-warning/15 text-warning",
 };
 
+const ACTIVITY_TYPES = ["note", "call", "email", "meeting", "status_change", "quote_sent", "contract_sent", "invoice_sent"];
+
 function formatCurrency(val: string | number) {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 0 }).format(Number(val));
 }
@@ -68,6 +69,7 @@ function formatDateTime(d: string | null | undefined) {
 export default function LeadDetail() {
   const [, params] = useRoute("/crm/leads/:id");
   const id = params?.id ?? "";
+  const { t } = useTranslation();
   const { toast } = useToast();
   const qc = useQueryClient();
 
@@ -77,10 +79,7 @@ export default function LeadDetail() {
   const [activityForm, setActivityForm] = useState({ type: "note", title: "", description: "" });
 
   const { data: lead, isLoading } = useGetLead(id, {
-    query: {
-      queryKey: ["lead", id],
-      enabled: !!id,
-    },
+    query: { queryKey: ["lead", id], enabled: !!id },
   });
 
   const updateMutation = useUpdateLead({
@@ -89,7 +88,7 @@ export default function LeadDetail() {
         qc.invalidateQueries({ queryKey: ["lead", id] });
         qc.invalidateQueries({ queryKey: ["leads"] });
         setEditing(false);
-        toast({ title: "Lead updated" });
+        toast({ title: t("leads.lead_updated") });
       },
     },
   });
@@ -100,7 +99,7 @@ export default function LeadDetail() {
         qc.invalidateQueries({ queryKey: ["lead", id] });
         setShowActivity(false);
         setActivityForm({ type: "note", title: "", description: "" });
-        toast({ title: "Activity added" });
+        toast({ title: t("leads.activity_added") });
       },
     },
   });
@@ -150,14 +149,13 @@ export default function LeadDetail() {
 
   const getStage = (status: string) => PIPELINE_STAGES.find((s) => s.key === status);
 
-  if (isLoading) return <div className="flex items-center justify-center h-40 text-muted-foreground">Loading…</div>;
-  if (!lead) return <div className="text-muted-foreground p-8">Lead not found.</div>;
+  if (isLoading) return <div className="flex items-center justify-center h-40 text-muted-foreground">{t("common.loading")}</div>;
+  if (!lead) return <div className="text-muted-foreground p-8">{t("leads.lead_not_found")}</div>;
 
   const stage = getStage(lead.status);
 
   return (
     <div className="space-y-6 max-w-5xl">
-      {/* Back + Header */}
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-3">
           <Link href="/crm/leads">
@@ -166,23 +164,21 @@ export default function LeadDetail() {
           <div>
             <div className="flex items-center gap-2.5 flex-wrap">
               <h1 className="text-2xl font-bold">{lead.companyName}</h1>
-              {stage && <Badge variant="outline" className={cn("text-xs", stage.color)}>{stage.label}</Badge>}
+              {stage && <Badge variant="outline" className={cn("text-xs", stage.color)}>{t(`leads.stage_${lead.status}`)}</Badge>}
             </div>
             <p className="text-muted-foreground text-sm mt-0.5">{lead.contactName}</p>
           </div>
         </div>
         <div className="flex gap-2 shrink-0">
-          <Button variant="outline" onClick={() => setShowActivity(true)} className="gap-2"><Send className="w-4 h-4" /> Log Activity</Button>
-          <Button onClick={startEdit} className="gap-2"><Edit2 className="w-4 h-4" /> Edit</Button>
+          <Button variant="outline" onClick={() => setShowActivity(true)} className="gap-2"><Send className="w-4 h-4" /> {t("leads.log_activity")}</Button>
+          <Button onClick={startEdit} className="gap-2"><Edit2 className="w-4 h-4" /> {t("common.edit")}</Button>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left: Details */}
         <div className="lg:col-span-1 space-y-4">
-          {/* Contact Info */}
           <div className="rounded-xl border bg-card p-5 space-y-4">
-            <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Contact</h3>
+            <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">{t("leads.contact_section")}</h3>
             <div className="space-y-3">
               <div className="flex items-center gap-2.5 text-sm">
                 <Building2 className="w-4 h-4 text-muted-foreground shrink-0" />
@@ -203,38 +199,35 @@ export default function LeadDetail() {
             </div>
           </div>
 
-          {/* Opportunity */}
           <div className="rounded-xl border bg-card p-5 space-y-3">
-            <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Opportunity</h3>
+            <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">{t("leads.opportunity_section")}</h3>
             <div className="space-y-2 text-sm">
-              <div className="flex justify-between"><span className="text-muted-foreground">Value</span><span className="font-bold text-success text-base">{formatCurrency(lead.value)}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Event Type</span><span>{lead.eventType ?? "—"}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Stage</span><span>{stage?.label ?? "—"}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Created</span><span>{formatDate(lead.createdAt)}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">{t("leads.value_label2")}</span><span className="font-bold text-success text-base">{formatCurrency(lead.value)}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">{t("leads.event_type_label")}</span><span>{lead.eventType ?? "—"}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">{t("leads.stage_label")}</span><span>{t(`leads.stage_${lead.status}`)}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">{t("common.created")}</span><span>{formatDate(lead.createdAt)}</span></div>
             </div>
           </div>
 
-          {/* Notes */}
           {lead.notes && (
             <div className="rounded-xl border bg-card p-5">
-              <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide mb-2">Notes</h3>
+              <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide mb-2">{t("leads.notes_label")}</h3>
               <p className="text-sm text-muted-foreground whitespace-pre-wrap">{lead.notes}</p>
             </div>
           )}
         </div>
 
-        {/* Right: Activity Timeline */}
         <div className="lg:col-span-2">
           <div className="rounded-xl border bg-card p-5">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold">Activity Timeline</h3>
-              <span className="text-xs text-muted-foreground">{lead.activities?.length ?? 0} activities</span>
+              <h3 className="font-semibold">{t("leads.activity_timeline")}</h3>
+              <span className="text-xs text-muted-foreground">{t("leads.activities_count", { count: lead.activities?.length ?? 0 })}</span>
             </div>
             {(!lead.activities || lead.activities.length === 0) ? (
               <div className="text-center py-10 text-muted-foreground">
                 <MessageSquare className="w-8 h-8 mx-auto mb-2 opacity-30" />
-                <p className="text-sm">No activities yet</p>
-                <p className="text-xs mt-1">Log a call, email, or note to track progress</p>
+                <p className="text-sm">{t("leads.no_activities")}</p>
+                <p className="text-xs mt-1">{t("leads.activity_hint")}</p>
               </div>
             ) : (
               <div className="relative">
@@ -264,53 +257,51 @@ export default function LeadDetail() {
         </div>
       </div>
 
-      {/* Edit Dialog */}
       <Dialog open={editing} onOpenChange={setEditing}>
         <DialogContent className="max-w-lg">
-          <DialogHeader><DialogTitle>Edit Lead</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{t("leads.edit_lead")}</DialogTitle></DialogHeader>
           <div className="grid grid-cols-2 gap-4 py-2">
-            <div className="col-span-2 space-y-1.5"><Label>Company Name</Label><Input value={editForm.companyName ?? ""} onChange={(e) => setEditForm({ ...editForm, companyName: e.target.value })} /></div>
-            <div className="col-span-2 space-y-1.5"><Label>Contact Name</Label><Input value={editForm.contactName ?? ""} onChange={(e) => setEditForm({ ...editForm, contactName: e.target.value })} /></div>
-            <div className="space-y-1.5"><Label>Email</Label><Input value={editForm.email ?? ""} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} /></div>
-            <div className="space-y-1.5"><Label>Phone</Label><Input value={editForm.phone ?? ""} onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })} /></div>
-            <div className="space-y-1.5"><Label>Status</Label>
+            <div className="col-span-2 space-y-1.5"><Label>{t("leads.company_label")}</Label><Input value={editForm.companyName ?? ""} onChange={(e) => setEditForm({ ...editForm, companyName: e.target.value })} /></div>
+            <div className="col-span-2 space-y-1.5"><Label>{t("leads.contact_label")}</Label><Input value={editForm.contactName ?? ""} onChange={(e) => setEditForm({ ...editForm, contactName: e.target.value })} /></div>
+            <div className="space-y-1.5"><Label>{t("leads.email_label")}</Label><Input value={editForm.email ?? ""} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} /></div>
+            <div className="space-y-1.5"><Label>{t("leads.phone_label")}</Label><Input value={editForm.phone ?? ""} onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })} /></div>
+            <div className="space-y-1.5"><Label>{t("leads.status_label")}</Label>
               <Select value={editForm.status ?? "new"} onValueChange={(v) => setEditForm({ ...editForm, status: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>{PIPELINE_STAGES.map((s) => <SelectItem key={s.key} value={s.key}>{s.label}</SelectItem>)}</SelectContent>
+                <SelectContent>{PIPELINE_STAGES.map((s) => <SelectItem key={s.key} value={s.key}>{t(`leads.stage_${s.key}`)}</SelectItem>)}</SelectContent>
               </Select>
             </div>
-            <div className="space-y-1.5"><Label>Value ($)</Label><Input type="number" value={editForm.value ?? ""} onChange={(e) => setEditForm({ ...editForm, value: e.target.value })} /></div>
-            <div className="space-y-1.5"><Label>Event Type</Label><Input value={editForm.eventType ?? ""} onChange={(e) => setEditForm({ ...editForm, eventType: e.target.value })} /></div>
-            <div className="col-span-2 space-y-1.5"><Label>Notes</Label><Textarea value={editForm.notes ?? ""} onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })} rows={3} /></div>
+            <div className="space-y-1.5"><Label>{t("leads.value_label")}</Label><Input type="number" value={editForm.value ?? ""} onChange={(e) => setEditForm({ ...editForm, value: e.target.value })} /></div>
+            <div className="space-y-1.5"><Label>{t("leads.event_type_label")}</Label><Input value={editForm.eventType ?? ""} onChange={(e) => setEditForm({ ...editForm, eventType: e.target.value })} /></div>
+            <div className="col-span-2 space-y-1.5"><Label>{t("leads.notes_label")}</Label><Textarea value={editForm.notes ?? ""} onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })} rows={3} /></div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditing(false)}>Cancel</Button>
-            <Button onClick={saveEdit} disabled={updateMutation.isPending}>{updateMutation.isPending ? "Saving…" : "Save Changes"}</Button>
+            <Button variant="outline" onClick={() => setEditing(false)}>{t("common.cancel")}</Button>
+            <Button onClick={saveEdit} disabled={updateMutation.isPending}>{updateMutation.isPending ? t("leads.saving") : t("leads.save_changes")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Activity Dialog */}
       <Dialog open={showActivity} onOpenChange={setShowActivity}>
         <DialogContent className="max-w-md">
-          <DialogHeader><DialogTitle>Log Activity</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{t("leads.log_activity")}</DialogTitle></DialogHeader>
           <div className="space-y-4 py-2">
-            <div className="space-y-1.5"><Label>Type</Label>
+            <div className="space-y-1.5"><Label>{t("leads.activity_type_label")}</Label>
               <Select value={activityForm.type} onValueChange={(v) => setActivityForm({ ...activityForm, type: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {["note", "call", "email", "meeting", "status_change", "quote_sent", "contract_sent", "invoice_sent"].map((t) => (
-                    <SelectItem key={t} value={t}>{t.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())}</SelectItem>
+                  {ACTIVITY_TYPES.map((type) => (
+                    <SelectItem key={type} value={type}>{t(`leads.activity_type_${type}`)}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-1.5"><Label>Title *</Label><Input value={activityForm.title} onChange={(e) => setActivityForm({ ...activityForm, title: e.target.value })} placeholder="What happened?" /></div>
-            <div className="space-y-1.5"><Label>Details</Label><Textarea value={activityForm.description} onChange={(e) => setActivityForm({ ...activityForm, description: e.target.value })} rows={3} /></div>
+            <div className="space-y-1.5"><Label>{t("leads.activity_title_label")} *</Label><Input value={activityForm.title} onChange={(e) => setActivityForm({ ...activityForm, title: e.target.value })} placeholder={t("leads.what_happened")} /></div>
+            <div className="space-y-1.5"><Label>{t("leads.activity_details_label")}</Label><Textarea value={activityForm.description} onChange={(e) => setActivityForm({ ...activityForm, description: e.target.value })} rows={3} /></div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowActivity(false)}>Cancel</Button>
-            <Button onClick={addActivity} disabled={activityMutation.isPending || !activityForm.title}>{activityMutation.isPending ? "Saving…" : "Add Activity"}</Button>
+            <Button variant="outline" onClick={() => setShowActivity(false)}>{t("common.cancel")}</Button>
+            <Button onClick={addActivity} disabled={activityMutation.isPending || !activityForm.title}>{activityMutation.isPending ? t("leads.saving") : t("leads.add_activity_btn")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Link, useParams } from "wouter";
 import { useGetAdminClient } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
@@ -6,21 +7,21 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   ArrowLeft, Award, Heart, Activity, AlertTriangle, Calendar, FileText,
   ReceiptText, LifeBuoy, MessageSquare, GraduationCap, CheckCircle2,
-  Lightbulb, TrendingUp, DollarSign, Star, Clock, User, Building,
+  Lightbulb, TrendingUp, DollarSign, Clock, Building,
   Phone, Mail, Loader2,
 } from "lucide-react";
 
-const tierConfig: Record<string, { label: string; bg: string; text: string; border: string; icon: React.ComponentType<{ className?: string }>; score: string }> = {
-  champion:   { label: "Champion",   bg: "bg-muted",  text: "text-foreground",  border: "border-border", icon: Award,          score: "80–100" },
-  healthy:    { label: "Healthy",    bg: "bg-success/10",   text: "text-success",   border: "border-green-200",  icon: Heart,          score: "55–79" },
-  developing: { label: "Developing", bg: "bg-warning/10",  text: "text-yellow-700",  border: "border-yellow-200", icon: Activity,       score: "30–54" },
-  at_risk:    { label: "At Risk",    bg: "bg-destructive/10",     text: "text-destructive",     border: "border-destructive/30",    icon: AlertTriangle,  score: "0–29" },
+const tierConfig: Record<string, { bg: string; text: string; border: string; icon: React.ComponentType<{ className?: string }> }> = {
+  champion:   { bg: "bg-muted",          text: "text-foreground",  border: "border-border",          icon: Award },
+  healthy:    { bg: "bg-success/10",     text: "text-success",     border: "border-green-200",       icon: Heart },
+  developing: { bg: "bg-warning/10",     text: "text-yellow-700",  border: "border-yellow-200",      icon: Activity },
+  at_risk:    { bg: "bg-destructive/10", text: "text-destructive", border: "border-destructive/30",  icon: AlertTriangle },
 };
 
 const confidenceColors: Record<string, string> = {
-  low: "bg-muted text-muted-foreground",
+  low:    "bg-muted text-muted-foreground",
   medium: "bg-info/15 text-info",
-  high: "bg-success/15 text-success",
+  high:   "bg-success/15 text-success",
 };
 
 function ScoreBar({ label, value, max, color = "bg-primary" }: { label: string; value: number; max: number; color?: string }) {
@@ -44,6 +45,7 @@ function formatDate(d: string | Date | null | undefined) {
 }
 
 export default function Client360() {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const { data, isLoading } = useGetAdminClient(id!);
 
@@ -78,23 +80,27 @@ export default function Client360() {
   const tierCfg = tierConfig[tier] ?? tierConfig.at_risk!;
   const TierIcon = tierCfg.icon;
 
+  const tierLabels: Record<string, string> = {
+    champion:   t("admin_clients.tier_champion"),
+    healthy:    t("admin_clients.tier_healthy"),
+    developing: t("admin_clients.tier_developing"),
+    at_risk:    t("admin_clients.tier_at_risk"),
+  };
+
   return (
     <div className="max-w-6xl mx-auto space-y-6">
-      {/* Header */}
       <div className="flex items-center gap-3">
         <Link href="/admin/clients">
           <Button variant="ghost" size="sm" className="gap-2">
             <ArrowLeft className="w-4 h-4" />
-            Clients
+            {t("client360.back")}
           </Button>
         </Link>
         <span className="text-muted-foreground">/</span>
         <span className="text-sm font-medium text-muted-foreground">{client.fullName ?? client.email}</span>
       </div>
 
-      {/* Profile + Score */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Profile */}
         <Card className="lg:col-span-2">
           <CardContent className="p-6">
             <div className="flex items-start gap-4">
@@ -112,21 +118,21 @@ export default function Client360() {
                 <div className="flex flex-wrap gap-3 mt-2 text-sm text-muted-foreground">
                   <span className="flex items-center gap-1.5"><Mail className="w-3.5 h-3.5" />{client.email}</span>
                   {client.phone && <span className="flex items-center gap-1.5"><Phone className="w-3.5 h-3.5" />{client.phone}</span>}
-                  <span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" />Joined {formatDate(client.createdAt)}</span>
+                  <span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" />{t("client360.joined", { date: formatDate(client.createdAt) })}</span>
                 </div>
               </div>
               <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm font-semibold ${tierCfg.bg} ${tierCfg.text} border ${tierCfg.border}`}>
                 <TierIcon className="w-4 h-4" />
-                {tierCfg.label}
+                {tierLabels[tier] ?? tier}
               </div>
             </div>
 
             <div className="grid grid-cols-4 gap-3 mt-6 pt-6 border-t">
               {[
-                { label: "Events", value: events?.length ?? 0, icon: Calendar },
-                { label: "Quotes", value: quotes?.length ?? 0, icon: FileText },
-                { label: "Invoices", value: invoices?.length ?? 0, icon: ReceiptText },
-                { label: "Revenue", value: `$${Math.round(revenue ?? 0).toLocaleString()}`, icon: DollarSign },
+                { label: t("client360.stat_events"),   value: events?.length ?? 0,                              icon: Calendar },
+                { label: t("client360.stat_quotes"),   value: quotes?.length ?? 0,                              icon: FileText },
+                { label: t("client360.stat_invoices"), value: invoices?.length ?? 0,                            icon: ReceiptText },
+                { label: t("client360.stat_revenue"),  value: `$${Math.round(revenue ?? 0).toLocaleString()}`, icon: DollarSign },
               ].map((s) => (
                 <div key={s.label} className="text-center">
                   <p className="text-xl font-bold text-foreground">{s.value}</p>
@@ -139,31 +145,29 @@ export default function Client360() {
           </CardContent>
         </Card>
 
-        {/* Success Score */}
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center justify-between">
-              <span>Success Score</span>
+              <span>{t("client360.success_score")}</span>
               <span className={`text-2xl font-bold ${tierCfg.text}`}>{score?.score ?? 0}</span>
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <ScoreBar label="Login Activity" value={score?.loginScore ?? 0} max={20} color="bg-info" />
-            <ScoreBar label="Onboarding" value={score?.onboardingScore ?? 0} max={20} color="bg-accent" />
-            <ScoreBar label="Academy" value={score?.academyScore ?? 0} max={15} color="bg-info" />
-            <ScoreBar label="Events" value={score?.eventsScore ?? 0} max={15} color="bg-success" />
-            <ScoreBar label="Quotes" value={score?.quotesScore ?? 0} max={10} color="bg-teal-400" />
-            <ScoreBar label="Invoices" value={score?.invoicesScore ?? 0} max={5} color="bg-success" />
-            <ScoreBar label="Community" value={score?.communityScore ?? 0} max={10} color="bg-warning" />
-            <ScoreBar label="Support" value={score?.supportScore ?? 0} max={5} color="bg-rose-400" />
+            <ScoreBar label={t("client360.score_login")}      value={score?.loginScore ?? 0}      max={20} color="bg-info" />
+            <ScoreBar label={t("client360.score_onboarding")} value={score?.onboardingScore ?? 0} max={20} color="bg-accent" />
+            <ScoreBar label={t("client360.score_academy")}    value={score?.academyScore ?? 0}    max={15} color="bg-info" />
+            <ScoreBar label={t("client360.score_events")}     value={score?.eventsScore ?? 0}     max={15} color="bg-success" />
+            <ScoreBar label={t("client360.score_quotes")}     value={score?.quotesScore ?? 0}     max={10} color="bg-teal-400" />
+            <ScoreBar label={t("client360.score_invoices")}   value={score?.invoicesScore ?? 0}   max={5}  color="bg-success" />
+            <ScoreBar label={t("client360.score_community")}  value={score?.communityScore ?? 0}  max={10} color="bg-warning" />
+            <ScoreBar label={t("client360.score_support")}    value={score?.supportScore ?? 0}    max={5}  color="bg-rose-400" />
             {score?.computedAt && (
-              <p className="text-xs text-muted-foreground text-right pt-1">Updated {formatDate(score.computedAt)}</p>
+              <p className="text-xs text-muted-foreground text-right pt-1">{t("client360.score_updated", { date: formatDate(score.computedAt) })}</p>
             )}
           </CardContent>
         </Card>
       </div>
 
-      {/* Coaching + Upsell */}
       {((coaching?.length ?? 0) > 0 || (upsells?.length ?? 0) > 0) && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {(coaching?.length ?? 0) > 0 && (
@@ -171,7 +175,7 @@ export default function Client360() {
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2 text-warning">
                   <Lightbulb className="w-4 h-4" />
-                  Coaching Recommendations ({coaching.length})
+                  {t("client360.coaching_title", { count: coaching.length })}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
@@ -193,7 +197,7 @@ export default function Client360() {
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2 text-info">
                   <TrendingUp className="w-4 h-4" />
-                  Upsell Opportunities ({upsells.length})
+                  {t("client360.upsell_title", { count: upsells.length })}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
@@ -219,19 +223,18 @@ export default function Client360() {
         </div>
       )}
 
-      {/* Onboarding + Academy */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-primary" />
-              Onboarding Progress
+              {t("client360.onboarding_title")}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-3 mb-3">
               <span className="text-3xl font-bold text-foreground">{onboarding?.pct ?? 0}%</span>
-              <span className="text-sm text-muted-foreground">{onboarding?.completedSteps ?? 0} of {onboarding?.totalSteps ?? 0} steps</span>
+              <span className="text-sm text-muted-foreground">{t("client360.steps_of", { completed: onboarding?.completedSteps ?? 0, total: onboarding?.totalSteps ?? 0 })}</span>
             </div>
             <div className="h-3 bg-muted rounded-full">
               <div className="h-3 bg-primary rounded-full transition-all" style={{ width: `${onboarding?.pct ?? 0}%` }} />
@@ -243,37 +246,35 @@ export default function Client360() {
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <GraduationCap className="w-4 h-4 text-primary" />
-              Academy Progress
+              {t("client360.academy_title")}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-3">
               <span className="text-3xl font-bold text-foreground">{academy?.lessonsCompleted ?? 0}</span>
-              <span className="text-sm text-muted-foreground">lessons completed</span>
+              <span className="text-sm text-muted-foreground">{t("client360.lessons_completed")}</span>
             </div>
             {(academy?.lessonsCompleted ?? 0) === 0 && (
               <p className="text-xs text-warning mt-2 flex items-center gap-1">
                 <AlertTriangle className="w-3.5 h-3.5" />
-                No academy activity yet
+                {t("client360.no_academy")}
               </p>
             )}
           </CardContent>
         </Card>
       </div>
 
-      {/* Events, Quotes, Invoices */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Events */}
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2">
               <Calendar className="w-4 h-4 text-primary" />
-              Events ({events?.length ?? 0})
+              {t("client360.events_title", { count: events?.length ?? 0 })}
             </CardTitle>
           </CardHeader>
           <CardContent>
             {(events?.length ?? 0) === 0 ? (
-              <p className="text-xs text-muted-foreground">No events created</p>
+              <p className="text-xs text-muted-foreground">{t("client360.no_events")}</p>
             ) : (
               <div className="space-y-2">
                 {events.slice(0, 5).map((e) => (
@@ -287,17 +288,16 @@ export default function Client360() {
           </CardContent>
         </Card>
 
-        {/* Quotes */}
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2">
               <FileText className="w-4 h-4 text-primary" />
-              Quotes ({quotes?.length ?? 0})
+              {t("client360.quotes_title", { count: quotes?.length ?? 0 })}
             </CardTitle>
           </CardHeader>
           <CardContent>
             {(quotes?.length ?? 0) === 0 ? (
-              <p className="text-xs text-muted-foreground">No quotes created</p>
+              <p className="text-xs text-muted-foreground">{t("client360.no_quotes")}</p>
             ) : (
               <div className="space-y-2">
                 {quotes.slice(0, 5).map((q) => (
@@ -311,17 +311,16 @@ export default function Client360() {
           </CardContent>
         </Card>
 
-        {/* Invoices */}
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2">
               <ReceiptText className="w-4 h-4 text-primary" />
-              Invoices ({invoices?.length ?? 0})
+              {t("client360.invoices_title", { count: invoices?.length ?? 0 })}
             </CardTitle>
           </CardHeader>
           <CardContent>
             {(invoices?.length ?? 0) === 0 ? (
-              <p className="text-xs text-muted-foreground">No invoices created</p>
+              <p className="text-xs text-muted-foreground">{t("client360.no_invoices")}</p>
             ) : (
               <div className="space-y-2">
                 {invoices.slice(0, 5).map((inv) => (
@@ -340,26 +339,25 @@ export default function Client360() {
         </Card>
       </div>
 
-      {/* Support + Community */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2">
               <LifeBuoy className="w-4 h-4 text-primary" />
-              Support History ({support?.length ?? 0})
+              {t("client360.support_title", { count: support?.length ?? 0 })}
             </CardTitle>
           </CardHeader>
           <CardContent>
             {(support?.length ?? 0) === 0 ? (
-              <p className="text-xs text-muted-foreground">No support tickets</p>
+              <p className="text-xs text-muted-foreground">{t("client360.no_tickets")}</p>
             ) : (
               <div className="space-y-2">
-                {support.slice(0, 5).map((t) => (
-                  <div key={t.id} className="flex items-center gap-2">
-                    <span className="text-xs font-mono text-muted-foreground">{t.ticketNumber}</span>
-                    <span className="text-sm text-foreground truncate flex-1">{t.title}</span>
-                    <Badge className={`text-xs px-1.5 py-0 border-0 shrink-0 ${t.status === "resolved" || t.status === "closed" ? "bg-success/15 text-success" : t.status === "open" ? "bg-info/15 text-info" : "bg-muted text-muted-foreground"}`}>
-                      {t.status}
+                {support.slice(0, 5).map((ticket) => (
+                  <div key={ticket.id} className="flex items-center gap-2">
+                    <span className="text-xs font-mono text-muted-foreground">{ticket.ticketNumber}</span>
+                    <span className="text-sm text-foreground truncate flex-1">{ticket.title}</span>
+                    <Badge className={`text-xs px-1.5 py-0 border-0 shrink-0 ${ticket.status === "resolved" || ticket.status === "closed" ? "bg-success/15 text-success" : ticket.status === "open" ? "bg-info/15 text-info" : "bg-muted text-muted-foreground"}`}>
+                      {ticket.status}
                     </Badge>
                   </div>
                 ))}
@@ -372,24 +370,24 @@ export default function Client360() {
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2">
               <MessageSquare className="w-4 h-4 text-primary" />
-              Community Participation
+              {t("client360.community_title")}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 gap-4 text-center">
               <div className="bg-muted rounded-lg p-3">
                 <p className="text-2xl font-bold text-foreground">{community?.postsCount ?? 0}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">Posts created</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{t("client360.posts_created")}</p>
               </div>
               <div className="bg-muted rounded-lg p-3">
                 <p className="text-2xl font-bold text-foreground">{community?.repliesCount ?? 0}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">Replies written</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{t("client360.replies_written")}</p>
               </div>
             </div>
             {(community?.postsCount ?? 0) + (community?.repliesCount ?? 0) === 0 && (
               <p className="text-xs text-warning mt-3 flex items-center gap-1">
                 <AlertTriangle className="w-3.5 h-3.5" />
-                No community participation
+                {t("client360.no_community")}
               </p>
             )}
           </CardContent>

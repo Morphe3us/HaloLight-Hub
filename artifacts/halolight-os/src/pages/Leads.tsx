@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "wouter";
 import { useTranslation } from "react-i18next";
-import { useListLeads, useCreateLead, useDeleteLead, useUpdateLead } from "@workspace/api-client-react";
+import { useListLeads, useCreateLead, useDeleteLead } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,17 +11,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Search, LayoutGrid, List, Building2, Phone, Mail, ChevronRight, Trash2, TrendingUp } from "lucide-react";
+import { Plus, Search, LayoutGrid, List, ChevronRight, Trash2, TrendingUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const PIPELINE_STAGES = [
-  { key: "new", label: "New", color: "bg-slate-100 text-slate-700 border-slate-200" },
-  { key: "contacted", label: "Contacted", color: "bg-info/10 text-info border-info/30" },
-  { key: "qualified", label: "Qualified", color: "bg-info/8 text-info border-info/20" },
-  { key: "proposal", label: "Proposal", color: "bg-warning/8 text-warning border-warning/20" },
-  { key: "negotiation", label: "Negotiation", color: "bg-warning/8 text-warning border-warning/20" },
-  { key: "won", label: "Won", color: "bg-success/8 text-success border-success/20" },
-  { key: "lost", label: "Lost", color: "bg-destructive/10 text-destructive border-destructive/30" },
+  { key: "new", color: "bg-slate-100 text-slate-700 border-slate-200" },
+  { key: "contacted", color: "bg-info/10 text-info border-info/30" },
+  { key: "qualified", color: "bg-info/8 text-info border-info/20" },
+  { key: "proposal", color: "bg-warning/8 text-warning border-warning/20" },
+  { key: "negotiation", color: "bg-warning/8 text-warning border-warning/20" },
+  { key: "won", color: "bg-success/8 text-success border-success/20" },
+  { key: "lost", color: "bg-destructive/10 text-destructive border-destructive/30" },
 ] as const;
 
 const STATUS_DOT: Record<string, string> = {
@@ -34,15 +34,7 @@ const STATUS_DOT: Record<string, string> = {
   lost: "bg-destructive",
 };
 
-const SOURCE_LABELS: Record<string, string> = {
-  website: "Website",
-  referral: "Referral",
-  social_media: "Social Media",
-  trade_show: "Trade Show",
-  cold_outreach: "Cold Outreach",
-  inbound_call: "Inbound Call",
-  other: "Other",
-};
+const SOURCE_KEYS = ["website", "referral", "social_media", "trade_show", "cold_outreach", "inbound_call", "other"];
 
 function formatCurrency(val: string | number) {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 0 }).format(Number(val));
@@ -75,14 +67,14 @@ export default function Leads() {
         qc.invalidateQueries({ queryKey: ["leads"] });
         setShowCreate(false);
         setForm({ companyName: "", contactName: "", email: "", phone: "", source: "other", status: "new", value: "", notes: "", eventType: "" });
-        toast({ title: "Lead created" });
+        toast({ title: t("leads.lead_created") });
       },
     },
   });
 
   const deleteMutation = useDeleteLead({
     mutation: {
-      onSuccess: () => { qc.invalidateQueries({ queryKey: ["leads"] }); toast({ title: "Lead deleted" }); },
+      onSuccess: () => { qc.invalidateQueries({ queryKey: ["leads"] }); toast({ title: t("leads.lead_deleted") }); },
     },
   });
 
@@ -115,31 +107,29 @@ export default function Leads() {
     return stage ? (
       <Badge variant="outline" className={cn("text-xs", stage.color)}>
         <span className={cn("w-1.5 h-1.5 rounded-full mr-1.5", STATUS_DOT[status])} />
-        {stage.label}
+        {t(`leads.stage_${status}`)}
       </Badge>
     ) : null;
   };
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">CRM Leads</h1>
-          <p className="text-muted-foreground text-sm mt-1">Manage your sales pipeline and track opportunities</p>
+          <h1 className="text-2xl font-bold tracking-tight">{t("leads.title")}</h1>
+          <p className="text-muted-foreground text-sm mt-1">{t("leads.subtitle")}</p>
         </div>
         <Button onClick={() => setShowCreate(true)} className="gap-2 shrink-0">
-          <Plus className="w-4 h-4" /> New Lead
+          <Plus className="w-4 h-4" /> {t("leads.new_lead")}
         </Button>
       </div>
 
-      {/* KPI Row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
-          { label: "Total Leads", value: String(leads.length), sub: "in pipeline" },
-          { label: "Pipeline Value", value: formatCurrency(totalValue), sub: "total opportunity" },
-          { label: "Won", value: String(wonLeads.length), sub: "deals closed" },
-          { label: "Won Value", value: formatCurrency(wonValue), sub: "revenue earned" },
+          { label: t("leads.total_leads"), value: String(leads.length), sub: t("leads.in_pipeline") },
+          { label: t("leads.pipeline_value"), value: formatCurrency(totalValue), sub: t("leads.total_opportunity") },
+          { label: t("leads.won_label"), value: String(wonLeads.length), sub: t("leads.deals_closed") },
+          { label: t("leads.won_value"), value: formatCurrency(wonValue), sub: t("leads.revenue_earned") },
         ].map((kpi) => (
           <div key={kpi.label} className="rounded-xl border bg-card p-4">
             <p className="text-xs text-muted-foreground font-medium">{kpi.label}</p>
@@ -149,19 +139,18 @@ export default function Leads() {
         ))}
       </div>
 
-      {/* Controls */}
       <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input placeholder="Search leads..." className="pl-9" value={search} onChange={(e) => setSearch(e.target.value)} />
+          <Input placeholder={t("leads.search_placeholder")} className="pl-9" value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
         <Select value={filterStatus} onValueChange={setFilterStatus}>
           <SelectTrigger className="w-40">
-            <SelectValue placeholder="All statuses" />
+            <SelectValue placeholder={t("leads.all_statuses")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Statuses</SelectItem>
-            {PIPELINE_STAGES.map((s) => <SelectItem key={s.key} value={s.key}>{s.label}</SelectItem>)}
+            <SelectItem value="all">{t("leads.all_statuses")}</SelectItem>
+            {PIPELINE_STAGES.map((s) => <SelectItem key={s.key} value={s.key}>{t(`leads.stage_${s.key}`)}</SelectItem>)}
           </SelectContent>
         </Select>
         <div className="flex rounded-lg border overflow-hidden">
@@ -175,9 +164,8 @@ export default function Leads() {
       </div>
 
       {isLoading ? (
-        <div className="flex items-center justify-center h-40 text-muted-foreground">Loading leads…</div>
+        <div className="flex items-center justify-center h-40 text-muted-foreground">{t("leads.loading_leads")}</div>
       ) : view === "pipeline" ? (
-        /* Pipeline View */
         <div className="overflow-x-auto pb-4">
           <div className="flex gap-4 min-w-max">
             {PIPELINE_STAGES.map((stage) => {
@@ -186,7 +174,7 @@ export default function Leads() {
               return (
                 <div key={stage.key} className="w-[240px] shrink-0">
                   <div className={cn("rounded-t-lg border px-3 py-2 flex items-center justify-between", stage.color)}>
-                    <span className="font-semibold text-sm">{stage.label}</span>
+                    <span className="font-semibold text-sm">{t(`leads.stage_${stage.key}`)}</span>
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-medium opacity-70">{formatCurrency(stageValue)}</span>
                       <span className="bg-card/60 text-xs font-bold px-1.5 py-0.5 rounded-full">{stageLeads.length}</span>
@@ -206,7 +194,7 @@ export default function Leads() {
                         </div>
                       </Link>
                     ))}
-                    {stageLeads.length === 0 && <p className="text-xs text-muted-foreground text-center py-4">No leads</p>}
+                    {stageLeads.length === 0 && <p className="text-xs text-muted-foreground text-center py-4">{t("leads.no_leads_stage")}</p>}
                   </div>
                 </div>
               );
@@ -214,23 +202,22 @@ export default function Leads() {
           </div>
         </div>
       ) : (
-        /* List View */
         <div className="rounded-xl border bg-card overflow-hidden">
           {leads.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
               <TrendingUp className="w-10 h-10 text-muted-foreground/30 mb-3" />
-              <p className="font-medium text-muted-foreground">No leads found</p>
-              <p className="text-sm text-muted-foreground/60 mt-1">Add your first lead to start building your pipeline</p>
+              <p className="font-medium text-muted-foreground">{t("leads.no_leads_title")}</p>
+              <p className="text-sm text-muted-foreground/60 mt-1">{t("leads.no_leads_desc")}</p>
             </div>
           ) : (
             <table className="w-full text-sm">
               <thead className="bg-muted/40 border-b">
                 <tr>
-                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">Company</th>
-                  <th className="text-left px-4 py-3 font-medium text-muted-foreground hidden sm:table-cell">Contact</th>
-                  <th className="text-left px-4 py-3 font-medium text-muted-foreground hidden md:table-cell">Source</th>
-                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">Status</th>
-                  <th className="text-right px-4 py-3 font-medium text-muted-foreground">Value</th>
+                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">{t("leads.col_company")}</th>
+                  <th className="text-left px-4 py-3 font-medium text-muted-foreground hidden sm:table-cell">{t("leads.col_contact")}</th>
+                  <th className="text-left px-4 py-3 font-medium text-muted-foreground hidden md:table-cell">{t("leads.col_source")}</th>
+                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">{t("common.status")}</th>
+                  <th className="text-right px-4 py-3 font-medium text-muted-foreground">{t("leads.col_value")}</th>
                   <th className="px-4 py-3"></th>
                 </tr>
               </thead>
@@ -244,7 +231,7 @@ export default function Leads() {
                       </Link>
                     </td>
                     <td className="px-4 py-3 hidden sm:table-cell text-muted-foreground">{lead.contactName}</td>
-                    <td className="px-4 py-3 hidden md:table-cell text-muted-foreground">{SOURCE_LABELS[lead.source] ?? lead.source}</td>
+                    <td className="px-4 py-3 hidden md:table-cell text-muted-foreground">{t(`leads.source_${lead.source}`, { defaultValue: lead.source })}</td>
                     <td className="px-4 py-3">{getStatusBadge(lead.status)}</td>
                     <td className="px-4 py-3 text-right font-medium text-success">{formatCurrency(lead.value)}</td>
                     <td className="px-4 py-3 text-right">
@@ -263,64 +250,63 @@ export default function Leads() {
         </div>
       )}
 
-      {/* Create Dialog */}
       <Dialog open={showCreate} onOpenChange={setShowCreate}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>New Lead</DialogTitle>
+            <DialogTitle>{t("leads.new_lead")}</DialogTitle>
           </DialogHeader>
           <div className="grid grid-cols-2 gap-4 py-2">
             <div className="col-span-2 space-y-1.5">
-              <Label>Company Name *</Label>
-              <Input value={form.companyName} onChange={(e) => setForm({ ...form, companyName: e.target.value })} placeholder="Acme Corp" />
+              <Label>{t("leads.company_label")} *</Label>
+              <Input value={form.companyName} onChange={(e) => setForm({ ...form, companyName: e.target.value })} placeholder={t("leads.company_placeholder")} />
             </div>
             <div className="col-span-2 space-y-1.5">
-              <Label>Contact Name *</Label>
-              <Input value={form.contactName} onChange={(e) => setForm({ ...form, contactName: e.target.value })} placeholder="Jane Smith" />
+              <Label>{t("leads.contact_label")} *</Label>
+              <Input value={form.contactName} onChange={(e) => setForm({ ...form, contactName: e.target.value })} placeholder={t("leads.contact_placeholder")} />
             </div>
             <div className="space-y-1.5">
-              <Label>Email</Label>
+              <Label>{t("leads.email_label")}</Label>
               <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
             </div>
             <div className="space-y-1.5">
-              <Label>Phone</Label>
+              <Label>{t("leads.phone_label")}</Label>
               <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
             </div>
             <div className="space-y-1.5">
-              <Label>Source</Label>
+              <Label>{t("leads.source_label")}</Label>
               <Select value={form.source} onValueChange={(v) => setForm({ ...form, source: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {Object.entries(SOURCE_LABELS).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+                  {SOURCE_KEYS.map((k) => <SelectItem key={k} value={k}>{t(`leads.source_${k}`)}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label>Status</Label>
+              <Label>{t("leads.status_label")}</Label>
               <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {PIPELINE_STAGES.map((s) => <SelectItem key={s.key} value={s.key}>{s.label}</SelectItem>)}
+                  {PIPELINE_STAGES.map((s) => <SelectItem key={s.key} value={s.key}>{t(`leads.stage_${s.key}`)}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label>Event Type</Label>
-              <Input value={form.eventType} onChange={(e) => setForm({ ...form, eventType: e.target.value })} placeholder="Wedding, Corporate…" />
+              <Label>{t("leads.event_type_label")}</Label>
+              <Input value={form.eventType} onChange={(e) => setForm({ ...form, eventType: e.target.value })} placeholder={t("leads.event_type_placeholder")} />
             </div>
             <div className="space-y-1.5">
-              <Label>Estimated Value ($)</Label>
+              <Label>{t("leads.value_label")}</Label>
               <Input type="number" value={form.value} onChange={(e) => setForm({ ...form, value: e.target.value })} placeholder="0" />
             </div>
             <div className="col-span-2 space-y-1.5">
-              <Label>Notes</Label>
+              <Label>{t("leads.notes_label")}</Label>
               <Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={3} />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowCreate(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setShowCreate(false)}>{t("common.cancel")}</Button>
             <Button onClick={handleCreate} disabled={createMutation.isPending || !form.companyName || !form.contactName}>
-              {createMutation.isPending ? "Creating…" : "Create Lead"}
+              {createMutation.isPending ? t("leads.creating") : t("leads.create_lead_btn")}
             </Button>
           </DialogFooter>
         </DialogContent>

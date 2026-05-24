@@ -1,17 +1,17 @@
+import { useTranslation } from "react-i18next";
 import { useGetAdminAnalytics } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import {
   Users, TrendingUp, GraduationCap, Calendar, FileText, ReceiptText,
   MessageSquare, LifeBuoy, DollarSign, CheckCircle2, Activity, Award,
-  AlertTriangle, Heart, Star, Zap,
+  AlertTriangle, Heart,
 } from "lucide-react";
 
 const tierColors: Record<string, { bg: string; text: string; icon: React.ComponentType<{ className?: string }> }> = {
-  at_risk: { bg: "bg-destructive/15", text: "text-destructive", icon: AlertTriangle },
-  developing: { bg: "bg-warning/15", text: "text-yellow-700", icon: Activity },
-  healthy: { bg: "bg-success/15", text: "text-success", icon: Heart },
-  champion: { bg: "bg-muted", text: "text-foreground", icon: Award },
+  at_risk:    { bg: "bg-destructive/15", text: "text-destructive", icon: AlertTriangle },
+  developing: { bg: "bg-warning/15",    text: "text-yellow-700",  icon: Activity },
+  healthy:    { bg: "bg-success/15",    text: "text-success",     icon: Heart },
+  champion:   { bg: "bg-muted",         text: "text-foreground",  icon: Award },
 };
 
 function StatCard({ title, value, sub, icon: Icon, color = "text-primary" }: {
@@ -46,6 +46,7 @@ function ProgressBar({ value, max = 100, color = "bg-primary" }: { value: number
 }
 
 export default function AdminAnalytics() {
+  const { t } = useTranslation();
   const { data, isLoading } = useGetAdminAnalytics();
 
   if (isLoading) {
@@ -68,42 +69,46 @@ export default function AdminAnalytics() {
   const tierDist = successScores?.tierDistribution as Record<string, number> ?? {};
   const totalWithScores = Object.values(tierDist).reduce((s, v) => s + (v as number), 0);
 
+  const tierLabels: Record<string, string> = {
+    champion:   t("admin_analytics.tier_champion"),
+    healthy:    t("admin_analytics.tier_healthy"),
+    developing: t("admin_analytics.tier_developing"),
+    at_risk:    t("admin_analytics.tier_at_risk"),
+  };
+
   return (
     <div className="max-w-6xl mx-auto space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Analytics Dashboard</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">Platform-wide metrics and insights</p>
+        <h1 className="text-2xl font-bold text-foreground">{t("admin_analytics.title")}</h1>
+        <p className="text-sm text-muted-foreground mt-0.5">{t("admin_analytics.subtitle")}</p>
       </div>
 
-      {/* Users */}
       <section>
-        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Users</h2>
+        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">{t("admin_analytics.section_users")}</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <StatCard title="Total Clients" value={users?.total ?? 0} icon={Users} />
-          <StatCard title="Active (30 days)" value={users?.active ?? 0} sub={`${users?.activeRate ?? 0}% of total`} icon={Activity} color="text-success" />
-          <StatCard title="Inactive" value={users?.inactive ?? 0} icon={AlertTriangle} color="text-warning" />
-          <StatCard title="Avg Success Score" value={successScores?.avgScore ?? 0} sub="/ 100" icon={Award} color="text-muted-foreground" />
+          <StatCard title={t("admin_analytics.stat_total_clients")} value={users?.total ?? 0} icon={Users} />
+          <StatCard title={t("admin_analytics.stat_active")} value={users?.active ?? 0} sub={t("admin_analytics.stat_active_sub", { rate: users?.activeRate ?? 0 })} icon={Activity} color="text-success" />
+          <StatCard title={t("admin_analytics.stat_inactive")} value={users?.inactive ?? 0} icon={AlertTriangle} color="text-warning" />
+          <StatCard title={t("admin_analytics.stat_avg_score")} value={successScores?.avgScore ?? 0} sub={t("admin_analytics.stat_avg_score_sub")} icon={Award} color="text-muted-foreground" />
         </div>
       </section>
 
-      {/* Score Distribution */}
       <section>
-        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Success Score Distribution</h2>
+        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">{t("admin_analytics.section_score_dist")}</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {(["champion", "healthy", "developing", "at_risk"] as const).map((tier) => {
             const { bg, text, icon: TierIcon } = tierColors[tier]!;
             const count = tierDist[tier] ?? 0;
             const pct = totalWithScores > 0 ? Math.round((count / totalWithScores) * 100) : 0;
-            const labels: Record<string, string> = { champion: "Champion (80-100)", healthy: "Healthy (55-79)", developing: "Developing (30-54)", at_risk: "At Risk (0-29)" };
             return (
               <Card key={tier} className={`${bg.replace("100", "50")} border-0`}>
                 <CardContent className="p-4">
                   <div className="flex items-center gap-2 mb-2">
                     <TierIcon className={`w-4 h-4 ${text}`} />
-                    <span className={`text-xs font-medium ${text}`}>{labels[tier]}</span>
+                    <span className={`text-xs font-medium ${text}`}>{tierLabels[tier]}</span>
                   </div>
                   <div className={`text-3xl font-bold ${text} mb-1`}>{count}</div>
-                  <div className="text-xs text-muted-foreground">{pct}% of scored users</div>
+                  <div className="text-xs text-muted-foreground">{t("admin_analytics.pct_scored", { pct })}</div>
                   <ProgressBar value={count} max={totalWithScores || 1} color={text.replace("text-", "bg-")} />
                 </CardContent>
               </Card>
@@ -112,116 +117,110 @@ export default function AdminAnalytics() {
         </div>
       </section>
 
-      {/* Sales & Revenue */}
       <section>
-        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Sales & Revenue</h2>
+        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">{t("admin_analytics.section_sales")}</h2>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-          <StatCard title="Total Revenue" value={`$${((sales?.totalRevenue ?? 0) / 100).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}` } sub="from paid invoices" icon={DollarSign} color="text-success" />
-          <StatCard title="Events" value={sales?.totalEvents ?? 0} icon={Calendar} />
-          <StatCard title="Quotes" value={sales?.totalQuotes ?? 0} icon={FileText} />
-          <StatCard title="Invoices" value={sales?.totalInvoices ?? 0} sub={`${sales?.paidInvoices ?? 0} paid`} icon={ReceiptText} />
-          <StatCard title="Quote→Invoice Rate" value={`${sales?.conversionRate ?? 0}%`} icon={TrendingUp} color="text-info" />
+          <StatCard title={t("admin_analytics.stat_revenue")} value={`$${((sales?.totalRevenue ?? 0) / 100).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}`} sub={t("admin_analytics.stat_revenue_sub")} icon={DollarSign} color="text-success" />
+          <StatCard title={t("admin_analytics.stat_events")} value={sales?.totalEvents ?? 0} icon={Calendar} />
+          <StatCard title={t("admin_analytics.stat_quotes")} value={sales?.totalQuotes ?? 0} icon={FileText} />
+          <StatCard title={t("admin_analytics.stat_invoices")} value={sales?.totalInvoices ?? 0} sub={t("admin_analytics.stat_invoices_sub", { paid: sales?.paidInvoices ?? 0 })} icon={ReceiptText} />
+          <StatCard title={t("admin_analytics.stat_conversion")} value={`${sales?.conversionRate ?? 0}%`} icon={TrendingUp} color="text-info" />
         </div>
       </section>
 
-      {/* Platform Engagement */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Onboarding */}
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-primary" />
-              Onboarding Completion
+              {t("admin_analytics.onboarding_title")}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-end gap-2 mb-3">
               <span className="text-3xl font-bold text-foreground">{onboarding?.avgCompletionPct ?? 0}%</span>
-              <span className="text-sm text-muted-foreground mb-1">average completion</span>
+              <span className="text-sm text-muted-foreground mb-1">{t("admin_analytics.onboarding_avg")}</span>
             </div>
             <ProgressBar value={onboarding?.avgCompletionPct ?? 0} color="bg-primary" />
-            <p className="text-xs text-muted-foreground mt-2">{onboarding?.usersWithProgress ?? 0} users have started onboarding</p>
+            <p className="text-xs text-muted-foreground mt-2">{t("admin_analytics.onboarding_started", { count: onboarding?.usersWithProgress ?? 0 })}</p>
           </CardContent>
         </Card>
 
-        {/* Academy */}
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <GraduationCap className="w-4 h-4 text-primary" />
-              Academy Engagement
+              {t("admin_analytics.academy_title")}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-3 gap-4 text-center">
               <div>
                 <p className="text-2xl font-bold text-foreground">{academy?.engagedLearners ?? 0}</p>
-                <p className="text-xs text-muted-foreground">Active learners</p>
+                <p className="text-xs text-muted-foreground">{t("admin_analytics.academy_learners")}</p>
               </div>
               <div>
                 <p className="text-2xl font-bold text-foreground">{academy?.totalLessonsCompleted ?? 0}</p>
-                <p className="text-xs text-muted-foreground">Lessons completed</p>
+                <p className="text-xs text-muted-foreground">{t("admin_analytics.academy_lessons")}</p>
               </div>
               <div>
                 <p className="text-2xl font-bold text-foreground">{academy?.avgLessonsPerLearner ?? 0}</p>
-                <p className="text-xs text-muted-foreground">Avg per learner</p>
+                <p className="text-xs text-muted-foreground">{t("admin_analytics.academy_avg")}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Community */}
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <MessageSquare className="w-4 h-4 text-primary" />
-              Community Activity
+              {t("admin_analytics.community_title")}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-3 gap-4 text-center">
               <div>
                 <p className="text-2xl font-bold text-foreground">{community?.totalPosts ?? 0}</p>
-                <p className="text-xs text-muted-foreground">Total posts</p>
+                <p className="text-xs text-muted-foreground">{t("admin_analytics.community_posts")}</p>
               </div>
               <div>
                 <p className="text-2xl font-bold text-foreground">{community?.totalReplies ?? 0}</p>
-                <p className="text-xs text-muted-foreground">Replies</p>
+                <p className="text-xs text-muted-foreground">{t("admin_analytics.community_replies")}</p>
               </div>
               <div>
                 <p className="text-2xl font-bold text-foreground">{community?.recentPosts ?? 0}</p>
-                <p className="text-xs text-muted-foreground">Last 30 days</p>
+                <p className="text-xs text-muted-foreground">{t("admin_analytics.community_recent")}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Support */}
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <LifeBuoy className="w-4 h-4 text-primary" />
-              Support Metrics
+              {t("admin_analytics.support_title")}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-3 gap-4 text-center mb-3">
               <div>
                 <p className="text-2xl font-bold text-foreground">{support?.totalTickets ?? 0}</p>
-                <p className="text-xs text-muted-foreground">Total tickets</p>
+                <p className="text-xs text-muted-foreground">{t("admin_analytics.support_total")}</p>
               </div>
               <div>
                 <p className="text-2xl font-bold text-warning">{support?.openTickets ?? 0}</p>
-                <p className="text-xs text-muted-foreground">Open</p>
+                <p className="text-xs text-muted-foreground">{t("admin_analytics.support_open")}</p>
               </div>
               <div>
                 <p className="text-2xl font-bold text-success">{support?.resolvedTickets ?? 0}</p>
-                <p className="text-xs text-muted-foreground">Resolved</p>
+                <p className="text-xs text-muted-foreground">{t("admin_analytics.support_resolved")}</p>
               </div>
             </div>
             <div className="space-y-1">
               <div className="flex justify-between text-xs text-muted-foreground">
-                <span>Resolution rate</span>
+                <span>{t("admin_analytics.support_resolution_rate")}</span>
                 <span className="font-medium">{support?.resolutionRate ?? 0}%</span>
               </div>
               <ProgressBar value={support?.resolutionRate ?? 0} color="bg-success" />
