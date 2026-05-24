@@ -1,0 +1,75 @@
+Infrastructure and data storage audit.
+
+I need to clearly understand where everything is hosted and where all user/content data is stored.
+
+Please produce a complete infrastructure map for HaloLight Hub.
+
+Explain:
+
+1. Application hosting
+- Where is the frontend hosted?
+- Where is the backend/API hosted?
+- Is this running on Replit workspace, Replit Deployment, Autoscale, Reserved VM, or something else?
+- What changes when we publish?
+
+2. Database
+- Which database is used?
+- Where is PostgreSQL hosted?
+- Is it Replit Postgres or an external provider?
+- What is stored in the database?
+- How do we access/export/back up the database?
+
+3. Authentication
+- Is Clerk used?
+- What data is stored in Clerk?
+- What data is stored locally in the users table?
+- How are roles handled?
+
+4. Uploaded files
+- Where are files currently stored?
+- Are uploads actually stored in Replit, database, or only as external URLs?
+- Are PDFs/images/videos physically uploaded anywhere?
+- If Upload Manager is URL-based only, say so clearly.
+
+5. Videos
+- Where should Academy videos be hosted?
+- Are videos stored in the app or only embedded via Vimeo/YouTube URL?
+
+6. AI Knowledge Base
+- Where are AI knowledge documents stored?
+- Where are chunks stored?
+- Are embeddings/vector search currently used?
+- If not, what is the current retrieval method?
+
+7. Secrets and API keys
+- Where are environment variables stored?
+- Which secrets are currently required?
+- Which secrets will be required for production?
+
+8. Backups
+- Are backups currently configured?
+- If not, what backup system should we add before beta?
+
+9. Data ownership
+- Confirm that HaloLight owns and controls:
+  - user records
+  - Academy content
+  - resources
+  - AI knowledge documents
+  - equipment data
+  - consumables data
+  - CRM data
+  - invoices/quotes/contracts
+
+10. Recommended production architecture
+Recommend the best production setup for HaloLight Hub:
+- app hosting
+- database hosting
+- file storage
+- video hosting
+- AI provider
+- backups
+- monitoring
+
+Do not change anything.
+Only audit and explain.
