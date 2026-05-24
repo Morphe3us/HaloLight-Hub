@@ -2080,6 +2080,290 @@ paths:
               schema:
                 $ref: "#/components/schemas/Client360"
 
+  # ─── Translations ────────────────────────────────────────────────────────────
+  /admin/translations:
+    get:
+      operationId: listTranslations
+      tags: [translations]
+      summary: List translation records with completeness stats
+      parameters:
+        - in: query
+          name: contentType
+          schema: { type: string }
+        - in: query
+          name: language
+          schema: { type: string }
+        - in: query
+          name: status
+          schema: { type: string }
+        - in: query
+          name: q
+          schema: { type: string }
+      responses:
+        "200":
+          description: Translation overview
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TranslationOverview"
+
+  /admin/translations/ensure:
+    post:
+      operationId: ensureTranslationRecords
+      tags: [translations]
+      summary: Ensure translation records exist for all content items
+      responses:
+        "200":
+          description: Created count
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [created]
+                properties:
+                  created: { type: integer }
+
+  /admin/translations/{id}:
+    get:
+      operationId: getTranslationRecord
+      tags: [translations]
+      summary: Get single translation record
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Translation record
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TranslationRecord"
+    patch:
+      operationId: updateTranslationRecord
+      tags: [translations]
+      summary: Update translation status or text
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateTranslationInput"
+      responses:
+        "200":
+          description: Updated translation record
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TranslationRecord"
+
+  # ─── Uploads ─────────────────────────────────────────────────────────────────
+  /admin/uploads:
+    get:
+      operationId: listUploads
+      tags: [uploads]
+      summary: List upload records
+      parameters:
+        - in: query
+          name: category
+          schema: { type: string }
+        - in: query
+          name: visibility
+          schema: { type: string }
+        - in: query
+          name: language
+          schema: { type: string }
+        - in: query
+          name: q
+          schema: { type: string }
+      responses:
+        "200":
+          description: Upload list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UploadList"
+    post:
+      operationId: createUpload
+      tags: [uploads]
+      summary: Create an upload record
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateUploadInput"
+      responses:
+        "201":
+          description: Created upload
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UploadItem"
+
+  /admin/uploads/{id}:
+    put:
+      operationId: updateUpload
+      tags: [uploads]
+      summary: Update an upload record
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUploadInput"
+      responses:
+        "200":
+          description: Updated upload
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UploadItem"
+    delete:
+      operationId: deleteUpload
+      tags: [uploads]
+      summary: Delete an upload record
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "204":
+          description: Deleted
+
+  # ─── AI Knowledge Base ────────────────────────────────────────────────────────
+  /admin/ai-knowledge:
+    get:
+      operationId: listAIKnowledgeDocs
+      tags: [ai-knowledge]
+      summary: List AI knowledge documents
+      parameters:
+        - in: query
+          name: category
+          schema: { type: string }
+        - in: query
+          name: language
+          schema: { type: string }
+        - in: query
+          name: status
+          schema: { type: string }
+        - in: query
+          name: aiActive
+          schema: { type: string }
+        - in: query
+          name: q
+          schema: { type: string }
+      responses:
+        "200":
+          description: AI knowledge document list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AIKnowledgeDocList"
+    post:
+      operationId: createAIKnowledgeDoc
+      tags: [ai-knowledge]
+      summary: Create an AI knowledge document
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAIKnowledgeDocInput"
+      responses:
+        "201":
+          description: Created document
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AIKnowledgeDoc"
+
+  /admin/ai-knowledge/{id}:
+    get:
+      operationId: getAIKnowledgeDoc
+      tags: [ai-knowledge]
+      summary: Get AI knowledge document with chunks
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: AI knowledge document detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AIKnowledgeDocDetail"
+    put:
+      operationId: updateAIKnowledgeDoc
+      tags: [ai-knowledge]
+      summary: Update an AI knowledge document
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateAIKnowledgeDocInput"
+      responses:
+        "200":
+          description: Updated document
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AIKnowledgeDoc"
+    delete:
+      operationId: deleteAIKnowledgeDoc
+      tags: [ai-knowledge]
+      summary: Delete an AI knowledge document
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "204":
+          description: Deleted
+
+  /admin/ai-knowledge/{id}/reindex:
+    post:
+      operationId: reindexAIKnowledgeDoc
+      tags: [ai-knowledge]
+      summary: Chunk and reindex a knowledge document
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Reindex result
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [documentId, chunksCreated]
+                properties:
+                  documentId: { type: string }
+                  chunksCreated: { type: integer }
+
   # ─── Admin Academy ────────────────────────────────────────────────────────────
   /admin/academy/courses:
     get:
@@ -5093,3 +5377,215 @@ components:
           items:
             $ref: "#/components/schemas/AdminSearchResultItem"
         total: { type: integer }
+
+    # ─── Translations ─────────────────────────────────────────────────────────────
+    TranslationRecord:
+      type: object
+      required: [id, contentType, contentId, language, status, createdAt, updatedAt]
+      properties:
+        id: { type: string }
+        contentType: { type: string }
+        contentId: { type: string }
+        language: { type: string }
+        status: { type: string, enum: [draft, needs_review, approved, published] }
+        translatedTitle: { type: string, nullable: true }
+        translatedBody: { type: string, nullable: true }
+        reviewedBy: { type: string, nullable: true }
+        reviewedAt: { type: string, nullable: true }
+        createdAt: { type: string }
+        updatedAt: { type: string }
+
+    TranslationItem:
+      type: object
+      required: [contentId, contentType, sourceTitle, sourceLanguage, translations]
+      properties:
+        contentId: { type: string }
+        contentType: { type: string }
+        sourceTitle: { type: string }
+        sourceLanguage: { type: string }
+        translations:
+          type: object
+          additionalProperties:
+            type: object
+            properties:
+              id: { type: string }
+              status: { type: string }
+
+    TranslationOverview:
+      type: object
+      required: [items, completenessScore, total]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/TranslationItem"
+        completenessScore:
+          type: object
+          additionalProperties: { type: integer }
+        total: { type: integer }
+
+    UpdateTranslationInput:
+      type: object
+      properties:
+        status: { type: string, enum: [draft, needs_review, approved, published] }
+        translatedTitle: { type: string }
+        translatedBody: { type: string }
+
+    # ─── Uploads ─────────────────────────────────────────────────────────────────
+    UploadItem:
+      type: object
+      required: [id, title, language, category, fileUrl, visibility, status, createdAt]
+      properties:
+        id: { type: string }
+        title: { type: string }
+        language: { type: string }
+        category: { type: string, enum: [academy, knowledge_base, resources, marketing, contracts, product_manuals, ai_knowledge_base, support_documentation] }
+        fileUrl: { type: string }
+        fileName: { type: string, nullable: true }
+        mimeType: { type: string, nullable: true }
+        fileSize: { type: integer, nullable: true }
+        visibility: { type: string, enum: [admin_only, client_visible, ai_only, public_resource] }
+        status: { type: string, enum: [pending, processing, ready, failed] }
+        relatedCourseId: { type: string, nullable: true }
+        relatedLessonId: { type: string, nullable: true }
+        relatedProduct: { type: string, nullable: true }
+        description: { type: string, nullable: true }
+        uploadedBy: { type: string, nullable: true }
+        createdAt: { type: string }
+        updatedAt: { type: string }
+
+    UploadList:
+      type: object
+      required: [items, total]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/UploadItem"
+        total: { type: integer }
+
+    CreateUploadInput:
+      type: object
+      required: [title, category, fileUrl]
+      properties:
+        title: { type: string }
+        language: { type: string }
+        category: { type: string, enum: [academy, knowledge_base, resources, marketing, contracts, product_manuals, ai_knowledge_base, support_documentation] }
+        fileUrl: { type: string }
+        fileName: { type: string }
+        mimeType: { type: string }
+        fileSize: { type: integer }
+        visibility: { type: string, enum: [admin_only, client_visible, ai_only, public_resource] }
+        relatedCourseId: { type: string }
+        relatedLessonId: { type: string }
+        relatedProduct: { type: string }
+        description: { type: string }
+
+    UpdateUploadInput:
+      type: object
+      properties:
+        title: { type: string }
+        language: { type: string }
+        category: { type: string, enum: [academy, knowledge_base, resources, marketing, contracts, product_manuals, ai_knowledge_base, support_documentation] }
+        fileUrl: { type: string }
+        fileName: { type: string }
+        mimeType: { type: string }
+        fileSize: { type: integer }
+        visibility: { type: string, enum: [admin_only, client_visible, ai_only, public_resource] }
+        status: { type: string, enum: [pending, processing, ready, failed] }
+        relatedCourseId: { type: string }
+        relatedLessonId: { type: string }
+        relatedProduct: { type: string }
+        description: { type: string }
+
+    # ─── AI Knowledge Base ────────────────────────────────────────────────────────
+    AIKnowledgeDoc:
+      type: object
+      required: [id, title, language, category, content, tags, aiActive, status, createdAt, updatedAt]
+      properties:
+        id: { type: string }
+        title: { type: string }
+        language: { type: string }
+        category: { type: string, enum: [faq, troubleshooting, printer_manual, camera_manual, software_guide, business_guide, pricing_guide, event_guide, product_guide, academy_lesson, support_article] }
+        productModel: { type: string, nullable: true }
+        sourceUrl: { type: string, nullable: true }
+        content: { type: string }
+        tags: { type: array, items: { type: string } }
+        aiActive: { type: boolean }
+        lastIndexedAt: { type: string, nullable: true }
+        status: { type: string, enum: [draft, indexed, needs_review, archived] }
+        createdAt: { type: string }
+        updatedAt: { type: string }
+
+    AIKnowledgeChunk:
+      type: object
+      required: [id, documentId, content, chunkIndex]
+      properties:
+        id: { type: string }
+        documentId: { type: string }
+        content: { type: string }
+        chunkIndex: { type: integer }
+        metadata: { type: object }
+        createdAt: { type: string }
+
+    AIKnowledgeDocDetail:
+      type: object
+      required: [id, title, language, category, content, tags, aiActive, status, createdAt, updatedAt, chunks, tagList]
+      properties:
+        id: { type: string }
+        title: { type: string }
+        language: { type: string }
+        category: { type: string }
+        productModel: { type: string, nullable: true }
+        sourceUrl: { type: string, nullable: true }
+        content: { type: string }
+        tags: { type: array, items: { type: string } }
+        aiActive: { type: boolean }
+        lastIndexedAt: { type: string, nullable: true }
+        status: { type: string }
+        createdAt: { type: string }
+        updatedAt: { type: string }
+        chunks:
+          type: array
+          items:
+            $ref: "#/components/schemas/AIKnowledgeChunk"
+        tagList:
+          type: array
+          items: { type: string }
+
+    AIKnowledgeDocList:
+      type: object
+      required: [items, total]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/AIKnowledgeDoc"
+        total: { type: integer }
+
+    CreateAIKnowledgeDocInput:
+      type: object
+      required: [title, category]
+      properties:
+        title: { type: string }
+        language: { type: string }
+        category: { type: string, enum: [faq, troubleshooting, printer_manual, camera_manual, software_guide, business_guide, pricing_guide, event_guide, product_guide, academy_lesson, support_article] }
+        productModel: { type: string }
+        sourceUrl: { type: string }
+        content: { type: string }
+        tags: { type: array, items: { type: string } }
+        aiActive: { type: boolean }
+        status: { type: string, enum: [draft, indexed, needs_review, archived] }
+
+    UpdateAIKnowledgeDocInput:
+      type: object
+      properties:
+        title: { type: string }
+        language: { type: string }
+        category: { type: string, enum: [faq, troubleshooting, printer_manual, camera_manual, software_guide, business_guide, pricing_guide, event_guide, product_guide, academy_lesson, support_article] }
+        productModel: { type: string }
+        sourceUrl: { type: string }
+        content: { type: string }
+        tags: { type: array, items: { type: string } }
+        aiActive: { type: boolean }
+        status: { type: string, enum: [draft, indexed, needs_review, archived] }

@@ -1,0 +1,299 @@
+Phase 11 — Content Upload, Translation Quality & AI Knowledge Base.
+
+Goal:
+
+Make HaloLight Hub ready for real content operations.
+
+We need to manage:
+- multilingual content quality
+- file/folder uploads
+- AI chatbot knowledge base
+- document ingestion
+- admin review workflows
+
+Do not break existing Academy, Resources, AI Assistant or Admin systems.
+
+==================================================
+1. TRANSLATION QUALITY SYSTEM
+==================================================
+
+Create a Translation Management interface for admin.
+
+Support languages:
+- French
+- English
+- German
+- Dutch
+- Spanish
+- Italian
+- Portuguese
+- Polish
+
+Features:
+
+- View all translated content by language
+- Compare source language vs translated language side by side
+- Edit translations manually
+- Mark translation as:
+  - Draft
+  - Needs review
+  - Approved
+  - Published
+
+Apply to:
+
+- Academy courses
+- Academy modules
+- Academy lessons
+- Quiz questions
+- Knowledge Base articles
+- Resources
+- UI labels if possible
+
+Add filters:
+
+- Missing translation
+- Needs review
+- Approved
+- Published
+- By language
+- By content type
+
+Add translation completeness score:
+
+Example:
+French: 100%
+English: 85%
+German: 72%
+
+Do not automatically publish translations without admin approval.
+
+==================================================
+2. BULK FILE & FOLDER UPLOAD MANAGER
+==================================================
+
+Create an Admin Upload Manager.
+
+Goal:
+
+Allow HaloLight staff to upload real content folders without touching code.
+
+Support:
+
+- PDF
+- images
+- videos
+- ZIP folders
+- documents
+- marketing assets
+- manuals
+- checklists
+- contracts
+
+Features:
+
+- Drag and drop upload
+- Folder upload if browser supports it
+- ZIP upload and extraction if possible
+- File categories:
+  - Academy
+  - Knowledge Base
+  - Resources
+  - Marketing
+  - Contracts
+  - Product Manuals
+  - AI Knowledge Base
+  - Support Documentation
+
+Fields per upload:
+
+- Title
+- Language
+- Category
+- Related product optional
+- Related course optional
+- Related lesson optional
+- Visibility:
+  - Admin only
+  - Client visible
+  - AI only
+  - Public resource
+
+Storage:
+
+For now:
+- Support external file URLs
+- Support upload architecture ready for S3 / Cloudflare R2 / Supabase Storage
+
+If direct storage is not configured, create the UI and data model, but store external URLs safely.
+
+==================================================
+3. AI KNOWLEDGE BASE MANAGER
+==================================================
+
+Create a dedicated AI Knowledge Base admin area.
+
+Goal:
+
+Admins can upload or link documents that the AI Assistant uses as knowledge.
+
+Features:
+
+- Add knowledge document
+- Edit knowledge document
+- Delete knowledge document
+- Set document language
+- Set document category
+- Set document product
+- Set visibility
+- Mark document as active/inactive for AI
+
+Supported content types:
+
+- FAQ
+- troubleshooting guide
+- printer manual
+- camera manual
+- software guide
+- business guide
+- pricing guide
+- event guide
+- product guide
+- Academy lesson
+- support article
+
+For each document:
+
+- Title
+- Language
+- Category
+- Product model
+- Source URL
+- Raw text content
+- Tags
+- AI active toggle
+- Last indexed date
+- Status:
+  - Draft
+  - Indexed
+  - Needs review
+  - Archived
+
+==================================================
+4. AI INGESTION PIPELINE
+==================================================
+
+Prepare document ingestion for the chatbot.
+
+Requirements:
+
+- Extract text from manually pasted content
+- Store clean text chunks
+- Chunk long documents into searchable sections
+- Attach metadata:
+  - language
+  - product
+  - category
+  - source
+  - last updated
+
+Create tables for:
+
+- ai_knowledge_documents
+- ai_knowledge_chunks
+- ai_knowledge_tags
+
+Prepare for future vector search / embeddings.
+
+For now:
+- Use keyword search fallback
+- Keep architecture ready for embeddings later
+
+==================================================
+5. AI SOURCE CONTROL
+==================================================
+
+When AI Assistant answers, it should be able to cite:
+
+- Academy lesson
+- Knowledge Base article
+- AI Knowledge document
+- Resource
+- Support guide
+
+Admin should be able to see:
+
+- Which documents are active for AI
+- Which documents are outdated
+- Which documents need review
+- Which documents are missing translations
+
+==================================================
+6. TRANSLATION QA FOR AI KNOWLEDGE
+==================================================
+
+Each AI knowledge document should support language versions.
+
+Example:
+
+Document:
+"How to replace DNP ribbon"
+
+Languages:
+- FR
+- EN
+- DE
+- NL
+- ES
+- IT
+- PT
+- PL
+
+Admin must see which languages are missing.
+
+==================================================
+7. ADMIN PAGES
+==================================================
+
+Add admin pages:
+
+- /admin/translations
+- /admin/uploads
+- /admin/ai-knowledge
+
+Add these links to the admin sidebar.
+
+==================================================
+8. SECURITY
+==================================================
+
+Only admin users can access:
+
+- Translation manager
+- Upload manager
+- AI knowledge manager
+
+Clients must never access admin-only uploads or AI-only documents directly.
+
+==================================================
+9. VERIFICATION
+==================================================
+
+Run:
+
+- database migration / schema push
+- OpenAPI generation
+- typecheck
+- route verification
+
+Manually verify:
+
+- create translation
+- edit translation
+- upload/link resource
+- create AI knowledge document
+- create chunks
+- toggle AI active
+- AI retrieval can see active knowledge documents
+
+Stop after completion and provide a full implementation summary.

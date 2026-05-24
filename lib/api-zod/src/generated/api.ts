@@ -2557,6 +2557,334 @@ export const GetAdminClientResponse = zod.object({
 
 
 /**
+ * @summary List translation records with completeness stats
+ */
+export const ListTranslationsQueryParams = zod.object({
+  "contentType": zod.coerce.string().optional(),
+  "language": zod.coerce.string().optional(),
+  "status": zod.coerce.string().optional(),
+  "q": zod.coerce.string().optional()
+})
+
+export const ListTranslationsResponse = zod.object({
+  "items": zod.array(zod.object({
+  "contentId": zod.string(),
+  "contentType": zod.string(),
+  "sourceTitle": zod.string(),
+  "sourceLanguage": zod.string(),
+  "translations": zod.record(zod.string(), zod.object({
+  "id": zod.string().optional(),
+  "status": zod.string().optional()
+}))
+})),
+  "completenessScore": zod.record(zod.string(), zod.number()),
+  "total": zod.number()
+})
+
+
+/**
+ * @summary Ensure translation records exist for all content items
+ */
+export const EnsureTranslationRecordsResponse = zod.object({
+  "created": zod.number()
+})
+
+
+/**
+ * @summary Get single translation record
+ */
+export const GetTranslationRecordParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const GetTranslationRecordResponse = zod.object({
+  "id": zod.string(),
+  "contentType": zod.string(),
+  "contentId": zod.string(),
+  "language": zod.string(),
+  "status": zod.enum(['draft', 'needs_review', 'approved', 'published']),
+  "translatedTitle": zod.string().nullish(),
+  "translatedBody": zod.string().nullish(),
+  "reviewedBy": zod.string().nullish(),
+  "reviewedAt": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Update translation status or text
+ */
+export const UpdateTranslationRecordParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const UpdateTranslationRecordBody = zod.object({
+  "status": zod.enum(['draft', 'needs_review', 'approved', 'published']).optional(),
+  "translatedTitle": zod.string().optional(),
+  "translatedBody": zod.string().optional()
+})
+
+export const UpdateTranslationRecordResponse = zod.object({
+  "id": zod.string(),
+  "contentType": zod.string(),
+  "contentId": zod.string(),
+  "language": zod.string(),
+  "status": zod.enum(['draft', 'needs_review', 'approved', 'published']),
+  "translatedTitle": zod.string().nullish(),
+  "translatedBody": zod.string().nullish(),
+  "reviewedBy": zod.string().nullish(),
+  "reviewedAt": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary List upload records
+ */
+export const ListUploadsQueryParams = zod.object({
+  "category": zod.coerce.string().optional(),
+  "visibility": zod.coerce.string().optional(),
+  "language": zod.coerce.string().optional(),
+  "q": zod.coerce.string().optional()
+})
+
+export const ListUploadsResponse = zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.string(),
+  "title": zod.string(),
+  "language": zod.string(),
+  "category": zod.enum(['academy', 'knowledge_base', 'resources', 'marketing', 'contracts', 'product_manuals', 'ai_knowledge_base', 'support_documentation']),
+  "fileUrl": zod.string(),
+  "fileName": zod.string().nullish(),
+  "mimeType": zod.string().nullish(),
+  "fileSize": zod.number().nullish(),
+  "visibility": zod.enum(['admin_only', 'client_visible', 'ai_only', 'public_resource']),
+  "status": zod.enum(['pending', 'processing', 'ready', 'failed']),
+  "relatedCourseId": zod.string().nullish(),
+  "relatedLessonId": zod.string().nullish(),
+  "relatedProduct": zod.string().nullish(),
+  "description": zod.string().nullish(),
+  "uploadedBy": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string().optional()
+})),
+  "total": zod.number()
+})
+
+
+/**
+ * @summary Create an upload record
+ */
+export const CreateUploadBody = zod.object({
+  "title": zod.string(),
+  "language": zod.string().optional(),
+  "category": zod.enum(['academy', 'knowledge_base', 'resources', 'marketing', 'contracts', 'product_manuals', 'ai_knowledge_base', 'support_documentation']),
+  "fileUrl": zod.string(),
+  "fileName": zod.string().optional(),
+  "mimeType": zod.string().optional(),
+  "fileSize": zod.number().optional(),
+  "visibility": zod.enum(['admin_only', 'client_visible', 'ai_only', 'public_resource']).optional(),
+  "relatedCourseId": zod.string().optional(),
+  "relatedLessonId": zod.string().optional(),
+  "relatedProduct": zod.string().optional(),
+  "description": zod.string().optional()
+})
+
+
+/**
+ * @summary Update an upload record
+ */
+export const UpdateUploadParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const UpdateUploadBody = zod.object({
+  "title": zod.string().optional(),
+  "language": zod.string().optional(),
+  "category": zod.enum(['academy', 'knowledge_base', 'resources', 'marketing', 'contracts', 'product_manuals', 'ai_knowledge_base', 'support_documentation']).optional(),
+  "fileUrl": zod.string().optional(),
+  "fileName": zod.string().optional(),
+  "mimeType": zod.string().optional(),
+  "fileSize": zod.number().optional(),
+  "visibility": zod.enum(['admin_only', 'client_visible', 'ai_only', 'public_resource']).optional(),
+  "status": zod.enum(['pending', 'processing', 'ready', 'failed']).optional(),
+  "relatedCourseId": zod.string().optional(),
+  "relatedLessonId": zod.string().optional(),
+  "relatedProduct": zod.string().optional(),
+  "description": zod.string().optional()
+})
+
+export const UpdateUploadResponse = zod.object({
+  "id": zod.string(),
+  "title": zod.string(),
+  "language": zod.string(),
+  "category": zod.enum(['academy', 'knowledge_base', 'resources', 'marketing', 'contracts', 'product_manuals', 'ai_knowledge_base', 'support_documentation']),
+  "fileUrl": zod.string(),
+  "fileName": zod.string().nullish(),
+  "mimeType": zod.string().nullish(),
+  "fileSize": zod.number().nullish(),
+  "visibility": zod.enum(['admin_only', 'client_visible', 'ai_only', 'public_resource']),
+  "status": zod.enum(['pending', 'processing', 'ready', 'failed']),
+  "relatedCourseId": zod.string().nullish(),
+  "relatedLessonId": zod.string().nullish(),
+  "relatedProduct": zod.string().nullish(),
+  "description": zod.string().nullish(),
+  "uploadedBy": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string().optional()
+})
+
+
+/**
+ * @summary Delete an upload record
+ */
+export const DeleteUploadParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+
+/**
+ * @summary List AI knowledge documents
+ */
+export const ListAIKnowledgeDocsQueryParams = zod.object({
+  "category": zod.coerce.string().optional(),
+  "language": zod.coerce.string().optional(),
+  "status": zod.coerce.string().optional(),
+  "aiActive": zod.coerce.string().optional(),
+  "q": zod.coerce.string().optional()
+})
+
+export const ListAIKnowledgeDocsResponse = zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.string(),
+  "title": zod.string(),
+  "language": zod.string(),
+  "category": zod.enum(['faq', 'troubleshooting', 'printer_manual', 'camera_manual', 'software_guide', 'business_guide', 'pricing_guide', 'event_guide', 'product_guide', 'academy_lesson', 'support_article']),
+  "productModel": zod.string().nullish(),
+  "sourceUrl": zod.string().nullish(),
+  "content": zod.string(),
+  "tags": zod.array(zod.string()),
+  "aiActive": zod.boolean(),
+  "lastIndexedAt": zod.string().nullish(),
+  "status": zod.enum(['draft', 'indexed', 'needs_review', 'archived']),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})),
+  "total": zod.number()
+})
+
+
+/**
+ * @summary Create an AI knowledge document
+ */
+export const CreateAIKnowledgeDocBody = zod.object({
+  "title": zod.string(),
+  "language": zod.string().optional(),
+  "category": zod.enum(['faq', 'troubleshooting', 'printer_manual', 'camera_manual', 'software_guide', 'business_guide', 'pricing_guide', 'event_guide', 'product_guide', 'academy_lesson', 'support_article']),
+  "productModel": zod.string().optional(),
+  "sourceUrl": zod.string().optional(),
+  "content": zod.string().optional(),
+  "tags": zod.array(zod.string()).optional(),
+  "aiActive": zod.boolean().optional(),
+  "status": zod.enum(['draft', 'indexed', 'needs_review', 'archived']).optional()
+})
+
+
+/**
+ * @summary Get AI knowledge document with chunks
+ */
+export const GetAIKnowledgeDocParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const GetAIKnowledgeDocResponse = zod.object({
+  "id": zod.string(),
+  "title": zod.string(),
+  "language": zod.string(),
+  "category": zod.string(),
+  "productModel": zod.string().nullish(),
+  "sourceUrl": zod.string().nullish(),
+  "content": zod.string(),
+  "tags": zod.array(zod.string()),
+  "aiActive": zod.boolean(),
+  "lastIndexedAt": zod.string().nullish(),
+  "status": zod.string(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string(),
+  "chunks": zod.array(zod.object({
+  "id": zod.string(),
+  "documentId": zod.string(),
+  "content": zod.string(),
+  "chunkIndex": zod.number(),
+  "metadata": zod.object({
+
+}).passthrough().optional(),
+  "createdAt": zod.string().optional()
+})),
+  "tagList": zod.array(zod.string())
+})
+
+
+/**
+ * @summary Update an AI knowledge document
+ */
+export const UpdateAIKnowledgeDocParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const UpdateAIKnowledgeDocBody = zod.object({
+  "title": zod.string().optional(),
+  "language": zod.string().optional(),
+  "category": zod.enum(['faq', 'troubleshooting', 'printer_manual', 'camera_manual', 'software_guide', 'business_guide', 'pricing_guide', 'event_guide', 'product_guide', 'academy_lesson', 'support_article']).optional(),
+  "productModel": zod.string().optional(),
+  "sourceUrl": zod.string().optional(),
+  "content": zod.string().optional(),
+  "tags": zod.array(zod.string()).optional(),
+  "aiActive": zod.boolean().optional(),
+  "status": zod.enum(['draft', 'indexed', 'needs_review', 'archived']).optional()
+})
+
+export const UpdateAIKnowledgeDocResponse = zod.object({
+  "id": zod.string(),
+  "title": zod.string(),
+  "language": zod.string(),
+  "category": zod.enum(['faq', 'troubleshooting', 'printer_manual', 'camera_manual', 'software_guide', 'business_guide', 'pricing_guide', 'event_guide', 'product_guide', 'academy_lesson', 'support_article']),
+  "productModel": zod.string().nullish(),
+  "sourceUrl": zod.string().nullish(),
+  "content": zod.string(),
+  "tags": zod.array(zod.string()),
+  "aiActive": zod.boolean(),
+  "lastIndexedAt": zod.string().nullish(),
+  "status": zod.enum(['draft', 'indexed', 'needs_review', 'archived']),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Delete an AI knowledge document
+ */
+export const DeleteAIKnowledgeDocParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+
+/**
+ * @summary Chunk and reindex a knowledge document
+ */
+export const ReindexAIKnowledgeDocParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const ReindexAIKnowledgeDocResponse = zod.object({
+  "documentId": zod.string(),
+  "chunksCreated": zod.number()
+})
+
+
+/**
  * @summary List all courses including drafts (admin)
  */
 export const ListAdminCoursesQueryParams = zod.object({

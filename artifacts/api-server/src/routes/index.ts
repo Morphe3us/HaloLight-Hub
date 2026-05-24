@@ -24,6 +24,9 @@ import automationRouter from "./automation";
 import academyAdminRouter from "./academy-admin";
 import resourcesRouter from "./resources";
 import adminSearchRouter from "./admin-search";
+import translationsRouter from "./translations";
+import uploadsRouter from "./uploads";
+import aiKnowledgeRouter from "./ai-knowledge";
 
 const router: IRouter = Router();
 
@@ -52,5 +55,8 @@ router.use(automationRouter);
 router.use(academyAdminRouter);
 router.use(resourcesRouter);
 router.use(adminSearchRouter);
+router.use(translationsRouter);
+router.use(uploadsRouter);
+router.use(aiKnowledgeRouter);
 
 export default router;

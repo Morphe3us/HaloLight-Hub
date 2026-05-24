@@ -16,3 +16,6 @@ export * from "./equipment";
 export * from "./consumables";
 export * from "./automation";
 export * from "./resources";
+export * from "./translations";
+export * from "./uploads";
+export * from "./ai-knowledge";

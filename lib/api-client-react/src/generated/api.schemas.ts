@@ -1994,6 +1994,370 @@ export interface AdminSearchResult {
   total: number;
 }
 
+export type TranslationRecordStatus = typeof TranslationRecordStatus[keyof typeof TranslationRecordStatus];
+
+
+export const TranslationRecordStatus = {
+  draft: 'draft',
+  needs_review: 'needs_review',
+  approved: 'approved',
+  published: 'published',
+} as const;
+
+export interface TranslationRecord {
+  id: string;
+  contentType: string;
+  contentId: string;
+  language: string;
+  status: TranslationRecordStatus;
+  translatedTitle?: string | null;
+  translatedBody?: string | null;
+  reviewedBy?: string | null;
+  reviewedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type TranslationItemTranslations = {[key: string]: {
+  id?: string;
+  status?: string;
+}};
+
+export interface TranslationItem {
+  contentId: string;
+  contentType: string;
+  sourceTitle: string;
+  sourceLanguage: string;
+  translations: TranslationItemTranslations;
+}
+
+export type TranslationOverviewCompletenessScore = {[key: string]: number};
+
+export interface TranslationOverview {
+  items: TranslationItem[];
+  completenessScore: TranslationOverviewCompletenessScore;
+  total: number;
+}
+
+export type UpdateTranslationInputStatus = typeof UpdateTranslationInputStatus[keyof typeof UpdateTranslationInputStatus];
+
+
+export const UpdateTranslationInputStatus = {
+  draft: 'draft',
+  needs_review: 'needs_review',
+  approved: 'approved',
+  published: 'published',
+} as const;
+
+export interface UpdateTranslationInput {
+  status?: UpdateTranslationInputStatus;
+  translatedTitle?: string;
+  translatedBody?: string;
+}
+
+export type UploadItemCategory = typeof UploadItemCategory[keyof typeof UploadItemCategory];
+
+
+export const UploadItemCategory = {
+  academy: 'academy',
+  knowledge_base: 'knowledge_base',
+  resources: 'resources',
+  marketing: 'marketing',
+  contracts: 'contracts',
+  product_manuals: 'product_manuals',
+  ai_knowledge_base: 'ai_knowledge_base',
+  support_documentation: 'support_documentation',
+} as const;
+
+export type UploadItemVisibility = typeof UploadItemVisibility[keyof typeof UploadItemVisibility];
+
+
+export const UploadItemVisibility = {
+  admin_only: 'admin_only',
+  client_visible: 'client_visible',
+  ai_only: 'ai_only',
+  public_resource: 'public_resource',
+} as const;
+
+export type UploadItemStatus = typeof UploadItemStatus[keyof typeof UploadItemStatus];
+
+
+export const UploadItemStatus = {
+  pending: 'pending',
+  processing: 'processing',
+  ready: 'ready',
+  failed: 'failed',
+} as const;
+
+export interface UploadItem {
+  id: string;
+  title: string;
+  language: string;
+  category: UploadItemCategory;
+  fileUrl: string;
+  fileName?: string | null;
+  mimeType?: string | null;
+  fileSize?: number | null;
+  visibility: UploadItemVisibility;
+  status: UploadItemStatus;
+  relatedCourseId?: string | null;
+  relatedLessonId?: string | null;
+  relatedProduct?: string | null;
+  description?: string | null;
+  uploadedBy?: string | null;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface UploadList {
+  items: UploadItem[];
+  total: number;
+}
+
+export type CreateUploadInputCategory = typeof CreateUploadInputCategory[keyof typeof CreateUploadInputCategory];
+
+
+export const CreateUploadInputCategory = {
+  academy: 'academy',
+  knowledge_base: 'knowledge_base',
+  resources: 'resources',
+  marketing: 'marketing',
+  contracts: 'contracts',
+  product_manuals: 'product_manuals',
+  ai_knowledge_base: 'ai_knowledge_base',
+  support_documentation: 'support_documentation',
+} as const;
+
+export type CreateUploadInputVisibility = typeof CreateUploadInputVisibility[keyof typeof CreateUploadInputVisibility];
+
+
+export const CreateUploadInputVisibility = {
+  admin_only: 'admin_only',
+  client_visible: 'client_visible',
+  ai_only: 'ai_only',
+  public_resource: 'public_resource',
+} as const;
+
+export interface CreateUploadInput {
+  title: string;
+  language?: string;
+  category: CreateUploadInputCategory;
+  fileUrl: string;
+  fileName?: string;
+  mimeType?: string;
+  fileSize?: number;
+  visibility?: CreateUploadInputVisibility;
+  relatedCourseId?: string;
+  relatedLessonId?: string;
+  relatedProduct?: string;
+  description?: string;
+}
+
+export type UpdateUploadInputCategory = typeof UpdateUploadInputCategory[keyof typeof UpdateUploadInputCategory];
+
+
+export const UpdateUploadInputCategory = {
+  academy: 'academy',
+  knowledge_base: 'knowledge_base',
+  resources: 'resources',
+  marketing: 'marketing',
+  contracts: 'contracts',
+  product_manuals: 'product_manuals',
+  ai_knowledge_base: 'ai_knowledge_base',
+  support_documentation: 'support_documentation',
+} as const;
+
+export type UpdateUploadInputVisibility = typeof UpdateUploadInputVisibility[keyof typeof UpdateUploadInputVisibility];
+
+
+export const UpdateUploadInputVisibility = {
+  admin_only: 'admin_only',
+  client_visible: 'client_visible',
+  ai_only: 'ai_only',
+  public_resource: 'public_resource',
+} as const;
+
+export type UpdateUploadInputStatus = typeof UpdateUploadInputStatus[keyof typeof UpdateUploadInputStatus];
+
+
+export const UpdateUploadInputStatus = {
+  pending: 'pending',
+  processing: 'processing',
+  ready: 'ready',
+  failed: 'failed',
+} as const;
+
+export interface UpdateUploadInput {
+  title?: string;
+  language?: string;
+  category?: UpdateUploadInputCategory;
+  fileUrl?: string;
+  fileName?: string;
+  mimeType?: string;
+  fileSize?: number;
+  visibility?: UpdateUploadInputVisibility;
+  status?: UpdateUploadInputStatus;
+  relatedCourseId?: string;
+  relatedLessonId?: string;
+  relatedProduct?: string;
+  description?: string;
+}
+
+export type AIKnowledgeDocCategory = typeof AIKnowledgeDocCategory[keyof typeof AIKnowledgeDocCategory];
+
+
+export const AIKnowledgeDocCategory = {
+  faq: 'faq',
+  troubleshooting: 'troubleshooting',
+  printer_manual: 'printer_manual',
+  camera_manual: 'camera_manual',
+  software_guide: 'software_guide',
+  business_guide: 'business_guide',
+  pricing_guide: 'pricing_guide',
+  event_guide: 'event_guide',
+  product_guide: 'product_guide',
+  academy_lesson: 'academy_lesson',
+  support_article: 'support_article',
+} as const;
+
+export type AIKnowledgeDocStatus = typeof AIKnowledgeDocStatus[keyof typeof AIKnowledgeDocStatus];
+
+
+export const AIKnowledgeDocStatus = {
+  draft: 'draft',
+  indexed: 'indexed',
+  needs_review: 'needs_review',
+  archived: 'archived',
+} as const;
+
+export interface AIKnowledgeDoc {
+  id: string;
+  title: string;
+  language: string;
+  category: AIKnowledgeDocCategory;
+  productModel?: string | null;
+  sourceUrl?: string | null;
+  content: string;
+  tags: string[];
+  aiActive: boolean;
+  lastIndexedAt?: string | null;
+  status: AIKnowledgeDocStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type AIKnowledgeChunkMetadata = { [key: string]: unknown };
+
+export interface AIKnowledgeChunk {
+  id: string;
+  documentId: string;
+  content: string;
+  chunkIndex: number;
+  metadata?: AIKnowledgeChunkMetadata;
+  createdAt?: string;
+}
+
+export interface AIKnowledgeDocDetail {
+  id: string;
+  title: string;
+  language: string;
+  category: string;
+  productModel?: string | null;
+  sourceUrl?: string | null;
+  content: string;
+  tags: string[];
+  aiActive: boolean;
+  lastIndexedAt?: string | null;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  chunks: AIKnowledgeChunk[];
+  tagList: string[];
+}
+
+export interface AIKnowledgeDocList {
+  items: AIKnowledgeDoc[];
+  total: number;
+}
+
+export type CreateAIKnowledgeDocInputCategory = typeof CreateAIKnowledgeDocInputCategory[keyof typeof CreateAIKnowledgeDocInputCategory];
+
+
+export const CreateAIKnowledgeDocInputCategory = {
+  faq: 'faq',
+  troubleshooting: 'troubleshooting',
+  printer_manual: 'printer_manual',
+  camera_manual: 'camera_manual',
+  software_guide: 'software_guide',
+  business_guide: 'business_guide',
+  pricing_guide: 'pricing_guide',
+  event_guide: 'event_guide',
+  product_guide: 'product_guide',
+  academy_lesson: 'academy_lesson',
+  support_article: 'support_article',
+} as const;
+
+export type CreateAIKnowledgeDocInputStatus = typeof CreateAIKnowledgeDocInputStatus[keyof typeof CreateAIKnowledgeDocInputStatus];
+
+
+export const CreateAIKnowledgeDocInputStatus = {
+  draft: 'draft',
+  indexed: 'indexed',
+  needs_review: 'needs_review',
+  archived: 'archived',
+} as const;
+
+export interface CreateAIKnowledgeDocInput {
+  title: string;
+  language?: string;
+  category: CreateAIKnowledgeDocInputCategory;
+  productModel?: string;
+  sourceUrl?: string;
+  content?: string;
+  tags?: string[];
+  aiActive?: boolean;
+  status?: CreateAIKnowledgeDocInputStatus;
+}
+
+export type UpdateAIKnowledgeDocInputCategory = typeof UpdateAIKnowledgeDocInputCategory[keyof typeof UpdateAIKnowledgeDocInputCategory];
+
+
+export const UpdateAIKnowledgeDocInputCategory = {
+  faq: 'faq',
+  troubleshooting: 'troubleshooting',
+  printer_manual: 'printer_manual',
+  camera_manual: 'camera_manual',
+  software_guide: 'software_guide',
+  business_guide: 'business_guide',
+  pricing_guide: 'pricing_guide',
+  event_guide: 'event_guide',
+  product_guide: 'product_guide',
+  academy_lesson: 'academy_lesson',
+  support_article: 'support_article',
+} as const;
+
+export type UpdateAIKnowledgeDocInputStatus = typeof UpdateAIKnowledgeDocInputStatus[keyof typeof UpdateAIKnowledgeDocInputStatus];
+
+
+export const UpdateAIKnowledgeDocInputStatus = {
+  draft: 'draft',
+  indexed: 'indexed',
+  needs_review: 'needs_review',
+  archived: 'archived',
+} as const;
+
+export interface UpdateAIKnowledgeDocInput {
+  title?: string;
+  language?: string;
+  category?: UpdateAIKnowledgeDocInputCategory;
+  productModel?: string;
+  sourceUrl?: string;
+  content?: string;
+  tags?: string[];
+  aiActive?: boolean;
+  status?: UpdateAIKnowledgeDocInputStatus;
+}
+
 export type ListUsersParams = {
 role?: string;
 limit?: number;
@@ -2208,6 +2572,37 @@ export type CreateConsumableOrderBody = {
   catalogItemId?: string;
   quantity?: number;
   notes?: string;
+};
+
+export type ListTranslationsParams = {
+contentType?: string;
+language?: string;
+status?: string;
+q?: string;
+};
+
+export type EnsureTranslationRecords200 = {
+  created: number;
+};
+
+export type ListUploadsParams = {
+category?: string;
+visibility?: string;
+language?: string;
+q?: string;
+};
+
+export type ListAIKnowledgeDocsParams = {
+category?: string;
+language?: string;
+status?: string;
+aiActive?: string;
+q?: string;
+};
+
+export type ReindexAIKnowledgeDoc200 = {
+  documentId: string;
+  chunksCreated: number;
 };
 
 export type ListAdminCoursesParams = {

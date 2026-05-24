@@ -44,6 +44,9 @@ import AdminAutomation from "./pages/AdminAutomation";
 import AdminAcademy from "./pages/AdminAcademy";
 import AdminResources from "./pages/AdminResources";
 import AdminSearch from "./pages/AdminSearch";
+import AdminTranslations from "./pages/AdminTranslations";
+import AdminUploads from "./pages/AdminUploads";
+import AdminAIKnowledge from "./pages/AdminAIKnowledge";
 import Equipment from "./pages/Equipment";
 import EquipmentDetail from "./pages/EquipmentDetail";
 import Consumables from "./pages/Consumables";
@@ -261,6 +264,9 @@ function ClerkProviderWithRoutes() {
             <ProtectedRoute path="/admin/academy" component={AdminAcademy} />
             <ProtectedRoute path="/admin/resources" component={AdminResources} />
             <ProtectedRoute path="/admin/search" component={AdminSearch} />
+            <ProtectedRoute path="/admin/translations" component={AdminTranslations} />
+            <ProtectedRoute path="/admin/uploads" component={AdminUploads} />
+            <ProtectedRoute path="/admin/ai-knowledge" component={AdminAIKnowledge} />
             <ProtectedRoute path="/admin" component={Admin} />
             <ProtectedRoute path="/equipment/:id" component={EquipmentDetail} />
             <ProtectedRoute path="/equipment" component={Equipment} />

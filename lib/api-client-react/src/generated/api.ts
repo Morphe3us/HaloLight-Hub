@@ -20,6 +20,9 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  AIKnowledgeDoc,
+  AIKnowledgeDocDetail,
+  AIKnowledgeDocList,
   AcademyProgressSummary,
   Activity,
   ActivityInput,
@@ -68,6 +71,7 @@ import type {
   ContractList,
   CourseDetail,
   CourseList,
+  CreateAIKnowledgeDocInput,
   CreateCommunityChannelBody,
   CreateConsumableOrderBody,
   CreateConsumableStockInput,
@@ -78,7 +82,9 @@ import type {
   CreateModuleInput,
   CreateResourceInput,
   CreateServiceRecordInput,
+  CreateUploadInput,
   DashboardSummary,
+  EnsureTranslationRecords200,
   Equipment,
   EquipmentDetail,
   EscalateAiConversationBody,
@@ -106,6 +112,7 @@ import type {
   LessonDetail,
   LessonProgress,
   LessonProgressUpdate,
+  ListAIKnowledgeDocsParams,
   ListAdminCoursesParams,
   ListAiSuggestedQuestions200,
   ListAutomationExecutionsParams,
@@ -122,6 +129,8 @@ import type {
   ListQuotesParams,
   ListResourcesParams,
   ListSupportTicketsParams,
+  ListTranslationsParams,
+  ListUploadsParams,
   ListUsersParams,
   NextLesson,
   Notification,
@@ -136,6 +145,7 @@ import type {
   QuoteDetail,
   QuoteInput,
   QuoteList,
+  ReindexAIKnowledgeDoc200,
   ResourceItem,
   ResourceList,
   RestockConsumableInput,
@@ -151,7 +161,10 @@ import type {
   SupportTicketStatusUpdate,
   TogglePostReaction200,
   TogglePostReactionBody,
+  TranslationOverview,
+  TranslationRecord,
   UnreadCount,
+  UpdateAIKnowledgeDocInput,
   UpdateContractStatusBody,
   UpdateCourseInput,
   UpdateEquipmentBody,
@@ -159,7 +172,11 @@ import type {
   UpdateModuleInput,
   UpdateQuoteStatusBody,
   UpdateResourceInput,
+  UpdateTranslationInput,
+  UpdateUploadInput,
   UpdatedCount,
+  UploadItem,
+  UploadList,
   User,
   UserList,
   UserUpdate
@@ -7917,6 +7934,1050 @@ export function useGetAdminClient<TData = Awaited<ReturnType<typeof getAdminClie
 
 
 
+
+export const getListTranslationsUrl = (params?: ListTranslationsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/admin/translations?${stringifiedParams}` : `/api/admin/translations`
+}
+
+/**
+ * @summary List translation records with completeness stats
+ */
+export const listTranslations = async (params?: ListTranslationsParams, options?: RequestInit): Promise<TranslationOverview> => {
+
+  return customFetch<TranslationOverview>(getListTranslationsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListTranslationsQueryKey = (params?: ListTranslationsParams,) => {
+    return [
+    `/api/admin/translations`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListTranslationsQueryOptions = <TData = Awaited<ReturnType<typeof listTranslations>>, TError = ErrorType<unknown>>(params?: ListTranslationsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listTranslations>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListTranslationsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listTranslations>>> = ({ signal }) => listTranslations(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listTranslations>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListTranslationsQueryResult = NonNullable<Awaited<ReturnType<typeof listTranslations>>>
+export type ListTranslationsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List translation records with completeness stats
+ */
+
+export function useListTranslations<TData = Awaited<ReturnType<typeof listTranslations>>, TError = ErrorType<unknown>>(
+ params?: ListTranslationsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listTranslations>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListTranslationsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getEnsureTranslationRecordsUrl = () => {
+
+
+
+
+  return `/api/admin/translations/ensure`
+}
+
+/**
+ * @summary Ensure translation records exist for all content items
+ */
+export const ensureTranslationRecords = async ( options?: RequestInit): Promise<EnsureTranslationRecords200> => {
+
+  return customFetch<EnsureTranslationRecords200>(getEnsureTranslationRecordsUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getEnsureTranslationRecordsMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof ensureTranslationRecords>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof ensureTranslationRecords>>, TError,void, TContext> => {
+
+const mutationKey = ['ensureTranslationRecords'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof ensureTranslationRecords>>, void> = () => {
+
+
+          return  ensureTranslationRecords(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type EnsureTranslationRecordsMutationResult = NonNullable<Awaited<ReturnType<typeof ensureTranslationRecords>>>
+
+    export type EnsureTranslationRecordsMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Ensure translation records exist for all content items
+ */
+export const useEnsureTranslationRecords = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof ensureTranslationRecords>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof ensureTranslationRecords>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getEnsureTranslationRecordsMutationOptions(options));
+    }
+
+export const getGetTranslationRecordUrl = (id: string,) => {
+
+
+
+
+  return `/api/admin/translations/${id}`
+}
+
+/**
+ * @summary Get single translation record
+ */
+export const getTranslationRecord = async (id: string, options?: RequestInit): Promise<TranslationRecord> => {
+
+  return customFetch<TranslationRecord>(getGetTranslationRecordUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetTranslationRecordQueryKey = (id: string,) => {
+    return [
+    `/api/admin/translations/${id}`
+    ] as const;
+    }
+
+
+export const getGetTranslationRecordQueryOptions = <TData = Awaited<ReturnType<typeof getTranslationRecord>>, TError = ErrorType<unknown>>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getTranslationRecord>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetTranslationRecordQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getTranslationRecord>>> = ({ signal }) => getTranslationRecord(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getTranslationRecord>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetTranslationRecordQueryResult = NonNullable<Awaited<ReturnType<typeof getTranslationRecord>>>
+export type GetTranslationRecordQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get single translation record
+ */
+
+export function useGetTranslationRecord<TData = Awaited<ReturnType<typeof getTranslationRecord>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getTranslationRecord>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetTranslationRecordQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getUpdateTranslationRecordUrl = (id: string,) => {
+
+
+
+
+  return `/api/admin/translations/${id}`
+}
+
+/**
+ * @summary Update translation status or text
+ */
+export const updateTranslationRecord = async (id: string,
+    updateTranslationInput: UpdateTranslationInput, options?: RequestInit): Promise<TranslationRecord> => {
+
+  return customFetch<TranslationRecord>(getUpdateTranslationRecordUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      updateTranslationInput,)
+  }
+);}
+
+
+
+
+export const getUpdateTranslationRecordMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateTranslationRecord>>, TError,{id: string;data: BodyType<UpdateTranslationInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateTranslationRecord>>, TError,{id: string;data: BodyType<UpdateTranslationInput>}, TContext> => {
+
+const mutationKey = ['updateTranslationRecord'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateTranslationRecord>>, {id: string;data: BodyType<UpdateTranslationInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateTranslationRecord(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateTranslationRecordMutationResult = NonNullable<Awaited<ReturnType<typeof updateTranslationRecord>>>
+    export type UpdateTranslationRecordMutationBody = BodyType<UpdateTranslationInput>
+    export type UpdateTranslationRecordMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Update translation status or text
+ */
+export const useUpdateTranslationRecord = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateTranslationRecord>>, TError,{id: string;data: BodyType<UpdateTranslationInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateTranslationRecord>>,
+        TError,
+        {id: string;data: BodyType<UpdateTranslationInput>},
+        TContext
+      > => {
+      return useMutation(getUpdateTranslationRecordMutationOptions(options));
+    }
+
+export const getListUploadsUrl = (params?: ListUploadsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/admin/uploads?${stringifiedParams}` : `/api/admin/uploads`
+}
+
+/**
+ * @summary List upload records
+ */
+export const listUploads = async (params?: ListUploadsParams, options?: RequestInit): Promise<UploadList> => {
+
+  return customFetch<UploadList>(getListUploadsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListUploadsQueryKey = (params?: ListUploadsParams,) => {
+    return [
+    `/api/admin/uploads`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListUploadsQueryOptions = <TData = Awaited<ReturnType<typeof listUploads>>, TError = ErrorType<unknown>>(params?: ListUploadsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listUploads>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListUploadsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listUploads>>> = ({ signal }) => listUploads(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listUploads>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListUploadsQueryResult = NonNullable<Awaited<ReturnType<typeof listUploads>>>
+export type ListUploadsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List upload records
+ */
+
+export function useListUploads<TData = Awaited<ReturnType<typeof listUploads>>, TError = ErrorType<unknown>>(
+ params?: ListUploadsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listUploads>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListUploadsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getCreateUploadUrl = () => {
+
+
+
+
+  return `/api/admin/uploads`
+}
+
+/**
+ * @summary Create an upload record
+ */
+export const createUpload = async (createUploadInput: CreateUploadInput, options?: RequestInit): Promise<UploadItem> => {
+
+  return customFetch<UploadItem>(getCreateUploadUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      createUploadInput,)
+  }
+);}
+
+
+
+
+export const getCreateUploadMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createUpload>>, TError,{data: BodyType<CreateUploadInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createUpload>>, TError,{data: BodyType<CreateUploadInput>}, TContext> => {
+
+const mutationKey = ['createUpload'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createUpload>>, {data: BodyType<CreateUploadInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createUpload(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateUploadMutationResult = NonNullable<Awaited<ReturnType<typeof createUpload>>>
+    export type CreateUploadMutationBody = BodyType<CreateUploadInput>
+    export type CreateUploadMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Create an upload record
+ */
+export const useCreateUpload = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createUpload>>, TError,{data: BodyType<CreateUploadInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createUpload>>,
+        TError,
+        {data: BodyType<CreateUploadInput>},
+        TContext
+      > => {
+      return useMutation(getCreateUploadMutationOptions(options));
+    }
+
+export const getUpdateUploadUrl = (id: string,) => {
+
+
+
+
+  return `/api/admin/uploads/${id}`
+}
+
+/**
+ * @summary Update an upload record
+ */
+export const updateUpload = async (id: string,
+    updateUploadInput: UpdateUploadInput, options?: RequestInit): Promise<UploadItem> => {
+
+  return customFetch<UploadItem>(getUpdateUploadUrl(id),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      updateUploadInput,)
+  }
+);}
+
+
+
+
+export const getUpdateUploadMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateUpload>>, TError,{id: string;data: BodyType<UpdateUploadInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateUpload>>, TError,{id: string;data: BodyType<UpdateUploadInput>}, TContext> => {
+
+const mutationKey = ['updateUpload'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateUpload>>, {id: string;data: BodyType<UpdateUploadInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateUpload(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateUploadMutationResult = NonNullable<Awaited<ReturnType<typeof updateUpload>>>
+    export type UpdateUploadMutationBody = BodyType<UpdateUploadInput>
+    export type UpdateUploadMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Update an upload record
+ */
+export const useUpdateUpload = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateUpload>>, TError,{id: string;data: BodyType<UpdateUploadInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateUpload>>,
+        TError,
+        {id: string;data: BodyType<UpdateUploadInput>},
+        TContext
+      > => {
+      return useMutation(getUpdateUploadMutationOptions(options));
+    }
+
+export const getDeleteUploadUrl = (id: string,) => {
+
+
+
+
+  return `/api/admin/uploads/${id}`
+}
+
+/**
+ * @summary Delete an upload record
+ */
+export const deleteUpload = async (id: string, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getDeleteUploadUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getDeleteUploadMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteUpload>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteUpload>>, TError,{id: string}, TContext> => {
+
+const mutationKey = ['deleteUpload'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteUpload>>, {id: string}> = (props) => {
+          const {id} = props ?? {};
+
+          return  deleteUpload(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteUploadMutationResult = NonNullable<Awaited<ReturnType<typeof deleteUpload>>>
+
+    export type DeleteUploadMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Delete an upload record
+ */
+export const useDeleteUpload = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteUpload>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteUpload>>,
+        TError,
+        {id: string},
+        TContext
+      > => {
+      return useMutation(getDeleteUploadMutationOptions(options));
+    }
+
+export const getListAIKnowledgeDocsUrl = (params?: ListAIKnowledgeDocsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/admin/ai-knowledge?${stringifiedParams}` : `/api/admin/ai-knowledge`
+}
+
+/**
+ * @summary List AI knowledge documents
+ */
+export const listAIKnowledgeDocs = async (params?: ListAIKnowledgeDocsParams, options?: RequestInit): Promise<AIKnowledgeDocList> => {
+
+  return customFetch<AIKnowledgeDocList>(getListAIKnowledgeDocsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListAIKnowledgeDocsQueryKey = (params?: ListAIKnowledgeDocsParams,) => {
+    return [
+    `/api/admin/ai-knowledge`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListAIKnowledgeDocsQueryOptions = <TData = Awaited<ReturnType<typeof listAIKnowledgeDocs>>, TError = ErrorType<unknown>>(params?: ListAIKnowledgeDocsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAIKnowledgeDocs>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListAIKnowledgeDocsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAIKnowledgeDocs>>> = ({ signal }) => listAIKnowledgeDocs(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAIKnowledgeDocs>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListAIKnowledgeDocsQueryResult = NonNullable<Awaited<ReturnType<typeof listAIKnowledgeDocs>>>
+export type ListAIKnowledgeDocsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List AI knowledge documents
+ */
+
+export function useListAIKnowledgeDocs<TData = Awaited<ReturnType<typeof listAIKnowledgeDocs>>, TError = ErrorType<unknown>>(
+ params?: ListAIKnowledgeDocsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAIKnowledgeDocs>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListAIKnowledgeDocsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getCreateAIKnowledgeDocUrl = () => {
+
+
+
+
+  return `/api/admin/ai-knowledge`
+}
+
+/**
+ * @summary Create an AI knowledge document
+ */
+export const createAIKnowledgeDoc = async (createAIKnowledgeDocInput: CreateAIKnowledgeDocInput, options?: RequestInit): Promise<AIKnowledgeDoc> => {
+
+  return customFetch<AIKnowledgeDoc>(getCreateAIKnowledgeDocUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      createAIKnowledgeDocInput,)
+  }
+);}
+
+
+
+
+export const getCreateAIKnowledgeDocMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAIKnowledgeDoc>>, TError,{data: BodyType<CreateAIKnowledgeDocInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createAIKnowledgeDoc>>, TError,{data: BodyType<CreateAIKnowledgeDocInput>}, TContext> => {
+
+const mutationKey = ['createAIKnowledgeDoc'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createAIKnowledgeDoc>>, {data: BodyType<CreateAIKnowledgeDocInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createAIKnowledgeDoc(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateAIKnowledgeDocMutationResult = NonNullable<Awaited<ReturnType<typeof createAIKnowledgeDoc>>>
+    export type CreateAIKnowledgeDocMutationBody = BodyType<CreateAIKnowledgeDocInput>
+    export type CreateAIKnowledgeDocMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Create an AI knowledge document
+ */
+export const useCreateAIKnowledgeDoc = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAIKnowledgeDoc>>, TError,{data: BodyType<CreateAIKnowledgeDocInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createAIKnowledgeDoc>>,
+        TError,
+        {data: BodyType<CreateAIKnowledgeDocInput>},
+        TContext
+      > => {
+      return useMutation(getCreateAIKnowledgeDocMutationOptions(options));
+    }
+
+export const getGetAIKnowledgeDocUrl = (id: string,) => {
+
+
+
+
+  return `/api/admin/ai-knowledge/${id}`
+}
+
+/**
+ * @summary Get AI knowledge document with chunks
+ */
+export const getAIKnowledgeDoc = async (id: string, options?: RequestInit): Promise<AIKnowledgeDocDetail> => {
+
+  return customFetch<AIKnowledgeDocDetail>(getGetAIKnowledgeDocUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAIKnowledgeDocQueryKey = (id: string,) => {
+    return [
+    `/api/admin/ai-knowledge/${id}`
+    ] as const;
+    }
+
+
+export const getGetAIKnowledgeDocQueryOptions = <TData = Awaited<ReturnType<typeof getAIKnowledgeDoc>>, TError = ErrorType<unknown>>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAIKnowledgeDoc>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAIKnowledgeDocQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAIKnowledgeDoc>>> = ({ signal }) => getAIKnowledgeDoc(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAIKnowledgeDoc>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAIKnowledgeDocQueryResult = NonNullable<Awaited<ReturnType<typeof getAIKnowledgeDoc>>>
+export type GetAIKnowledgeDocQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get AI knowledge document with chunks
+ */
+
+export function useGetAIKnowledgeDoc<TData = Awaited<ReturnType<typeof getAIKnowledgeDoc>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAIKnowledgeDoc>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAIKnowledgeDocQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getUpdateAIKnowledgeDocUrl = (id: string,) => {
+
+
+
+
+  return `/api/admin/ai-knowledge/${id}`
+}
+
+/**
+ * @summary Update an AI knowledge document
+ */
+export const updateAIKnowledgeDoc = async (id: string,
+    updateAIKnowledgeDocInput: UpdateAIKnowledgeDocInput, options?: RequestInit): Promise<AIKnowledgeDoc> => {
+
+  return customFetch<AIKnowledgeDoc>(getUpdateAIKnowledgeDocUrl(id),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      updateAIKnowledgeDocInput,)
+  }
+);}
+
+
+
+
+export const getUpdateAIKnowledgeDocMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateAIKnowledgeDoc>>, TError,{id: string;data: BodyType<UpdateAIKnowledgeDocInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateAIKnowledgeDoc>>, TError,{id: string;data: BodyType<UpdateAIKnowledgeDocInput>}, TContext> => {
+
+const mutationKey = ['updateAIKnowledgeDoc'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateAIKnowledgeDoc>>, {id: string;data: BodyType<UpdateAIKnowledgeDocInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateAIKnowledgeDoc(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateAIKnowledgeDocMutationResult = NonNullable<Awaited<ReturnType<typeof updateAIKnowledgeDoc>>>
+    export type UpdateAIKnowledgeDocMutationBody = BodyType<UpdateAIKnowledgeDocInput>
+    export type UpdateAIKnowledgeDocMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Update an AI knowledge document
+ */
+export const useUpdateAIKnowledgeDoc = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateAIKnowledgeDoc>>, TError,{id: string;data: BodyType<UpdateAIKnowledgeDocInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateAIKnowledgeDoc>>,
+        TError,
+        {id: string;data: BodyType<UpdateAIKnowledgeDocInput>},
+        TContext
+      > => {
+      return useMutation(getUpdateAIKnowledgeDocMutationOptions(options));
+    }
+
+export const getDeleteAIKnowledgeDocUrl = (id: string,) => {
+
+
+
+
+  return `/api/admin/ai-knowledge/${id}`
+}
+
+/**
+ * @summary Delete an AI knowledge document
+ */
+export const deleteAIKnowledgeDoc = async (id: string, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getDeleteAIKnowledgeDocUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getDeleteAIKnowledgeDocMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteAIKnowledgeDoc>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteAIKnowledgeDoc>>, TError,{id: string}, TContext> => {
+
+const mutationKey = ['deleteAIKnowledgeDoc'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteAIKnowledgeDoc>>, {id: string}> = (props) => {
+          const {id} = props ?? {};
+
+          return  deleteAIKnowledgeDoc(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteAIKnowledgeDocMutationResult = NonNullable<Awaited<ReturnType<typeof deleteAIKnowledgeDoc>>>
+
+    export type DeleteAIKnowledgeDocMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Delete an AI knowledge document
+ */
+export const useDeleteAIKnowledgeDoc = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteAIKnowledgeDoc>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteAIKnowledgeDoc>>,
+        TError,
+        {id: string},
+        TContext
+      > => {
+      return useMutation(getDeleteAIKnowledgeDocMutationOptions(options));
+    }
+
+export const getReindexAIKnowledgeDocUrl = (id: string,) => {
+
+
+
+
+  return `/api/admin/ai-knowledge/${id}/reindex`
+}
+
+/**
+ * @summary Chunk and reindex a knowledge document
+ */
+export const reindexAIKnowledgeDoc = async (id: string, options?: RequestInit): Promise<ReindexAIKnowledgeDoc200> => {
+
+  return customFetch<ReindexAIKnowledgeDoc200>(getReindexAIKnowledgeDocUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getReindexAIKnowledgeDocMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reindexAIKnowledgeDoc>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof reindexAIKnowledgeDoc>>, TError,{id: string}, TContext> => {
+
+const mutationKey = ['reindexAIKnowledgeDoc'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof reindexAIKnowledgeDoc>>, {id: string}> = (props) => {
+          const {id} = props ?? {};
+
+          return  reindexAIKnowledgeDoc(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReindexAIKnowledgeDocMutationResult = NonNullable<Awaited<ReturnType<typeof reindexAIKnowledgeDoc>>>
+
+    export type ReindexAIKnowledgeDocMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Chunk and reindex a knowledge document
+ */
+export const useReindexAIKnowledgeDoc = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reindexAIKnowledgeDoc>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof reindexAIKnowledgeDoc>>,
+        TError,
+        {id: string},
+        TContext
+      > => {
+      return useMutation(getReindexAIKnowledgeDocMutationOptions(options));
+    }
 
 export const getListAdminCoursesUrl = (params?: ListAdminCoursesParams,) => {
   const normalizedParams = new URLSearchParams();
