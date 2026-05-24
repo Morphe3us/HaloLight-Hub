@@ -9,9 +9,9 @@ export interface AIMessage {
 
 export interface RAGSource {
   id: string;
-  type: "kb" | "academy" | "support" | "product";
+  type: "kb" | "academy" | "support" | "product" | "knowledge";
   title: string;
-  url: string;
+  url?: string;
   excerpt: string;
 }
 

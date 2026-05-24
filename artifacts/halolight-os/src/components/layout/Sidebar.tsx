@@ -6,7 +6,7 @@ import {
   ChevronRight, LogOut, Menu, GraduationCap, Calendar, TrendingUp,
   FileText, FileSignature, ReceiptText, ChevronDown, LifeBuoy, BookOpen,
   Sparkles, Users, Hash, BarChart3, UserCheck, DollarSign, Monitor, Package, Zap,
-  LibraryBig, Search, Languages, FolderUp, Brain,
+  LibraryBig, Search, Languages, FolderUp, Brain, HardDrive,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useClerk } from "@clerk/react";
@@ -82,7 +82,7 @@ function NavLink({ item, location, onClose }: { item: NavItem; location: string;
             ? "bg-accent/15 text-foreground shadow-sm"
             : "text-muted-foreground hover:bg-accent/10 hover:text-foreground"
         )}
-        data-testid={`link-sidebar-${item.title.toLowerCase()}`}
+        data-testid={`link-sidebar-${item.title.toLowerCase().replace(/\s+/g, "-")}`}
       >
         <div className="flex items-center gap-3">
           <item.icon className={cn(
@@ -120,34 +120,34 @@ export function Sidebar() {
     { title: t("nav.academy"), href: "/academy", icon: GraduationCap },
     { title: t("nav.events"), href: "/events", icon: Calendar },
     {
-      title: "Sales",
+      title: t("nav.sales"),
       href: "/crm",
       icon: TrendingUp,
       children: [
-        { title: "Leads", href: "/crm/leads", icon: TrendingUp },
-        { title: "Quotes", href: "/quotes", icon: FileText },
-        { title: "Contracts", href: "/contracts", icon: FileSignature },
-        { title: "Invoices", href: "/invoices", icon: ReceiptText },
+        { title: t("nav.leads"), href: "/crm/leads", icon: TrendingUp },
+        { title: t("nav.quotes"), href: "/quotes", icon: FileText },
+        { title: t("nav.contracts"), href: "/contracts", icon: FileSignature },
+        { title: t("nav.invoices"), href: "/invoices", icon: ReceiptText },
       ],
     },
     {
-      title: "Support",
+      title: t("nav.support"),
       href: "/support",
       icon: LifeBuoy,
       children: [
-        { title: "Tickets", href: "/support", icon: LifeBuoy },
-        { title: "Knowledge Base", href: "/kb", icon: BookOpen },
+        { title: t("nav.tickets"), href: "/support", icon: LifeBuoy },
+        { title: t("nav.kb"), href: "/kb", icon: BookOpen },
       ],
     },
-    { title: "AI Assistant", href: "/ai", icon: Sparkles },
-    { title: "Community", href: "/community", icon: Users },
+    { title: t("nav.ai_assistant"), href: "/ai", icon: Sparkles },
+    { title: t("nav.community"), href: "/community", icon: Users },
     {
-      title: "Hardware",
+      title: t("nav.hardware"),
       href: "/equipment",
       icon: Monitor,
       children: [
-        { title: "Equipment", href: "/equipment", icon: Monitor },
-        { title: "Consumables", href: "/consumables", icon: Package },
+        { title: t("nav.equipment"), href: "/equipment", icon: Monitor },
+        { title: t("nav.consumables"), href: "/consumables", icon: Package },
       ],
     },
     { title: t("nav.onboarding"), href: "/onboarding", icon: CheckCircle2 },
@@ -173,6 +173,7 @@ export function Sidebar() {
             { title: "Translations", href: "/admin/translations", icon: Languages },
             { title: "Uploads", href: "/admin/uploads", icon: FolderUp },
             { title: "AI Knowledge", href: "/admin/ai-knowledge", icon: Brain },
+            { title: "Backup", href: "/admin/backup", icon: HardDrive },
             { title: "Users", href: "/admin", icon: Users },
           ],
         },
@@ -208,7 +209,7 @@ export function Sidebar() {
           data-testid="button-signout-sidebar"
         >
           <LogOut className="w-4 h-4 shrink-0" />
-          Sign Out
+          {t("nav.sign_out")}
         </button>
       </div>
     </div>

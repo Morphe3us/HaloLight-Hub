@@ -24,9 +24,9 @@ export const aiMessages = pgTable("ai_messages", {
   // RAG source citations — array of RAGSource objects
   sources: jsonb("sources").$type<Array<{
     id: string;
-    type: "kb" | "academy" | "support" | "product";
+    type: "kb" | "academy" | "support" | "product" | "knowledge";
     title: string;
-    url: string;
+    url?: string;
     excerpt: string;
   }>>(),
   // Suggested follow-up actions

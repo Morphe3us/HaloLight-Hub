@@ -1,8 +1,152 @@
 {
-  "nav": { "dashboard": "Dashboard", "academy": "Akademie", "events": "Veranstaltungen", "onboarding": "Einrichtung", "notifications": "Benachrichtigungen", "settings": "Einstellungen", "admin": "Admin" },
-  "dashboard": { "title": "Dashboard", "greeting_morning": "Guten Morgen", "greeting_afternoon": "Guten Nachmittag", "greeting_evening": "Guten Abend", "subtitle": "Hier ist, was heute mit Ihren Operationen passiert.", "kpi_notifications": "Ungelesene Benachrichtigungen", "kpi_onboarding": "Einrichtungsfortschritt", "kpi_lessons": "Abgeschlossene Lektionen", "kpi_events": "Bevorstehende Events", "next_lesson": "Weiter lernen", "no_lessons": "Starten Sie Ihren ersten Kurs", "onboarding_card": "Kontoeinrichtung", "onboarding_desc": "Schließen Sie die Einrichtungsschritte ab, um alle Funktionen freizuschalten.", "continue_setup": "Einrichtung fortsetzen", "recent_notifications": "Neueste Benachrichtigungen", "view_all": "Alle anzeigen", "no_notifications": "Keine neuen Benachrichtigungen", "upcoming_events": "Bevorstehende Events", "no_events": "Keine bevorstehenden Events", "add_event": "Event hinzufügen", "resume": "Fortsetzen", "start": "Starten", "watch": "Ansehen", "minutes": "Min" },
-  "academy": { "title": "Akademie", "subtitle": "Meistern Sie Ihr HaloLight-System mit expertengeführten Videokursen.", "courses": "Kurse", "lessons": "Lektionen", "minutes": "Min", "level_beginner": "Anfänger", "level_intermediate": "Mittelstufe", "level_advanced": "Fortgeschritten", "progress": "Fortschritt", "completed": "Abgeschlossen", "continue": "Fortsetzen", "start_course": "Kurs starten", "resources": "Ressourcen", "quiz": "Quiz", "quiz_submit": "Antworten einreichen", "quiz_retake": "Quiz wiederholen", "quiz_passed": "Quiz bestanden!", "quiz_failed": "Weiter üben", "quiz_score": "Punktzahl", "next_lesson": "Nächste Lektion", "prev_lesson": "Vorherige Lektion", "back_to_course": "Zurück zum Kurs", "back_to_academy": "Zurück zur Akademie", "mark_complete": "Als abgeschlossen markieren", "download": "Herunterladen", "no_courses": "Noch keine Kurse verfügbar.", "all_courses": "Alle Kurse", "your_progress": "Ihr Fortschritt", "total_progress": "Gesamtfortschritt", "courses_completed": "Abgeschlossene Kurse", "course_overview": "Kursübersicht", "watch_video": "Video ansehen" },
-  "events": { "title": "Veranstaltungen", "subtitle": "Verwalten Sie Ihre bevorstehenden Fotokabinen-Veranstaltungen und Buchungen.", "add_event": "Event hinzufügen", "no_events": "Keine Events. Fügen Sie Ihr erstes Event hinzu.", "event_date": "Veranstaltungsdatum", "event_location": "Ort", "event_type": "Veranstaltungstyp", "event_status": "Status", "event_notes": "Notizen", "status_upcoming": "Bevorstehend", "status_active": "Aktiv", "status_completed": "Abgeschlossen", "status_cancelled": "Abgesagt", "edit_event": "Event bearbeiten", "delete_event": "Event löschen", "confirm_delete": "Sind Sie sicher, dass Sie dieses Event löschen möchten?", "save": "Speichern", "cancel": "Abbrechen", "create_event": "Event erstellen", "event_title": "Event-Titel", "event_description": "Beschreibung", "filters": "Filter", "all_statuses": "Alle Status" },
-  "settings": { "title": "Einstellungen", "profile": "Profil", "notifications": "Benachrichtigungen", "language": "Sprache", "save": "Änderungen speichern", "saving": "Speichern...", "saved": "Gespeichert!", "full_name": "Vollständiger Name", "company_name": "Firmenname", "phone": "Telefonnummer", "email": "E-Mail", "email_notifications": "E-Mail-Benachrichtigungen", "in_app_notifications": "In-App-Benachrichtigungen", "language_select": "Sprache auswählen" },
-  "common": { "loading": "Laden...", "error": "Etwas ist schief gelaufen", "retry": "Wiederholen", "save": "Speichern", "cancel": "Abbrechen", "delete": "Löschen", "edit": "Bearbeiten", "close": "Schließen", "back": "Zurück", "next": "Weiter", "previous": "Zurück", "search": "Suchen", "filter": "Filtern", "of": "von", "minutes": "Min", "hours": "Std" }
+  "nav": {
+    "dashboard": "Dashboard", "academy": "Akademie", "events": "Veranstaltungen",
+    "onboarding": "Einrichtung", "notifications": "Benachrichtigungen", "settings": "Einstellungen",
+    "admin": "Admin", "sales": "Vertrieb", "leads": "Interessenten", "quotes": "Angebote",
+    "contracts": "Verträge", "invoices": "Rechnungen", "support": "Support",
+    "tickets": "Tickets", "kb": "Wissensdatenbank", "ai_assistant": "KI-Assistent",
+    "community": "Community", "hardware": "Hardware", "equipment": "Ausrüstung",
+    "consumables": "Verbrauchsmaterial", "sign_out": "Abmelden"
+  },
+  "dashboard": {
+    "title": "Dashboard", "greeting_morning": "Guten Morgen", "greeting_afternoon": "Guten Nachmittag",
+    "greeting_evening": "Guten Abend", "subtitle": "Hier ist, was heute mit Ihren Operationen passiert.",
+    "kpi_notifications": "Ungelesene Benachrichtigungen", "kpi_onboarding": "Einrichtungsfortschritt",
+    "kpi_lessons": "Abgeschlossene Lektionen", "kpi_events": "Bevorstehende Events",
+    "kpi_equipment_alerts": "Gerätewarnungen", "kpi_low_stock": "Artikel mit niedrigem Bestand",
+    "kpi_open_tickets": "Offene Tickets",
+    "next_lesson": "Weiter lernen", "no_lessons": "Starten Sie Ihren ersten Kurs",
+    "onboarding_card": "Kontoeinrichtung",
+    "onboarding_desc": "Schließen Sie die Einrichtungsschritte ab, um alle Funktionen freizuschalten.",
+    "continue_setup": "Einrichtung fortsetzen", "recent_notifications": "Neueste Benachrichtigungen",
+    "view_all": "Alle anzeigen", "no_notifications": "Keine neuen Benachrichtigungen",
+    "upcoming_events": "Bevorstehende Events", "no_events": "Keine bevorstehenden Events",
+    "add_event": "Event hinzufügen", "resume": "Fortsetzen", "start": "Starten",
+    "watch": "Ansehen", "minutes": "Min", "equipment_ok": "Alles OK", "stock_ok": "Vollständig bevorratet"
+  },
+  "academy": {
+    "title": "Akademie", "subtitle": "Meistern Sie Ihr HaloLight-System mit expertengeführten Videokursen.",
+    "courses": "Kurse", "lessons": "Lektionen", "minutes": "Min", "level_beginner": "Anfänger",
+    "level_intermediate": "Mittelstufe", "level_advanced": "Fortgeschritten", "progress": "Fortschritt",
+    "completed": "Abgeschlossen", "continue": "Fortsetzen", "start_course": "Kurs starten",
+    "resources": "Ressourcen", "quiz": "Quiz", "quiz_submit": "Antworten einreichen",
+    "quiz_retake": "Quiz wiederholen", "quiz_passed": "Quiz bestanden!", "quiz_failed": "Weiter üben",
+    "quiz_score": "Punktzahl", "next_lesson": "Nächste Lektion", "prev_lesson": "Vorherige Lektion",
+    "back_to_course": "Zurück zum Kurs", "back_to_academy": "Zurück zur Akademie",
+    "mark_complete": "Als abgeschlossen markieren", "download": "Herunterladen",
+    "no_courses": "Noch keine Kurse verfügbar.", "all_courses": "Alle Kurse",
+    "your_progress": "Ihr Fortschritt", "total_progress": "Gesamtfortschritt",
+    "courses_completed": "Abgeschlossene Kurse", "course_overview": "Kursübersicht", "watch_video": "Video ansehen"
+  },
+  "events": {
+    "title": "Veranstaltungen", "subtitle": "Verwalten Sie Ihre bevorstehenden Fotokabinen-Veranstaltungen und Buchungen.",
+    "add_event": "Event hinzufügen", "no_events": "Keine Events. Fügen Sie Ihr erstes Event hinzu.",
+    "event_date": "Veranstaltungsdatum", "event_location": "Ort", "event_type": "Veranstaltungstyp",
+    "event_status": "Status", "event_notes": "Notizen", "status_upcoming": "Bevorstehend",
+    "status_active": "Aktiv", "status_completed": "Abgeschlossen", "status_cancelled": "Abgesagt",
+    "edit_event": "Event bearbeiten", "delete_event": "Event löschen",
+    "confirm_delete": "Sind Sie sicher, dass Sie dieses Event löschen möchten?",
+    "save": "Speichern", "cancel": "Abbrechen", "create_event": "Event erstellen",
+    "event_title": "Event-Titel", "event_description": "Beschreibung", "filters": "Filter", "all_statuses": "Alle Status"
+  },
+  "equipment": {
+    "title": "Ausrüstung", "subtitle": "Verfolgen und verwalten Sie Ihre HaloLight-Hardware.",
+    "no_equipment": "Noch keine Ausrüstung registriert.",
+    "status_active": "Aktiv", "status_inactive": "Inaktiv", "status_in_service": "Im Service", "status_retired": "Außer Betrieb",
+    "warranty_expiry": "Garantieablauf", "next_service": "Nächste Wartung", "last_service": "Letzte Wartung",
+    "serial_number": "Seriennummer", "model": "Modell", "view_details": "Details anzeigen",
+    "service_history": "Servicehistorie", "no_service_history": "Keine Servicehistorie aufgezeichnet.",
+    "alert_warranty": "Garantie läuft bald ab", "alert_service": "Wartung fällig",
+    "purchase_date": "Kaufdatum", "vendor": "Anbieter", "maintenance_notes": "Wartungsnotizen",
+    "all_statuses": "Alle Status"
+  },
+  "consumables": {
+    "title": "Verbrauchsmaterial", "subtitle": "Überwachen Sie Ihre Lagerbestände und bestellen Sie Nachschub.",
+    "no_stock": "Noch kein Verbrauchsmaterialbestand erfasst.",
+    "reorder": "Nachbestellen", "reorder_title": "Bestellung aufgeben", "reorder_desc": "Nachbestellung für diesen Artikel aufgeben.",
+    "stock_level": "Lagerbestand", "days_remaining": "Verbleibende Tage", "reorder_point": "Nachbestellpunkt",
+    "in_stock": "Auf Lager", "low_stock": "Niedriger Bestand", "out_of_stock": "Nicht auf Lager",
+    "category_paper": "Papier", "category_ribbon": "Farbband", "category_accessory": "Zubehör", "category_cleaning": "Reinigung",
+    "quantity": "Menge", "unit_price": "Stückpreis", "total": "Gesamt", "all_categories": "Alle Kategorien",
+    "orders": "Bestellungen", "order_status_pending": "Ausstehend", "order_status_processing": "In Bearbeitung",
+    "order_status_shipped": "Versandt", "order_status_delivered": "Geliefert", "order_status_cancelled": "Storniert",
+    "confirm_reorder": "Bestellung bestätigen", "reorder_success": "Bestellung erfolgreich aufgegeben"
+  },
+  "support": {
+    "title": "Support", "subtitle": "Holen Sie sich Hilfe für Ihre HaloLight-Ausrüstung und Dienste.",
+    "open_ticket": "Ticket öffnen", "create_ticket": "Ticket erstellen",
+    "ticket_title": "Betreff", "ticket_desc": "Beschreibung", "ticket_category": "Kategorie", "ticket_priority": "Priorität",
+    "no_tickets": "Noch keine Support-Tickets.",
+    "status_open": "Offen", "status_in_progress": "In Bearbeitung", "status_waiting": "Warten auf Sie",
+    "status_resolved": "Gelöst", "status_closed": "Geschlossen",
+    "priority_low": "Niedrig", "priority_medium": "Mittel", "priority_high": "Hoch", "priority_urgent": "Dringend",
+    "category_billing": "Abrechnung", "category_technical": "Technisch", "category_general": "Allgemein",
+    "category_feature": "Funktionsanfrage", "category_bug": "Fehlerbericht",
+    "reply": "Antworten", "send_reply": "Antwort senden", "close_ticket": "Ticket schließen",
+    "reopen_ticket": "Ticket wieder öffnen", "ticket_number": "Ticket",
+    "all_statuses": "Alle Status", "all_categories": "Alle Kategorien"
+  },
+  "kb": {
+    "title": "Wissensdatenbank", "subtitle": "Durchsuchen Sie Artikel und Anleitungen für Ihr HaloLight-System.",
+    "search_placeholder": "Artikel suchen...", "no_results": "Keine Artikel gefunden.",
+    "no_articles": "Noch keine Artikel verfügbar.", "categories": "Kategorien",
+    "all_categories": "Alle Kategorien", "read_more": "Mehr lesen",
+    "back_to_kb": "Zurück zur Wissensdatenbank", "read_time": "Min. Lesezeit",
+    "published": "Veröffentlicht", "last_updated": "Zuletzt aktualisiert"
+  },
+  "community": {
+    "title": "Community", "subtitle": "Verbinden Sie sich mit anderen HaloLight-Betreibern.",
+    "channels": "Kanäle", "no_channels": "Noch keine Kanäle verfügbar.",
+    "no_posts": "Noch keine Beiträge. Seien Sie der Erste!",
+    "write_post": "Beitrag schreiben...", "post": "Posten", "reply": "Antworten",
+    "replies": "Antworten", "members": "Mitglieder", "pinned": "Angeheftet",
+    "back_to_community": "Zurück zur Community", "new_post": "Neuer Beitrag", "share": "Teilen"
+  },
+  "ai": {
+    "title": "KI-Assistent", "subtitle": "Erhalten Sie sofortige Antworten zu Ihrer HaloLight-Ausrüstung und Ihrem Geschäft.",
+    "placeholder": "Stellen Sie mir eine Frage zu Ihrem HaloLight-System...",
+    "thinking": "Nachdenken...", "error": "Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut.",
+    "sources": "Quellen", "escalate": "An Support eskalieren",
+    "escalate_title": "Support-Ticket öffnen", "escalate_desc": "Support-Ticket mit diesem Gespräch als Kontext erstellen.",
+    "new_conversation": "Neues Gespräch", "history": "Verlauf",
+    "suggested": "Vorgeschlagene Fragen", "no_history": "Keine früheren Gespräche.",
+    "provider": "KI-Anbieter", "you": "Sie"
+  },
+  "notifications": {
+    "title": "Benachrichtigungen", "mark_read": "Als gelesen markieren", "mark_all_read": "Alle als gelesen markieren",
+    "no_notifications": "Alles erledigt!", "all": "Alle", "unread": "Ungelesen",
+    "preferences": "Einstellungen", "email_channel": "E-Mail", "in_app_channel": "In-App"
+  },
+  "onboarding": {
+    "title": "Kontoeinrichtung", "subtitle": "Schließen Sie diese Schritte ab, um das Beste aus HaloLight Hub herauszuholen.",
+    "step": "Schritt", "of": "von", "complete": "Abgeschlossen",
+    "congratulations": "Herzlichen Glückwunsch! Einrichtung abgeschlossen.",
+    "congratulations_desc": "Sie haben alle Einrichtungsschritte abgeschlossen. Ihr HaloLight Hub ist vollständig eingerichtet.",
+    "steps_completed": "Schritte abgeschlossen", "view_guide": "Anleitung anzeigen", "mark_done": "Als erledigt markieren"
+  },
+  "backup": {
+    "title": "Backup & Export", "subtitle": "Datenbankstatus überwachen und Daten exportieren.",
+    "status": "Datenbankstatus", "table_count": "Tabellen", "estimated_size": "Geschätzte Größe",
+    "last_export": "Letzter Export", "never": "Nie", "export": "Datenbank exportieren",
+    "exporting": "Exportieren...", "export_success": "Export abgeschlossen.",
+    "export_desc": "Laden Sie ein vollständiges SQL-Backup Ihrer Datenbank herunter.",
+    "instructions": "Backup-Anleitung", "instructions_desc": "Führen Sie pg_dump regelmäßig aus und speichern Sie in S3 oder Cloudflare R2.",
+    "warning": "Keine automatischen Backups konfiguriert. Richten Sie tägliche Exporte vor dem Go-Live ein.",
+    "copy_command": "Befehl kopieren", "copied": "Kopiert!"
+  },
+  "settings": {
+    "title": "Einstellungen", "profile": "Profil", "notifications": "Benachrichtigungen", "language": "Sprache",
+    "save": "Änderungen speichern", "saving": "Speichern...", "saved": "Gespeichert!",
+    "full_name": "Vollständiger Name", "company_name": "Firmenname", "phone": "Telefonnummer",
+    "email": "E-Mail", "email_notifications": "E-Mail-Benachrichtigungen",
+    "in_app_notifications": "In-App-Benachrichtigungen", "language_select": "Sprache auswählen"
+  },
+  "common": {
+    "loading": "Laden...", "error": "Etwas ist schief gelaufen", "retry": "Wiederholen",
+    "save": "Speichern", "cancel": "Abbrechen", "delete": "Löschen", "edit": "Bearbeiten",
+    "close": "Schließen", "back": "Zurück", "next": "Weiter", "previous": "Zurück",
+    "search": "Suchen", "filter": "Filtern", "of": "von", "minutes": "Min", "hours": "Std",
+    "no_data": "Keine Daten verfügbar", "confirm": "Bestätigen", "status": "Status",
+    "actions": "Aktionen", "created": "Erstellt", "updated": "Aktualisiert"
+  }
 }

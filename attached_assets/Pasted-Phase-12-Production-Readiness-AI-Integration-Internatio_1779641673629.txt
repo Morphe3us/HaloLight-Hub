@@ -1,0 +1,240 @@
+Phase 12 — Production Readiness, AI Integration & Internationalization.
+
+Goal:
+
+Prepare HaloLight Hub for beta launch.
+
+Do not add new business modules.
+
+Focus on:
+
+* AI knowledge integration
+* translation completeness
+* backup readiness
+* production infrastructure preparation
+* final UX polish
+
+==================================================
+
+1. AI KNOWLEDGE → CHATBOT INTEGRATION
+   ==================================================
+
+Current audit indicates:
+
+* ai_knowledge_documents exists
+* ai_knowledge_chunks exists
+* chunking works
+* reindex works
+
+But AI Knowledge Base documents are not yet connected to the RAG retrieval layer.
+
+Requirements:
+
+Update rag.ts and all retrieval services so AI Assistant can search:
+
+* ai_knowledge_documents
+* ai_knowledge_chunks
+* kb_articles
+* academy lessons
+* academy courses
+* resources when applicable
+
+Respect:
+
+* language
+* ai_active flag
+* category
+* product model
+* status
+
+When AI responds:
+
+* prioritize exact product matches
+* include source references
+* surface document titles used
+
+Add retrieval logging so admins can see which sources were used.
+
+Provide examples proving AI can retrieve AI Knowledge documents.
+
+==================================================
+2. FULL INTERNATIONALIZATION AUDIT
+==================================
+
+Many interface elements remain hardcoded in English.
+
+Examples observed:
+
+* Dashboard
+* Good evening
+* View All
+* Upcoming Events
+* Continue Learning
+* Account Setup
+* Settings
+* Support
+* Community
+* Notifications
+
+Requirements:
+
+Perform a complete UI audit.
+
+Find all hardcoded visible strings.
+
+Move all interface text into the translation system.
+
+Verify language switching updates:
+
+* sidebar
+* dashboard
+* onboarding
+* academy
+* support
+* community
+* equipment
+* consumables
+* admin pages
+* AI assistant
+* empty states
+* buttons
+* modals
+* notifications
+
+Supported languages:
+
+* FR
+* EN
+* DE
+* NL
+* ES
+* IT
+* PT
+* PL
+
+Fallback:
+
+* translated string first
+* English only if missing
+
+Provide a list of strings fixed.
+
+==================================================
+3. TRANSLATION QUALITY REVIEW
+=============================
+
+Improve Translation Manager.
+
+Add:
+
+* missing translation indicators
+* untranslated content filters
+* completeness percentages
+* language coverage dashboard
+
+Admins must immediately see:
+
+* what is translated
+* what is missing
+* what needs review
+
+==================================================
+4. BACKUP READINESS
+===================
+
+Implement backup preparation.
+
+Do not configure external cloud storage yet.
+
+Create:
+
+* database export utility
+* backup documentation page
+* admin backup status screen
+
+Show:
+
+* last backup date
+* estimated database size
+* backup instructions
+
+Prepare architecture for automated daily backups.
+
+==================================================
+5. FILE STORAGE PREPARATION
+===========================
+
+Current uploads are URL-only.
+
+Do not implement Cloudflare R2 yet.
+
+Prepare storage abstraction layer.
+
+Requirements:
+
+* storage provider interface
+* support future:
+
+  * Cloudflare R2
+  * AWS S3
+  * Supabase Storage
+
+Keep current URL workflow operational.
+
+Create migration-ready architecture.
+
+==================================================
+6. UX POLISH
+============
+
+Dark mode is strong but can be refined.
+
+Improve:
+
+* card hierarchy
+* dashboard information density
+* KPI readability
+* visual depth
+* hover states
+* loading states
+* empty states
+
+Dashboard:
+
+Replace generic greeting experience.
+
+Users should immediately see:
+
+* Academy Progress
+* Equipment Status
+* Consumable Alerts
+* Open Support Tickets
+* Upcoming Events
+* Recent Activity
+
+Increase KPI prominence.
+
+Reduce generic SaaS feeling.
+
+Strengthen HaloLight identity.
+
+==================================================
+7. FINAL AUDIT
+==============
+
+Run:
+
+* typecheck
+* route verification
+* translation audit
+* AI retrieval verification
+* admin permissions verification
+
+Provide:
+
+* list of fixes completed
+* unresolved issues
+* beta readiness assessment (%)
+* recommended next steps before public beta
+
+Stop after completion.

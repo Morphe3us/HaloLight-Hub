@@ -1,8 +1,153 @@
 {
-  "nav": { "dashboard": "Dashboard", "academy": "Academie", "events": "Evenementen", "onboarding": "Instellen", "notifications": "Meldingen", "settings": "Instellingen", "admin": "Admin" },
-  "dashboard": { "title": "Dashboard", "greeting_morning": "Goedemorgen", "greeting_afternoon": "Goedemiddag", "greeting_evening": "Goedenavond", "subtitle": "Dit is wat er vandaag met uw operaties gebeurt.", "kpi_notifications": "Ongelezen meldingen", "kpi_onboarding": "Instelling voortgang", "kpi_lessons": "Voltooide lessen", "kpi_events": "Aankomende evenementen", "next_lesson": "Doorgaan met leren", "no_lessons": "Begin uw eerste cursus", "onboarding_card": "Account instellen", "onboarding_desc": "Voltooi de installatiestappen om alle functies te ontgrendelen.", "continue_setup": "Instelling voortzetten", "recent_notifications": "Recente meldingen", "view_all": "Alles bekijken", "no_notifications": "Geen nieuwe meldingen", "upcoming_events": "Aankomende evenementen", "no_events": "Geen aankomende evenementen", "add_event": "Evenement toevoegen", "resume": "Hervat", "start": "Starten", "watch": "Bekijken", "minutes": "min" },
-  "academy": { "title": "Academie", "subtitle": "Beheers uw HaloLight-systeem met expertgeleide videocursussen.", "courses": "Cursussen", "lessons": "lessen", "minutes": "min", "level_beginner": "Beginner", "level_intermediate": "Gevorderd", "level_advanced": "Expert", "progress": "Voortgang", "completed": "Voltooid", "continue": "Doorgaan", "start_course": "Cursus starten", "resources": "Bronnen", "quiz": "Quiz", "quiz_submit": "Antwoorden indienen", "quiz_retake": "Quiz opnieuw maken", "quiz_passed": "Quiz geslaagd!", "quiz_failed": "Blijf oefenen", "quiz_score": "Score", "next_lesson": "Volgende les", "prev_lesson": "Vorige les", "back_to_course": "Terug naar cursus", "back_to_academy": "Terug naar academie", "mark_complete": "Markeer als voltooid", "download": "Downloaden", "no_courses": "Nog geen cursussen beschikbaar.", "all_courses": "Alle cursussen", "your_progress": "Uw voortgang", "total_progress": "Totale voortgang", "courses_completed": "Voltooide cursussen", "course_overview": "Cursusoverzicht", "watch_video": "Video bekijken" },
-  "events": { "title": "Evenementen", "subtitle": "Beheer uw aankomende fotoboothactiviteiten en boekingen.", "add_event": "Evenement toevoegen", "no_events": "Geen evenementen. Voeg uw eerste evenement toe om te beginnen.", "event_date": "Evenementdatum", "event_location": "Locatie", "event_type": "Evenementtype", "event_status": "Status", "event_notes": "Notities", "status_upcoming": "Aankomend", "status_active": "Actief", "status_completed": "Voltooid", "status_cancelled": "Geannuleerd", "edit_event": "Evenement bewerken", "delete_event": "Evenement verwijderen", "confirm_delete": "Weet u zeker dat u dit evenement wilt verwijderen?", "save": "Opslaan", "cancel": "Annuleren", "create_event": "Evenement aanmaken", "event_title": "Evenementtitel", "event_description": "Beschrijving", "filters": "Filters", "all_statuses": "Alle statussen" },
-  "settings": { "title": "Instellingen", "profile": "Profiel", "notifications": "Meldingen", "language": "Taal", "save": "Wijzigingen opslaan", "saving": "Opslaan...", "saved": "Opgeslagen!", "full_name": "Volledige naam", "company_name": "Bedrijfsnaam", "phone": "Telefoonnummer", "email": "E-mail", "email_notifications": "E-mailmeldingen", "in_app_notifications": "In-app meldingen", "language_select": "Taal selecteren" },
-  "common": { "loading": "Laden...", "error": "Er is iets misgegaan", "retry": "Opnieuw proberen", "save": "Opslaan", "cancel": "Annuleren", "delete": "Verwijderen", "edit": "Bewerken", "close": "Sluiten", "back": "Terug", "next": "Volgende", "previous": "Vorige", "search": "Zoeken", "filter": "Filteren", "of": "van", "minutes": "min", "hours": "u" }
+  "nav": {
+    "dashboard": "Dashboard", "academy": "Academie", "events": "Evenementen",
+    "onboarding": "Instellen", "notifications": "Meldingen", "settings": "Instellingen",
+    "admin": "Admin", "sales": "Verkoop", "leads": "Leads", "quotes": "Offertes",
+    "contracts": "Contracten", "invoices": "Facturen", "support": "Support",
+    "tickets": "Tickets", "kb": "Kennisbank", "ai_assistant": "AI-assistent",
+    "community": "Community", "hardware": "Hardware", "equipment": "Apparatuur",
+    "consumables": "Verbruiksartikelen", "sign_out": "Uitloggen"
+  },
+  "dashboard": {
+    "title": "Dashboard", "greeting_morning": "Goedemorgen", "greeting_afternoon": "Goedemiddag",
+    "greeting_evening": "Goedenavond", "subtitle": "Dit is wat er vandaag met uw operaties gebeurt.",
+    "kpi_notifications": "Ongelezen meldingen", "kpi_onboarding": "Instelling voortgang",
+    "kpi_lessons": "Voltooide lessen", "kpi_events": "Aankomende evenementen",
+    "kpi_equipment_alerts": "Apparatuurwaarschuwingen", "kpi_low_stock": "Artikelen met laag voorraad",
+    "kpi_open_tickets": "Openstaande tickets",
+    "next_lesson": "Doorgaan met leren", "no_lessons": "Begin uw eerste cursus",
+    "onboarding_card": "Account instellen",
+    "onboarding_desc": "Voltooi de installatiestappen om alle functies te ontgrendelen.",
+    "continue_setup": "Instelling voortzetten", "recent_notifications": "Recente meldingen",
+    "view_all": "Alles bekijken", "no_notifications": "Geen nieuwe meldingen",
+    "upcoming_events": "Aankomende evenementen", "no_events": "Geen aankomende evenementen",
+    "add_event": "Evenement toevoegen", "resume": "Hervat", "start": "Starten",
+    "watch": "Bekijken", "minutes": "min", "equipment_ok": "Alles OK", "stock_ok": "Volledig voorradig"
+  },
+  "academy": {
+    "title": "Academie", "subtitle": "Beheers uw HaloLight-systeem met expertgeleide videocursussen.",
+    "courses": "Cursussen", "lessons": "lessen", "minutes": "min", "level_beginner": "Beginner",
+    "level_intermediate": "Gevorderd", "level_advanced": "Expert", "progress": "Voortgang",
+    "completed": "Voltooid", "continue": "Doorgaan", "start_course": "Cursus starten",
+    "resources": "Bronnen", "quiz": "Quiz", "quiz_submit": "Antwoorden indienen",
+    "quiz_retake": "Quiz opnieuw maken", "quiz_passed": "Quiz geslaagd!", "quiz_failed": "Blijf oefenen",
+    "quiz_score": "Score", "next_lesson": "Volgende les", "prev_lesson": "Vorige les",
+    "back_to_course": "Terug naar cursus", "back_to_academy": "Terug naar academie",
+    "mark_complete": "Markeer als voltooid", "download": "Downloaden",
+    "no_courses": "Nog geen cursussen beschikbaar.", "all_courses": "Alle cursussen",
+    "your_progress": "Uw voortgang", "total_progress": "Totale voortgang",
+    "courses_completed": "Voltooide cursussen", "course_overview": "Cursusoverzicht", "watch_video": "Video bekijken"
+  },
+  "events": {
+    "title": "Evenementen", "subtitle": "Beheer uw aankomende fotoboothactiviteiten en boekingen.",
+    "add_event": "Evenement toevoegen", "no_events": "Geen evenementen. Voeg uw eerste evenement toe.",
+    "event_date": "Evenementdatum", "event_location": "Locatie", "event_type": "Evenementtype",
+    "event_status": "Status", "event_notes": "Notities", "status_upcoming": "Aankomend",
+    "status_active": "Actief", "status_completed": "Voltooid", "status_cancelled": "Geannuleerd",
+    "edit_event": "Evenement bewerken", "delete_event": "Evenement verwijderen",
+    "confirm_delete": "Weet u zeker dat u dit evenement wilt verwijderen?",
+    "save": "Opslaan", "cancel": "Annuleren", "create_event": "Evenement aanmaken",
+    "event_title": "Evenementtitel", "event_description": "Beschrijving",
+    "filters": "Filters", "all_statuses": "Alle statussen"
+  },
+  "equipment": {
+    "title": "Apparatuur", "subtitle": "Volg en beheer uw HaloLight-hardware.",
+    "no_equipment": "Nog geen apparatuur geregistreerd.",
+    "status_active": "Actief", "status_inactive": "Inactief", "status_in_service": "In onderhoud", "status_retired": "Buiten gebruik",
+    "warranty_expiry": "Garantie verloopt", "next_service": "Volgend onderhoud", "last_service": "Laatste onderhoud",
+    "serial_number": "Serienummer", "model": "Model", "view_details": "Details bekijken",
+    "service_history": "Servicegeschiedenis", "no_service_history": "Geen servicegeschiedenis vastgelegd.",
+    "alert_warranty": "Garantie verloopt binnenkort", "alert_service": "Onderhoud binnenkort vereist",
+    "purchase_date": "Aankoopdatum", "vendor": "Leverancier", "maintenance_notes": "Onderhoudsnota's",
+    "all_statuses": "Alle statussen"
+  },
+  "consumables": {
+    "title": "Verbruiksartikelen", "subtitle": "Bewaak uw voorraadniveaus en bestel benodigdheden.",
+    "no_stock": "Nog geen verbruiksartikelen bijgehouden.",
+    "reorder": "Nabestellen", "reorder_title": "Bestelling plaatsen", "reorder_desc": "Nabestelling indienen voor dit artikel.",
+    "stock_level": "Voorraadniveau", "days_remaining": "Resterende dagen", "reorder_point": "Bestelpunt",
+    "in_stock": "Op voorraad", "low_stock": "Lage voorraad", "out_of_stock": "Niet op voorraad",
+    "category_paper": "Papier", "category_ribbon": "Lint", "category_accessory": "Accessoire", "category_cleaning": "Schoonmaak",
+    "quantity": "Hoeveelheid", "unit_price": "Eenheidsprijs", "total": "Totaal", "all_categories": "Alle categorieën",
+    "orders": "Bestellingen", "order_status_pending": "In afwachting", "order_status_processing": "Wordt verwerkt",
+    "order_status_shipped": "Verzonden", "order_status_delivered": "Afgeleverd", "order_status_cancelled": "Geannuleerd",
+    "confirm_reorder": "Bestelling bevestigen", "reorder_success": "Bestelling succesvol geplaatst"
+  },
+  "support": {
+    "title": "Support", "subtitle": "Krijg hulp voor uw HaloLight-apparatuur en services.",
+    "open_ticket": "Ticket openen", "create_ticket": "Ticket aanmaken",
+    "ticket_title": "Onderwerp", "ticket_desc": "Beschrijving", "ticket_category": "Categorie", "ticket_priority": "Prioriteit",
+    "no_tickets": "Nog geen supporttickets.",
+    "status_open": "Open", "status_in_progress": "In behandeling", "status_waiting": "Wacht op u",
+    "status_resolved": "Opgelost", "status_closed": "Gesloten",
+    "priority_low": "Laag", "priority_medium": "Gemiddeld", "priority_high": "Hoog", "priority_urgent": "Urgent",
+    "category_billing": "Facturering", "category_technical": "Technisch", "category_general": "Algemeen",
+    "category_feature": "Functieverzoek", "category_bug": "Foutmelding",
+    "reply": "Beantwoorden", "send_reply": "Antwoord verzenden", "close_ticket": "Ticket sluiten",
+    "reopen_ticket": "Ticket heropenen", "ticket_number": "Ticket",
+    "all_statuses": "Alle statussen", "all_categories": "Alle categorieën"
+  },
+  "kb": {
+    "title": "Kennisbank", "subtitle": "Blader door artikelen en handleidingen voor uw HaloLight-systeem.",
+    "search_placeholder": "Artikelen zoeken...", "no_results": "Geen artikelen gevonden.",
+    "no_articles": "Nog geen artikelen beschikbaar.", "categories": "Categorieën",
+    "all_categories": "Alle categorieën", "read_more": "Meer lezen",
+    "back_to_kb": "Terug naar kennisbank", "read_time": "min leestijd",
+    "published": "Gepubliceerd", "last_updated": "Laatst bijgewerkt"
+  },
+  "community": {
+    "title": "Community", "subtitle": "Verbind met andere HaloLight-operators.",
+    "channels": "Kanalen", "no_channels": "Nog geen kanalen beschikbaar.",
+    "no_posts": "Nog geen berichten. Wees de eerste!",
+    "write_post": "Bericht schrijven...", "post": "Plaatsen", "reply": "Beantwoorden",
+    "replies": "antwoorden", "members": "leden", "pinned": "Vastgemaakt",
+    "back_to_community": "Terug naar community", "new_post": "Nieuw bericht", "share": "Delen"
+  },
+  "ai": {
+    "title": "AI-assistent", "subtitle": "Krijg directe antwoorden over uw HaloLight-apparatuur en bedrijf.",
+    "placeholder": "Stel mij een vraag over uw HaloLight-systeem...",
+    "thinking": "Denken...", "error": "Er is iets misgegaan. Probeer het opnieuw.",
+    "sources": "Bronnen", "escalate": "Escaleren naar support",
+    "escalate_title": "Supportticket openen", "escalate_desc": "Maak een supportticket aan met dit gesprek als context.",
+    "new_conversation": "Nieuw gesprek", "history": "Geschiedenis",
+    "suggested": "Voorgestelde vragen", "no_history": "Geen eerdere gesprekken.",
+    "provider": "AI-provider", "you": "U"
+  },
+  "notifications": {
+    "title": "Meldingen", "mark_read": "Markeer als gelezen", "mark_all_read": "Alles als gelezen markeren",
+    "no_notifications": "U bent helemaal bijgewerkt!", "all": "Alles", "unread": "Ongelezen",
+    "preferences": "Voorkeuren", "email_channel": "E-mail", "in_app_channel": "In-app"
+  },
+  "onboarding": {
+    "title": "Account instellen", "subtitle": "Voltooi deze stappen om het meeste uit HaloLight Hub te halen.",
+    "step": "Stap", "of": "van", "complete": "Voltooid",
+    "congratulations": "Gefeliciteerd! Installatie voltooid.",
+    "congratulations_desc": "U heeft alle installatiestappen voltooid. Uw HaloLight Hub is volledig ingesteld.",
+    "steps_completed": "stappen voltooid", "view_guide": "Handleiding bekijken", "mark_done": "Markeer als gedaan"
+  },
+  "backup": {
+    "title": "Backup & Export", "subtitle": "Bewaak de databasestatus en exporteer uw gegevens.",
+    "status": "Databasestatus", "table_count": "Tabellen", "estimated_size": "Geschatte omvang",
+    "last_export": "Laatste export", "never": "Nooit", "export": "Database exporteren",
+    "exporting": "Exporteren...", "export_success": "Export voltooid.",
+    "export_desc": "Download een volledige SQL-back-up van uw database.",
+    "instructions": "Back-upinstructies", "instructions_desc": "Voer pg_dump regelmatig uit en sla op in S3 of Cloudflare R2.",
+    "warning": "Geen automatische back-ups geconfigureerd. Stel dagelijkse exports in vóór de lancering.",
+    "copy_command": "Opdracht kopiëren", "copied": "Gekopieerd!"
+  },
+  "settings": {
+    "title": "Instellingen", "profile": "Profiel", "notifications": "Meldingen", "language": "Taal",
+    "save": "Wijzigingen opslaan", "saving": "Opslaan...", "saved": "Opgeslagen!",
+    "full_name": "Volledige naam", "company_name": "Bedrijfsnaam", "phone": "Telefoonnummer",
+    "email": "E-mail", "email_notifications": "E-mailmeldingen",
+    "in_app_notifications": "In-app meldingen", "language_select": "Taal selecteren"
+  },
+  "common": {
+    "loading": "Laden...", "error": "Er is iets misgegaan", "retry": "Opnieuw proberen",
+    "save": "Opslaan", "cancel": "Annuleren", "delete": "Verwijderen", "edit": "Bewerken",
+    "close": "Sluiten", "back": "Terug", "next": "Volgende", "previous": "Vorige",
+    "search": "Zoeken", "filter": "Filteren", "of": "van", "minutes": "min", "hours": "u",
+    "no_data": "Geen gegevens beschikbaar", "confirm": "Bevestigen", "status": "Status",
+    "actions": "Acties", "created": "Aangemaakt", "updated": "Bijgewerkt"
+  }
 }

@@ -27,6 +27,7 @@ import adminSearchRouter from "./admin-search";
 import translationsRouter from "./translations";
 import uploadsRouter from "./uploads";
 import aiKnowledgeRouter from "./ai-knowledge";
+import backupRouter from "./backup";
 
 const router: IRouter = Router();
 
@@ -58,5 +59,6 @@ router.use(adminSearchRouter);
 router.use(translationsRouter);
 router.use(uploadsRouter);
 router.use(aiKnowledgeRouter);
+router.use(backupRouter);
 
 export default router;

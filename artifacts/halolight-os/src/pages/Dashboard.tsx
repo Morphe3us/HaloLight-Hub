@@ -1,8 +1,6 @@
 import { useTranslation } from "react-i18next";
 import {
   useGetCurrentUser,
-  useGetUnreadNotificationCount,
-  useGetOnboardingSummary,
   useListNotifications,
   useGetDashboardSummary,
   useListEvents,
@@ -11,7 +9,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { Bell, ArrowRight, Trophy, PlayCircle, Calendar, BookOpen, Clock, MapPin, GraduationCap } from "lucide-react";
+import {
+  Bell, ArrowRight, Trophy, PlayCircle, Calendar, BookOpen, Clock,
+  MapPin, GraduationCap, Monitor, Package, LifeBuoy, CheckCircle2,
+} from "lucide-react";
 import { Link } from "wouter";
 import { format, parseISO } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -25,7 +26,12 @@ function formatDuration(seconds: number): string {
 export default function Dashboard() {
   const { t } = useTranslation();
   const hour = new Date().getHours();
-  const greeting = hour < 12 ? t("dashboard.greeting_morning") : hour < 18 ? t("dashboard.greeting_afternoon") : t("dashboard.greeting_evening");
+  const greeting =
+    hour < 12
+      ? t("dashboard.greeting_morning")
+      : hour < 18
+      ? t("dashboard.greeting_afternoon")
+      : t("dashboard.greeting_evening");
 
   const { data: user, isLoading: loadingUser } = useGetCurrentUser();
   const { data: summary, isLoading: loadingSummary } = useGetDashboardSummary();
@@ -38,8 +44,8 @@ export default function Dashboard() {
     return (
       <div className="space-y-6">
         <Skeleton className="h-10 w-72" />
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-28 rounded-xl" />)}
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-28 rounded-xl" />)}
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <Skeleton className="h-48 col-span-2 rounded-xl" />
@@ -51,6 +57,11 @@ export default function Dashboard() {
 
   const firstName = user?.fullName?.split(" ")[0] || "Partner";
 
+  // Derive alert state for contextual display
+  const equipmentAlerts = (summary as Record<string, unknown> | undefined)?.equipmentAlerts as number ?? 0;
+  const lowStockCount = (summary as Record<string, unknown> | undefined)?.lowStockCount as number ?? 0;
+  const openTicketsCount = (summary as Record<string, unknown> | undefined)?.openTicketsCount as number ?? 0;
+
   return (
     <div className="space-y-8" data-testid="page-dashboard">
       {/* Header */}
@@ -61,59 +72,144 @@ export default function Dashboard() {
         <p className="text-muted-foreground mt-1">{t("dashboard.subtitle")}</p>
       </div>
 
-      {/* KPI Cards */}
+      {/* KPI Cards — 6-card grid (2×3 mobile, 3×2 desktop) */}
       {summary && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card className="border-0 shadow-sm bg-info/8">
-            <CardContent className="p-5">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="h-9 w-9 rounded-lg bg-primary flex items-center justify-center">
-                  <Bell className="w-4 h-4 text-white" />
-                </div>
-                <span className="text-xs font-medium text-info uppercase tracking-wide leading-tight">{t("dashboard.kpi_notifications")}</span>
-              </div>
-              <p className="text-3xl font-bold text-foreground">{summary.unreadNotifications}</p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-0 shadow-sm bg-warning/8">
-            <CardContent className="p-5">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="h-9 w-9 rounded-lg bg-warning flex items-center justify-center">
-                  <Trophy className="w-4 h-4 text-foreground" />
-                </div>
-                <span className="text-xs font-medium text-warning uppercase tracking-wide leading-tight">{t("dashboard.kpi_onboarding")}</span>
-              </div>
-              <p className="text-3xl font-bold text-foreground">{summary.onboardingPercent}%</p>
-            </CardContent>
-          </Card>
-
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          {/* Lessons Completed */}
           <Card className="border-0 shadow-sm bg-success/8">
             <CardContent className="p-5">
               <div className="flex items-center gap-3 mb-3">
                 <div className="h-9 w-9 rounded-lg bg-success flex items-center justify-center">
                   <GraduationCap className="w-4 h-4 text-white" />
                 </div>
-                <span className="text-xs font-medium text-success uppercase tracking-wide leading-tight">{t("dashboard.kpi_lessons")}</span>
+                <span className="text-xs font-medium text-success uppercase tracking-wide leading-tight">
+                  {t("dashboard.kpi_lessons")}
+                </span>
               </div>
               <p className="text-3xl font-bold text-foreground">
                 {summary.academyLessonsCompleted}
-                <span className="text-base font-normal text-muted-foreground ml-1">/ {summary.academyTotalLessons}</span>
+                <span className="text-base font-normal text-muted-foreground ml-1">
+                  / {summary.academyTotalLessons}
+                </span>
               </p>
             </CardContent>
           </Card>
 
+          {/* Upcoming Events */}
           <Card className="border-0 shadow-sm bg-accent/8">
             <CardContent className="p-5">
               <div className="flex items-center gap-3 mb-3">
                 <div className="h-9 w-9 rounded-lg bg-accent flex items-center justify-center">
                   <Calendar className="w-4 h-4 text-foreground" />
                 </div>
-                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide leading-tight">{t("dashboard.kpi_events")}</span>
+                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide leading-tight">
+                  {t("dashboard.kpi_events")}
+                </span>
               </div>
               <p className="text-3xl font-bold text-foreground">{summary.upcomingEventsCount}</p>
             </CardContent>
           </Card>
+
+          {/* Unread Notifications */}
+          <Card className="border-0 shadow-sm bg-info/8">
+            <CardContent className="p-5">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="h-9 w-9 rounded-lg bg-primary flex items-center justify-center">
+                  <Bell className="w-4 h-4 text-white" />
+                </div>
+                <span className="text-xs font-medium text-info uppercase tracking-wide leading-tight">
+                  {t("dashboard.kpi_notifications")}
+                </span>
+              </div>
+              <p className="text-3xl font-bold text-foreground">{summary.unreadNotifications}</p>
+            </CardContent>
+          </Card>
+
+          {/* Equipment Alerts */}
+          <Link href="/equipment">
+            <Card className={cn(
+              "border-0 shadow-sm cursor-pointer transition-transform hover:scale-[1.02]",
+              equipmentAlerts > 0 ? "bg-destructive/8" : "bg-muted/50"
+            )}>
+              <CardContent className="p-5">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className={cn(
+                    "h-9 w-9 rounded-lg flex items-center justify-center",
+                    equipmentAlerts > 0 ? "bg-destructive" : "bg-muted"
+                  )}>
+                    <Monitor className={cn("w-4 h-4", equipmentAlerts > 0 ? "text-white" : "text-muted-foreground")} />
+                  </div>
+                  <span className={cn(
+                    "text-xs font-medium uppercase tracking-wide leading-tight",
+                    equipmentAlerts > 0 ? "text-destructive" : "text-muted-foreground"
+                  )}>
+                    {t("dashboard.kpi_equipment_alerts")}
+                  </span>
+                </div>
+                <p className="text-3xl font-bold text-foreground">
+                  {equipmentAlerts > 0 ? equipmentAlerts : (
+                    <span className="text-xl text-success font-semibold">{t("dashboard.equipment_ok")}</span>
+                  )}
+                </p>
+              </CardContent>
+            </Card>
+          </Link>
+
+          {/* Low Stock */}
+          <Link href="/consumables">
+            <Card className={cn(
+              "border-0 shadow-sm cursor-pointer transition-transform hover:scale-[1.02]",
+              lowStockCount > 0 ? "bg-warning/8" : "bg-muted/50"
+            )}>
+              <CardContent className="p-5">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className={cn(
+                    "h-9 w-9 rounded-lg flex items-center justify-center",
+                    lowStockCount > 0 ? "bg-warning" : "bg-muted"
+                  )}>
+                    <Package className={cn("w-4 h-4", lowStockCount > 0 ? "text-foreground" : "text-muted-foreground")} />
+                  </div>
+                  <span className={cn(
+                    "text-xs font-medium uppercase tracking-wide leading-tight",
+                    lowStockCount > 0 ? "text-warning" : "text-muted-foreground"
+                  )}>
+                    {t("dashboard.kpi_low_stock")}
+                  </span>
+                </div>
+                <p className="text-3xl font-bold text-foreground">
+                  {lowStockCount > 0 ? lowStockCount : (
+                    <span className="text-xl text-success font-semibold">{t("dashboard.stock_ok")}</span>
+                  )}
+                </p>
+              </CardContent>
+            </Card>
+          </Link>
+
+          {/* Open Tickets */}
+          <Link href="/support">
+            <Card className={cn(
+              "border-0 shadow-sm cursor-pointer transition-transform hover:scale-[1.02]",
+              openTicketsCount > 0 ? "bg-info/8" : "bg-muted/50"
+            )}>
+              <CardContent className="p-5">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className={cn(
+                    "h-9 w-9 rounded-lg flex items-center justify-center",
+                    openTicketsCount > 0 ? "bg-info" : "bg-muted"
+                  )}>
+                    <LifeBuoy className={cn("w-4 h-4", openTicketsCount > 0 ? "text-white" : "text-muted-foreground")} />
+                  </div>
+                  <span className={cn(
+                    "text-xs font-medium uppercase tracking-wide leading-tight",
+                    openTicketsCount > 0 ? "text-info" : "text-muted-foreground"
+                  )}>
+                    {t("dashboard.kpi_open_tickets")}
+                  </span>
+                </div>
+                <p className="text-3xl font-bold text-foreground">{openTicketsCount}</p>
+              </CardContent>
+            </Card>
+          </Link>
         </div>
       )}
 
@@ -179,7 +275,7 @@ export default function Dashboard() {
             </Card>
           )}
 
-          {/* Onboarding */}
+          {/* Onboarding progress — only if incomplete */}
           {summary && summary.onboardingPercent < 100 && (
             <Card className="border border-warning/20 bg-warning/5 shadow-sm">
               <CardHeader className="pb-3">
@@ -203,6 +299,21 @@ export default function Dashboard() {
             </Card>
           )}
 
+          {/* Onboarding complete celebration */}
+          {summary && summary.onboardingPercent >= 100 && (
+            <Card className="border border-success/20 bg-success/5 shadow-sm">
+              <CardContent className="p-5 flex items-center gap-4">
+                <div className="h-10 w-10 rounded-full bg-success/15 flex items-center justify-center flex-shrink-0">
+                  <CheckCircle2 className="w-5 h-5 text-success" />
+                </div>
+                <div>
+                  <p className="font-semibold text-foreground">{t("onboarding.congratulations")}</p>
+                  <p className="text-sm text-muted-foreground">{t("onboarding.congratulations_desc")}</p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Recent Notifications */}
           <Card className="border border-border shadow-sm">
             <CardHeader className="pb-3 flex flex-row items-center justify-between">
@@ -219,10 +330,13 @@ export default function Dashboard() {
               ) : (
                 <div className="space-y-2">
                   {notifications?.items.map((n) => (
-                    <div key={n.id} className={cn(
-                      "flex items-start gap-3 p-3 rounded-lg transition-colors",
-                      !n.isRead ? "bg-primary/5" : "hover:bg-muted"
-                    )}>
+                    <div
+                      key={n.id}
+                      className={cn(
+                        "flex items-start gap-3 p-3 rounded-lg transition-colors",
+                        !n.isRead ? "bg-primary/5" : "hover:bg-muted"
+                      )}
+                    >
                       {!n.isRead && <div className="h-2 w-2 rounded-full bg-primary mt-1.5 flex-shrink-0" />}
                       <div className={cn("flex-1 min-w-0", n.isRead && "pl-5")}>
                         <p className="text-sm font-medium text-foreground truncate">{n.title}</p>
@@ -301,9 +415,11 @@ export default function Dashboard() {
                     </span>
                   </div>
                   <Progress
-                    value={summary.academyTotalLessons > 0
-                      ? (summary.academyLessonsCompleted / summary.academyTotalLessons) * 100
-                      : 0}
+                    value={
+                      summary.academyTotalLessons > 0
+                        ? (summary.academyLessonsCompleted / summary.academyTotalLessons) * 100
+                        : 0
+                    }
                     className="h-2"
                   />
                 </div>
