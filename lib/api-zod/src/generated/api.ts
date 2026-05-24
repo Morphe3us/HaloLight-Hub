@@ -3503,3 +3503,33 @@ export const RunAutomationResponse = zod.object({
 })
 
 
+/**
+ * @summary Get database backup status (admin only)
+ */
+export const GetBackupStatusResponse = zod.object({
+  "tableCount": zod.number(),
+  "estimatedSize": zod.string(),
+  "sizeBytes": zod.number(),
+  "tables": zod.array(zod.object({
+  "name": zod.string(),
+  "rowCount": zod.number()
+})),
+  "databaseName": zod.string(),
+  "checkedAt": zod.string()
+})
+
+
+/**
+ * @summary Generate pg_dump export command (admin only)
+ */
+export const CreateBackupExportResponse = zod.object({
+  "message": zod.string(),
+  "filename": zod.string(),
+  "pgDumpCommand": zod.string(),
+  "tarCommand": zod.string(),
+  "instructions": zod.array(zod.string()),
+  "automationExample": zod.string(),
+  "generatedAt": zod.string()
+})
+
+

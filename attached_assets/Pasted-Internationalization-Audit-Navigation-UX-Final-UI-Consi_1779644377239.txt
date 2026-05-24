@@ -1,0 +1,264 @@
+Internationalization Audit + Navigation UX + Final UI Consistency Pass.
+
+The language switching mechanism is now working, but the internationalization audit is NOT complete.
+
+Many pages still display English text after switching the user language to French.
+
+Examples currently visible:
+
+Notifications:
+
+* Notifications
+* Inbox
+* Mark all as read
+* Reorder Recommended
+* Growth Opportunity Available
+* Mark Read
+
+Onboarding:
+
+* Partner Setup
+* Your Progress
+* Complete your profile
+* Choose your language
+* Explore the Academy
+* Create your first event
+* Register your equipment
+* Invite your team
+* Configure notifications
+* Download marketing resources
+* Complete Step
+
+Equipment:
+
+* My Equipment
+* Register Equipment
+* Total Units
+* Active
+* In Service
+* Alerts
+
+This means many visible UI strings are still hardcoded and bypassing the translation system.
+
+==================================================
+PART 1 — COMPLETE I18N AUDIT
+============================
+
+Requirements:
+
+1. Scan the entire frontend codebase.
+2. Find every visible hardcoded user-facing string.
+3. Replace all user-facing text with translation keys.
+4. Add missing keys to all locale files:
+
+   * fr
+   * en
+   * de
+   * nl
+   * es
+   * it
+   * pt
+   * pl
+
+Verify:
+
+* Dashboard
+* Notifications
+* Academy
+* Community
+* Support
+* Knowledge Base
+* AI Assistant
+* Equipment
+* Consumables
+* Events
+* Sales
+* Settings
+* Onboarding
+* Resources
+* Upload Manager
+* Translation Manager
+* AI Knowledge
+* All Admin pages
+
+Also verify:
+
+* buttons
+* labels
+* descriptions
+* placeholders
+* tooltips
+* banners
+* cards
+* empty states
+* alerts
+* modal titles
+
+Important:
+
+Do not only fix the examples above.
+
+Search the entire application and eliminate all remaining hardcoded English UI text.
+
+==================================================
+PART 2 — NAVIGATION UX RESTRUCTURE
+==================================
+
+The sidebar currently contains too many standalone entries.
+
+Group navigation into clearer logical sections.
+
+Client navigation:
+
+Main
+
+* Dashboard
+* Notifications
+
+Learning
+
+* Academy
+* Community
+* Resources
+
+Business
+
+* Events
+* Sales
+
+  * Leads
+  * Quotes
+  * Contracts
+  * Invoices
+
+Operations
+
+* Equipment
+* Consumables
+
+Support
+
+* AI Assistant
+* Support
+* Knowledge Base
+
+Account
+
+* Settings
+* Sign Out
+
+Admin remains separate.
+
+Admin — Intelligence
+
+* Analytics
+* Revenue
+* Clients
+* Search
+
+Admin — Management
+
+* Users
+* Academy
+* Resources
+* Translations
+* Uploads
+* AI Knowledge
+
+Admin — Operations
+
+* Equipment
+* Automation
+* Backups
+
+Requirements:
+
+* Keep all routes unchanged
+* Keep all permissions unchanged
+* Use collapsible groups
+* Reduce visual clutter
+* Improve discoverability
+* Fully translated group labels
+
+==================================================
+PART 3 — DASHBOARD UX POLISH
+============================
+
+Improve dashboard usability.
+
+Current greeting area feels generic.
+
+Instead focus on actionable information:
+
+* Academy Progress
+* Equipment Status
+* Consumable Alerts
+* Open Support Tickets
+* Upcoming Events
+* Recent Activity
+
+Increase KPI hierarchy:
+
+* larger numbers
+* better readability
+* stronger visual importance
+
+==================================================
+PART 4 — DARK MODE REFINEMENT
+=============================
+
+Dark mode is already strong but needs more depth.
+
+Improve:
+
+* card hierarchy
+* surface hierarchy
+* hover states
+* loading states
+* empty states
+
+Create clearer distinction between:
+
+* page background
+* cards
+* panels
+* sidebar
+
+Maintain HaloLight black / gold identity.
+
+==================================================
+PART 5 — CONSISTENCY AUDIT
+==========================
+
+Perform a full UI consistency review:
+
+* spacing
+* typography
+* icon usage
+* card headers
+* button styles
+* modal styles
+* form layouts
+* status badges
+
+Ensure all pages follow the same design system.
+
+==================================================
+VERIFICATION
+============
+
+Run:
+
+* typecheck
+* route verification
+* i18n verification
+
+Provide:
+
+1. pages audited
+2. number of hardcoded strings replaced
+3. navigation restructuring summary
+4. UX improvements completed
+5. remaining untranslated strings (if any)
+
+Stop after completion.

@@ -108,7 +108,7 @@ export default function AdminBackup() {
         </div>
         <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isRefetching}>
           <RefreshCw className={`w-4 h-4 mr-2 ${isRefetching ? "animate-spin" : ""}`} />
-          Refresh
+          {t("backup.refresh")}
         </Button>
       </div>
 
@@ -165,7 +165,7 @@ export default function AdminBackup() {
                 <Database className="w-4 h-4 text-accent-foreground" />
               </div>
               <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                Database
+                {t("backup.database_label")}
               </span>
             </div>
             {isLoading ? (
@@ -183,12 +183,12 @@ export default function AdminBackup() {
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <Table2 className="w-4 h-4 text-muted-foreground" />
-              Table Row Counts
+              {t("backup.table_row_counts")}
             </CardTitle>
             {status?.checkedAt && (
               <CardDescription className="flex items-center gap-1 text-xs">
                 <Clock className="w-3 h-3" />
-                Checked {new Date(status.checkedAt).toLocaleTimeString()}
+                {t("backup.checked_prefix")} {new Date(status.checkedAt).toLocaleTimeString()}
               </CardDescription>
             )}
           </CardHeader>
@@ -202,8 +202,8 @@ export default function AdminBackup() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="text-xs">Table</TableHead>
-                      <TableHead className="text-xs text-right">Rows</TableHead>
+                      <TableHead className="text-xs">{t("backup.col_table")}</TableHead>
+                      <TableHead className="text-xs text-right">{t("backup.col_rows")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -250,11 +250,11 @@ export default function AdminBackup() {
 
                   <CopyableCode
                     code={exportResult.pgDumpCommand}
-                    label="pg_dump (custom format)"
+                    label={t("backup.pg_dump_label")}
                   />
                   <CopyableCode
                     code={exportResult.tarCommand}
-                    label="pg_dump (gzip)"
+                    label={t("backup.tar_label")}
                   />
                 </div>
               )}
@@ -276,13 +276,13 @@ export default function AdminBackup() {
             </CardHeader>
             <CardContent className="pt-0 space-y-4">
               <ol className="space-y-2">
-                {[
-                  "SSH into your server with DATABASE_URL set in the environment.",
-                  "Run the pg_dump command from the Export panel above.",
-                  "Upload the .dump or .gz file to S3 / Cloudflare R2.",
-                  "Verify with: pg_restore --list <backup-file>",
-                  "Automate with a daily cron or CI/CD step.",
-                ].map((step, i) => (
+                {([
+                  t("backup.step_1"),
+                  t("backup.step_2"),
+                  t("backup.step_3"),
+                  t("backup.step_4"),
+                  t("backup.step_5"),
+                ] as string[]).map((step, i) => (
                   <li key={i} className="flex gap-3 text-sm">
                     <span className="shrink-0 h-5 w-5 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center">
                       {i + 1}
@@ -295,14 +295,14 @@ export default function AdminBackup() {
               <div className="border-t border-border pt-4">
                 <CopyableCode
                   code={`0 2 * * * pg_dump "$DATABASE_URL" --format=custom --compress=9 --file="/backups/halolight-$(date +%Y%m%d).dump"`}
-                  label="Cron automation example"
+                  label={t("backup.cron_label")}
                 />
               </div>
 
               <div className="flex flex-wrap gap-2 pt-1">
-                <Badge variant="secondary">Cloudflare R2 ready</Badge>
-                <Badge variant="secondary">AWS S3 compatible</Badge>
-                <Badge variant="secondary">pg_restore compatible</Badge>
+                <Badge variant="secondary">{t("backup.badge_r2")}</Badge>
+                <Badge variant="secondary">{t("backup.badge_s3")}</Badge>
+                <Badge variant="secondary">{t("backup.badge_pg")}</Badge>
               </div>
             </CardContent>
           </Card>

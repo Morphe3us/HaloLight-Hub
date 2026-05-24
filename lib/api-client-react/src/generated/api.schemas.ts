@@ -2358,6 +2358,30 @@ export interface UpdateAIKnowledgeDocInput {
   status?: UpdateAIKnowledgeDocInputStatus;
 }
 
+export interface BackupTableStat {
+  name: string;
+  rowCount: number;
+}
+
+export interface BackupStatus {
+  tableCount: number;
+  estimatedSize: string;
+  sizeBytes: number;
+  tables: BackupTableStat[];
+  databaseName: string;
+  checkedAt: string;
+}
+
+export interface BackupExport {
+  message: string;
+  filename: string;
+  pgDumpCommand: string;
+  tarCommand: string;
+  instructions: string[];
+  automationExample: string;
+  generatedAt: string;
+}
+
 export type ListUsersParams = {
 role?: string;
 limit?: number;

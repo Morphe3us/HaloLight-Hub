@@ -54,6 +54,8 @@ import type {
   AutomationRuleUpdate,
   AutomationRunResult,
   AutomationStats,
+  BackupExport,
+  BackupStatus,
   Client360,
   CommunityChannel,
   CommunityChannelList,
@@ -11057,5 +11059,152 @@ export const useRunAutomation = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getRunAutomationMutationOptions(options));
+    }
+
+export const getGetBackupStatusUrl = () => {
+
+
+
+
+  return `/api/admin/backup/status`
+}
+
+/**
+ * @summary Get database backup status (admin only)
+ */
+export const getBackupStatus = async ( options?: RequestInit): Promise<BackupStatus> => {
+
+  return customFetch<BackupStatus>(getGetBackupStatusUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetBackupStatusQueryKey = () => {
+    return [
+    `/api/admin/backup/status`
+    ] as const;
+    }
+
+
+export const getGetBackupStatusQueryOptions = <TData = Awaited<ReturnType<typeof getBackupStatus>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getBackupStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetBackupStatusQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getBackupStatus>>> = ({ signal }) => getBackupStatus({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getBackupStatus>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetBackupStatusQueryResult = NonNullable<Awaited<ReturnType<typeof getBackupStatus>>>
+export type GetBackupStatusQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get database backup status (admin only)
+ */
+
+export function useGetBackupStatus<TData = Awaited<ReturnType<typeof getBackupStatus>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getBackupStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetBackupStatusQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getCreateBackupExportUrl = () => {
+
+
+
+
+  return `/api/admin/backup/export`
+}
+
+/**
+ * @summary Generate pg_dump export command (admin only)
+ */
+export const createBackupExport = async ( options?: RequestInit): Promise<BackupExport> => {
+
+  return customFetch<BackupExport>(getCreateBackupExportUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getCreateBackupExportMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createBackupExport>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createBackupExport>>, TError,void, TContext> => {
+
+const mutationKey = ['createBackupExport'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createBackupExport>>, void> = () => {
+
+
+          return  createBackupExport(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateBackupExportMutationResult = NonNullable<Awaited<ReturnType<typeof createBackupExport>>>
+
+    export type CreateBackupExportMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Generate pg_dump export command (admin only)
+ */
+export const useCreateBackupExport = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createBackupExport>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createBackupExport>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getCreateBackupExportMutationOptions(options));
     }
 
