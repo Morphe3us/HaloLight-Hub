@@ -15,3 +15,4 @@ export * from "./success";
 export * from "./equipment";
 export * from "./consumables";
 export * from "./automation";
+export * from "./resources";

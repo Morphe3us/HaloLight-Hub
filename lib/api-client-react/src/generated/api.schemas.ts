@@ -1690,6 +1690,310 @@ export interface AutomationRunResult {
   durationMs: number;
 }
 
+export type AdminCourseTitle = {[key: string]: string};
+
+export type AdminCourseDescription = {[key: string]: string};
+
+export type AdminCourseLevel = typeof AdminCourseLevel[keyof typeof AdminCourseLevel];
+
+
+export const AdminCourseLevel = {
+  beginner: 'beginner',
+  intermediate: 'intermediate',
+  advanced: 'advanced',
+} as const;
+
+export interface AdminCourse {
+  id: string;
+  slug: string;
+  title: AdminCourseTitle;
+  description: AdminCourseDescription;
+  category: string;
+  level: AdminCourseLevel;
+  thumbnailUrl: string;
+  isPublished: boolean;
+  isFeatured: boolean;
+  order: number;
+  totalDurationSeconds: number;
+  instructorName?: string | null;
+  estimatedDuration?: string | null;
+  moduleCount: number;
+  lessonCount: number;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface AdminCourseList {
+  items: AdminCourse[];
+  total: number;
+}
+
+export type AdminCourseDetailTitle = {[key: string]: string};
+
+export type AdminCourseDetailDescription = {[key: string]: string};
+
+export type AdminLessonTitle = {[key: string]: string};
+
+export type AdminLessonDescription = {[key: string]: string} | null;
+
+export interface AdminLesson {
+  id: string;
+  moduleId: string;
+  title: AdminLessonTitle;
+  description?: AdminLessonDescription;
+  videoUrl: string;
+  durationSeconds: number;
+  order: number;
+  isPublished: boolean;
+  notes?: string | null;
+}
+
+export type AdminModuleTitle = {[key: string]: string};
+
+export interface AdminModule {
+  id: string;
+  courseId: string;
+  title: AdminModuleTitle;
+  order: number;
+  lessons?: AdminLesson[];
+}
+
+export interface AdminCourseDetail {
+  id: string;
+  slug: string;
+  title: AdminCourseDetailTitle;
+  description: AdminCourseDetailDescription;
+  category: string;
+  level: string;
+  thumbnailUrl: string;
+  isPublished: boolean;
+  isFeatured: boolean;
+  order: number;
+  totalDurationSeconds: number;
+  instructorName?: string | null;
+  estimatedDuration?: string | null;
+  moduleCount: number;
+  lessonCount: number;
+  createdAt: string;
+  updatedAt?: string;
+  modules: AdminModule[];
+}
+
+export type CreateCourseInputTitle = {[key: string]: string};
+
+export type CreateCourseInputDescription = {[key: string]: string};
+
+export type CreateCourseInputLevel = typeof CreateCourseInputLevel[keyof typeof CreateCourseInputLevel];
+
+
+export const CreateCourseInputLevel = {
+  beginner: 'beginner',
+  intermediate: 'intermediate',
+  advanced: 'advanced',
+} as const;
+
+export interface CreateCourseInput {
+  title: CreateCourseInputTitle;
+  description: CreateCourseInputDescription;
+  category: string;
+  level: CreateCourseInputLevel;
+  thumbnailUrl?: string | null;
+  isPublished?: boolean;
+  isFeatured?: boolean;
+  instructorName?: string | null;
+  estimatedDuration?: string | null;
+}
+
+export type UpdateCourseInputTitle = {[key: string]: string};
+
+export type UpdateCourseInputDescription = {[key: string]: string};
+
+export type UpdateCourseInputLevel = typeof UpdateCourseInputLevel[keyof typeof UpdateCourseInputLevel];
+
+
+export const UpdateCourseInputLevel = {
+  beginner: 'beginner',
+  intermediate: 'intermediate',
+  advanced: 'advanced',
+} as const;
+
+export interface UpdateCourseInput {
+  title?: UpdateCourseInputTitle;
+  description?: UpdateCourseInputDescription;
+  category?: string;
+  level?: UpdateCourseInputLevel;
+  thumbnailUrl?: string | null;
+  isPublished?: boolean;
+  isFeatured?: boolean;
+  instructorName?: string | null;
+  estimatedDuration?: string | null;
+  order?: number;
+}
+
+export type CreateModuleInputTitle = {[key: string]: string};
+
+export interface CreateModuleInput {
+  courseId: string;
+  title: CreateModuleInputTitle;
+  order?: number;
+}
+
+export type UpdateModuleInputTitle = {[key: string]: string};
+
+export interface UpdateModuleInput {
+  title?: UpdateModuleInputTitle;
+  order?: number;
+}
+
+export type CreateLessonInputTitle = {[key: string]: string};
+
+export type CreateLessonInputDescription = {[key: string]: string} | null;
+
+export interface CreateLessonInput {
+  moduleId: string;
+  title: CreateLessonInputTitle;
+  description?: CreateLessonInputDescription;
+  videoUrl?: string | null;
+  durationSeconds?: number;
+  isPublished?: boolean;
+  notes?: string | null;
+}
+
+export type UpdateLessonInputTitle = {[key: string]: string};
+
+export type UpdateLessonInputDescription = {[key: string]: string} | null;
+
+export interface UpdateLessonInput {
+  title?: UpdateLessonInputTitle;
+  description?: UpdateLessonInputDescription;
+  videoUrl?: string | null;
+  durationSeconds?: number;
+  isPublished?: boolean;
+  notes?: string | null;
+  order?: number;
+}
+
+export type ResourceItemCategory = typeof ResourceItemCategory[keyof typeof ResourceItemCategory];
+
+
+export const ResourceItemCategory = {
+  pdf: 'pdf',
+  marketing: 'marketing',
+  template: 'template',
+  contract: 'contract',
+  checklist: 'checklist',
+  guide: 'guide',
+} as const;
+
+export type ResourceItemStatus = typeof ResourceItemStatus[keyof typeof ResourceItemStatus];
+
+
+export const ResourceItemStatus = {
+  draft: 'draft',
+  published: 'published',
+} as const;
+
+export interface ResourceItem {
+  id: string;
+  title: string;
+  category: ResourceItemCategory;
+  language: string;
+  fileUrl: string;
+  description?: string | null;
+  status: ResourceItemStatus;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface ResourceList {
+  items: ResourceItem[];
+  total: number;
+}
+
+export type CreateResourceInputCategory = typeof CreateResourceInputCategory[keyof typeof CreateResourceInputCategory];
+
+
+export const CreateResourceInputCategory = {
+  pdf: 'pdf',
+  marketing: 'marketing',
+  template: 'template',
+  contract: 'contract',
+  checklist: 'checklist',
+  guide: 'guide',
+} as const;
+
+export type CreateResourceInputStatus = typeof CreateResourceInputStatus[keyof typeof CreateResourceInputStatus];
+
+
+export const CreateResourceInputStatus = {
+  draft: 'draft',
+  published: 'published',
+} as const;
+
+export interface CreateResourceInput {
+  title: string;
+  category: CreateResourceInputCategory;
+  language: string;
+  fileUrl: string;
+  description?: string | null;
+  status?: CreateResourceInputStatus;
+}
+
+export type UpdateResourceInputCategory = typeof UpdateResourceInputCategory[keyof typeof UpdateResourceInputCategory];
+
+
+export const UpdateResourceInputCategory = {
+  pdf: 'pdf',
+  marketing: 'marketing',
+  template: 'template',
+  contract: 'contract',
+  checklist: 'checklist',
+  guide: 'guide',
+} as const;
+
+export type UpdateResourceInputStatus = typeof UpdateResourceInputStatus[keyof typeof UpdateResourceInputStatus];
+
+
+export const UpdateResourceInputStatus = {
+  draft: 'draft',
+  published: 'published',
+} as const;
+
+export interface UpdateResourceInput {
+  title?: string;
+  category?: UpdateResourceInputCategory;
+  language?: string;
+  fileUrl?: string;
+  description?: string | null;
+  status?: UpdateResourceInputStatus;
+}
+
+export type AdminSearchResultItemType = typeof AdminSearchResultItemType[keyof typeof AdminSearchResultItemType];
+
+
+export const AdminSearchResultItemType = {
+  user: 'user',
+  course: 'course',
+  lesson: 'lesson',
+  resource: 'resource',
+  article: 'article',
+  ticket: 'ticket',
+  equipment: 'equipment',
+} as const;
+
+export interface AdminSearchResultItem {
+  id: string;
+  type: AdminSearchResultItemType;
+  title: string;
+  subtitle: string;
+  href?: string;
+}
+
+export interface AdminSearchResult {
+  items: AdminSearchResultItem[];
+  total: number;
+}
+
 export type ListUsersParams = {
 role?: string;
 limit?: number;
@@ -1904,6 +2208,22 @@ export type CreateConsumableOrderBody = {
   catalogItemId?: string;
   quantity?: number;
   notes?: string;
+};
+
+export type ListAdminCoursesParams = {
+q?: string;
+status?: string;
+};
+
+export type ListResourcesParams = {
+category?: string;
+language?: string;
+status?: string;
+q?: string;
+};
+
+export type AdminSearchParams = {
+q: string;
 };
 
 export type ListAutomationExecutionsParams = {

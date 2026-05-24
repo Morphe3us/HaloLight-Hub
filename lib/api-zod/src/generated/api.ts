@@ -2557,6 +2557,352 @@ export const GetAdminClientResponse = zod.object({
 
 
 /**
+ * @summary List all courses including drafts (admin)
+ */
+export const ListAdminCoursesQueryParams = zod.object({
+  "q": zod.coerce.string().optional(),
+  "status": zod.coerce.string().optional()
+})
+
+export const ListAdminCoursesResponse = zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.string(),
+  "slug": zod.string(),
+  "title": zod.record(zod.string(), zod.string()),
+  "description": zod.record(zod.string(), zod.string()),
+  "category": zod.string(),
+  "level": zod.enum(['beginner', 'intermediate', 'advanced']),
+  "thumbnailUrl": zod.string(),
+  "isPublished": zod.boolean(),
+  "isFeatured": zod.boolean(),
+  "order": zod.number(),
+  "totalDurationSeconds": zod.number(),
+  "instructorName": zod.string().nullish(),
+  "estimatedDuration": zod.string().nullish(),
+  "moduleCount": zod.number(),
+  "lessonCount": zod.number(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string().optional()
+})),
+  "total": zod.number()
+})
+
+
+/**
+ * @summary Create a new course
+ */
+export const CreateAdminCourseBody = zod.object({
+  "title": zod.record(zod.string(), zod.string()),
+  "description": zod.record(zod.string(), zod.string()),
+  "category": zod.string(),
+  "level": zod.enum(['beginner', 'intermediate', 'advanced']),
+  "thumbnailUrl": zod.string().nullish(),
+  "isPublished": zod.boolean().optional(),
+  "isFeatured": zod.boolean().optional(),
+  "instructorName": zod.string().nullish(),
+  "estimatedDuration": zod.string().nullish()
+})
+
+
+/**
+ * @summary Get course with modules and lessons (admin)
+ */
+export const GetAdminCourseDetailParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const GetAdminCourseDetailResponse = zod.object({
+  "id": zod.string(),
+  "slug": zod.string(),
+  "title": zod.record(zod.string(), zod.string()),
+  "description": zod.record(zod.string(), zod.string()),
+  "category": zod.string(),
+  "level": zod.string(),
+  "thumbnailUrl": zod.string(),
+  "isPublished": zod.boolean(),
+  "isFeatured": zod.boolean(),
+  "order": zod.number(),
+  "totalDurationSeconds": zod.number(),
+  "instructorName": zod.string().nullish(),
+  "estimatedDuration": zod.string().nullish(),
+  "moduleCount": zod.number(),
+  "lessonCount": zod.number(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string().optional(),
+  "modules": zod.array(zod.object({
+  "id": zod.string(),
+  "courseId": zod.string(),
+  "title": zod.record(zod.string(), zod.string()),
+  "order": zod.number(),
+  "lessons": zod.array(zod.object({
+  "id": zod.string(),
+  "moduleId": zod.string(),
+  "title": zod.record(zod.string(), zod.string()),
+  "description": zod.record(zod.string(), zod.string()).nullish(),
+  "videoUrl": zod.string(),
+  "durationSeconds": zod.number(),
+  "order": zod.number(),
+  "isPublished": zod.boolean(),
+  "notes": zod.string().nullish()
+})).optional()
+}))
+})
+
+
+/**
+ * @summary Update a course
+ */
+export const UpdateAdminCourseParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const UpdateAdminCourseBody = zod.object({
+  "title": zod.record(zod.string(), zod.string()).optional(),
+  "description": zod.record(zod.string(), zod.string()).optional(),
+  "category": zod.string().optional(),
+  "level": zod.enum(['beginner', 'intermediate', 'advanced']).optional(),
+  "thumbnailUrl": zod.string().nullish(),
+  "isPublished": zod.boolean().optional(),
+  "isFeatured": zod.boolean().optional(),
+  "instructorName": zod.string().nullish(),
+  "estimatedDuration": zod.string().nullish(),
+  "order": zod.number().optional()
+})
+
+export const UpdateAdminCourseResponse = zod.object({
+  "id": zod.string(),
+  "slug": zod.string(),
+  "title": zod.record(zod.string(), zod.string()),
+  "description": zod.record(zod.string(), zod.string()),
+  "category": zod.string(),
+  "level": zod.enum(['beginner', 'intermediate', 'advanced']),
+  "thumbnailUrl": zod.string(),
+  "isPublished": zod.boolean(),
+  "isFeatured": zod.boolean(),
+  "order": zod.number(),
+  "totalDurationSeconds": zod.number(),
+  "instructorName": zod.string().nullish(),
+  "estimatedDuration": zod.string().nullish(),
+  "moduleCount": zod.number(),
+  "lessonCount": zod.number(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string().optional()
+})
+
+
+/**
+ * @summary Delete a course
+ */
+export const DeleteAdminCourseParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+
+/**
+ * @summary Duplicate a course (creates a draft copy)
+ */
+export const DuplicateAdminCourseParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+
+/**
+ * @summary Create a module inside a course
+ */
+export const CreateAdminModuleBody = zod.object({
+  "courseId": zod.string(),
+  "title": zod.record(zod.string(), zod.string()),
+  "order": zod.number().optional()
+})
+
+
+/**
+ * @summary Update a module
+ */
+export const UpdateAdminModuleParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const UpdateAdminModuleBody = zod.object({
+  "title": zod.record(zod.string(), zod.string()).optional(),
+  "order": zod.number().optional()
+})
+
+export const UpdateAdminModuleResponse = zod.object({
+  "id": zod.string(),
+  "courseId": zod.string(),
+  "title": zod.record(zod.string(), zod.string()),
+  "order": zod.number(),
+  "lessons": zod.array(zod.object({
+  "id": zod.string(),
+  "moduleId": zod.string(),
+  "title": zod.record(zod.string(), zod.string()),
+  "description": zod.record(zod.string(), zod.string()).nullish(),
+  "videoUrl": zod.string(),
+  "durationSeconds": zod.number(),
+  "order": zod.number(),
+  "isPublished": zod.boolean(),
+  "notes": zod.string().nullish()
+})).optional()
+})
+
+
+/**
+ * @summary Delete a module and its lessons
+ */
+export const DeleteAdminModuleParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+
+/**
+ * @summary Create a lesson inside a module
+ */
+export const CreateAdminLessonBody = zod.object({
+  "moduleId": zod.string(),
+  "title": zod.record(zod.string(), zod.string()),
+  "description": zod.record(zod.string(), zod.string()).nullish(),
+  "videoUrl": zod.string().nullish(),
+  "durationSeconds": zod.number().optional(),
+  "isPublished": zod.boolean().optional(),
+  "notes": zod.string().nullish()
+})
+
+
+/**
+ * @summary Update a lesson
+ */
+export const UpdateAdminLessonParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const UpdateAdminLessonBody = zod.object({
+  "title": zod.record(zod.string(), zod.string()).optional(),
+  "description": zod.record(zod.string(), zod.string()).nullish(),
+  "videoUrl": zod.string().nullish(),
+  "durationSeconds": zod.number().optional(),
+  "isPublished": zod.boolean().optional(),
+  "notes": zod.string().nullish(),
+  "order": zod.number().optional()
+})
+
+export const UpdateAdminLessonResponse = zod.object({
+  "id": zod.string(),
+  "moduleId": zod.string(),
+  "title": zod.record(zod.string(), zod.string()),
+  "description": zod.record(zod.string(), zod.string()).nullish(),
+  "videoUrl": zod.string(),
+  "durationSeconds": zod.number(),
+  "order": zod.number(),
+  "isPublished": zod.boolean(),
+  "notes": zod.string().nullish()
+})
+
+
+/**
+ * @summary Delete a lesson
+ */
+export const DeleteAdminLessonParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+
+/**
+ * @summary List all resources
+ */
+export const ListResourcesQueryParams = zod.object({
+  "category": zod.coerce.string().optional(),
+  "language": zod.coerce.string().optional(),
+  "status": zod.coerce.string().optional(),
+  "q": zod.coerce.string().optional()
+})
+
+export const ListResourcesResponse = zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.string(),
+  "title": zod.string(),
+  "category": zod.enum(['pdf', 'marketing', 'template', 'contract', 'checklist', 'guide']),
+  "language": zod.string(),
+  "fileUrl": zod.string(),
+  "description": zod.string().nullish(),
+  "status": zod.enum(['draft', 'published']),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string().optional()
+})),
+  "total": zod.number()
+})
+
+
+/**
+ * @summary Create a resource
+ */
+export const CreateResourceBody = zod.object({
+  "title": zod.string(),
+  "category": zod.enum(['pdf', 'marketing', 'template', 'contract', 'checklist', 'guide']),
+  "language": zod.string(),
+  "fileUrl": zod.string(),
+  "description": zod.string().nullish(),
+  "status": zod.enum(['draft', 'published']).optional()
+})
+
+
+/**
+ * @summary Update a resource
+ */
+export const UpdateResourceParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const UpdateResourceBody = zod.object({
+  "title": zod.string().optional(),
+  "category": zod.enum(['pdf', 'marketing', 'template', 'contract', 'checklist', 'guide']).optional(),
+  "language": zod.string().optional(),
+  "fileUrl": zod.string().optional(),
+  "description": zod.string().nullish(),
+  "status": zod.enum(['draft', 'published']).optional()
+})
+
+export const UpdateResourceResponse = zod.object({
+  "id": zod.string(),
+  "title": zod.string(),
+  "category": zod.enum(['pdf', 'marketing', 'template', 'contract', 'checklist', 'guide']),
+  "language": zod.string(),
+  "fileUrl": zod.string(),
+  "description": zod.string().nullish(),
+  "status": zod.enum(['draft', 'published']),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string().optional()
+})
+
+
+/**
+ * @summary Delete a resource
+ */
+export const DeleteResourceParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+
+/**
+ * @summary Global admin search
+ */
+export const AdminSearchQueryParams = zod.object({
+  "q": zod.coerce.string()
+})
+
+export const AdminSearchResponse = zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.string(),
+  "type": zod.enum(['user', 'course', 'lesson', 'resource', 'article', 'ticket', 'equipment']),
+  "title": zod.string(),
+  "subtitle": zod.string(),
+  "href": zod.string().optional()
+})),
+  "total": zod.number()
+})
+
+
+/**
  * @summary Get automation dashboard stats
  */
 export const GetAutomationStatsResponse = zod.object({

@@ -1,0 +1,241 @@
+Phase completed.
+
+Start Phase 10 — HaloLight Hub Content Management System.
+
+Goal:
+
+Create a complete admin content management experience so HaloLight staff can manage all Academy, Knowledge Base and Resources content directly from the application.
+
+Important:
+
+Do not modify existing business logic.
+Do not remove existing Academy functionality.
+Extend the current system.
+
+==================================================
+ACADEMY CONTENT MANAGER
+==================================================
+
+Create a dedicated Admin Academy page.
+
+Features:
+
+Course Management:
+- Create course
+- Edit course
+- Duplicate course
+- Archive course
+- Delete course
+- Draft / Published status
+
+Course fields:
+- Title
+- Description
+- Language
+- Category
+- Thumbnail image
+- Difficulty level
+- Estimated duration
+- Instructor name
+- Featured course toggle
+
+Module Management:
+- Create module
+- Edit module
+- Delete module
+- Reorder modules via drag-and-drop
+
+Lesson Management:
+- Create lesson
+- Edit lesson
+- Delete lesson
+- Reorder lessons via drag-and-drop
+
+Lesson fields:
+- Title
+- Description
+- Language
+- Video URL (Vimeo)
+- Video duration
+- PDF resources
+- Downloads
+- Notes
+- Attach quiz
+- Draft / Published
+
+Lesson preview:
+- Preview exactly as client sees it
+
+==================================================
+MULTILINGUAL CONTENT
+==================================================
+
+Every course, module and lesson must support:
+
+- French
+- English
+- German
+- Dutch
+- Spanish
+- Italian
+- Portuguese
+- Polish
+
+Content structure:
+
+Course
+ ├── FR
+ ├── EN
+ ├── DE
+ ├── NL
+ ├── ES
+ ├── IT
+ ├── PT
+ └── PL
+
+Allow switching language inside admin.
+
+==================================================
+KNOWLEDGE BASE MANAGER
+==================================================
+
+Admin interface:
+
+- Create article
+- Edit article
+- Delete article
+- Publish / Draft
+- Categories
+- Tags
+- Search
+
+Article fields:
+
+- Title
+- Excerpt
+- Content
+- Language
+- Category
+- Tags
+
+Preview article mode.
+
+==================================================
+RESOURCE LIBRARY
+==================================================
+
+Create Resource Manager.
+
+Allow:
+
+- PDF links
+- Marketing assets
+- Templates
+- Contracts
+- Checklists
+- Guides
+
+Fields:
+
+- Title
+- Category
+- Language
+- File URL
+- Description
+
+Search and filters.
+
+==================================================
+USER INSIGHTS PANEL
+==================================================
+
+Enhance Client 360.
+
+For every client display:
+
+- Academy progress
+- Courses completed
+- Last login
+- Quotes
+- Contracts
+- Invoices
+- Revenue generated
+- Events
+- Equipment
+- Consumables
+- Support tickets
+- Success score
+- Coaching recommendations
+
+Add CSV export.
+
+==================================================
+ADMIN SEARCH
+==================================================
+
+Global admin search.
+
+Search across:
+
+- users
+- courses
+- lessons
+- resources
+- articles
+- tickets
+- equipment
+
+==================================================
+IMPORT TOOLS
+==================================================
+
+Create import helpers.
+
+Support:
+
+- Bulk course creation
+- Bulk lesson creation
+- Bulk resource import
+
+Allow simple copy/paste workflow.
+
+==================================================
+SECURITY
+==================================================
+
+Only Admin role can access.
+
+Clients must never access:
+
+- content manager
+- user management
+- admin search
+
+==================================================
+UX
+==================================================
+
+Maintain HaloLight Hub design system.
+
+Use:
+
+- tables
+- filters
+- search
+- pagination
+- modals
+- bulk actions
+
+==================================================
+VERIFICATION
+==================================================
+
+Run:
+
+- OpenAPI generation
+- typecheck
+- route verification
+
+Provide a complete implementation summary when finished.
+
+Stop after completion.

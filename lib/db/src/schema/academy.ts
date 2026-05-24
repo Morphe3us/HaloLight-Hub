@@ -34,6 +34,9 @@ export const courses = pgTable("courses", {
   order: integer("order").notNull().default(0),
   isPublished: boolean("is_published").notNull().default(true),
   totalDurationSeconds: integer("total_duration_seconds").notNull().default(0),
+  instructorName: text("instructor_name"),
+  isFeatured: boolean("is_featured").notNull().default(false),
+  estimatedDuration: text("estimated_duration"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
@@ -54,10 +57,12 @@ export const lessons = pgTable("lessons", {
     .notNull()
     .references(() => courseModules.id, { onDelete: "cascade" }),
   title: jsonb("title").notNull(),
+  description: jsonb("description"),
   videoUrl: text("video_url").notNull().default(""),
   durationSeconds: integer("duration_seconds").notNull().default(0),
   order: integer("order").notNull().default(0),
   isPublished: boolean("is_published").notNull().default(true),
+  notes: text("notes"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

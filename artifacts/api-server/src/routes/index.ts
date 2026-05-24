@@ -21,6 +21,9 @@ import revenueRouter from "./revenue";
 import equipmentRouter from "./equipment";
 import consumablesRouter from "./consumables";
 import automationRouter from "./automation";
+import academyAdminRouter from "./academy-admin";
+import resourcesRouter from "./resources";
+import adminSearchRouter from "./admin-search";
 
 const router: IRouter = Router();
 
@@ -46,5 +49,8 @@ router.use(revenueRouter);
 router.use(equipmentRouter);
 router.use(consumablesRouter);
 router.use(automationRouter);
+router.use(academyAdminRouter);
+router.use(resourcesRouter);
+router.use(adminSearchRouter);
 
 export default router;
