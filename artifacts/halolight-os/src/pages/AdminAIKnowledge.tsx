@@ -268,39 +268,39 @@ export default function AdminAIKnowledge() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input className="pl-9" placeholder="Search documents…" value={q} onChange={e => setQ(e.target.value)} />
             </div>
-            <Select value={filterCat} onValueChange={setFilterCat}>
+            <Select value={filterCat || "all"} onValueChange={v => setFilterCat(v === "all" ? "" : v)}>
               <SelectTrigger className="w-44">
                 <SelectValue placeholder="Category" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All categories</SelectItem>
+                <SelectItem value="all">All categories</SelectItem>
                 {CATEGORIES.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
               </SelectContent>
             </Select>
-            <Select value={filterLang} onValueChange={setFilterLang}>
+            <Select value={filterLang || "all"} onValueChange={v => setFilterLang(v === "all" ? "" : v)}>
               <SelectTrigger className="w-32">
                 <SelectValue placeholder="Language" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All languages</SelectItem>
+                <SelectItem value="all">All languages</SelectItem>
                 {LANGUAGES.map(l => <SelectItem key={l.code} value={l.code}>{l.label}</SelectItem>)}
               </SelectContent>
             </Select>
-            <Select value={filterStatus} onValueChange={setFilterStatus}>
+            <Select value={filterStatus || "all"} onValueChange={v => setFilterStatus(v === "all" ? "" : v)}>
               <SelectTrigger className="w-36">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All statuses</SelectItem>
+                <SelectItem value="all">All statuses</SelectItem>
                 {STATUSES.map(s => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
               </SelectContent>
             </Select>
-            <Select value={filterActive} onValueChange={setFilterActive}>
+            <Select value={filterActive || "all"} onValueChange={v => setFilterActive(v === "all" ? "" : v)}>
               <SelectTrigger className="w-32">
                 <SelectValue placeholder="AI Active" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All</SelectItem>
+                <SelectItem value="all">All</SelectItem>
                 <SelectItem value="true">Active</SelectItem>
                 <SelectItem value="false">Inactive</SelectItem>
               </SelectContent>

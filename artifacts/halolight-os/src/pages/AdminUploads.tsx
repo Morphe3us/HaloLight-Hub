@@ -275,30 +275,30 @@ export default function AdminUploads() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input className="pl-9" placeholder="Search uploads…" value={q} onChange={e => setQ(e.target.value)} />
             </div>
-            <Select value={filterCat} onValueChange={setFilterCat}>
+            <Select value={filterCat || "all"} onValueChange={v => setFilterCat(v === "all" ? "" : v)}>
               <SelectTrigger className="w-44">
                 <SelectValue placeholder="Category" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All categories</SelectItem>
+                <SelectItem value="all">All categories</SelectItem>
                 {CATEGORIES.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
               </SelectContent>
             </Select>
-            <Select value={filterVis} onValueChange={setFilterVis}>
+            <Select value={filterVis || "all"} onValueChange={v => setFilterVis(v === "all" ? "" : v)}>
               <SelectTrigger className="w-40">
                 <SelectValue placeholder="Visibility" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All visibility</SelectItem>
+                <SelectItem value="all">All visibility</SelectItem>
                 {VISIBILITY.map(v => <SelectItem key={v.value} value={v.value}>{v.label}</SelectItem>)}
               </SelectContent>
             </Select>
-            <Select value={filterLang} onValueChange={setFilterLang}>
+            <Select value={filterLang || "all"} onValueChange={v => setFilterLang(v === "all" ? "" : v)}>
               <SelectTrigger className="w-32">
                 <SelectValue placeholder="Language" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All languages</SelectItem>
+                <SelectItem value="all">All languages</SelectItem>
                 {LANGUAGES.map(l => <SelectItem key={l.code} value={l.code}>{l.label}</SelectItem>)}
               </SelectContent>
             </Select>

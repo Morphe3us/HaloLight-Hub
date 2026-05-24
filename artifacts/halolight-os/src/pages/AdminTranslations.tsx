@@ -193,34 +193,34 @@ export default function AdminTranslations() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input className="pl-9" placeholder="Search content…" value={q} onChange={e => setQ(e.target.value)} />
             </div>
-            <Select value={contentType} onValueChange={setContentType}>
+            <Select value={contentType || "all"} onValueChange={v => setContentType(v === "all" ? "" : v)}>
               <SelectTrigger className="w-40">
                 <SelectValue placeholder="Content type" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All types</SelectItem>
+                <SelectItem value="all">All types</SelectItem>
                 {CONTENT_TYPES.map(ct => (
                   <SelectItem key={ct.value} value={ct.value}>{ct.label}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
-            <Select value={language} onValueChange={setLanguage}>
+            <Select value={language || "all"} onValueChange={v => setLanguage(v === "all" ? "" : v)}>
               <SelectTrigger className="w-36">
                 <SelectValue placeholder="Language" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All languages</SelectItem>
+                <SelectItem value="all">All languages</SelectItem>
                 {LANGUAGES.map(l => (
                   <SelectItem key={l.code} value={l.code}>{l.label}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
-            <Select value={status} onValueChange={setStatus}>
+            <Select value={status || "all"} onValueChange={v => setStatus(v === "all" ? "" : v)}>
               <SelectTrigger className="w-36">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All statuses</SelectItem>
+                <SelectItem value="all">All statuses</SelectItem>
                 {["draft", "needs_review", "approved", "published", "missing"].map(s => (
                   <SelectItem key={s} value={s}>{STATUS_CONFIG[s]?.label}</SelectItem>
                 ))}
