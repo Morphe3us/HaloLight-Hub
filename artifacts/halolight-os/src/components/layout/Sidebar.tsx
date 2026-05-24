@@ -182,8 +182,8 @@ export function Sidebar() {
     <div className="flex flex-col h-full bg-background border-r border-border">
       {/* Logo */}
       <div className="px-5 py-5 border-b border-border">
-        <img src="/logo-hub-light.png" alt="HaloLight Hub" className="w-[110px] h-auto object-contain dark:hidden" />
-        <img src="/logo-hub.png" alt="HaloLight Hub" className="w-[110px] h-auto object-contain hidden dark:block" />
+        <img src="/logo-hub-light-orig.png" alt="HaloLight Hub" className="w-[110px] h-auto object-contain dark:hidden" style={{ mixBlendMode: "multiply" }} />
+        <img src="/logo-hub-dark-orig.png" alt="HaloLight Hub" className="w-[110px] h-auto object-contain hidden dark:block" style={{ mixBlendMode: "screen" }} />
       </div>
 
       {/* Navigation */}
@@ -226,8 +226,8 @@ export function Sidebar() {
             <SidebarContent onClose={() => setMobileOpen(false)} />
           </SheetContent>
         </Sheet>
-        <img src="/logo-hub-light.png" alt="HaloLight Hub" className="w-20 h-auto object-contain dark:hidden" />
-        <img src="/logo-hub.png" alt="HaloLight Hub" className="w-20 h-auto object-contain hidden dark:block" />
+        <img src="/logo-hub-light-orig.png" alt="HaloLight Hub" className="w-20 h-auto object-contain dark:hidden" style={{ mixBlendMode: "multiply" }} />
+        <img src="/logo-hub-dark-orig.png" alt="HaloLight Hub" className="w-20 h-auto object-contain hidden dark:block" style={{ mixBlendMode: "screen" }} />
       </div>
     </>
   );

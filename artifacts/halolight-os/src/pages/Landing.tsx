@@ -8,8 +8,8 @@ export default function Landing() {
       {/* Header */}
       <header className="bg-background/80 backdrop-blur-md border-b border-border px-6 py-4 flex items-center justify-between sticky top-0 z-50">
         <div className="flex items-center gap-3">
-          <img src="/logo-hub-light.png" alt="HaloLight Hub" className="w-[120px] h-auto object-contain dark:hidden" />
-          <img src="/logo-hub.png" alt="HaloLight Hub" className="w-[120px] h-auto object-contain hidden dark:block" />
+          <img src="/logo-hub-light-orig.png" alt="HaloLight Hub" className="w-[120px] h-auto object-contain dark:hidden" style={{ mixBlendMode: "multiply" }} />
+          <img src="/logo-hub-dark-orig.png" alt="HaloLight Hub" className="w-[120px] h-auto object-contain hidden dark:block" style={{ mixBlendMode: "screen" }} />
         </div>
         <div className="flex items-center gap-3">
           <Link href="/sign-in">
