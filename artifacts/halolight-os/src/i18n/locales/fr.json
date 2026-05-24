@@ -71,7 +71,8 @@
     "watch": "Regarder",
     "minutes": "min",
     "equipment_ok": "Tout OK",
-    "stock_ok": "Stock complet"
+    "stock_ok": "Stock complet",
+    "watched": "regardé"
   },
   "academy": {
     "title": "Académie",
@@ -184,7 +185,11 @@
     "maintenance_notes_label": "Notes de maintenance",
     "registered_success": "Équipement enregistré",
     "registered_success_desc": "{{model}} a été ajouté à votre registre.",
-    "register_failed": "Échec de l'enregistrement"
+    "register_failed": "Échec de l'enregistrement",
+    "due_date": "Dû {{date}}",
+    "alert_banner": "{{count}} article(s) nécessitent votre attention",
+    "sn_prefix": "N/S :",
+    "register_equipment": "Enregistrer un équipement"
   },
   "consumables": {
     "title": "Consommables",
@@ -255,7 +260,16 @@
     "orders_section": "Bons de commande",
     "no_orders": "Aucun historique d'achat",
     "order_date": "Date de commande",
-    "delivered": "Livré"
+    "delivered": "Livré",
+    "kpi_total": "Total des articles",
+    "kpi_well_stocked": "Bien approvisionné",
+    "first_supply_desc": "Votre stock de papier, rubans et accessoires apparaîtra ici",
+    "add_first_supply": "Ajouter votre premier article",
+    "compatible": "Compatible",
+    "days_remaining_short": "~{{days}}j restants",
+    "reorder_threshold": "Seuil de réapprovisionnement : {{threshold}} {{unit}}",
+    "last_restocked": "Dernier réapprovisionnement : {{date}}",
+    "reorder_recommended_msg": "Réapprovisionnement recommandé"
   },
   "support": {
     "title": "Support",
@@ -402,7 +416,17 @@
     "conv_deleted": "Conversation supprimée",
     "ticket_created_msg": "Ticket d'assistance créé",
     "ticket_failed": "Échec de la création du ticket",
-    "conv_failed": "Impossible de démarrer la conversation"
+    "conv_failed": "Impossible de démarrer la conversation",
+    "help_question": "Comment puis-je vous aider aujourd'hui ?",
+    "generating": "Génération en cours…",
+    "message_count": "{{count}} messages",
+    "escalate_short": "Escalader",
+    "powered_by": "Propulsé par votre Base de connaissances et Académie",
+    "create_ticket": "Créer un ticket",
+    "voice_input_error": "Erreur de saisie vocale",
+    "new_chat": "Nouvelle conversation",
+    "send_get_started": "Envoyez un message pour commencer",
+    "escalate_dialog_desc": "Un ticket de support sera créé avec la transcription de cette conversation afin que notre équipe puisse faire un suivi. Vous pourrez le suivre dans vos Tickets de Support."
   },
   "notifications": {
     "title": "Notifications",
@@ -436,7 +460,9 @@
     "all_set": "Parfait ! Votre compte est entièrement configuré.",
     "required": "Obligatoire",
     "complete_step": "Compléter l'étape",
-    "completed_label": "Terminé"
+    "completed_label": "Terminé",
+    "page_title": "Configuration partenaire",
+    "steps_of": "{{completed}} sur {{total}} étapes complétées"
   },
   "backup": {
     "title": "Sauvegarde et export",
@@ -517,7 +543,9 @@
     "status": "Statut",
     "actions": "Actions",
     "created": "Créé",
-    "updated": "Mis à jour"
+    "updated": "Mis à jour",
+    "today": "Aujourd'hui",
+    "yesterday": "Hier"
   },
   "admin": {
     "console_title": "Console d'administration",

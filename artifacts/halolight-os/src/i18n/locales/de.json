@@ -71,7 +71,8 @@
     "watch": "Ansehen",
     "minutes": "Min",
     "equipment_ok": "Alles OK",
-    "stock_ok": "Vollständig bevorratet"
+    "stock_ok": "Vollständig bevorratet",
+    "watched": "angesehen"
   },
   "academy": {
     "title": "Akademie",
@@ -184,7 +185,11 @@
     "maintenance_notes_label": "Maintenance Notes",
     "registered_success": "Gerät registriert",
     "registered_success_desc": "{{model}} has been added to your registry.",
-    "register_failed": "Registrierung fehlgeschlagen"
+    "register_failed": "Registrierung fehlgeschlagen",
+    "due_date": "Fällig {{date}}",
+    "alert_banner": "{{count}} Element(e) benötigen Aufmerksamkeit",
+    "sn_prefix": "S/N:",
+    "register_equipment": "Gerät registrieren"
   },
   "consumables": {
     "title": "Verbrauchsmaterial",
@@ -255,7 +260,16 @@
     "orders_section": "Purchase Orders",
     "no_orders": "No purchase history yet",
     "order_date": "Order Date",
-    "delivered": "Delivered"
+    "delivered": "Delivered",
+    "kpi_total": "Artikel gesamt",
+    "kpi_well_stocked": "Gut bestückt",
+    "first_supply_desc": "Ihr Papier- und Zubehörbestand erscheint hier",
+    "add_first_supply": "Ersten Artikel hinzufügen",
+    "compatible": "Kompatibel",
+    "days_remaining_short": "~{{days}}T übrig",
+    "reorder_threshold": "Nachbestellgrenze: {{threshold}} {{unit}}",
+    "last_restocked": "Zuletzt aufgefüllt: {{date}}",
+    "reorder_recommended_msg": "Nachbestellung empfohlen"
   },
   "support": {
     "title": "Support",
@@ -402,7 +416,17 @@
     "conv_deleted": "Conversation deleted",
     "ticket_created_msg": "Support ticket created",
     "ticket_failed": "Failed to create ticket",
-    "conv_failed": "Could not start conversation"
+    "conv_failed": "Could not start conversation",
+    "help_question": "Wie kann ich Ihnen heute helfen?",
+    "generating": "Wird generiert…",
+    "message_count": "{{count}} Nachrichten",
+    "escalate_short": "Eskalieren",
+    "powered_by": "Unterstützt durch Ihre Wissensdatenbank & Akademie",
+    "create_ticket": "Ticket erstellen",
+    "voice_input_error": "Spracheingabefehler",
+    "new_chat": "Neues Gespräch",
+    "send_get_started": "Senden Sie eine Nachricht, um zu beginnen",
+    "escalate_dialog_desc": "Ein Support-Ticket wird mit einer Abschrift dieses Gesprächs erstellt, damit unser Team direkt nachfassen kann. Sie können es in Ihren Support-Tickets verfolgen."
   },
   "notifications": {
     "title": "Benachrichtigungen",
@@ -436,7 +460,9 @@
     "all_set": "Fertig! Ihr Konto ist vollständig konfiguriert.",
     "required": "Erforderlich",
     "complete_step": "Schritt abschließen",
-    "completed_label": "Abgeschlossen"
+    "completed_label": "Abgeschlossen",
+    "page_title": "Partner-Einrichtung",
+    "steps_of": "{{completed}} von {{total}} Schritten abgeschlossen"
   },
   "backup": {
     "title": "Backup & Export",
@@ -517,7 +543,9 @@
     "status": "Status",
     "actions": "Aktionen",
     "created": "Erstellt",
-    "updated": "Aktualisiert"
+    "updated": "Aktualisiert",
+    "today": "Heute",
+    "yesterday": "Gestern"
   },
   "admin": {
     "console_title": "Admin Console",

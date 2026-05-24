@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import {
   useListAiConversations, useCreateAiConversation,
   useGetAiConversation, useDeleteAiConversation,
@@ -109,11 +110,12 @@ function SourceIcon({ type }: { type: RAGSource["type"] }) {
 }
 
 function SourceCitations({ sources }: { sources: RAGSource[] }) {
+  const { t } = useTranslation();
   if (!sources.length) return null;
   return (
     <div className="mt-3 pt-3 border-t border-border/40">
       <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold mb-2">
-        Sources
+        {t("ai.sources")}
       </p>
       <div className="flex flex-wrap gap-1.5">
         {sources.map((s) => (
@@ -197,6 +199,7 @@ function MessageBubble({
   onSpeak?: (text: string, id: string) => void;
   isSpeaking?: boolean;
 }) {
+  const { t } = useTranslation();
   const isUser = message.role === "user";
   const displayContent = stream ? stream.content : message.content;
   const sources = stream ? stream.sources : (message.sources ?? []);
@@ -263,7 +266,7 @@ function MessageBubble({
             <button
               type="button"
               onClick={() => onSpeak(displayContent, message.id)}
-              aria-label={isSpeaking ? "Stop speaking" : "Read aloud"}
+              aria-label={isSpeaking ? t("ai.stop_generating") : t("ai.send_message")}
               className={cn(
                 "w-5 h-5 flex items-center justify-center rounded-full transition-colors",
                 "text-muted-foreground/40 hover:text-muted-foreground focus:outline-none",
@@ -314,12 +317,13 @@ function InputBar({
   placeholder?: string;
   inputRef?: React.RefObject<HTMLInputElement | null>;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="relative">
       {voiceInput.isListening && (
         <div className="absolute -top-7 left-0 flex items-center gap-1.5 text-xs text-destructive font-medium">
           <span className="w-1.5 h-1.5 rounded-full bg-destructive animate-pulse shrink-0" />
-          {voiceInput.partialTranscript || "Listening… speak your question"}
+          {voiceInput.partialTranscript || t("ai.listening")}
         </div>
       )}
       <div className={cn(
@@ -336,7 +340,7 @@ function InputBar({
               onSubmit();
             }
           }}
-          placeholder={voiceInput.isListening ? "Listening…" : (placeholder ?? "Message HaloLight AI…")}
+          placeholder={voiceInput.isListening ? t("ai.listening_short") : (placeholder ?? t("ai.chat_placeholder"))}
           disabled={isStreaming || voiceInput.isActive || isDisabled}
           className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground py-1.5 min-w-0"
           autoComplete="off"
@@ -355,7 +359,7 @@ function InputBar({
               type="button"
               onClick={onStop}
               className="p-2 rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors"
-              aria-label="Stop generating"
+              aria-label={t("ai.stop_generating")}
             >
               <StopCircle className="w-4 h-4" />
             </button>
@@ -365,7 +369,7 @@ function InputBar({
               onClick={onSubmit}
               disabled={!value.trim() || voiceInput.isActive || isDisabled}
               className="p-2 rounded-xl bg-primary text-primary-foreground disabled:opacity-25 hover:bg-primary/90 transition-all"
-              aria-label="Send message"
+              aria-label={t("ai.send_message")}
             >
               <Send className="w-4 h-4" />
             </button>
@@ -379,6 +383,7 @@ function InputBar({
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function AIAssistant() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const qc = useQueryClient();
   const [activeConvId, setActiveConvId] = useState<string | null>(null);
@@ -418,7 +423,7 @@ export default function AIAssistant() {
         setActiveConvId(null);
         setStream(null);
         setPendingUserMsg(null);
-        toast({ title: "Conversation deleted" });
+        toast({ title: t("ai.conv_deleted") });
       },
     },
   });
@@ -428,11 +433,11 @@ export default function AIAssistant() {
       onSuccess: (data) => {
         setEscalateOpen(false);
         toast({
-          title: "Support ticket created",
-          description: data.ticket?.title ?? "Ticket opened successfully",
+          title: t("ai.ticket_created_msg"),
+          description: data.ticket?.title ?? t("ai.ticket_created_msg"),
         });
       },
-      onError: () => toast({ title: "Failed to create ticket", variant: "destructive" }),
+      onError: () => toast({ title: t("ai.ticket_failed"), variant: "destructive" }),
     },
   });
 
@@ -529,8 +534,8 @@ export default function AIAssistant() {
       } catch (err: unknown) {
         if ((err as { name?: string }).name === "AbortError") return;
         toast({
-          title: "Something went wrong",
-          description: (err as Error).message ?? "Failed to get AI response",
+          title: t("common.error"),
+          description: (err as Error).message ?? t("ai.error"),
           variant: "destructive",
         });
       } finally {
@@ -588,7 +593,7 @@ export default function AIAssistant() {
         void streamConversation(convId, msg);
       },
       onError: () => {
-        toast({ title: "Could not start conversation", variant: "destructive" });
+        toast({ title: t("ai.conv_failed"), variant: "destructive" });
       },
     });
   };
@@ -617,7 +622,7 @@ export default function AIAssistant() {
   const voiceInput = useVoiceInput({
     onTranscript: handleVoiceTranscript,
     onError: (msg) =>
-      toast({ title: "Voice input error", description: msg, variant: "destructive" }),
+      toast({ title: t("ai.voice_input_error"), description: msg, variant: "destructive" }),
   });
 
   // ─── Derived state ────────────────────────────────────────────────────────
@@ -654,7 +659,7 @@ export default function AIAssistant() {
             {isCreating
               ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
               : <Plus className="w-3.5 h-3.5" />}
-            New chat
+            {t("ai.new_chat")}
           </button>
         </div>
 
@@ -666,7 +671,7 @@ export default function AIAssistant() {
               </div>
             ) : conversations.length === 0 ? (
               <p className="text-center text-xs text-muted-foreground py-8 px-3 leading-relaxed">
-                No conversations yet
+                {t("ai.no_conversations_title")}
               </p>
             ) : (
               conversations.map((c) => (
@@ -723,10 +728,10 @@ export default function AIAssistant() {
                 <Sparkles className="w-5 h-5 text-background" />
               </div>
               <h1 className="text-2xl font-bold text-foreground mb-1.5 tracking-tight">
-                HaloLight AI Assistant
+                {t("ai.assistant_name")}
               </h1>
               <p className="text-muted-foreground text-sm mb-8">
-                How can I help you today?
+                {t("ai.help_question")}
               </p>
 
               {/* Integrated input */}
@@ -739,7 +744,7 @@ export default function AIAssistant() {
                   isStreaming={false}
                   isDisabled={isCreating}
                   voiceInput={voiceInput}
-                  placeholder="Ask about equipment, pricing, bookings…"
+                  placeholder={t("ai.placeholder")}
                   inputRef={welcomeInputRef}
                 />
               </div>
@@ -775,10 +780,10 @@ export default function AIAssistant() {
                     {isStreaming ? (
                       <span className="flex items-center gap-1 text-accent">
                         <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
-                        Generating…
+                        {t("ai.generating")}
                       </span>
                     ) : (
-                      `${messages.length} message${messages.length !== 1 ? "s" : ""}`
+                      t("ai.message_count", { count: messages.length })
                     )}
                   </p>
                 </div>
@@ -807,7 +812,7 @@ export default function AIAssistant() {
                   className="flex items-center gap-1.5 px-2.5 h-8 rounded-lg border border-warning/30 text-warning hover:bg-warning/8 text-xs font-medium transition-colors disabled:opacity-40"
                 >
                   <AlertTriangle className="w-3.5 h-3.5" />
-                  Escalate
+                  {t("ai.escalate_short")}
                 </button>
                 <button
                   onClick={() => { if (activeConvId) deleteConv({ id: activeConvId }); }}
@@ -829,7 +834,7 @@ export default function AIAssistant() {
                   </div>
                 ) : displayMessages.length === 0 && !isStreaming ? (
                   <div className="flex flex-col items-center justify-center py-16 gap-3">
-                    <p className="text-sm text-muted-foreground">Send a message to get started</p>
+                    <p className="text-sm text-muted-foreground">{t("ai.send_get_started")}</p>
                     <div className="flex flex-wrap justify-center gap-2 max-w-md">
                       {pills.slice(0, 3).map((p, i) => (
                         <button
@@ -890,7 +895,7 @@ export default function AIAssistant() {
                   inputRef={chatInputRef}
                 />
                 <p className="text-[11px] text-muted-foreground/50 text-center mt-2.5">
-                  Powered by your Knowledge Base &amp; Academy
+                  {t("ai.powered_by")}
                   {providerData && <span className="ml-1">· {providerData.name}</span>}
                 </p>
               </div>
@@ -905,16 +910,15 @@ export default function AIAssistant() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <AlertTriangle className="w-5 h-5 text-warning" />
-              Escalate to Support
+              {t("ai.escalate")}
             </DialogTitle>
             <DialogDescription>
-              A support ticket will be created with a transcript of this conversation so our team
-              can follow up directly. You'll be able to track it in your Support Tickets.
+              {t("ai.escalate_dialog_desc")}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2 mt-2">
             <Button variant="outline" onClick={() => setEscalateOpen(false)}>
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button
               className="gap-2 bg-destructive hover:bg-destructive/90 text-destructive-foreground"
@@ -931,7 +935,7 @@ export default function AIAssistant() {
               {isEscalating
                 ? <Loader2 className="w-4 h-4 animate-spin" />
                 : <Ticket className="w-4 h-4" />}
-              Create Ticket
+              {t("ai.create_ticket")}
             </Button>
           </DialogFooter>
         </DialogContent>

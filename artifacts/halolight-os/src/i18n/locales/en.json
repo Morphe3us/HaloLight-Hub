@@ -71,7 +71,8 @@
     "watch": "Watch",
     "minutes": "min",
     "equipment_ok": "All OK",
-    "stock_ok": "Fully Stocked"
+    "stock_ok": "Fully Stocked",
+    "watched": "watched"
   },
   "academy": {
     "title": "Academy",
@@ -184,7 +185,11 @@
     "maintenance_notes_label": "Maintenance Notes",
     "registered_success": "Equipment registered",
     "registered_success_desc": "{{model}} has been added to your registry.",
-    "register_failed": "Registration failed"
+    "register_failed": "Registration failed",
+    "due_date": "Due {{date}}",
+    "alert_banner": "{{count}} item(s) need attention",
+    "sn_prefix": "S/N:",
+    "register_equipment": "Register Equipment"
   },
   "consumables": {
     "title": "Consumables",
@@ -255,7 +260,16 @@
     "orders_section": "Purchase Orders",
     "no_orders": "No purchase history yet",
     "order_date": "Order Date",
-    "delivered": "Delivered"
+    "delivered": "Delivered",
+    "kpi_total": "Total Items",
+    "kpi_well_stocked": "Well Stocked",
+    "first_supply_desc": "Your paper, ribbon, and accessory stock will appear here",
+    "add_first_supply": "Add your first supply",
+    "compatible": "Compatible",
+    "days_remaining_short": "~{{days}}d left",
+    "reorder_threshold": "Reorder threshold: {{threshold}} {{unit}}",
+    "last_restocked": "Last restocked: {{date}}",
+    "reorder_recommended_msg": "Reorder recommended"
   },
   "support": {
     "title": "Support",
@@ -402,7 +416,17 @@
     "conv_deleted": "Conversation deleted",
     "ticket_created_msg": "Support ticket created",
     "ticket_failed": "Failed to create ticket",
-    "conv_failed": "Could not start conversation"
+    "conv_failed": "Could not start conversation",
+    "help_question": "How can I help you today?",
+    "generating": "Generating…",
+    "message_count": "{{count}} messages",
+    "escalate_short": "Escalate",
+    "powered_by": "Powered by your Knowledge Base & Academy",
+    "create_ticket": "Create Ticket",
+    "voice_input_error": "Voice input error",
+    "new_chat": "New chat",
+    "send_get_started": "Send a message to get started",
+    "escalate_dialog_desc": "A support ticket will be created with a transcript of this conversation so our team can follow up directly. You'll be able to track it in your Support Tickets."
   },
   "notifications": {
     "title": "Notifications",
@@ -436,7 +460,9 @@
     "all_set": "All set! Your account is fully configured.",
     "required": "Required",
     "complete_step": "Complete Step",
-    "completed_label": "Completed"
+    "completed_label": "Completed",
+    "page_title": "Partner Setup",
+    "steps_of": "{{completed}} of {{total}} steps completed"
   },
   "backup": {
     "title": "Backup & Export",
@@ -517,7 +543,9 @@
     "status": "Status",
     "actions": "Actions",
     "created": "Created",
-    "updated": "Updated"
+    "updated": "Updated",
+    "today": "Today",
+    "yesterday": "Yesterday"
   },
   "admin": {
     "console_title": "Admin Console",

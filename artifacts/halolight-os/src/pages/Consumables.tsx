@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   useGetConsumables, useGetConsumableOrders,
   useCreateConsumableStock, useRestockConsumable,
@@ -60,28 +61,43 @@ type Order = {
   unitType: string;
 };
 
-// ─── Config ───────────────────────────────────────────────────────────────────
+// ─── Config (icons and colors only — labels translated inline) ────────────────
 
-const CATEGORY_CONFIG: Record<string, { label: string; icon: React.ComponentType<{className?: string}>; color: string }> = {
-  paper:     { label: "Paper",      icon: Layers,   color: "text-info" },
-  ribbon:    { label: "Ribbon",     icon: Printer,  color: "text-muted-foreground" },
-  accessory: { label: "Accessory",  icon: Package,  color: "text-warning" },
-  cleaning:  { label: "Cleaning",   icon: Brush,    color: "text-teal-600" },
+const CATEGORY_CONFIG: Record<string, { icon: React.ComponentType<{ className?: string }>; color: string }> = {
+  paper:     { icon: Layers,   color: "text-info" },
+  ribbon:    { icon: Printer,  color: "text-muted-foreground" },
+  accessory: { icon: Package,  color: "text-warning" },
+  cleaning:  { icon: Brush,    color: "text-teal-600" },
 };
 
-const ORDER_STATUS: Record<string, { label: string; color: string }> = {
-  pending:    { label: "Pending",    color: "bg-warning/15 text-yellow-700" },
-  processing: { label: "Processing", color: "bg-info/15 text-info" },
-  shipped:    { label: "Shipped",    color: "bg-info/15 text-info" },
-  delivered:  { label: "Delivered",  color: "bg-success/15 text-success" },
-  cancelled:  { label: "Cancelled",  color: "bg-muted text-muted-foreground" },
+const ORDER_STATUS_COLORS: Record<string, string> = {
+  pending:    "bg-warning/15 text-yellow-700",
+  processing: "bg-info/15 text-info",
+  shipped:    "bg-info/15 text-info",
+  delivered:  "bg-success/15 text-success",
+  cancelled:  "bg-muted text-muted-foreground",
+};
+
+const ORDER_STATUS_KEYS: Record<string, string> = {
+  pending:    "consumables.order_status_pending",
+  processing: "consumables.order_status_processing",
+  shipped:    "consumables.order_status_shipped",
+  delivered:  "consumables.order_status_delivered",
+  cancelled:  "consumables.order_status_cancelled",
+};
+
+const CATEGORY_LABEL_KEYS: Record<string, string> = {
+  paper:     "consumables.category_paper",
+  ribbon:    "consumables.category_ribbon",
+  accessory: "consumables.category_accessory",
+  cleaning:  "consumables.category_cleaning",
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function fmtDate(d: string | null) {
   if (!d) return "—";
-  return new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  return new Date(d).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
 }
 
 function todayStr() {
@@ -122,6 +138,7 @@ function RestockModal({
   stock: StockItem[];
   preSelectedId?: string;
 }) {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const qc = useQueryClient();
   const [form, setForm] = useState({ ...EMPTY_RESTOCK, stockItemId: preSelectedId ?? "" });
@@ -139,15 +156,15 @@ function RestockModal({
         qc.invalidateQueries({ queryKey: ["/api/consumables/orders"] });
         const newQty = (data as { currentQuantity?: number }).currentQuantity ?? totalPrints;
         toast({
-          title: "Purchase recorded",
-          description: `Added ${totalPrints} ${selectedItem?.unitType ?? "units"} to ${selectedItem?.name ?? "stock"}. New total: ${newQty}.`,
+          title: t("consumables.purchase_recorded"),
+          description: `+${totalPrints} ${selectedItem?.unitType ?? "units"} → ${selectedItem?.name ?? ""}. ${t("consumables.in_stock")}: ${newQty}.`,
         });
         setForm({ ...EMPTY_RESTOCK, stockItemId: preSelectedId ?? "" });
         onClose();
       },
       onError: (err: unknown) => {
-        const msg = (err as { data?: { error?: string } })?.data?.error ?? "Failed to record purchase";
-        toast({ title: "Restock failed", description: msg, variant: "destructive" });
+        const msg = (err as { data?: { error?: string } })?.data?.error ?? t("consumables.restock_failed");
+        toast({ title: t("consumables.restock_failed"), description: msg, variant: "destructive" });
       },
     },
   });
@@ -184,25 +201,21 @@ function RestockModal({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <RefreshCw className="w-4 h-4 text-primary" />
-            Record a Purchase
+            {t("consumables.record_purchase_title")}
           </DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 pt-1">
-          {/* Consumable selector */}
           <div className="space-y-1.5">
-            <Label>Consumable <span className="text-destructive">*</span></Label>
-            <Select
-              value={form.stockItemId}
-              onValueChange={set("stockItemId")}
-            >
+            <Label>{t("consumables.title")} <span className="text-destructive">*</span></Label>
+            <Select value={form.stockItemId} onValueChange={set("stockItemId")}>
               <SelectTrigger>
-                <SelectValue placeholder="Select a consumable…" />
+                <SelectValue placeholder={t("consumables.consumable_placeholder")} />
               </SelectTrigger>
               <SelectContent>
                 {stock.map(s => (
                   <SelectItem key={s.id} value={s.id}>
                     {s.name}
-                    <span className="ml-1.5 text-muted-foreground text-xs">({s.currentQuantity} {s.unitType} in stock)</span>
+                    <span className="ml-1.5 text-muted-foreground text-xs">({s.currentQuantity} {s.unitType} {t("consumables.in_stock")})</span>
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -211,7 +224,7 @@ function RestockModal({
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label htmlFor="rollsPurchased">Rolls Purchased <span className="text-destructive">*</span></Label>
+              <Label htmlFor="rollsPurchased">{t("consumables.rolls_purchased")} <span className="text-destructive">*</span></Label>
               <Input
                 id="rollsPurchased"
                 type="number"
@@ -223,7 +236,7 @@ function RestockModal({
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="printsPerRoll">Prints per Roll <span className="text-destructive">*</span></Label>
+              <Label htmlFor="printsPerRoll">{t("consumables.prints_per_roll")} <span className="text-destructive">*</span></Label>
               <Input
                 id="printsPerRoll"
                 type="number"
@@ -236,10 +249,9 @@ function RestockModal({
             </div>
           </div>
 
-          {/* Live calculation */}
           {totalPrints > 0 && (
             <div className="bg-success/8 border border-success/25 rounded-lg px-3 py-2.5 flex items-center justify-between">
-              <span className="text-sm text-success font-medium">Total prints added</span>
+              <span className="text-sm text-success font-medium">{t("consumables.total_prints_added")}</span>
               <span className="text-lg font-bold text-success">
                 +{totalPrints.toLocaleString()}
                 <span className="text-xs font-normal text-success/70 ml-1">
@@ -250,7 +262,7 @@ function RestockModal({
           )}
 
           <div className="space-y-1.5">
-            <Label htmlFor="purchaseDate">Purchase Date <span className="text-destructive">*</span></Label>
+            <Label htmlFor="purchaseDate">{t("consumables.purchase_date_label")} <span className="text-destructive">*</span></Label>
             <Input
               id="purchaseDate"
               type="date"
@@ -262,7 +274,7 @@ function RestockModal({
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label htmlFor="supplierName">Supplier</Label>
+              <Label htmlFor="supplierName">{t("consumables.supplier_label")}</Label>
               <Input
                 id="supplierName"
                 placeholder="e.g. HaloLight Direct"
@@ -271,7 +283,7 @@ function RestockModal({
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="unitPricePerRoll">Price per Roll ($)</Label>
+              <Label htmlFor="unitPricePerRoll">{t("consumables.price_per_roll")}</Label>
               <Input
                 id="unitPricePerRoll"
                 type="number"
@@ -285,7 +297,7 @@ function RestockModal({
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="restockNotes">Notes</Label>
+            <Label htmlFor="restockNotes">{t("common.actions", { defaultValue: "Notes" })}</Label>
             <Textarea
               id="restockNotes"
               placeholder="Any additional notes about this purchase…"
@@ -297,15 +309,15 @@ function RestockModal({
 
           <DialogFooter className="pt-2">
             <Button type="button" variant="outline" onClick={onClose} disabled={isPending}>
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button
               type="submit"
               disabled={isPending || !form.stockItemId || rolls < 1 || prints < 1 || !form.purchaseDate}
             >
               {isPending
-                ? <><Loader2 className="w-4 h-4 mr-1.5 animate-spin" />Recording…</>
-                : "Record Purchase"}
+                ? <><Loader2 className="w-4 h-4 mr-1.5 animate-spin" />{t("consumables.recording")}</>
+                : t("consumables.record_purchase_btn")}
             </Button>
           </DialogFooter>
         </form>
@@ -336,6 +348,7 @@ function AddSupplyModal({
   open: boolean;
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const qc = useQueryClient();
   const [form, setForm] = useState(EMPTY_SUPPLY);
@@ -344,13 +357,13 @@ function AddSupplyModal({
     mutation: {
       onSuccess: () => {
         qc.invalidateQueries({ queryKey: ["/api/consumables"] });
-        toast({ title: "Supply added", description: `${form.name} has been added to your inventory.` });
+        toast({ title: t("consumables.supply_added"), description: t("consumables.supply_added_desc", { name: form.name }) });
         setForm(EMPTY_SUPPLY);
         onClose();
       },
       onError: (err: unknown) => {
-        const msg = (err as { data?: { error?: string } })?.data?.error ?? "Failed to add supply item";
-        toast({ title: "Failed to add supply", description: msg, variant: "destructive" });
+        const msg = (err as { data?: { error?: string } })?.data?.error ?? t("consumables.supply_add_failed");
+        toast({ title: t("consumables.supply_add_failed"), description: msg, variant: "destructive" });
       },
     },
   });
@@ -383,12 +396,12 @@ function AddSupplyModal({
     <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Add Supply Item</DialogTitle>
+          <DialogTitle>{t("consumables.add_supply_title")}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 pt-1">
           <div className="grid grid-cols-2 gap-3">
             <div className="col-span-2 space-y-1.5">
-              <Label htmlFor="supplyName">Item Name <span className="text-destructive">*</span></Label>
+              <Label htmlFor="supplyName">{t("consumables.item_name_label")} <span className="text-destructive">*</span></Label>
               <Input
                 id="supplyName"
                 placeholder="e.g. 4x6 Glossy Photo Paper"
@@ -398,21 +411,21 @@ function AddSupplyModal({
               />
             </div>
             <div className="space-y-1.5">
-              <Label>Category <span className="text-destructive">*</span></Label>
+              <Label>{t("consumables.category_label")} <span className="text-destructive">*</span></Label>
               <Select value={form.category} onValueChange={set("category")}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select category" />
+                  <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="paper">Paper</SelectItem>
-                  <SelectItem value="ribbon">Ribbon</SelectItem>
-                  <SelectItem value="accessory">Accessory</SelectItem>
-                  <SelectItem value="cleaning">Cleaning</SelectItem>
+                  <SelectItem value="paper">{t("consumables.category_paper")}</SelectItem>
+                  <SelectItem value="ribbon">{t("consumables.category_ribbon")}</SelectItem>
+                  <SelectItem value="accessory">{t("consumables.category_accessory")}</SelectItem>
+                  <SelectItem value="cleaning">{t("consumables.category_cleaning")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="unitType">Unit Type</Label>
+              <Label htmlFor="unitType">{t("consumables.unit_type_label")}</Label>
               <Input
                 id="unitType"
                 placeholder="e.g. sheets, rolls, packs"
@@ -421,7 +434,7 @@ function AddSupplyModal({
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="currentQty">Current Quantity <span className="text-destructive">*</span></Label>
+              <Label htmlFor="currentQty">{t("consumables.current_qty_label")} <span className="text-destructive">*</span></Label>
               <Input
                 id="currentQty"
                 type="number"
@@ -433,7 +446,7 @@ function AddSupplyModal({
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="reorderThreshold">Reorder Threshold</Label>
+              <Label htmlFor="reorderThreshold">{t("consumables.reorder_threshold_label")}</Label>
               <Input
                 id="reorderThreshold"
                 type="number"
@@ -444,7 +457,7 @@ function AddSupplyModal({
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="dailyUsage">Est. Daily Usage</Label>
+              <Label htmlFor="dailyUsage">{t("consumables.daily_usage_label")}</Label>
               <Input
                 id="dailyUsage"
                 type="number"
@@ -456,7 +469,7 @@ function AddSupplyModal({
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="unitPrice">Unit Price ($)</Label>
+              <Label htmlFor="unitPrice">{t("consumables.unit_price_label")}</Label>
               <Input
                 id="unitPrice"
                 type="number"
@@ -468,7 +481,7 @@ function AddSupplyModal({
               />
             </div>
             <div className="col-span-2 space-y-1.5">
-              <Label htmlFor="compatibleModels">Compatible Models</Label>
+              <Label htmlFor="compatibleModels">{t("consumables.compatible_models_label")}</Label>
               <Input
                 id="compatibleModels"
                 placeholder="e.g. HaloLight Pro X1, X2"
@@ -477,7 +490,7 @@ function AddSupplyModal({
               />
             </div>
             <div className="col-span-2 space-y-1.5">
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="description">{t("consumables.description_label")}</Label>
               <Textarea
                 id="description"
                 placeholder="Optional notes about this item…"
@@ -489,13 +502,15 @@ function AddSupplyModal({
           </div>
           <DialogFooter className="pt-2">
             <Button type="button" variant="outline" onClick={onClose} disabled={isPending}>
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button
               type="submit"
               disabled={isPending || !form.name.trim() || !form.currentQuantity}
             >
-              {isPending ? <><Loader2 className="w-4 h-4 mr-1.5 animate-spin" />Adding…</> : "Add Supply"}
+              {isPending
+                ? <><Loader2 className="w-4 h-4 mr-1.5 animate-spin" />{t("consumables.adding")}</>
+                : t("consumables.add_supply_btn")}
             </Button>
           </DialogFooter>
         </form>
@@ -507,6 +522,7 @@ function AddSupplyModal({
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function Consumables() {
+  const { t } = useTranslation();
   const [showOrders, setShowOrders] = useState(false);
   const [addSupplyOpen, setAddSupplyOpen] = useState(false);
   const [restockOpen, setRestockOpen] = useState(false);
@@ -536,7 +552,7 @@ export default function Consumables() {
   if (stockLoading) return (
     <div className="max-w-4xl mx-auto space-y-4">
       <div className="h-8 w-48 bg-border rounded animate-pulse" />
-      {[1,2,3].map(i => <div key={i} className="h-28 bg-muted rounded-xl animate-pulse" />)}
+      {[1, 2, 3].map(i => <div key={i} className="h-28 bg-muted rounded-xl animate-pulse" />)}
     </div>
   );
 
@@ -553,24 +569,24 @@ export default function Consumables() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Consumables</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Paper stock, ribbons, and accessories</p>
+          <h1 className="text-2xl font-bold text-foreground">{t("consumables.title")}</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">{t("consumables.subtitle_short")}</p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setShowOrders(!showOrders)}>
             <ShoppingCart className="w-4 h-4" />
-            Purchase History
+            {t("consumables.purchase_history")}
             {showOrders ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
           </Button>
           {stock.length > 0 && (
             <Button variant="outline" size="sm" className="gap-1.5" onClick={() => openRestock()}>
               <RefreshCw className="w-4 h-4" />
-              Restock
+              {t("consumables.reorder")}
             </Button>
           )}
           <Button size="sm" className="gap-1.5" onClick={() => setAddSupplyOpen(true)}>
             <Plus className="w-4 h-4" />
-            Add Supply
+            {t("consumables.add_supply")}
           </Button>
         </div>
       </div>
@@ -580,13 +596,13 @@ export default function Consumables() {
         <div className="bg-destructive/10 border border-destructive/30 rounded-xl p-4 flex items-start gap-3">
           <AlertTriangle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
           <div className="flex-1">
-            <p className="text-sm font-semibold text-destructive">Critical: Out of stock</p>
-            <p className="text-xs text-destructive mt-0.5">{criticalItems.map(i => i.name).join(", ")} — reorder immediately</p>
+            <p className="text-sm font-semibold text-destructive">{t("consumables.critical_title")}</p>
+            <p className="text-xs text-destructive mt-0.5">{criticalItems.map(i => i.name).join(", ")} — {t("consumables.critical_desc")}</p>
           </div>
           <Button size="sm" variant="outline" className="shrink-0 gap-1.5 border-destructive/30 text-destructive hover:bg-destructive/8"
             onClick={() => openRestock(criticalItems[0]?.id)}>
             <RefreshCw className="w-3.5 h-3.5" />
-            Restock
+            {t("consumables.reorder")}
           </Button>
         </div>
       )}
@@ -594,13 +610,13 @@ export default function Consumables() {
         <div className="bg-warning/8 border border-warning/30 rounded-xl p-4 flex items-start gap-3">
           <TrendingDown className="w-5 h-5 text-warning shrink-0 mt-0.5" />
           <div className="flex-1">
-            <p className="text-sm font-semibold text-warning">Low stock — reorder recommended</p>
+            <p className="text-sm font-semibold text-warning">{t("consumables.low_stock_title")}</p>
             <p className="text-xs text-warning mt-0.5">{lowItems.map(i => `${i.name} (${i.currentQuantity} ${i.unitType})`).join(", ")}</p>
           </div>
           <Button size="sm" variant="outline" className="shrink-0 gap-1.5 border-warning/30 text-warning hover:bg-warning/8"
             onClick={() => openRestock(lowItems[0]?.id)}>
             <RefreshCw className="w-3.5 h-3.5" />
-            Restock
+            {t("consumables.reorder")}
           </Button>
         </div>
       )}
@@ -608,10 +624,10 @@ export default function Consumables() {
       {/* Summary KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: "Total Items",   value: stock.length,                        color: "text-foreground" },
-          { label: "Well Stocked",  value: stock.filter(s => !s.isLow).length,  color: "text-success" },
-          { label: "Low Stock",     value: lowItems.length,                     color: "text-warning" },
-          { label: "Out of Stock",  value: criticalItems.length,                color: "text-destructive" },
+          { label: t("consumables.kpi_total"),        value: stock.length,                       color: "text-foreground" },
+          { label: t("consumables.kpi_well_stocked"), value: stock.filter(s => !s.isLow).length, color: "text-success" },
+          { label: t("consumables.low_stock"),        value: lowItems.length,                    color: "text-warning" },
+          { label: t("consumables.out_of_stock"),     value: criticalItems.length,               color: "text-destructive" },
         ].map(s => (
           <Card key={s.label}>
             <CardContent className="p-4 text-center">
@@ -628,18 +644,19 @@ export default function Consumables() {
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <Clock className="w-4 h-4 text-primary" />
-              Purchase History
+              {t("consumables.orders_section")}
             </CardTitle>
           </CardHeader>
           <CardContent>
             {ordersLoading ? (
-              <div className="space-y-2">{[1,2,3].map(i => <div key={i} className="h-12 bg-muted rounded animate-pulse" />)}</div>
+              <div className="space-y-2">{[1, 2, 3].map(i => <div key={i} className="h-12 bg-muted rounded animate-pulse" />)}</div>
             ) : orders.length === 0 ? (
-              <div className="py-8 text-center text-muted-foreground text-sm">No purchase history yet</div>
+              <div className="py-8 text-center text-muted-foreground text-sm">{t("consumables.no_orders")}</div>
             ) : (
               <div className="space-y-1">
                 {orders.map(order => {
-                  const statusCfg = ORDER_STATUS[order.status] ?? ORDER_STATUS.pending!;
+                  const statusColor = ORDER_STATUS_COLORS[order.status] ?? ORDER_STATUS_COLORS.pending!;
+                  const statusLabel = t(ORDER_STATUS_KEYS[order.status] ?? "consumables.order_status_pending");
                   const isRestock = order.status === "delivered" && order.notes?.includes("prints/roll");
                   return (
                     <div key={order.id} className="flex items-start gap-3 py-2.5 border-b border-border last:border-0">
@@ -649,7 +666,7 @@ export default function Consumables() {
                           {isRestock && (
                             <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
                               <RefreshCw className="w-2.5 h-2.5" />
-                              Restock
+                              {t("consumables.reorder")}
                             </span>
                           )}
                         </div>
@@ -662,8 +679,8 @@ export default function Consumables() {
                           <p className="text-xs text-muted-foreground mt-0.5">{order.notes}</p>
                         )}
                       </div>
-                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 mt-0.5 ${statusCfg.color}`}>
-                        {statusCfg.label}
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 mt-0.5 ${statusColor}`}>
+                        {statusLabel}
                       </span>
                     </div>
                   );
@@ -679,11 +696,11 @@ export default function Consumables() {
         <Card>
           <CardContent className="py-16 text-center">
             <Package className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
-            <p className="text-muted-foreground font-medium">No consumables tracked yet</p>
-            <p className="text-sm text-muted-foreground mt-1 mb-4">Your paper, ribbon, and accessory stock will appear here</p>
+            <p className="text-muted-foreground font-medium">{t("consumables.no_stock_empty")}</p>
+            <p className="text-sm text-muted-foreground mt-1 mb-4">{t("consumables.first_supply_desc")}</p>
             <Button size="sm" className="gap-1.5" onClick={() => setAddSupplyOpen(true)}>
               <Plus className="w-4 h-4" />
-              Add your first supply
+              {t("consumables.add_first_supply")}
             </Button>
           </CardContent>
         </Card>
@@ -691,12 +708,13 @@ export default function Consumables() {
         Object.entries(grouped).map(([category, items]) => {
           const catCfg = CATEGORY_CONFIG[category] ?? CATEGORY_CONFIG.accessory!;
           const CatIcon = catCfg.icon;
+          const catLabel = t(CATEGORY_LABEL_KEYS[category] ?? "consumables.category_accessory");
           return (
             <Card key={category}>
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm flex items-center gap-2">
                   <CatIcon className={`w-4 h-4 ${catCfg.color}`} />
-                  {catCfg.label}
+                  {catLabel}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -708,15 +726,19 @@ export default function Consumables() {
                           <div className="flex items-center gap-2 flex-wrap">
                             <p className="text-sm font-medium text-foreground">{item.name}</p>
                             {item.isCritical && (
-                              <span className="text-xs px-1.5 py-0.5 rounded-full bg-destructive/15 text-destructive font-medium">Out of Stock</span>
+                              <span className="text-xs px-1.5 py-0.5 rounded-full bg-destructive/15 text-destructive font-medium">
+                                {t("consumables.out_of_stock")}
+                              </span>
                             )}
                             {item.isLow && !item.isCritical && (
-                              <span className="text-xs px-1.5 py-0.5 rounded-full bg-warning/15 text-warning font-medium">Low Stock</span>
+                              <span className="text-xs px-1.5 py-0.5 rounded-full bg-warning/15 text-warning font-medium">
+                                {t("consumables.low_stock")}
+                              </span>
                             )}
                           </div>
                           <p className="text-xs text-muted-foreground">{item.sku}</p>
                           {item.compatibleModels && (
-                            <p className="text-xs text-muted-foreground">Compatible: {item.compatibleModels}</p>
+                            <p className="text-xs text-muted-foreground">{t("consumables.compatible")}: {item.compatibleModels}</p>
                           )}
                         </div>
                         <div className="flex items-start gap-2 shrink-0">
@@ -726,14 +748,16 @@ export default function Consumables() {
                               <span className="text-xs font-normal text-muted-foreground ml-1">{item.unitType}</span>
                             </p>
                             {item.daysRemaining !== null && item.daysRemaining >= 0 && (
-                              <p className="text-xs text-muted-foreground">~{item.daysRemaining}d remaining</p>
+                              <p className="text-xs text-muted-foreground">
+                                {t("consumables.days_remaining_short", { days: item.daysRemaining })}
+                              </p>
                             )}
                           </div>
                           <Button
                             size="sm"
                             variant="ghost"
                             className="h-8 w-8 p-0 text-muted-foreground hover:text-primary hover:bg-primary/8"
-                            title="Record a purchase"
+                            title={t("consumables.record_purchase_title")}
                             onClick={() => openRestock(item.id)}
                           >
                             <RefreshCw className="w-3.5 h-3.5" />
@@ -742,14 +766,14 @@ export default function Consumables() {
                       </div>
                       <StockBar qty={item.currentQuantity} threshold={item.reorderThreshold} isCritical={item.isCritical} isLow={item.isLow} />
                       <div className="flex justify-between text-xs text-muted-foreground">
-                        <span>Reorder threshold: {item.reorderThreshold} {item.unitType}</span>
-                        <span>Last restocked: {fmtDate(item.lastRestockedAt)}</span>
+                        <span>{t("consumables.reorder_threshold", { threshold: item.reorderThreshold, unit: item.unitType })}</span>
+                        <span>{t("consumables.last_restocked", { date: fmtDate(item.lastRestockedAt) })}</span>
                       </div>
                       {item.reorderRecommended && (
                         <div className="bg-warning/8 border border-warning/30 rounded-lg p-2.5 flex items-center justify-between">
                           <p className="text-xs text-warning font-medium flex items-center gap-1.5">
                             <RotateCcw className="w-3.5 h-3.5" />
-                            Reorder recommended — {item.currentQuantity <= item.reorderThreshold ? "at or below" : "approaching"} minimum level
+                            {t("consumables.reorder_recommended_msg")}
                           </p>
                           <Button
                             size="sm"
@@ -758,7 +782,7 @@ export default function Consumables() {
                             onClick={() => openRestock(item.id)}
                           >
                             <RefreshCw className="w-3 h-3" />
-                            Restock
+                            {t("consumables.reorder")}
                           </Button>
                         </div>
                       )}

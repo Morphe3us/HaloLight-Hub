@@ -71,7 +71,8 @@
     "watch": "Oglądaj",
     "minutes": "min",
     "equipment_ok": "Wszystko OK",
-    "stock_ok": "Pełny stan"
+    "stock_ok": "Pełny stan",
+    "watched": "obejrzano"
   },
   "academy": {
     "title": "Akademia",
@@ -184,7 +185,11 @@
     "maintenance_notes_label": "Maintenance Notes",
     "registered_success": "Equipment registered",
     "registered_success_desc": "{{model}} has been added to your registry.",
-    "register_failed": "Registration failed"
+    "register_failed": "Registration failed",
+    "due_date": "Należy {{date}}",
+    "alert_banner": "{{count}} element(y) wymaga(ją) uwagi",
+    "sn_prefix": "Nr ser.:",
+    "register_equipment": "Zarejestruj sprzęt"
   },
   "consumables": {
     "title": "Materiały eksploatacyjne",
@@ -255,7 +260,16 @@
     "orders_section": "Purchase Orders",
     "no_orders": "No purchase history yet",
     "order_date": "Order Date",
-    "delivered": "Delivered"
+    "delivered": "Delivered",
+    "kpi_total": "Łącznie pozycji",
+    "kpi_well_stocked": "Dobrze zaopatrzony",
+    "first_supply_desc": "Twój zapas papieru, taśm i akcesoriów pojawi się tutaj",
+    "add_first_supply": "Dodaj pierwszy artykuł",
+    "compatible": "Kompatybilne",
+    "days_remaining_short": "~{{days}}d pozostało",
+    "reorder_threshold": "Próg zamówienia: {{threshold}} {{unit}}",
+    "last_restocked": "Ostatnie uzupełnienie: {{date}}",
+    "reorder_recommended_msg": "Zalecane zamówienie"
   },
   "support": {
     "title": "Wsparcie",
@@ -402,7 +416,17 @@
     "conv_deleted": "Conversation deleted",
     "ticket_created_msg": "Support ticket created",
     "ticket_failed": "Failed to create ticket",
-    "conv_failed": "Could not start conversation"
+    "conv_failed": "Could not start conversation",
+    "help_question": "Jak mogę ci dzisiaj pomóc?",
+    "generating": "Generowanie…",
+    "message_count": "{{count}} wiadomości",
+    "escalate_short": "Eskaluj",
+    "powered_by": "Zasilany przez Bazę wiedzy i Akademię",
+    "create_ticket": "Utwórz zgłoszenie",
+    "voice_input_error": "Błąd wejścia głosowego",
+    "new_chat": "Nowa rozmowa",
+    "send_get_started": "Wyślij wiadomość, aby rozpocząć",
+    "escalate_dialog_desc": "Zostanie utworzone zgłoszenie z transkryptem tej rozmowy. Możesz je śledzić w swoich Zgłoszeniach Wsparcia."
   },
   "notifications": {
     "title": "Powiadomienia",
@@ -436,7 +460,9 @@
     "all_set": "Gotowe! Twoje konto jest w pełni skonfigurowane.",
     "required": "Wymagane",
     "complete_step": "Ukończ krok",
-    "completed_label": "Ukończono"
+    "completed_label": "Ukończono",
+    "page_title": "Konfiguracja partnera",
+    "steps_of": "{{completed}} z {{total}} kroków ukończono"
   },
   "backup": {
     "title": "Backup i eksport",
@@ -517,7 +543,9 @@
     "status": "Status",
     "actions": "Akcje",
     "created": "Utworzono",
-    "updated": "Zaktualizowano"
+    "updated": "Zaktualizowano",
+    "today": "Dzisiaj",
+    "yesterday": "Wczoraj"
   },
   "admin": {
     "console_title": "Admin Console",

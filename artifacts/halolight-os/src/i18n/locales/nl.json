@@ -71,7 +71,8 @@
     "watch": "Bekijken",
     "minutes": "min",
     "equipment_ok": "Alles OK",
-    "stock_ok": "Volledig voorradig"
+    "stock_ok": "Volledig voorradig",
+    "watched": "bekeken"
   },
   "academy": {
     "title": "Academie",
@@ -184,7 +185,11 @@
     "maintenance_notes_label": "Maintenance Notes",
     "registered_success": "Equipment registered",
     "registered_success_desc": "{{model}} has been added to your registry.",
-    "register_failed": "Registration failed"
+    "register_failed": "Registration failed",
+    "due_date": "Vervalt {{date}}",
+    "alert_banner": "{{count}} item(s) vereist aandacht",
+    "sn_prefix": "S/N:",
+    "register_equipment": "Apparaat registreren"
   },
   "consumables": {
     "title": "Verbruiksartikelen",
@@ -255,7 +260,16 @@
     "orders_section": "Purchase Orders",
     "no_orders": "No purchase history yet",
     "order_date": "Order Date",
-    "delivered": "Delivered"
+    "delivered": "Delivered",
+    "kpi_total": "Totaal artikelen",
+    "kpi_well_stocked": "Goed gevuld",
+    "first_supply_desc": "Uw papier- en accessoirevoorraad verschijnt hier",
+    "add_first_supply": "Voeg uw eerste artikel toe",
+    "compatible": "Compatibel",
+    "days_remaining_short": "~{{days}}d resterend",
+    "reorder_threshold": "Bestelpunt: {{threshold}} {{unit}}",
+    "last_restocked": "Laatst bijgevuld: {{date}}",
+    "reorder_recommended_msg": "Bestelling aanbevolen"
   },
   "support": {
     "title": "Support",
@@ -402,7 +416,17 @@
     "conv_deleted": "Conversation deleted",
     "ticket_created_msg": "Support ticket created",
     "ticket_failed": "Failed to create ticket",
-    "conv_failed": "Could not start conversation"
+    "conv_failed": "Could not start conversation",
+    "help_question": "Hoe kan ik u vandaag helpen?",
+    "generating": "Bezig met genereren…",
+    "message_count": "{{count}} berichten",
+    "escalate_short": "Escaleren",
+    "powered_by": "Aangedreven door uw Kennisbank & Academie",
+    "create_ticket": "Ticket aanmaken",
+    "voice_input_error": "Spraakfout",
+    "new_chat": "Nieuw gesprek",
+    "send_get_started": "Stuur een bericht om te beginnen",
+    "escalate_dialog_desc": "Er wordt een supportticket aangemaakt met een transcript van dit gesprek, zodat ons team direct contact kan opnemen. U kunt het volgen in uw Supporttickets."
   },
   "notifications": {
     "title": "Meldingen",
@@ -436,7 +460,9 @@
     "all_set": "Klaar! Uw account is volledig geconfigureerd.",
     "required": "Verplicht",
     "complete_step": "Stap voltooien",
-    "completed_label": "Voltooid"
+    "completed_label": "Voltooid",
+    "page_title": "Partner instellen",
+    "steps_of": "{{completed}} van {{total}} stappen voltooid"
   },
   "backup": {
     "title": "Backup & Export",
@@ -517,7 +543,9 @@
     "status": "Status",
     "actions": "Acties",
     "created": "Aangemaakt",
-    "updated": "Bijgewerkt"
+    "updated": "Bijgewerkt",
+    "today": "Vandaag",
+    "yesterday": "Gisteren"
   },
   "admin": {
     "console_title": "Admin Console",

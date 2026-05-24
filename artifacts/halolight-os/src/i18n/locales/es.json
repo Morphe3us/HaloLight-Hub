@@ -71,7 +71,8 @@
     "watch": "Ver",
     "minutes": "min",
     "equipment_ok": "Todo OK",
-    "stock_ok": "Stock completo"
+    "stock_ok": "Stock completo",
+    "watched": "visto"
   },
   "academy": {
     "title": "Academia",
@@ -184,7 +185,11 @@
     "maintenance_notes_label": "Maintenance Notes",
     "registered_success": "Equipment registered",
     "registered_success_desc": "{{model}} has been added to your registry.",
-    "register_failed": "Registration failed"
+    "register_failed": "Registration failed",
+    "due_date": "Vence {{date}}",
+    "alert_banner": "{{count}} elemento(s) necesita(n) atención",
+    "sn_prefix": "N/S:",
+    "register_equipment": "Registrar equipo"
   },
   "consumables": {
     "title": "Consumibles",
@@ -255,7 +260,16 @@
     "orders_section": "Purchase Orders",
     "no_orders": "No purchase history yet",
     "order_date": "Order Date",
-    "delivered": "Delivered"
+    "delivered": "Delivered",
+    "kpi_total": "Total de artículos",
+    "kpi_well_stocked": "Bien abastecido",
+    "first_supply_desc": "Tu stock de papel, cintas y accesorios aparecerá aquí",
+    "add_first_supply": "Agregar tu primer artículo",
+    "compatible": "Compatible",
+    "days_remaining_short": "~{{days}}d restantes",
+    "reorder_threshold": "Umbral de reposición: {{threshold}} {{unit}}",
+    "last_restocked": "Último reabastecimiento: {{date}}",
+    "reorder_recommended_msg": "Se recomienda reposición"
   },
   "support": {
     "title": "Soporte",
@@ -402,7 +416,17 @@
     "conv_deleted": "Conversation deleted",
     "ticket_created_msg": "Support ticket created",
     "ticket_failed": "Failed to create ticket",
-    "conv_failed": "Could not start conversation"
+    "conv_failed": "Could not start conversation",
+    "help_question": "¿Cómo puedo ayudarte hoy?",
+    "generating": "Generando…",
+    "message_count": "{{count}} mensajes",
+    "escalate_short": "Escalar",
+    "powered_by": "Potenciado por su Base de conocimiento y Academia",
+    "create_ticket": "Crear ticket",
+    "voice_input_error": "Error de entrada de voz",
+    "new_chat": "Nueva conversación",
+    "send_get_started": "Envía un mensaje para empezar",
+    "escalate_dialog_desc": "Se creará un ticket de soporte con una transcripción de esta conversación para que nuestro equipo pueda dar seguimiento. Podrás rastrearlo en tus Tickets de Soporte."
   },
   "notifications": {
     "title": "Notificaciones",
@@ -436,7 +460,9 @@
     "all_set": "¡Listo! Su cuenta está completamente configurada.",
     "required": "Requerido",
     "complete_step": "Completar paso",
-    "completed_label": "Completado"
+    "completed_label": "Completado",
+    "page_title": "Configuración de socio",
+    "steps_of": "{{completed}} de {{total}} pasos completados"
   },
   "backup": {
     "title": "Backup y exportación",
@@ -517,7 +543,9 @@
     "status": "Estado",
     "actions": "Acciones",
     "created": "Creado",
-    "updated": "Actualizado"
+    "updated": "Actualizado",
+    "today": "Hoy",
+    "yesterday": "Ayer"
   },
   "admin": {
     "console_title": "Admin Console",

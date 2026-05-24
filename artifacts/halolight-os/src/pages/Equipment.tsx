@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Link } from "wouter";
 import { useGetEquipment, useCreateEquipment } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -36,36 +37,38 @@ type EquipmentItem = {
   createdAt: string;
 };
 
-const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.ComponentType<{className?: string}> }> = {
-  active:     { label: "Active",      color: "bg-success/15 text-success",          icon: CheckCircle2 },
-  inactive:   { label: "Inactive",    color: "bg-muted text-muted-foreground",      icon: Package },
-  in_service: { label: "In Service",  color: "bg-info/15 text-info",               icon: Wrench },
-  retired:    { label: "Retired",     color: "bg-destructive/15 text-destructive",  icon: AlertTriangle },
+type TFn = (key: string, opts?: Record<string, unknown>) => string;
+
+const STATUS_CONFIG: Record<string, { color: string; icon: React.ComponentType<{ className?: string }> }> = {
+  active:     { color: "bg-success/15 text-success",          icon: CheckCircle2 },
+  inactive:   { color: "bg-muted text-muted-foreground",      icon: Package },
+  in_service: { color: "bg-info/15 text-info",               icon: Wrench },
+  retired:    { color: "bg-destructive/15 text-destructive",  icon: AlertTriangle },
 };
 
-function warrantyStatus(expiry: string | null): { label: string; color: string; icon: React.ComponentType<{className?: string}> } {
-  if (!expiry) return { label: "No Warranty", color: "text-muted-foreground", icon: ShieldX };
+function warrantyStatus(expiry: string | null, t: TFn): { label: string; color: string; icon: React.ComponentType<{ className?: string }> } {
+  if (!expiry) return { label: t("equipment.no_warranty_label"), color: "text-muted-foreground", icon: ShieldX };
   const now = new Date();
   const exp = new Date(expiry);
   const daysLeft = Math.round((exp.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-  if (daysLeft < 0) return { label: "Expired", color: "text-destructive", icon: ShieldX };
-  if (daysLeft <= 60) return { label: `Expires in ${daysLeft}d`, color: "text-warning", icon: ShieldAlert };
-  return { label: `${Math.floor(daysLeft / 30)}mo left`, color: "text-success", icon: ShieldCheck };
+  if (daysLeft < 0) return { label: t("equipment.expired_label"), color: "text-destructive", icon: ShieldX };
+  if (daysLeft <= 60) return { label: t("equipment.expires_in", { days: daysLeft }), color: "text-warning", icon: ShieldAlert };
+  return { label: t("equipment.months_left", { months: Math.floor(daysLeft / 30) }), color: "text-success", icon: ShieldCheck };
 }
 
-function maintenanceStatus(next: string | null): { label: string; urgent: boolean } {
-  if (!next) return { label: "Not scheduled", urgent: false };
+function maintenanceStatus(next: string | null, t: TFn): { label: string; urgent: boolean } {
+  if (!next) return { label: t("equipment.not_scheduled"), urgent: false };
   const now = new Date();
   const d = new Date(next);
   const daysLeft = Math.round((d.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-  if (daysLeft < 0) return { label: `Overdue ${Math.abs(daysLeft)}d`, urgent: true };
-  if (daysLeft <= 30) return { label: `Due in ${daysLeft}d`, urgent: true };
-  return { label: `Due ${d.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`, urgent: false };
+  if (daysLeft < 0) return { label: t("equipment.overdue_days", { days: Math.abs(daysLeft) }), urgent: true };
+  if (daysLeft <= 30) return { label: t("equipment.due_in_days", { days: daysLeft }), urgent: true };
+  return { label: t("equipment.due_date", { date: d.toLocaleDateString() }), urgent: false };
 }
 
 function fmtDate(d: string | null) {
   if (!d) return "—";
-  return new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  return new Date(d).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
 }
 
 const EMPTY_FORM = {
@@ -86,6 +89,7 @@ function RegisterModal({
   open: boolean;
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const qc = useQueryClient();
   const [form, setForm] = useState(EMPTY_FORM);
@@ -94,13 +98,13 @@ function RegisterModal({
     mutation: {
       onSuccess: () => {
         qc.invalidateQueries({ queryKey: ["/api/equipment"] });
-        toast({ title: "Equipment registered", description: `${form.productModel} has been added to your registry.` });
+        toast({ title: t("equipment.registered_success"), description: t("equipment.registered_success_desc", { model: form.productModel }) });
         setForm(EMPTY_FORM);
         onClose();
       },
       onError: (err: unknown) => {
-        const msg = (err as { data?: { error?: string } })?.data?.error ?? "Failed to register equipment";
-        toast({ title: "Registration failed", description: msg, variant: "destructive" });
+        const msg = (err as { data?: { error?: string } })?.data?.error ?? t("equipment.register_failed");
+        toast({ title: t("equipment.register_failed"), description: msg, variant: "destructive" });
       },
     },
   });
@@ -128,12 +132,12 @@ function RegisterModal({
     <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Register Equipment</DialogTitle>
+          <DialogTitle>{t("equipment.register_equipment", { defaultValue: "Register Equipment" })}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 pt-1">
           <div className="grid grid-cols-2 gap-3">
             <div className="col-span-2 space-y-1.5">
-              <Label htmlFor="productModel">Equipment Name / Model <span className="text-destructive">*</span></Label>
+              <Label htmlFor="productModel">{t("equipment.model_label")} <span className="text-destructive">*</span></Label>
               <Input
                 id="productModel"
                 placeholder="e.g. HaloLight Pro X1"
@@ -143,7 +147,7 @@ function RegisterModal({
               />
             </div>
             <div className="col-span-2 space-y-1.5">
-              <Label htmlFor="serialNumber">Serial Number <span className="text-destructive">*</span></Label>
+              <Label htmlFor="serialNumber">{t("equipment.serial_label")} <span className="text-destructive">*</span></Label>
               <Input
                 id="serialNumber"
                 placeholder="e.g. SN-20240001"
@@ -153,7 +157,7 @@ function RegisterModal({
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="purchaseDate">Purchase Date</Label>
+              <Label htmlFor="purchaseDate">{t("equipment.purchase_date_label")}</Label>
               <Input
                 id="purchaseDate"
                 type="date"
@@ -162,7 +166,7 @@ function RegisterModal({
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="warrantyExpiration">Warranty Expiry</Label>
+              <Label htmlFor="warrantyExpiration">{t("equipment.warranty_expiry_label")}</Label>
               <Input
                 id="warrantyExpiration"
                 type="date"
@@ -171,7 +175,7 @@ function RegisterModal({
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="vendorName">Vendor / Supplier</Label>
+              <Label htmlFor="vendorName">{t("equipment.vendor_label")}</Label>
               <Input
                 id="vendorName"
                 placeholder="e.g. HaloLight Direct"
@@ -180,7 +184,7 @@ function RegisterModal({
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="purchasePrice">Purchase Price ($)</Label>
+              <Label htmlFor="purchasePrice">{t("equipment.price_label")}</Label>
               <Input
                 id="purchasePrice"
                 type="number"
@@ -192,7 +196,7 @@ function RegisterModal({
               />
             </div>
             <div className="col-span-2 space-y-1.5">
-              <Label htmlFor="maintenanceNotes">Maintenance Notes</Label>
+              <Label htmlFor="maintenanceNotes">{t("equipment.maintenance_notes_label")}</Label>
               <Textarea
                 id="maintenanceNotes"
                 placeholder="Any notes about this unit…"
@@ -204,13 +208,15 @@ function RegisterModal({
           </div>
           <DialogFooter className="pt-2">
             <Button type="button" variant="outline" onClick={onClose} disabled={isPending}>
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button
               type="submit"
               disabled={isPending || !form.productModel.trim() || !form.serialNumber.trim()}
             >
-              {isPending ? <><Loader2 className="w-4 h-4 mr-1.5 animate-spin" />Registering…</> : "Register Equipment"}
+              {isPending
+                ? <><Loader2 className="w-4 h-4 mr-1.5 animate-spin" />{t("equipment.registering")}</>
+                : t("equipment.register_equipment", { defaultValue: "Register Equipment" })}
             </Button>
           </DialogFooter>
         </form>
@@ -220,21 +226,22 @@ function RegisterModal({
 }
 
 export default function Equipment() {
+  const { t } = useTranslation();
   const { data = [], isLoading } = useGetEquipment();
   const items = data as EquipmentItem[];
   const [registerOpen, setRegisterOpen] = useState(false);
 
   const alerts = items.filter(eq => {
-    const w = warrantyStatus(eq.warrantyExpiration ?? null);
-    const m = maintenanceStatus(eq.nextMaintenanceDate ?? null);
-    return w.label === "Expired" || w.color === "text-warning" || m.urgent;
+    const w = warrantyStatus(eq.warrantyExpiration ?? null, t);
+    const m = maintenanceStatus(eq.nextMaintenanceDate ?? null, t);
+    return w.label === t("equipment.expired_label") || w.color === "text-warning" || m.urgent;
   });
 
   if (isLoading) {
     return (
       <div className="max-w-4xl mx-auto space-y-4">
         <div className="h-8 w-56 bg-border rounded animate-pulse" />
-        {[1,2,3].map(i => <div key={i} className="h-36 bg-muted rounded-xl animate-pulse" />)}
+        {[1, 2, 3].map(i => <div key={i} className="h-36 bg-muted rounded-xl animate-pulse" />)}
       </div>
     );
   }
@@ -246,12 +253,12 @@ export default function Equipment() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">My Equipment</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Track your photobooth units, warranties, and service history</p>
+          <h1 className="text-2xl font-bold text-foreground">{t("equipment.my_equipment")}</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">{t("equipment.track_subtitle")}</p>
         </div>
         <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setRegisterOpen(true)}>
           <Plus className="w-4 h-4" />
-          Register Equipment
+          {t("equipment.register_equipment", { defaultValue: "Register Equipment" })}
         </Button>
       </div>
 
@@ -260,9 +267,11 @@ export default function Equipment() {
         <div className="bg-warning/8 border border-warning/30 rounded-xl p-4 flex items-start gap-3">
           <AlertTriangle className="w-5 h-5 text-warning shrink-0 mt-0.5" />
           <div>
-            <p className="text-sm font-semibold text-warning">{alerts.length} item{alerts.length > 1 ? "s" : ""} need{alerts.length === 1 ? "s" : ""} attention</p>
+            <p className="text-sm font-semibold text-warning">
+              {t("equipment.alert_banner", { count: alerts.length })}
+            </p>
             <p className="text-xs text-warning mt-0.5">
-              {alerts.map(a => a.productModel).join(", ")} — check warranty or maintenance status below
+              {alerts.map(a => a.productModel).join(", ")} — {t("equipment.check_status")}
             </p>
           </div>
         </div>
@@ -272,10 +281,10 @@ export default function Equipment() {
       {items.length > 0 && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
-            { label: "Total Units",  value: items.length,                                      color: "text-foreground" },
-            { label: "Active",       value: items.filter(e => e.status === "active").length,   color: "text-success" },
-            { label: "In Service",   value: items.filter(e => e.status === "in_service").length, color: "text-info" },
-            { label: "Alerts",       value: alerts.length,                                      color: "text-warning" },
+            { label: t("equipment.total_units"),      value: items.length,                                         color: "text-foreground" },
+            { label: t("equipment.status_active"),    value: items.filter(e => e.status === "active").length,      color: "text-success" },
+            { label: t("equipment.status_in_service"), value: items.filter(e => e.status === "in_service").length, color: "text-info" },
+            { label: t("equipment.alerts"),           value: alerts.length,                                         color: "text-warning" },
           ].map(s => (
             <Card key={s.label}>
               <CardContent className="p-4 text-center">
@@ -292,11 +301,11 @@ export default function Equipment() {
         <Card>
           <CardContent className="py-16 text-center">
             <Monitor className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
-            <p className="text-muted-foreground font-medium">No equipment registered yet</p>
-            <p className="text-sm text-muted-foreground mt-1 mb-4">Your photobooth units will appear here once registered</p>
+            <p className="text-muted-foreground font-medium">{t("equipment.no_equipment_empty")}</p>
+            <p className="text-sm text-muted-foreground mt-1 mb-4">{t("equipment.no_equipment_desc")}</p>
             <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setRegisterOpen(true)}>
               <Plus className="w-4 h-4" />
-              Register your first unit
+              {t("equipment.register_first_unit")}
             </Button>
           </CardContent>
         </Card>
@@ -305,9 +314,9 @@ export default function Equipment() {
           {items.map((item) => {
             const statusCfg = STATUS_CONFIG[item.status] ?? STATUS_CONFIG.active!;
             const StatusIcon = statusCfg.icon;
-            const w = warrantyStatus(item.warrantyExpiration ?? null);
+            const w = warrantyStatus(item.warrantyExpiration ?? null, t);
             const WarrantyIcon = w.icon;
-            const m = maintenanceStatus(item.nextMaintenanceDate ?? null);
+            const m = maintenanceStatus(item.nextMaintenanceDate ?? null, t);
 
             return (
               <Link key={item.id} href={`/equipment/${item.id}`}>
@@ -322,29 +331,29 @@ export default function Equipment() {
                           <h3 className="font-semibold text-foreground text-base">{item.productModel}</h3>
                           <span className={`text-xs px-2 py-0.5 rounded-full font-medium flex items-center gap-1 ${statusCfg.color}`}>
                             <StatusIcon className="w-3 h-3" />
-                            {statusCfg.label}
+                            {t(`equipment.status_${item.status}`, item.status.replace('_', ' '))}
                           </span>
                         </div>
-                        <p className="text-xs text-muted-foreground mt-0.5">S/N: {item.serialNumber}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">{t("equipment.sn_prefix")} {item.serialNumber}</p>
 
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3">
                           <div>
-                            <p className="text-xs text-muted-foreground">Purchased</p>
+                            <p className="text-xs text-muted-foreground">{t("equipment.purchased")}</p>
                             <p className="text-xs font-medium text-foreground">{fmtDate(item.purchaseDate)}</p>
                           </div>
                           <div>
-                            <p className="text-xs text-muted-foreground">Warranty</p>
+                            <p className="text-xs text-muted-foreground">{t("equipment.warranty_label")}</p>
                             <p className={`text-xs font-medium flex items-center gap-1 ${w.color}`}>
                               <WarrantyIcon className="w-3 h-3" />
                               {w.label}
                             </p>
                           </div>
                           <div>
-                            <p className="text-xs text-muted-foreground">Last Service</p>
+                            <p className="text-xs text-muted-foreground">{t("equipment.last_service_label")}</p>
                             <p className="text-xs font-medium text-foreground">{fmtDate(item.lastMaintenanceDate)}</p>
                           </div>
                           <div>
-                            <p className="text-xs text-muted-foreground">Next Service</p>
+                            <p className="text-xs text-muted-foreground">{t("equipment.next_service_label")}</p>
                             <p className={`text-xs font-medium flex items-center gap-1 ${m.urgent ? "text-warning" : "text-foreground"}`}>
                               {m.urgent && <AlertTriangle className="w-3 h-3" />}
                               {m.label}

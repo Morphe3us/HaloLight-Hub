@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useListOnboardingSteps, useCompleteOnboardingStep, useGetOnboardingSummary, getListOnboardingStepsQueryKey, getGetOnboardingSummaryQueryKey } from "@workspace/api-client-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,6 +7,7 @@ import { CheckCircle2, Circle, Trophy, ArrowRight } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 
 export default function Onboarding() {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { data: stepsData, isLoading: isLoadingSteps } = useListOnboardingSteps();
   const { data: summary, isLoading: isLoadingSummary } = useGetOnboardingSummary();
@@ -39,8 +41,8 @@ export default function Onboarding() {
   return (
     <div className="max-w-4xl mx-auto space-y-8" data-testid="page-onboarding">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight text-foreground">Partner Setup</h1>
-        <p className="text-muted-foreground mt-1">Get your account ready for production.</p>
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">{t("onboarding.page_title")}</h1>
+        <p className="text-muted-foreground mt-1">{t("onboarding.get_ready")}</p>
       </div>
 
       <Card className="bg-foreground text-background border-border shadow-lg overflow-hidden relative">
@@ -48,16 +50,16 @@ export default function Onboarding() {
           <Trophy className="w-32 h-32" />
         </div>
         <CardHeader className="relative z-10 pb-4">
-          <CardTitle className="text-2xl text-background">Your Progress</CardTitle>
+          <CardTitle className="text-2xl text-background">{t("onboarding.your_progress")}</CardTitle>
           <CardDescription className="text-background/60">
-            {summary?.completedSteps} of {summary?.totalSteps} steps completed
+            {t("onboarding.steps_of", { completed: summary?.completedSteps ?? 0, total: summary?.totalSteps ?? 0 })}
           </CardDescription>
         </CardHeader>
         <CardContent className="relative z-10">
           <div className="flex items-center gap-4 mb-2">
             <div className="flex-1 h-3 bg-background/20 rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-accent transition-all duration-1000 ease-out" 
+              <div
+                className="h-full bg-accent transition-all duration-1000 ease-out"
                 style={{ width: `${summary?.percentComplete || 0}%` }}
               />
             </div>
@@ -65,7 +67,7 @@ export default function Onboarding() {
           </div>
           {isAllComplete && (
             <p className="text-accent text-sm font-medium mt-4 flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4" /> All set! Your account is fully configured.
+              <CheckCircle2 className="w-4 h-4" /> {t("onboarding.all_set")}
             </p>
           )}
         </CardContent>
@@ -74,10 +76,10 @@ export default function Onboarding() {
       <div className="space-y-4">
         {steps.map((step) => {
           const isCompleted = !!step.completedAt;
-          
+
           return (
-            <Card 
-              key={step.id} 
+            <Card
+              key={step.id}
               className={`transition-all ${isCompleted ? 'bg-muted border-border' : 'bg-card border-border hover:border-primary/50 shadow-sm'}`}
               data-testid={`card-step-${step.id}`}
             >
@@ -89,7 +91,7 @@ export default function Onboarding() {
                     <Circle className="w-8 h-8 text-muted-foreground" />
                   )}
                 </div>
-                
+
                 <div className="flex-1">
                   <div className="flex flex-wrap items-center gap-3 mb-1">
                     <h3 className={`text-lg font-bold ${isCompleted ? 'text-muted-foreground line-through' : 'text-foreground'}`}>
@@ -97,31 +99,31 @@ export default function Onboarding() {
                     </h3>
                     {step.isRequired && !isCompleted && (
                       <span className="px-2 py-0.5 rounded text-xs font-semibold bg-destructive/15 text-destructive uppercase tracking-wide">
-                        Required
+                        {t("onboarding.required")}
                       </span>
                     )}
                     <span className="px-2 py-0.5 rounded text-xs font-medium bg-muted text-muted-foreground capitalize">
                       {step.category}
                     </span>
                   </div>
-                  <p className={`text-sm ${isCompleted ? 'text-muted-foreground' : 'text-muted-foreground'}`}>
+                  <p className="text-sm text-muted-foreground">
                     {step.description}
                   </p>
                 </div>
-                
+
                 <div className="shrink-0 pt-2 sm:pt-0">
                   {!isCompleted ? (
-                    <Button 
+                    <Button
                       onClick={() => handleComplete(step.id)}
                       disabled={completeStep.isPending}
                       className="w-full sm:w-auto shadow-sm"
                       data-testid={`button-complete-step-${step.id}`}
                     >
-                      Complete Step <ArrowRight className="w-4 h-4 ml-2" />
+                      {t("onboarding.complete_step")} <ArrowRight className="w-4 h-4 ml-2" />
                     </Button>
                   ) : (
                     <Button variant="ghost" disabled className="w-full sm:w-auto text-success font-medium">
-                      Completed
+                      {t("onboarding.completed_label")}
                     </Button>
                   )}
                 </div>

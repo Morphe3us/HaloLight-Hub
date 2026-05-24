@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useListNotifications, useMarkNotificationRead, useMarkAllNotificationsRead, getGetUnreadNotificationCountQueryKey, getListNotificationsQueryKey } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -7,6 +8,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 
 export default function Notifications() {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { data: notificationsData, isLoading } = useListNotifications();
   const markRead = useMarkNotificationRead();
@@ -48,26 +50,26 @@ export default function Notifications() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-foreground flex items-center gap-3">
-            Inbox
+            {t("notifications.inbox")}
             {unreadCount > 0 && (
               <Badge variant="secondary" className="bg-primary/10 text-primary hover:bg-primary/20 text-sm">
-                {unreadCount} new
+                {unreadCount} {t("notifications.new_badge")}
               </Badge>
             )}
           </h1>
-          <p className="text-muted-foreground mt-1">Manage your alerts and system updates.</p>
+          <p className="text-muted-foreground mt-1">{t("notifications.subtitle")}</p>
         </div>
-        
+
         {unreadCount > 0 && (
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             onClick={handleMarkAllRead}
             disabled={markAllRead.isPending}
             className="shadow-sm"
             data-testid="button-mark-all-read"
           >
             <Check className="mr-2 h-4 w-4" />
-            Mark all as read
+            {t("notifications.mark_all_read")}
           </Button>
         )}
       </div>
@@ -80,13 +82,13 @@ export default function Notifications() {
                 <Bell className="h-6 w-6 text-muted-foreground" />
               </div>
             </div>
-            <h3 className="text-lg font-medium text-foreground">All caught up!</h3>
-            <p className="text-muted-foreground mt-1">You have no notifications right now.</p>
+            <h3 className="text-lg font-medium text-foreground">{t("notifications.all_caught_up_title")}</h3>
+            <p className="text-muted-foreground mt-1">{t("notifications.all_caught_up_body")}</p>
           </Card>
         ) : (
           notifications.map((notification) => (
-            <Card 
-              key={notification.id} 
+            <Card
+              key={notification.id}
               className={`p-5 transition-colors border ${!notification.isRead ? 'bg-primary/[0.02] border-primary/20 shadow-sm' : 'bg-card border-border'}`}
               data-testid={`card-notification-${notification.id}`}
             >
@@ -94,15 +96,15 @@ export default function Notifications() {
                 <div className={`mt-1 p-2 rounded-full shrink-0 ${!notification.isRead ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
                   {!notification.isRead ? <BellRing className="w-4 h-4" /> : <Bell className="w-4 h-4" />}
                 </div>
-                
+
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-4">
                     <div>
-                      <h4 className={`text-base font-semibold ${!notification.isRead ? 'text-foreground' : 'text-foreground'}`}>
+                      <h4 className="text-base font-semibold text-foreground">
                         {notification.title}
                       </h4>
                       <p className="text-muted-foreground mt-1">{notification.body}</p>
-                      
+
                       <div className="flex items-center gap-4 mt-3">
                         <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                           {notification.type.replace('_', ' ')}
@@ -112,7 +114,7 @@ export default function Notifications() {
                         </span>
                       </div>
                     </div>
-                    
+
                     {!notification.isRead && (
                       <Button
                         variant="ghost"
@@ -123,7 +125,7 @@ export default function Notifications() {
                         data-testid={`button-mark-read-${notification.id}`}
                       >
                         <Check className="h-4 w-4 mr-2" />
-                        Mark Read
+                        {t("notifications.mark_read")}
                       </Button>
                     )}
                   </div>

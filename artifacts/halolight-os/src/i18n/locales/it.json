@@ -71,7 +71,8 @@
     "watch": "Guarda",
     "minutes": "min",
     "equipment_ok": "Tutto OK",
-    "stock_ok": "Scorte complete"
+    "stock_ok": "Scorte complete",
+    "watched": "guardato"
   },
   "academy": {
     "title": "Accademia",
@@ -184,7 +185,11 @@
     "maintenance_notes_label": "Maintenance Notes",
     "registered_success": "Equipment registered",
     "registered_success_desc": "{{model}} has been added to your registry.",
-    "register_failed": "Registration failed"
+    "register_failed": "Registration failed",
+    "due_date": "Scade {{date}}",
+    "alert_banner": "{{count}} articolo/i necessita/no attenzione",
+    "sn_prefix": "N/S:",
+    "register_equipment": "Registra attrezzatura"
   },
   "consumables": {
     "title": "Materiali di consumo",
@@ -255,7 +260,16 @@
     "orders_section": "Purchase Orders",
     "no_orders": "No purchase history yet",
     "order_date": "Order Date",
-    "delivered": "Delivered"
+    "delivered": "Delivered",
+    "kpi_total": "Totale articoli",
+    "kpi_well_stocked": "Ben fornito",
+    "first_supply_desc": "Il tuo stock di carta, nastri e accessori apparirà qui",
+    "add_first_supply": "Aggiungi il tuo primo articolo",
+    "compatible": "Compatibile",
+    "days_remaining_short": "~{{days}}g rimanenti",
+    "reorder_threshold": "Soglia di riordino: {{threshold}} {{unit}}",
+    "last_restocked": "Ultimo rifornimento: {{date}}",
+    "reorder_recommended_msg": "Riordino consigliato"
   },
   "support": {
     "title": "Supporto",
@@ -402,7 +416,17 @@
     "conv_deleted": "Conversation deleted",
     "ticket_created_msg": "Support ticket created",
     "ticket_failed": "Failed to create ticket",
-    "conv_failed": "Could not start conversation"
+    "conv_failed": "Could not start conversation",
+    "help_question": "Come posso aiutarti oggi?",
+    "generating": "Generazione in corso…",
+    "message_count": "{{count}} messaggi",
+    "escalate_short": "Escalation",
+    "powered_by": "Powered dalla tua Knowledge Base e Accademia",
+    "create_ticket": "Crea ticket",
+    "voice_input_error": "Errore input vocale",
+    "new_chat": "Nuova conversazione",
+    "send_get_started": "Invia un messaggio per iniziare",
+    "escalate_dialog_desc": "Verrà creato un ticket di supporto con la trascrizione di questa conversazione. Potrai tracciarlo nei tuoi Ticket di Supporto."
   },
   "notifications": {
     "title": "Notifiche",
@@ -436,7 +460,9 @@
     "all_set": "Fatto! Il tuo account è completamente configurato.",
     "required": "Obbligatorio",
     "complete_step": "Completa il passaggio",
-    "completed_label": "Completato"
+    "completed_label": "Completato",
+    "page_title": "Configurazione partner",
+    "steps_of": "{{completed}} di {{total}} passi completati"
   },
   "backup": {
     "title": "Backup ed esportazione",
@@ -517,7 +543,9 @@
     "status": "Stato",
     "actions": "Azioni",
     "created": "Creato",
-    "updated": "Aggiornato"
+    "updated": "Aggiornato",
+    "today": "Oggi",
+    "yesterday": "Ieri"
   },
   "admin": {
     "console_title": "Admin Console",

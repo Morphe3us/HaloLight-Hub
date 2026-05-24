@@ -244,7 +244,7 @@ export default function Dashboard() {
                       </span>
                       {summary.nextLesson.watchPercent > 0 && (
                         <span className="text-xs text-primary font-medium">
-                          {summary.nextLesson.watchPercent}% watched
+                          {summary.nextLesson.watchPercent}% {t("dashboard.watched")}
                         </span>
                       )}
                     </div>
