@@ -29,6 +29,7 @@ import uploadsRouter from "./uploads";
 import aiKnowledgeRouter from "./ai-knowledge";
 import backupRouter from "./backup";
 import exportsRouter from "./exports";
+import salesSearchRouter from "./sales-search";
 import bunnyRouter from "./bunny";
 
 const router: IRouter = Router();
@@ -63,6 +64,7 @@ router.use(uploadsRouter);
 router.use(aiKnowledgeRouter);
 router.use(backupRouter);
 router.use(exportsRouter);
+router.use(salesSearchRouter);
 router.use(bunnyRouter);
 
 export default router;

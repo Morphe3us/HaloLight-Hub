@@ -1655,5 +1655,16 @@
     "stage_invoice_created": "Invoice Created",
     "stage_won": "Won",
     "stage_lost": "Lost"
+  },
+  "sales_search": {
+    "placeholder": "Buscar clientes existentes…",
+    "no_results": "No se encontró ningún cliente existente",
+    "existing_customer_found": "Cliente existente encontrado — datos prellenados",
+    "type_lead": "Contacto",
+    "type_quote": "Presupuesto",
+    "type_contract": "Contrato",
+    "type_invoice": "Factura",
+    "search_label": "Buscar cliente existente",
+    "or_create_new": "o crear uno nuevo abajo"
   }
 }

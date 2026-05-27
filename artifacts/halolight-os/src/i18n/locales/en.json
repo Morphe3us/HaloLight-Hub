@@ -1655,5 +1655,16 @@
     "stage_invoice_created": "Invoice Created",
     "stage_won": "Won",
     "stage_lost": "Lost"
+  },
+  "sales_search": {
+    "placeholder": "Search existing customers…",
+    "no_results": "No existing customer found",
+    "existing_customer_found": "Existing customer found — prefill selected",
+    "type_lead": "Lead",
+    "type_quote": "Quote",
+    "type_contract": "Contract",
+    "type_invoice": "Invoice",
+    "search_label": "Search existing customer",
+    "or_create_new": "or create new below"
   }
 }

@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Plus, FileText, Trash2, ChevronRight, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCurrency } from "@/lib/currency";
+import CustomerSearchCombobox from "@/components/CustomerSearchCombobox";
 
 const STATUS_COLORS: Record<string, string> = {
   draft: "bg-slate-100 text-slate-700 border-slate-200",
@@ -39,7 +40,12 @@ export default function Quotes() {
   const { format: formatCurrency } = useCurrency();
   const [filterStatus, setFilterStatus] = useState("all");
   const [showCreate, setShowCreate] = useState(false);
-  const [form, setForm] = useState({ title: "", clientName: "", clientEmail: "", taxRate: "10", notes: "", terms: "" });
+  const [customerSearch, setCustomerSearch] = useState("");
+  const [form, setForm] = useState({
+    title: "", clientName: "", clientEmail: "", taxRate: "10", notes: "", terms: "",
+    leadId: "", clientPhone: "", clientCompany: "", clientAddress: "",
+    eventType: "", eventDate: "", eventLocation: "", currency: "",
+  });
   const [items, setItems] = useState<LineItem[]>([{ description: "", quantity: "1", unitPrice: "" }]);
 
   const { data, isLoading } = useListQuotes(
@@ -47,12 +53,19 @@ export default function Quotes() {
     { query: { queryKey: ["quotes", filterStatus] } }
   );
 
+  const EMPTY_QUOTE_FORM = {
+    title: "", clientName: "", clientEmail: "", taxRate: "10", notes: "", terms: "",
+    leadId: "", clientPhone: "", clientCompany: "", clientAddress: "",
+    eventType: "", eventDate: "", eventLocation: "", currency: "",
+  };
+
   const createMutation = useCreateQuote({
     mutation: {
       onSuccess: () => {
         qc.invalidateQueries({ queryKey: ["quotes"] });
         setShowCreate(false);
-        setForm({ title: "", clientName: "", clientEmail: "", taxRate: "10", notes: "", terms: "" });
+        setCustomerSearch("");
+        setForm(EMPTY_QUOTE_FORM);
         setItems([{ description: "", quantity: "1", unitPrice: "" }]);
         toast({ title: t("quotes.quote_created") });
       },
@@ -84,6 +97,14 @@ export default function Quotes() {
         title: form.title,
         clientName: form.clientName,
         clientEmail: form.clientEmail || undefined,
+        clientPhone: form.clientPhone || undefined,
+        clientCompany: form.clientCompany || undefined,
+        clientAddress: form.clientAddress || undefined,
+        eventType: form.eventType || undefined,
+        eventDate: form.eventDate ? new Date(form.eventDate).toISOString() : undefined,
+        eventLocation: form.eventLocation || undefined,
+        currency: form.currency || undefined,
+        leadId: form.leadId || undefined,
         taxRate: form.taxRate,
         notes: form.notes || undefined,
         terms: form.terms || undefined,
@@ -182,10 +203,35 @@ export default function Quotes() {
         )}
       </div>
 
-      <Dialog open={showCreate} onOpenChange={setShowCreate}>
+      <Dialog open={showCreate} onOpenChange={(open) => { setShowCreate(open); if (!open) { setCustomerSearch(""); setForm(EMPTY_QUOTE_FORM); setItems([{ description: "", quantity: "1", unitPrice: "" }]); } }}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{t("quotes.new_quote")}</DialogTitle></DialogHeader>
           <div className="space-y-4 py-2">
+            <div className="space-y-1.5">
+              <Label>{t("sales_search.search_label")}</Label>
+              <CustomerSearchCombobox
+                value={customerSearch}
+                onChange={setCustomerSearch}
+                onSelect={(s) => {
+                  setForm((f) => ({
+                    ...f,
+                    clientName: s.name,
+                    clientEmail: s.email ?? f.clientEmail,
+                    clientPhone: s.phone ?? f.clientPhone,
+                    clientCompany: s.company ?? f.clientCompany,
+                    clientAddress: s.address ?? f.clientAddress,
+                    eventType: s.eventType ?? f.eventType,
+                    eventDate: s.eventDate ? s.eventDate.slice(0, 10) : f.eventDate,
+                    eventLocation: s.eventLocation ?? f.eventLocation,
+                    currency: s.currency ?? f.currency,
+                    leadId: s.leadId ?? f.leadId,
+                  }));
+                }}
+                onClear={() => setCustomerSearch("")}
+                existingEmail={form.clientEmail}
+              />
+              <p className="text-xs text-muted-foreground">{t("sales_search.or_create_new")}</p>
+            </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="col-span-2 space-y-1.5"><Label>{t("quotes.title_label")} *</Label><Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder={t("quotes.title_placeholder")} /></div>
               <div className="space-y-1.5"><Label>{t("quotes.client_name_label")} *</Label><Input value={form.clientName} onChange={(e) => setForm({ ...form, clientName: e.target.value })} /></div>

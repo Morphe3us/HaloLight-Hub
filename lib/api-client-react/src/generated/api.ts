@@ -167,6 +167,8 @@ import type {
   ResourceList,
   RestockConsumableInput,
   RevenueIntelligence,
+  SearchSalesCustomers200,
+  SearchSalesCustomersParams,
   ServiceRecord,
   SuccessScoreResponse,
   SupportTicket,
@@ -4895,6 +4897,90 @@ export const useUpdateInvoiceStatus = <TError = ErrorType<unknown>,
       > => {
       return useMutation(getUpdateInvoiceStatusMutationOptions(options));
     }
+
+export const getSearchSalesCustomersUrl = (params: SearchSalesCustomersParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/sales/search?${stringifiedParams}` : `/api/sales/search`
+}
+
+/**
+ * @summary Unified customer search across leads, quotes, contracts, invoices
+ */
+export const searchSalesCustomers = async (params: SearchSalesCustomersParams, options?: RequestInit): Promise<SearchSalesCustomers200> => {
+
+  return customFetch<SearchSalesCustomers200>(getSearchSalesCustomersUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getSearchSalesCustomersQueryKey = (params?: SearchSalesCustomersParams,) => {
+    return [
+    `/api/sales/search`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getSearchSalesCustomersQueryOptions = <TData = Awaited<ReturnType<typeof searchSalesCustomers>>, TError = ErrorType<unknown>>(params: SearchSalesCustomersParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof searchSalesCustomers>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getSearchSalesCustomersQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof searchSalesCustomers>>> = ({ signal }) => searchSalesCustomers(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof searchSalesCustomers>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type SearchSalesCustomersQueryResult = NonNullable<Awaited<ReturnType<typeof searchSalesCustomers>>>
+export type SearchSalesCustomersQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Unified customer search across leads, quotes, contracts, invoices
+ */
+
+export function useSearchSalesCustomers<TData = Awaited<ReturnType<typeof searchSalesCustomers>>, TError = ErrorType<unknown>>(
+ params: SearchSalesCustomersParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof searchSalesCustomers>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getSearchSalesCustomersQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
 
 export const getListSupportTicketsUrl = (params?: ListSupportTicketsParams,) => {
   const normalizedParams = new URLSearchParams();

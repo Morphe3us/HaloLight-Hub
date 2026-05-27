@@ -129,6 +129,27 @@ An all-in-one SaaS customer portal for HaloLight — a professional photobooth a
   - Sidebar: "Exports" nav item added to admin section
 - **i18n**: `nav.exports` + 4 `settings.export_data.*` keys added to all 8 locale files
 
+### Sales CRM — Autocomplete + Duplicate Prevention (complete)
+- **API endpoint**: `GET /sales/search?q=` — unified customer search across leads, quotes, contracts, invoices
+  - Debounce-friendly: returns `{ items: [] }` for queries shorter than 2 characters
+  - Merges results by email/name key: one suggestion card per unique customer, with all linked IDs
+  - Scoped by userId for regular users; admins search entire workspace
+  - Returns: id, type, name, company, email, phone, address, eventType, eventDate, eventLocation, currency, leadId, quoteId, contractId, invoiceId, pipelineStage, lastActivityAt
+- **Reusable component** `components/CustomerSearchCombobox.tsx`:
+  - Debounced fetch (300ms), keyboard navigation (↑↓ Enter Escape), loading spinner
+  - Empty state: "No existing customer found"
+  - Duplicate warning: inline `AlertCircle` if typed email matches an existing record
+  - Clear (×) button resets selection; source type badge (Lead / Quote / Contract / Invoice)
+- **Form integration** — Lead, Quote, Contract, Invoice creation dialogs:
+  - "Search existing customer" field at top of each form
+  - On selection: prefills name, company, email, phone, address, eventType, eventDate, eventLocation, currency
+  - Passes pipeline link IDs: leadId (Quote/Contract/Invoice), quoteId (Contract/Invoice), contractId (Invoice)
+  - Users can still edit prefilled values freely or ignore the search and type new values
+  - Forms reset cleanly on close or success
+- **Pipeline linking**: When an existing lead/quote/contract is selected, the new record inherits the link — no silently orphaned records
+- **OpenAPI spec + codegen**: `/sales/search` endpoint + `CustomerSuggestion` schema added; `useSearchSalesCustomers` hook generated
+- **i18n**: `sales_search.*` keys added to all 8 locale files
+
 ### Planned Phases (10+)
 See architecture document for full 30-module scope.
 

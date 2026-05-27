@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Plus, Search, LayoutGrid, List, ChevronRight, Trash2, TrendingUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCurrency } from "@/lib/currency";
+import CustomerSearchCombobox from "@/components/CustomerSearchCombobox";
 
 const PIPELINE_STAGES = [
   { key: "new", color: "bg-slate-100 text-slate-700 border-slate-200" },
@@ -49,6 +50,7 @@ export default function Leads() {
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [showCreate, setShowCreate] = useState(false);
+  const [customerSearch, setCustomerSearch] = useState("");
   const [form, setForm] = useState({
     companyName: "", contactName: "", email: "", phone: "",
     source: "other", status: "new", value: "", notes: "", eventType: "",
@@ -64,6 +66,7 @@ export default function Leads() {
       onSuccess: () => {
         qc.invalidateQueries({ queryKey: ["leads"] });
         setShowCreate(false);
+        setCustomerSearch("");
         setForm({ companyName: "", contactName: "", email: "", phone: "", source: "other", status: "new", value: "", notes: "", eventType: "" });
         toast({ title: t("leads.lead_created") });
       },
@@ -250,12 +253,32 @@ export default function Leads() {
         </div>
       )}
 
-      <Dialog open={showCreate} onOpenChange={setShowCreate}>
+      <Dialog open={showCreate} onOpenChange={(open) => { setShowCreate(open); if (!open) { setCustomerSearch(""); } }}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>{t("leads.new_lead")}</DialogTitle>
           </DialogHeader>
           <div className="grid grid-cols-2 gap-4 py-2">
+            <div className="col-span-2 space-y-1.5">
+              <Label>{t("sales_search.search_label")}</Label>
+              <CustomerSearchCombobox
+                value={customerSearch}
+                onChange={setCustomerSearch}
+                onSelect={(s) => {
+                  setForm((f) => ({
+                    ...f,
+                    companyName: s.company ?? s.name,
+                    contactName: s.name,
+                    email: s.email ?? f.email,
+                    phone: s.phone ?? f.phone,
+                    eventType: s.eventType ?? f.eventType,
+                  }));
+                }}
+                onClear={() => setCustomerSearch("")}
+                existingEmail={form.email}
+              />
+              <p className="text-xs text-muted-foreground">{t("sales_search.or_create_new")}</p>
+            </div>
             <div className="col-span-2 space-y-1.5">
               <Label>{t("leads.company_label")} *</Label>
               <Input value={form.companyName} onChange={(e) => setForm({ ...form, companyName: e.target.value })} placeholder={t("leads.company_placeholder")} />

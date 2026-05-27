@@ -1,0 +1,199 @@
+Sales CRM autocomplete + duplicate prevention.
+
+The Sales pipeline is now connected, but it is still hard to use because when creating a quote, contract, invoice, or lead, existing customer/company data is not suggested automatically.
+
+Current issue:
+When I type a client name, company name, or email in:
+
+* Lead form
+* Quote form
+* Contract form
+* Invoice form
+
+The app does not suggest existing records that were already entered earlier in the pipeline.
+
+This makes the connected CRM difficult to verify and still encourages duplicate customer records.
+
+Goal:
+Add autocomplete/search suggestions for existing customers and pipeline records across the Sales module.
+
+==================================================
+
+1. GLOBAL CUSTOMER SEARCH
+   ==================================================
+
+Create a reusable customer search/autocomplete component.
+
+Search should match:
+
+* client full name
+* company name
+* email
+* phone
+* existing lead name
+* existing quote client
+* existing contract client
+* existing invoice client
+
+When typing at least 2 characters, show suggestions.
+
+Suggestion card should display:
+
+* client/person name
+* company name
+* email
+* phone
+* source record type: Lead / Quote / Contract / Invoice / Client
+* latest pipeline stage if available
+
+==================================================
+2. FORM INTEGRATION
+===================
+
+Integrate autocomplete into:
+
+* New Lead
+* New Quote
+* New Contract
+* New Invoice
+
+Fields:
+
+* client name
+* company name
+* email
+* phone
+
+When a suggestion is selected, prefill:
+
+* client name
+* company name
+* email
+* phone
+* address if available
+* event type if available
+* event date if available
+* event location if available
+* currency if available
+* linked leadId / clientId if available
+
+==================================================
+3. PIPELINE LINKING
+===================
+
+When selecting an existing customer/lead:
+
+* Quote should link to existing lead/client
+* Contract should link to existing lead/client/quote if available
+* Invoice should link to existing lead/client/contract if available
+
+Do not silently create duplicate records.
+
+If email already exists:
+
+* show “Existing customer found”
+* offer “Link to existing record”
+* prefill from existing record
+
+==================================================
+4. API ENDPOINT
+===============
+
+Add an endpoint:
+
+GET /sales/search?q=
+
+Returns unified suggestions from:
+
+* leads
+* quotes
+* contracts
+* invoices
+* users/clients if applicable
+
+Each suggestion should include:
+
+* id
+* type
+* name
+* company
+* email
+* phone
+* address
+* eventType
+* eventDate
+* eventLocation
+* currency
+* leadId
+* clientId
+* quoteId
+* contractId
+* invoiceId
+* pipelineStage
+* lastActivityAt
+
+Protect data:
+
+* users only see their own workspace/customer data
+* admins can search all workspace data
+
+==================================================
+5. UX REQUIREMENTS
+==================
+
+* Debounced search
+* Keyboard navigation
+* Loading state
+* Empty state: “No existing customer found”
+* Clear selected customer button
+* Show duplicate warning if email already exists
+* Do not block creating a new customer if user confirms it is new
+
+==================================================
+6. VERIFICATION
+===============
+
+Test:
+
+1. Create a lead:
+
+* Name: Jane Smith
+* Company: Acme Corp
+* Email: [jane@acme.com](mailto:jane@acme.com)
+
+2. Go to New Quote:
+
+* type “Jane”
+* Jane Smith / Acme Corp appears as suggestion
+* select it
+* quote form is prefilled
+* quote links to the lead
+
+3. Go to New Contract:
+
+* type “Acme”
+* same customer appears
+* select it
+* contract form is prefilled
+
+4. Go to New Invoice:
+
+* type “jane@”
+* same customer appears
+* invoice form is prefilled
+
+5. Verify:
+
+* no duplicate lead/customer is created
+* lead pipeline updates
+* Client 360 shows the connected quote/contract/invoice
+* Sales dashboard reflects the pipeline
+
+Run:
+
+* OpenAPI/codegen if needed
+* typecheck
+* route verification
+
+Do not redesign Sales.
+Fix only autocomplete, prefill and duplicate prevention across the Sales workflow.

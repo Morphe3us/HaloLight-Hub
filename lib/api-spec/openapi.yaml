@@ -22,6 +22,8 @@ tags:
     description: Event management
   - name: dashboard
     description: Dashboard aggregations
+  - name: sales
+    description: Unified sales customer search
   - name: leads
     description: CRM lead pipeline management
   - name: quotes
@@ -1329,6 +1331,33 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/InvoiceDetail"
+
+  # ─── Sales Search ─────────────────────────────────────────────────────────
+  /sales/search:
+    get:
+      operationId: searchSalesCustomers
+      tags: [sales]
+      summary: Unified customer search across leads, quotes, contracts, invoices
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 2
+      responses:
+        "200":
+          description: List of matching customer suggestions
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/CustomerSuggestion"
 
   # ─── Support ──────────────────────────────────────────────────────────────
   /support/tickets:
@@ -6279,3 +6308,28 @@ components:
         fileCount: { type: integer, nullable: true }
         recordCounts: { type: object, nullable: true, additionalProperties: { type: integer } }
         createdAt: { type: string, format: date-time }
+
+    CustomerSuggestion:
+      type: object
+      required: [id, type, name]
+      properties:
+        id: { type: string }
+        type:
+          type: string
+          enum: [lead, quote, contract, invoice]
+        name: { type: string }
+        company: { type: string, nullable: true }
+        email: { type: string, nullable: true }
+        phone: { type: string, nullable: true }
+        address: { type: string, nullable: true }
+        eventType: { type: string, nullable: true }
+        eventDate: { type: string, nullable: true }
+        eventLocation: { type: string, nullable: true }
+        currency: { type: string, nullable: true }
+        leadId: { type: string, nullable: true }
+        clientId: { type: string, nullable: true }
+        quoteId: { type: string, nullable: true }
+        contractId: { type: string, nullable: true }
+        invoiceId: { type: string, nullable: true }
+        pipelineStage: { type: string, nullable: true }
+        lastActivityAt: { type: string, nullable: true }

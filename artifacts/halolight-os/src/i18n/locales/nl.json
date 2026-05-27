@@ -1655,5 +1655,16 @@
     "stage_invoice_created": "Invoice Created",
     "stage_won": "Won",
     "stage_lost": "Lost"
+  },
+  "sales_search": {
+    "placeholder": "Bestaande klanten zoeken…",
+    "no_results": "Geen bestaande klant gevonden",
+    "existing_customer_found": "Bestaande klant gevonden — velden ingevuld",
+    "type_lead": "Lead",
+    "type_quote": "Offerte",
+    "type_contract": "Contract",
+    "type_invoice": "Factuur",
+    "search_label": "Bestaande klant zoeken",
+    "or_create_new": "of maak hieronder nieuw aan"
   }
 }

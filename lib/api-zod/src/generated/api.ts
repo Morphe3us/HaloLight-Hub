@@ -1959,6 +1959,41 @@ export const UpdateInvoiceStatusResponse = zod.object({
 
 
 /**
+ * @summary Unified customer search across leads, quotes, contracts, invoices
+ */
+export const searchSalesCustomersQueryQMin = 2;
+
+
+
+export const SearchSalesCustomersQueryParams = zod.object({
+  "q": zod.coerce.string().min(searchSalesCustomersQueryQMin)
+})
+
+export const SearchSalesCustomersResponse = zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.string(),
+  "type": zod.enum(['lead', 'quote', 'contract', 'invoice']),
+  "name": zod.string(),
+  "company": zod.string().nullish(),
+  "email": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "address": zod.string().nullish(),
+  "eventType": zod.string().nullish(),
+  "eventDate": zod.string().nullish(),
+  "eventLocation": zod.string().nullish(),
+  "currency": zod.string().nullish(),
+  "leadId": zod.string().nullish(),
+  "clientId": zod.string().nullish(),
+  "quoteId": zod.string().nullish(),
+  "contractId": zod.string().nullish(),
+  "invoiceId": zod.string().nullish(),
+  "pipelineStage": zod.string().nullish(),
+  "lastActivityAt": zod.string().nullish()
+}))
+})
+
+
+/**
  * @summary List support tickets
  */
 export const ListSupportTicketsQueryParams = zod.object({

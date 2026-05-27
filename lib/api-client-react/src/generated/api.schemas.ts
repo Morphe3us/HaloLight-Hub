@@ -2625,6 +2625,37 @@ export interface ExportLog {
   createdAt: string;
 }
 
+export type CustomerSuggestionType = typeof CustomerSuggestionType[keyof typeof CustomerSuggestionType];
+
+
+export const CustomerSuggestionType = {
+  lead: 'lead',
+  quote: 'quote',
+  contract: 'contract',
+  invoice: 'invoice',
+} as const;
+
+export interface CustomerSuggestion {
+  id: string;
+  type: CustomerSuggestionType;
+  name: string;
+  company?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  address?: string | null;
+  eventType?: string | null;
+  eventDate?: string | null;
+  eventLocation?: string | null;
+  currency?: string | null;
+  leadId?: string | null;
+  clientId?: string | null;
+  quoteId?: string | null;
+  contractId?: string | null;
+  invoiceId?: string | null;
+  pipelineStage?: string | null;
+  lastActivityAt?: string | null;
+}
+
 export type ListUsersParams = {
 role?: string;
 limit?: number;
@@ -2788,6 +2819,17 @@ export const ListInvoicesStatus = {
   overdue: 'overdue',
   cancelled: 'cancelled',
 } as const;
+
+export type SearchSalesCustomersParams = {
+/**
+ * @minLength 2
+ */
+q: string;
+};
+
+export type SearchSalesCustomers200 = {
+  items: CustomerSuggestion[];
+};
 
 export type ListSupportTicketsParams = {
 status?: string;

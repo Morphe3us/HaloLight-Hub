@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Plus, FileSignature, Trash2, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCurrency } from "@/lib/currency";
+import CustomerSearchCombobox from "@/components/CustomerSearchCombobox";
 
 const STATUS_COLORS: Record<string, string> = {
   draft: "bg-slate-100 text-slate-700 border-slate-200",
@@ -52,7 +53,11 @@ export default function Contracts() {
   const { format: formatCurrency, currency: currencyCode } = useCurrency();
   const [filterStatus, setFilterStatus] = useState("all");
   const [showCreate, setShowCreate] = useState(false);
-  const [form, setForm] = useState({ title: "", clientName: "", clientEmail: "", value: "", templateId: "", content: "", notes: "" });
+  const [customerSearch, setCustomerSearch] = useState("");
+  const [form, setForm] = useState({
+    title: "", clientName: "", clientEmail: "", value: "", templateId: "", content: "", notes: "",
+    leadId: "", quoteId: "", clientPhone: "", clientCompany: "",
+  });
 
   const { data: currentUserData } = useGetCurrentUser();
   const currentUser = currentUserData as any;
@@ -63,12 +68,18 @@ export default function Contracts() {
   );
   const { data: templatesData } = useListContractTemplates({ lang }, { query: { queryKey: ["contract-templates", lang] } });
 
+  const EMPTY_CONTRACT_FORM = {
+    title: "", clientName: "", clientEmail: "", value: "", templateId: "", content: "", notes: "",
+    leadId: "", quoteId: "", clientPhone: "", clientCompany: "",
+  };
+
   const createMutation = useCreateContract({
     mutation: {
       onSuccess: () => {
         qc.invalidateQueries({ queryKey: ["contracts"] });
         setShowCreate(false);
-        setForm({ title: "", clientName: "", clientEmail: "", value: "", templateId: "", content: "", notes: "" });
+        setCustomerSearch("");
+        setForm(EMPTY_CONTRACT_FORM);
         toast({ title: t("contracts.contract_created") });
       },
     },
@@ -97,6 +108,10 @@ export default function Contracts() {
         title: form.title,
         clientName: form.clientName,
         clientEmail: form.clientEmail || undefined,
+        clientPhone: form.clientPhone || undefined,
+        clientCompany: form.clientCompany || undefined,
+        leadId: form.leadId || undefined,
+        quoteId: form.quoteId || undefined,
         value: form.value || "0",
         templateId: form.templateId || undefined,
         content: form.content,
@@ -193,10 +208,31 @@ export default function Contracts() {
         )}
       </div>
 
-      <Dialog open={showCreate} onOpenChange={setShowCreate}>
+      <Dialog open={showCreate} onOpenChange={(open) => { setShowCreate(open); if (!open) { setCustomerSearch(""); setForm(EMPTY_CONTRACT_FORM); } }}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{t("contracts.new_contract")}</DialogTitle></DialogHeader>
           <div className="space-y-4 py-2">
+            <div className="space-y-1.5">
+              <Label>{t("sales_search.search_label")}</Label>
+              <CustomerSearchCombobox
+                value={customerSearch}
+                onChange={setCustomerSearch}
+                onSelect={(s) => {
+                  setForm((f) => ({
+                    ...f,
+                    clientName: s.name,
+                    clientEmail: s.email ?? f.clientEmail,
+                    clientPhone: s.phone ?? f.clientPhone,
+                    clientCompany: s.company ?? f.clientCompany,
+                    leadId: s.leadId ?? f.leadId,
+                    quoteId: s.quoteId ?? f.quoteId,
+                  }));
+                }}
+                onClear={() => setCustomerSearch("")}
+                existingEmail={form.clientEmail}
+              />
+              <p className="text-xs text-muted-foreground">{t("sales_search.or_create_new")}</p>
+            </div>
             {templates.length > 0 && (
               <div className="space-y-1.5">
                 <Label>{t("contracts.template_label")}</Label>
