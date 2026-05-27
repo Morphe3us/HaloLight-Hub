@@ -40,7 +40,8 @@
     "ai_knowledge": "IA Conocimiento",
     "backup": "Copia de seguridad",
     "users": "Usuarios",
-    "resources": "Recursos"
+    "resources": "Recursos",
+    "contract_templates": "Plantillas de contrato"
   },
   "dashboard": {
     "title": "Panel",
@@ -1590,5 +1591,24 @@
     "toast_error": "Error",
     "toast_mark_fail": "No se pudo marcar como completada.",
     "toast_quiz_fail": "No se pudo enviar el cuestionario."
+  },
+  "admin_contract_templates": {
+    "title": "Plantillas de contrato",
+    "subtitle": "Editar las plantillas de contrato de alquiler de photobooth por idioma",
+    "save_btn": "Guardar cambios",
+    "reset_btn": "Restablecer",
+    "saving": "Guardando...",
+    "saved": "Plantilla guardada",
+    "reset_success": "Plantilla restablecida",
+    "reset_confirm": "¿Restablecer esta plantilla al valor predeterminado? Sus cambios se perderán.",
+    "variables_title": "Variables disponibles",
+    "variables_count": "variables disponibles",
+    "no_template": "No se encontró plantilla personalizada para este idioma",
+    "create_hint": "Guarde el contenido siguiente para crear una",
+    "template_title_label": "Título de la plantilla",
+    "template_title_placeholder": "ej. Contrato de alquiler de photobooth",
+    "template_content_label": "Contenido de la plantilla",
+    "content_placeholder": "Introduzca el contenido con marcadores {{variable}}...",
+    "unsaved": "Cambios sin guardar"
   }
 }

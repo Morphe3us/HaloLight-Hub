@@ -3,6 +3,7 @@ import { eq, and, desc, sql } from "drizzle-orm";
 import { db, contracts, contractTemplates } from "@workspace/db";
 import { requireAuth } from "../middlewares/requireAuth";
 import { getOrCreateUser } from "../lib/userSync";
+import { DEFAULT_CONTRACT_TEMPLATES } from "../lib/defaultContractTemplates";
 
 const router: IRouter = Router();
 
@@ -16,17 +17,13 @@ function generateContractNumber(): string {
 router.get("/contracts", requireAuth, async (req: Request, res: Response): Promise<void> => {
   const user = await getOrCreateUser(req);
   if (!user) { res.status(401).json({ error: "Unauthorized" }); return; }
-
   const { status, limit = "50", offset = "0" } = req.query as Record<string, string>;
-
   const conditions = [eq(contracts.userId, user.id)];
   if (status) conditions.push(eq(contracts.status, status as typeof contracts.status._.data));
-
   const [rows, countRow] = await Promise.all([
     db.select().from(contracts).where(and(...conditions)).orderBy(desc(contracts.updatedAt)).limit(Number(limit)).offset(Number(offset)),
     db.select({ count: sql<number>`count(*)::int` }).from(contracts).where(and(...conditions)),
   ]);
-
   res.json({ items: rows, total: countRow[0]?.count ?? 0 });
 });
 
@@ -34,34 +31,23 @@ router.get("/contracts", requireAuth, async (req: Request, res: Response): Promi
 router.post("/contracts", requireAuth, async (req: Request, res: Response): Promise<void> => {
   const user = await getOrCreateUser(req);
   if (!user) { res.status(401).json({ error: "Unauthorized" }); return; }
-
   const { leadId, quoteId, templateId, title, clientName, clientEmail, content, value, startDate, endDate, notes } = req.body as {
     leadId?: string; quoteId?: string; templateId?: string; title: string; clientName: string;
     clientEmail?: string; content?: string; value?: string; startDate?: string; endDate?: string; notes?: string;
   };
   if (!title || !clientName) { res.status(400).json({ error: "title and clientName required" }); return; }
-
   let finalContent = content ?? "";
   if (templateId && !content) {
     const [tpl] = await db.select().from(contractTemplates).where(eq(contractTemplates.id, templateId));
     if (tpl) finalContent = tpl.content;
   }
-
   const [contract] = await db.insert(contracts).values({
-    userId: user.id,
-    leadId: leadId ?? null,
-    quoteId: quoteId ?? null,
-    contractNumber: generateContractNumber(),
-    title,
-    clientName,
-    clientEmail: clientEmail ?? null,
-    content: finalContent,
-    value: value ?? "0",
-    startDate: startDate ? new Date(startDate) : null,
-    endDate: endDate ? new Date(endDate) : null,
+    userId: user.id, leadId: leadId ?? null, quoteId: quoteId ?? null,
+    contractNumber: generateContractNumber(), title, clientName,
+    clientEmail: clientEmail ?? null, content: finalContent, value: value ?? "0",
+    startDate: startDate ? new Date(startDate) : null, endDate: endDate ? new Date(endDate) : null,
     notes: notes ?? null,
   }).returning();
-
   res.status(201).json(contract);
 });
 
@@ -69,11 +55,8 @@ router.post("/contracts", requireAuth, async (req: Request, res: Response): Prom
 router.get("/contracts/:id", requireAuth, async (req: Request, res: Response): Promise<void> => {
   const user = await getOrCreateUser(req);
   if (!user) { res.status(401).json({ error: "Unauthorized" }); return; }
-  const id = String(req.params.id);
-
-  const [contract] = await db.select().from(contracts).where(and(eq(contracts.id, id), eq(contracts.userId, user.id)));
+  const [contract] = await db.select().from(contracts).where(and(eq(contracts.id, String(req.params.id)), eq(contracts.userId, user.id)));
   if (!contract) { res.status(404).json({ error: "Not found" }); return; }
-
   res.json(contract);
 });
 
@@ -82,29 +65,22 @@ router.put("/contracts/:id", requireAuth, async (req: Request, res: Response): P
   const user = await getOrCreateUser(req);
   if (!user) { res.status(401).json({ error: "Unauthorized" }); return; }
   const id = String(req.params.id);
-
   const [existing] = await db.select().from(contracts).where(and(eq(contracts.id, id), eq(contracts.userId, user.id)));
   if (!existing) { res.status(404).json({ error: "Not found" }); return; }
-
   const { leadId, quoteId, title, clientName, clientEmail, content, value, startDate, endDate, notes } = req.body as {
     leadId?: string | null; quoteId?: string | null; title?: string; clientName?: string;
     clientEmail?: string | null; content?: string; value?: string; startDate?: string; endDate?: string; notes?: string | null;
   };
-
   const [updated] = await db.update(contracts).set({
     leadId: leadId !== undefined ? (leadId ?? null) : existing.leadId,
     quoteId: quoteId !== undefined ? (quoteId ?? null) : existing.quoteId,
-    title: title ?? existing.title,
-    clientName: clientName ?? existing.clientName,
+    title: title ?? existing.title, clientName: clientName ?? existing.clientName,
     clientEmail: clientEmail !== undefined ? clientEmail : existing.clientEmail,
-    content: content ?? existing.content,
-    value: value ?? existing.value,
+    content: content ?? existing.content, value: value ?? existing.value,
     startDate: startDate ? new Date(startDate) : existing.startDate,
     endDate: endDate ? new Date(endDate) : existing.endDate,
-    notes: notes !== undefined ? notes : existing.notes,
-    updatedAt: new Date(),
+    notes: notes !== undefined ? notes : existing.notes, updatedAt: new Date(),
   }).where(eq(contracts.id, id)).returning();
-
   res.json(updated);
 });
 
@@ -113,10 +89,8 @@ router.delete("/contracts/:id", requireAuth, async (req: Request, res: Response)
   const user = await getOrCreateUser(req);
   if (!user) { res.status(401).json({ error: "Unauthorized" }); return; }
   const id = String(req.params.id);
-
   const [existing] = await db.select().from(contracts).where(and(eq(contracts.id, id), eq(contracts.userId, user.id)));
   if (!existing) { res.status(404).json({ error: "Not found" }); return; }
-
   await db.delete(contracts).where(eq(contracts.id, id));
   res.status(204).send();
 });
@@ -126,28 +100,108 @@ router.patch("/contracts/:id/status", requireAuth, async (req: Request, res: Res
   const user = await getOrCreateUser(req);
   if (!user) { res.status(401).json({ error: "Unauthorized" }); return; }
   const id = String(req.params.id);
-
   const [existing] = await db.select().from(contracts).where(and(eq(contracts.id, id), eq(contracts.userId, user.id)));
   if (!existing) { res.status(404).json({ error: "Not found" }); return; }
-
   const { status } = req.body as { status: typeof contracts.status._.data };
   if (!status) { res.status(400).json({ error: "status required" }); return; }
-
   const extra: { sentAt?: Date; signedAt?: Date } = {};
   if (status === "sent") extra.sentAt = new Date();
   if (status === "signed") extra.signedAt = new Date();
-
   const [updated] = await db.update(contracts).set({ status, ...extra, updatedAt: new Date() }).where(eq(contracts.id, id)).returning();
   res.json(updated);
 });
 
-// GET /contract-templates
+// ─── Contract Templates ──────────────────────────────────────────────────────
+
+// GET /contract-templates — list (with optional ?lang= filter)
 router.get("/contract-templates", requireAuth, async (req: Request, res: Response): Promise<void> => {
   const user = await getOrCreateUser(req);
   if (!user) { res.status(401).json({ error: "Unauthorized" }); return; }
+  const { lang } = req.query as { lang?: string };
+  const rows = lang
+    ? await db.select().from(contractTemplates).where(eq(contractTemplates.language, lang)).orderBy(contractTemplates.createdAt)
+    : await db.select().from(contractTemplates).orderBy(contractTemplates.createdAt);
+  res.json({ items: rows });
+});
 
-  const items = await db.select().from(contractTemplates).orderBy(contractTemplates.createdAt);
-  res.json({ items });
+// POST /contract-templates — create (admin)
+router.post("/contract-templates", requireAuth, async (req: Request, res: Response): Promise<void> => {
+  const user = await getOrCreateUser(req);
+  if (!user) { res.status(401).json({ error: "Unauthorized" }); return; }
+  if (user.role !== "admin") { res.status(403).json({ error: "Forbidden" }); return; }
+  const { language, title, content, category, isDefault } = req.body as {
+    language: string; title: string; content: string; category?: string; isDefault?: boolean;
+  };
+  if (!language || !title || !content) { res.status(400).json({ error: "language, title and content required" }); return; }
+  const [tpl] = await db.insert(contractTemplates).values({
+    language, title, content, category: category ?? "general", isDefault: isDefault ?? false,
+  }).returning();
+  res.status(201).json(tpl);
+});
+
+// POST /contract-templates/reset — MUST come before /:id
+router.post("/contract-templates/reset", requireAuth, async (req: Request, res: Response): Promise<void> => {
+  const user = await getOrCreateUser(req);
+  if (!user) { res.status(401).json({ error: "Unauthorized" }); return; }
+  if (user.role !== "admin") { res.status(403).json({ error: "Forbidden" }); return; }
+  const { lang } = req.body as { lang?: string };
+  const targets = lang
+    ? DEFAULT_CONTRACT_TEMPLATES.filter((t) => t.language === lang)
+    : DEFAULT_CONTRACT_TEMPLATES;
+  let reset = 0;
+  for (const tpl of targets) {
+    const [existing] = await db.select().from(contractTemplates)
+      .where(and(eq(contractTemplates.language, tpl.language), eq(contractTemplates.isDefault, true)));
+    if (existing) {
+      await db.update(contractTemplates).set({ title: tpl.title, content: tpl.content, updatedAt: new Date() }).where(eq(contractTemplates.id, existing.id));
+    } else {
+      await db.insert(contractTemplates).values({ language: tpl.language, title: tpl.title, content: tpl.content, isDefault: true });
+    }
+    reset++;
+  }
+  res.json({ reset });
+});
+
+// GET /contract-templates/default/:lang — MUST come before /:id
+router.get("/contract-templates/default/:lang", requireAuth, async (req: Request, res: Response): Promise<void> => {
+  const user = await getOrCreateUser(req);
+  if (!user) { res.status(401).json({ error: "Unauthorized" }); return; }
+  const lang = String(req.params.lang);
+  const [tpl] = await db.select().from(contractTemplates)
+    .where(and(eq(contractTemplates.language, lang), eq(contractTemplates.isDefault, true)));
+  if (!tpl) {
+    const hardcoded = DEFAULT_CONTRACT_TEMPLATES.find((t) => t.language === lang) ?? DEFAULT_CONTRACT_TEMPLATES[0];
+    res.json({ id: "default", language: lang, title: hardcoded.title, content: hardcoded.content, isDefault: true, category: "general", createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
+    return;
+  }
+  res.json(tpl);
+});
+
+// PUT /contract-templates/:id — update (admin)
+router.put("/contract-templates/:id", requireAuth, async (req: Request, res: Response): Promise<void> => {
+  const user = await getOrCreateUser(req);
+  if (!user) { res.status(401).json({ error: "Unauthorized" }); return; }
+  if (user.role !== "admin") { res.status(403).json({ error: "Forbidden" }); return; }
+  const id = String(req.params.id);
+  const { language, title, content, category, isDefault } = req.body as {
+    language?: string; title?: string; content?: string; category?: string; isDefault?: boolean;
+  };
+  const [updated] = await db.update(contractTemplates).set({
+    ...(language && { language }), ...(title && { title }),
+    ...(content !== undefined && { content }), ...(category && { category }),
+    ...(isDefault !== undefined && { isDefault }), updatedAt: new Date(),
+  }).where(eq(contractTemplates.id, id)).returning();
+  if (!updated) { res.status(404).json({ error: "Not found" }); return; }
+  res.json(updated);
+});
+
+// DELETE /contract-templates/:id — (admin)
+router.delete("/contract-templates/:id", requireAuth, async (req: Request, res: Response): Promise<void> => {
+  const user = await getOrCreateUser(req);
+  if (!user) { res.status(401).json({ error: "Unauthorized" }); return; }
+  if (user.role !== "admin") { res.status(403).json({ error: "Forbidden" }); return; }
+  await db.delete(contractTemplates).where(eq(contractTemplates.id, String(req.params.id)));
+  res.status(204).send();
 });
 
 export default router;

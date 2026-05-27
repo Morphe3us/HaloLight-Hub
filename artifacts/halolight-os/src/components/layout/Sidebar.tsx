@@ -178,6 +178,7 @@ export function Sidebar() {
             { title: t("nav.uploads"), href: "/admin/uploads", icon: FolderUp },
             { title: t("nav.ai_knowledge"), href: "/admin/ai-knowledge", icon: Brain },
             { title: t("nav.backup"), href: "/admin/backup", icon: HardDrive },
+            { title: t("nav.contract_templates"), href: "/admin/contract-templates", icon: FileSignature },
             { title: t("nav.users"), href: "/admin", icon: Users },
           ],
         },

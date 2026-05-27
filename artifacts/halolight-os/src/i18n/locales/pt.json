@@ -40,7 +40,8 @@
     "ai_knowledge": "Conhecimento IA",
     "backup": "Backup",
     "users": "Usuários",
-    "resources": "Recursos"
+    "resources": "Recursos",
+    "contract_templates": "Modelos de contrato"
   },
   "dashboard": {
     "title": "Painel",
@@ -1590,5 +1591,24 @@
     "toast_error": "Erro",
     "toast_mark_fail": "Não foi possível marcar como concluída.",
     "toast_quiz_fail": "Não foi possível submeter o questionário."
+  },
+  "admin_contract_templates": {
+    "title": "Modelos de contrato",
+    "subtitle": "Edite os modelos de contrato de aluguel de photobooth por idioma",
+    "save_btn": "Guardar alterações",
+    "reset_btn": "Restaurar padrão",
+    "saving": "A guardar...",
+    "saved": "Modelo guardado",
+    "reset_success": "Modelo restaurado ao padrão",
+    "reset_confirm": "Restaurar este modelo ao padrão? As suas alterações serão perdidas.",
+    "variables_title": "Variáveis disponíveis",
+    "variables_count": "variáveis disponíveis",
+    "no_template": "Nenhum modelo personalizado encontrado para este idioma",
+    "create_hint": "Guarde o conteúdo abaixo para criar um",
+    "template_title_label": "Título do modelo",
+    "template_title_placeholder": "ex. Contrato de aluguel de photobooth",
+    "template_content_label": "Conteúdo do modelo",
+    "content_placeholder": "Introduza o conteúdo com marcadores {{variable}}...",
+    "unsaved": "Alterações não guardadas"
   }
 }

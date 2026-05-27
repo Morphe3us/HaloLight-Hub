@@ -40,7 +40,8 @@
     "ai_knowledge": "Wiedza AI",
     "backup": "Kopia zapasowa",
     "users": "Użytkownicy",
-    "resources": "Zasoby"
+    "resources": "Zasoby",
+    "contract_templates": "Szablony umów"
   },
   "dashboard": {
     "title": "Panel",
@@ -1590,5 +1591,24 @@
     "toast_error": "Błąd",
     "toast_mark_fail": "Nie można oznaczyć jako ukończonej.",
     "toast_quiz_fail": "Nie można przesłać quizu."
+  },
+  "admin_contract_templates": {
+    "title": "Szablony umów",
+    "subtitle": "Edytuj szablony umów najmu fotobudki dla każdego języka",
+    "save_btn": "Zapisz zmiany",
+    "reset_btn": "Przywróć domyślny",
+    "saving": "Zapisywanie...",
+    "saved": "Szablon zapisany",
+    "reset_success": "Szablon przywrócony do domyślnego",
+    "reset_confirm": "Przywrócić ten szablon do domyślnego? Twoje zmiany zostaną utracone.",
+    "variables_title": "Dostępne zmienne",
+    "variables_count": "dostępnych zmiennych",
+    "no_template": "Nie znaleziono niestandardowego szablonu dla tego języka",
+    "create_hint": "Zapisz poniższą treść, aby go utworzyć",
+    "template_title_label": "Tytuł szablonu",
+    "template_title_placeholder": "np. Umowa najmu fotobudki",
+    "template_content_label": "Treść szablonu",
+    "content_placeholder": "Wprowadź treść z symbolami zastępczymi {{variable}}...",
+    "unsaved": "Niezapisane zmiany"
   }
 }

@@ -76,6 +76,8 @@ import type {
   Contract,
   ContractInput,
   ContractList,
+  ContractTemplate,
+  ContractTemplateInput,
   CourseDetail,
   CourseList,
   CreateAIKnowledgeDocInput,
@@ -126,6 +128,7 @@ import type {
   ListAutomationLogsParams,
   ListChannelPostsParams,
   ListContractTemplates200,
+  ListContractTemplatesParams,
   ListContractsParams,
   ListCoursesParams,
   ListEventsParams,
@@ -153,6 +156,8 @@ import type {
   QuoteInput,
   QuoteList,
   ReindexAIKnowledgeDoc200,
+  ResetContractTemplates200,
+  ResetContractTemplatesBody,
   ResourceItem,
   ResourceList,
   RestockConsumableInput,
@@ -3918,20 +3923,27 @@ export const useUpdateContractStatus = <TError = ErrorType<unknown>,
       return useMutation(getUpdateContractStatusMutationOptions(options));
     }
 
-export const getListContractTemplatesUrl = () => {
+export const getListContractTemplatesUrl = (params?: ListContractTemplatesParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
 
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/contract-templates`
+  return stringifiedParams.length > 0 ? `/api/contract-templates?${stringifiedParams}` : `/api/contract-templates`
 }
 
 /**
  * @summary List contract templates
  */
-export const listContractTemplates = async ( options?: RequestInit): Promise<ListContractTemplates200> => {
+export const listContractTemplates = async (params?: ListContractTemplatesParams, options?: RequestInit): Promise<ListContractTemplates200> => {
 
-  return customFetch<ListContractTemplates200>(getListContractTemplatesUrl(),
+  return customFetch<ListContractTemplates200>(getListContractTemplatesUrl(params),
   {
     ...options,
     method: 'GET'
@@ -3944,23 +3956,23 @@ export const listContractTemplates = async ( options?: RequestInit): Promise<Lis
 
 
 
-export const getListContractTemplatesQueryKey = () => {
+export const getListContractTemplatesQueryKey = (params?: ListContractTemplatesParams,) => {
     return [
-    `/api/contract-templates`
+    `/api/contract-templates`, ...(params ? [params] : [])
     ] as const;
     }
 
 
-export const getListContractTemplatesQueryOptions = <TData = Awaited<ReturnType<typeof listContractTemplates>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listContractTemplates>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getListContractTemplatesQueryOptions = <TData = Awaited<ReturnType<typeof listContractTemplates>>, TError = ErrorType<unknown>>(params?: ListContractTemplatesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listContractTemplates>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getListContractTemplatesQueryKey();
+  const queryKey =  queryOptions?.queryKey ?? getListContractTemplatesQueryKey(params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof listContractTemplates>>> = ({ signal }) => listContractTemplates({ signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listContractTemplates>>> = ({ signal }) => listContractTemplates(params, { signal, ...requestOptions });
 
 
 
@@ -3978,11 +3990,11 @@ export type ListContractTemplatesQueryError = ErrorType<unknown>
  */
 
 export function useListContractTemplates<TData = Awaited<ReturnType<typeof listContractTemplates>>, TError = ErrorType<unknown>>(
-  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listContractTemplates>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+ params?: ListContractTemplatesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listContractTemplates>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
-  const queryOptions = getListContractTemplatesQueryOptions(options)
+  const queryOptions = getListContractTemplatesQueryOptions(params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
@@ -3994,6 +4006,367 @@ export function useListContractTemplates<TData = Awaited<ReturnType<typeof listC
 
 
 
+
+export const getCreateContractTemplateUrl = () => {
+
+
+
+
+  return `/api/contract-templates`
+}
+
+/**
+ * @summary Create a contract template
+ */
+export const createContractTemplate = async (contractTemplateInput: ContractTemplateInput, options?: RequestInit): Promise<ContractTemplate> => {
+
+  return customFetch<ContractTemplate>(getCreateContractTemplateUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      contractTemplateInput,)
+  }
+);}
+
+
+
+
+export const getCreateContractTemplateMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createContractTemplate>>, TError,{data: BodyType<ContractTemplateInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createContractTemplate>>, TError,{data: BodyType<ContractTemplateInput>}, TContext> => {
+
+const mutationKey = ['createContractTemplate'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createContractTemplate>>, {data: BodyType<ContractTemplateInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createContractTemplate(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateContractTemplateMutationResult = NonNullable<Awaited<ReturnType<typeof createContractTemplate>>>
+    export type CreateContractTemplateMutationBody = BodyType<ContractTemplateInput>
+    export type CreateContractTemplateMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Create a contract template
+ */
+export const useCreateContractTemplate = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createContractTemplate>>, TError,{data: BodyType<ContractTemplateInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createContractTemplate>>,
+        TError,
+        {data: BodyType<ContractTemplateInput>},
+        TContext
+      > => {
+      return useMutation(getCreateContractTemplateMutationOptions(options));
+    }
+
+export const getResetContractTemplatesUrl = () => {
+
+
+
+
+  return `/api/contract-templates/reset`
+}
+
+/**
+ * @summary Reset templates to factory defaults
+ */
+export const resetContractTemplates = async (resetContractTemplatesBody?: ResetContractTemplatesBody, options?: RequestInit): Promise<ResetContractTemplates200> => {
+
+  return customFetch<ResetContractTemplates200>(getResetContractTemplatesUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      resetContractTemplatesBody,)
+  }
+);}
+
+
+
+
+export const getResetContractTemplatesMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof resetContractTemplates>>, TError,{data?: BodyType<ResetContractTemplatesBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof resetContractTemplates>>, TError,{data?: BodyType<ResetContractTemplatesBody>}, TContext> => {
+
+const mutationKey = ['resetContractTemplates'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof resetContractTemplates>>, {data?: BodyType<ResetContractTemplatesBody>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  resetContractTemplates(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ResetContractTemplatesMutationResult = NonNullable<Awaited<ReturnType<typeof resetContractTemplates>>>
+    export type ResetContractTemplatesMutationBody = BodyType<ResetContractTemplatesBody> | undefined
+    export type ResetContractTemplatesMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Reset templates to factory defaults
+ */
+export const useResetContractTemplates = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof resetContractTemplates>>, TError,{data?: BodyType<ResetContractTemplatesBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof resetContractTemplates>>,
+        TError,
+        {data?: BodyType<ResetContractTemplatesBody>},
+        TContext
+      > => {
+      return useMutation(getResetContractTemplatesMutationOptions(options));
+    }
+
+export const getGetDefaultContractTemplateUrl = (lang: string,) => {
+
+
+
+
+  return `/api/contract-templates/default/${lang}`
+}
+
+/**
+ * @summary Get default template for a language
+ */
+export const getDefaultContractTemplate = async (lang: string, options?: RequestInit): Promise<ContractTemplate> => {
+
+  return customFetch<ContractTemplate>(getGetDefaultContractTemplateUrl(lang),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetDefaultContractTemplateQueryKey = (lang: string,) => {
+    return [
+    `/api/contract-templates/default/${lang}`
+    ] as const;
+    }
+
+
+export const getGetDefaultContractTemplateQueryOptions = <TData = Awaited<ReturnType<typeof getDefaultContractTemplate>>, TError = ErrorType<void>>(lang: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getDefaultContractTemplate>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetDefaultContractTemplateQueryKey(lang);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getDefaultContractTemplate>>> = ({ signal }) => getDefaultContractTemplate(lang, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(lang), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getDefaultContractTemplate>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetDefaultContractTemplateQueryResult = NonNullable<Awaited<ReturnType<typeof getDefaultContractTemplate>>>
+export type GetDefaultContractTemplateQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get default template for a language
+ */
+
+export function useGetDefaultContractTemplate<TData = Awaited<ReturnType<typeof getDefaultContractTemplate>>, TError = ErrorType<void>>(
+ lang: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getDefaultContractTemplate>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetDefaultContractTemplateQueryOptions(lang,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getUpdateContractTemplateUrl = (id: string,) => {
+
+
+
+
+  return `/api/contract-templates/${id}`
+}
+
+/**
+ * @summary Update a contract template
+ */
+export const updateContractTemplate = async (id: string,
+    contractTemplateInput: ContractTemplateInput, options?: RequestInit): Promise<ContractTemplate> => {
+
+  return customFetch<ContractTemplate>(getUpdateContractTemplateUrl(id),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      contractTemplateInput,)
+  }
+);}
+
+
+
+
+export const getUpdateContractTemplateMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateContractTemplate>>, TError,{id: string;data: BodyType<ContractTemplateInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateContractTemplate>>, TError,{id: string;data: BodyType<ContractTemplateInput>}, TContext> => {
+
+const mutationKey = ['updateContractTemplate'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateContractTemplate>>, {id: string;data: BodyType<ContractTemplateInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateContractTemplate(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateContractTemplateMutationResult = NonNullable<Awaited<ReturnType<typeof updateContractTemplate>>>
+    export type UpdateContractTemplateMutationBody = BodyType<ContractTemplateInput>
+    export type UpdateContractTemplateMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Update a contract template
+ */
+export const useUpdateContractTemplate = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateContractTemplate>>, TError,{id: string;data: BodyType<ContractTemplateInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateContractTemplate>>,
+        TError,
+        {id: string;data: BodyType<ContractTemplateInput>},
+        TContext
+      > => {
+      return useMutation(getUpdateContractTemplateMutationOptions(options));
+    }
+
+export const getDeleteContractTemplateUrl = (id: string,) => {
+
+
+
+
+  return `/api/contract-templates/${id}`
+}
+
+/**
+ * @summary Delete a contract template
+ */
+export const deleteContractTemplate = async (id: string, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getDeleteContractTemplateUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getDeleteContractTemplateMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteContractTemplate>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteContractTemplate>>, TError,{id: string}, TContext> => {
+
+const mutationKey = ['deleteContractTemplate'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteContractTemplate>>, {id: string}> = (props) => {
+          const {id} = props ?? {};
+
+          return  deleteContractTemplate(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteContractTemplateMutationResult = NonNullable<Awaited<ReturnType<typeof deleteContractTemplate>>>
+
+    export type DeleteContractTemplateMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Delete a contract template
+ */
+export const useDeleteContractTemplate = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteContractTemplate>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteContractTemplate>>,
+        TError,
+        {id: string},
+        TContext
+      > => {
+      return useMutation(getDeleteContractTemplateMutationOptions(options));
+    }
 
 export const getListInvoicesUrl = (params?: ListInvoicesParams,) => {
   const normalizedParams = new URLSearchParams();

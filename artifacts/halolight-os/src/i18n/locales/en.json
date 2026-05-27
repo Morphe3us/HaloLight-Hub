@@ -40,7 +40,8 @@
     "ai_knowledge": "AI Knowledge",
     "backup": "Backup",
     "users": "Users",
-    "resources": "Resources"
+    "resources": "Resources",
+    "contract_templates": "Contract Templates"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -1590,5 +1591,24 @@
     "toast_error": "Error",
     "toast_mark_fail": "Could not mark complete.",
     "toast_quiz_fail": "Could not submit quiz."
+  },
+  "admin_contract_templates": {
+    "title": "Contract Templates",
+    "subtitle": "Edit photobooth rental contract templates for each language",
+    "save_btn": "Save Changes",
+    "reset_btn": "Reset to Default",
+    "saving": "Saving...",
+    "saved": "Template saved",
+    "reset_success": "Template reset to default",
+    "reset_confirm": "Reset this template to the factory default? Your edits will be lost.",
+    "variables_title": "Available Variables",
+    "variables_count": "variables available",
+    "no_template": "No custom template found for this language",
+    "create_hint": "Save content below to create one",
+    "template_title_label": "Template Title",
+    "template_title_placeholder": "e.g. Photobooth Rental Agreement",
+    "template_content_label": "Template Content",
+    "content_placeholder": "Enter template content with {{variable}} placeholders...",
+    "unsaved": "Unsaved changes"
   }
 }

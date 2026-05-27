@@ -40,7 +40,8 @@
     "ai_knowledge": "KI-Wissen",
     "backup": "Sicherung",
     "users": "Benutzer",
-    "resources": "Ressourcen"
+    "resources": "Ressourcen",
+    "contract_templates": "Vertragsvorlagen"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -1590,5 +1591,24 @@
     "toast_error": "Fehler",
     "toast_mark_fail": "Lektion konnte nicht als abgeschlossen markiert werden.",
     "toast_quiz_fail": "Quiz konnte nicht eingereicht werden."
+  },
+  "admin_contract_templates": {
+    "title": "Vertragsvorlagen",
+    "subtitle": "Photobooth-Mietvertragsvorlagen je Sprache bearbeiten",
+    "save_btn": "Änderungen speichern",
+    "reset_btn": "Zurücksetzen",
+    "saving": "Speichern...",
+    "saved": "Vorlage gespeichert",
+    "reset_success": "Vorlage zurückgesetzt",
+    "reset_confirm": "Diese Vorlage auf Standard zurücksetzen? Ihre Änderungen gehen verloren.",
+    "variables_title": "Verfügbare Variablen",
+    "variables_count": "Variablen verfügbar",
+    "no_template": "Keine benutzerdefinierte Vorlage für diese Sprache gefunden",
+    "create_hint": "Inhalt unten speichern, um eine zu erstellen",
+    "template_title_label": "Vorlagentitel",
+    "template_title_placeholder": "z.B. Mietvertrag für Photobooth",
+    "template_content_label": "Vorlageninhalt",
+    "content_placeholder": "Inhalt mit {{variable}}-Platzhaltern eingeben...",
+    "unsaved": "Nicht gespeicherte Änderungen"
   }
 }

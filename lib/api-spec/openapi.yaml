@@ -1046,6 +1046,10 @@ paths:
       operationId: listContractTemplates
       tags: [contracts]
       summary: List contract templates
+      parameters:
+        - in: query
+          name: lang
+          schema: { type: string }
       responses:
         "200":
           description: List of templates
@@ -1059,6 +1063,102 @@ paths:
                     type: array
                     items:
                       $ref: "#/components/schemas/ContractTemplate"
+    post:
+      operationId: createContractTemplate
+      tags: [contracts]
+      summary: Create a contract template
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContractTemplateInput"
+      responses:
+        "201":
+          description: Created template
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContractTemplate"
+
+  /contract-templates/reset:
+    post:
+      operationId: resetContractTemplates
+      tags: [contracts]
+      summary: Reset templates to factory defaults
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                lang: { type: string }
+      responses:
+        "200":
+          description: Reset result
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [reset]
+                properties:
+                  reset: { type: integer }
+
+  /contract-templates/default/{lang}:
+    get:
+      operationId: getDefaultContractTemplate
+      tags: [contracts]
+      summary: Get default template for a language
+      parameters:
+        - in: path
+          name: lang
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Default template
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContractTemplate"
+        "404":
+          description: Not found
+
+  /contract-templates/{id}:
+    put:
+      operationId: updateContractTemplate
+      tags: [contracts]
+      summary: Update a contract template
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContractTemplateInput"
+      responses:
+        "200":
+          description: Updated template
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContractTemplate"
+    delete:
+      operationId: deleteContractTemplate
+      tags: [contracts]
+      summary: Delete a contract template
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "204":
+          description: Deleted
 
   # ─── Invoices ────────────────────────────────────────────────────────────
   /invoices:
@@ -3880,11 +3980,23 @@ components:
             $ref: "#/components/schemas/QuoteItemInput"
 
     # ─── Contracts ───────────────────────────────────────────────────────────
+    ContractTemplateInput:
+      type: object
+      required: [language, title, content]
+      properties:
+        language: { type: string }
+        title: { type: string }
+        category: { type: string }
+        content: { type: string }
+        isDefault: { type: boolean }
+
     ContractTemplate:
       type: object
-      required: [id, title, category, content, createdAt]
+      required: [id, language, title, content, isDefault, createdAt, updatedAt]
       properties:
         id:
+          type: string
+        language:
           type: string
         title:
           type: string
@@ -3892,7 +4004,12 @@ components:
           type: string
         content:
           type: string
+        isDefault:
+          type: boolean
         createdAt:
+          type: string
+          format: date-time
+        updatedAt:
           type: string
           format: date-time
 

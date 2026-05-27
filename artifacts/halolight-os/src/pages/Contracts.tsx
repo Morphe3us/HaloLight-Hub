@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "wouter";
 import { useTranslation } from "react-i18next";
-import { useListContracts, useCreateContract, useDeleteContract, useListContractTemplates } from "@workspace/api-client-react";
+import { useListContracts, useCreateContract, useDeleteContract, useListContractTemplates, useGetCurrentUser } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -31,21 +31,37 @@ function formatDate(d: string | null | undefined, locale = "en") {
   return new Date(d).toLocaleDateString(locale, { year: "numeric", month: "short", day: "numeric" });
 }
 
+function fillProfileVariables(content: string, user: { companyName?: string | null; firstName?: string | null; lastName?: string | null; email?: string | null; phone?: string | null } | null | undefined, lang: string, currency: string): string {
+  if (!user) return content;
+  const today = new Date().toLocaleDateString(lang, { year: "numeric", month: "long", day: "numeric" });
+  const rep = [user.firstName, user.lastName].filter(Boolean).join(" ") || "{{rental_company_representative}}";
+  return content
+    .replace(/\{\{rental_company_name\}\}/g, user.companyName ?? "{{rental_company_name}}")
+    .replace(/\{\{rental_company_representative\}\}/g, rep)
+    .replace(/\{\{rental_company_email\}\}/g, user.email ?? "{{rental_company_email}}")
+    .replace(/\{\{rental_company_phone\}\}/g, user.phone ?? "{{rental_company_phone}}")
+    .replace(/\{\{signature_date\}\}/g, today)
+    .replace(/\{\{currency\}\}/g, currency);
+}
+
 export default function Contracts() {
   const { t, i18n } = useTranslation();
   const lang = i18n.language?.split("-")[0] ?? "en";
   const { toast } = useToast();
   const qc = useQueryClient();
-  const { format: formatCurrency } = useCurrency();
+  const { format: formatCurrency, currency: currencyCode } = useCurrency();
   const [filterStatus, setFilterStatus] = useState("all");
   const [showCreate, setShowCreate] = useState(false);
   const [form, setForm] = useState({ title: "", clientName: "", clientEmail: "", value: "", templateId: "", content: "", notes: "" });
+
+  const { data: currentUserData } = useGetCurrentUser();
+  const currentUser = currentUserData as any;
 
   const { data, isLoading } = useListContracts(
     { status: filterStatus !== "all" ? (filterStatus as any) : undefined },
     { query: { queryKey: ["contracts", filterStatus] } }
   );
-  const { data: templatesData } = useListContractTemplates({ query: { queryKey: ["contract-templates"] } });
+  const { data: templatesData } = useListContractTemplates({ lang }, { query: { queryKey: ["contract-templates", lang] } });
 
   const createMutation = useCreateContract({
     mutation: {
@@ -69,7 +85,9 @@ export default function Contracts() {
 
   const handleTemplateSelect = (id: string) => {
     const tpl = templates.find((tmpl) => tmpl.id === id);
-    setForm({ ...form, templateId: id, content: tpl?.content ?? "" });
+    const raw = tpl?.content ?? "";
+    const filled = fillProfileVariables(raw, currentUser, lang, currencyCode ?? "EUR");
+    setForm({ ...form, templateId: id, content: filled });
   };
 
   const handleCreate = () => {

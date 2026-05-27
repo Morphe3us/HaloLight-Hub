@@ -1,4 +1,4 @@
-import { pgTable, text, uuid, timestamp, pgEnum, numeric } from "drizzle-orm/pg-core";
+import { pgTable, text, uuid, timestamp, pgEnum, numeric, boolean } from "drizzle-orm/pg-core";
 import { usersTable } from "./users";
 import { leads } from "./crm";
 import { quotes } from "./quotes";
@@ -14,9 +14,11 @@ export const contractStatusEnum = pgEnum("contract_status", [
 
 export const contractTemplates = pgTable("contract_templates", {
   id: uuid("id").primaryKey().defaultRandom(),
+  language: text("language").notNull().default("en"),
   title: text("title").notNull(),
   category: text("category").notNull().default("general"),
   content: text("content").notNull(),
+  isDefault: boolean("is_default").notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

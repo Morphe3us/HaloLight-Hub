@@ -663,12 +663,23 @@ export interface QuoteInput {
   items: QuoteItemInput[];
 }
 
+export interface ContractTemplateInput {
+  language: string;
+  title: string;
+  category?: string;
+  content: string;
+  isDefault?: boolean;
+}
+
 export interface ContractTemplate {
   id: string;
+  language: string;
   title: string;
-  category: string;
+  category?: string;
   content: string;
+  isDefault: boolean;
   createdAt: string;
+  updatedAt: string;
 }
 
 export type ContractStatus = typeof ContractStatus[keyof typeof ContractStatus];
@@ -2659,8 +2670,20 @@ export type UpdateContractStatusBody = {
   status: UpdateContractStatusBodyStatus;
 };
 
+export type ListContractTemplatesParams = {
+lang?: string;
+};
+
 export type ListContractTemplates200 = {
   items: ContractTemplate[];
+};
+
+export type ResetContractTemplatesBody = {
+  lang?: string;
+};
+
+export type ResetContractTemplates200 = {
+  reset: number;
 };
 
 export type ListInvoicesParams = {

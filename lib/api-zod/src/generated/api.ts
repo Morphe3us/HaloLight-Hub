@@ -1290,14 +1290,99 @@ export const UpdateContractStatusResponse = zod.object({
 /**
  * @summary List contract templates
  */
+export const ListContractTemplatesQueryParams = zod.object({
+  "lang": zod.coerce.string().optional()
+})
+
 export const ListContractTemplatesResponse = zod.object({
   "items": zod.array(zod.object({
   "id": zod.string(),
+  "language": zod.string(),
   "title": zod.string(),
-  "category": zod.string(),
+  "category": zod.string().optional(),
   "content": zod.string(),
-  "createdAt": zod.coerce.date()
+  "isDefault": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
 }))
+})
+
+
+/**
+ * @summary Create a contract template
+ */
+export const CreateContractTemplateBody = zod.object({
+  "language": zod.string(),
+  "title": zod.string(),
+  "category": zod.string().optional(),
+  "content": zod.string(),
+  "isDefault": zod.boolean().optional()
+})
+
+
+/**
+ * @summary Reset templates to factory defaults
+ */
+export const ResetContractTemplatesBody = zod.object({
+  "lang": zod.string().optional()
+})
+
+export const ResetContractTemplatesResponse = zod.object({
+  "reset": zod.number()
+})
+
+
+/**
+ * @summary Get default template for a language
+ */
+export const GetDefaultContractTemplateParams = zod.object({
+  "lang": zod.coerce.string()
+})
+
+export const GetDefaultContractTemplateResponse = zod.object({
+  "id": zod.string(),
+  "language": zod.string(),
+  "title": zod.string(),
+  "category": zod.string().optional(),
+  "content": zod.string(),
+  "isDefault": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Update a contract template
+ */
+export const UpdateContractTemplateParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const UpdateContractTemplateBody = zod.object({
+  "language": zod.string(),
+  "title": zod.string(),
+  "category": zod.string().optional(),
+  "content": zod.string(),
+  "isDefault": zod.boolean().optional()
+})
+
+export const UpdateContractTemplateResponse = zod.object({
+  "id": zod.string(),
+  "language": zod.string(),
+  "title": zod.string(),
+  "category": zod.string().optional(),
+  "content": zod.string(),
+  "isDefault": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Delete a contract template
+ */
+export const DeleteContractTemplateParams = zod.object({
+  "id": zod.coerce.string()
 })
 
 

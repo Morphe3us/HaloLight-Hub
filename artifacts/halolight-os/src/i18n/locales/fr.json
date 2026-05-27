@@ -40,7 +40,8 @@
     "ai_knowledge": "Connaissances IA",
     "backup": "Sauvegarde",
     "users": "Utilisateurs",
-    "resources": "Ressources"
+    "resources": "Ressources",
+    "contract_templates": "Modèles de contrats"
   },
   "dashboard": {
     "title": "Tableau de bord",
@@ -1590,5 +1591,24 @@
     "toast_error": "Erreur",
     "toast_mark_fail": "Impossible de marquer comme terminée.",
     "toast_quiz_fail": "Impossible de soumettre le quiz."
+  },
+  "admin_contract_templates": {
+    "title": "Modèles de contrats",
+    "subtitle": "Modifier les modèles de contrat de location de photobooth par langue",
+    "save_btn": "Sauvegarder",
+    "reset_btn": "Réinitialiser",
+    "saving": "Sauvegarde...",
+    "saved": "Modèle sauvegardé",
+    "reset_success": "Modèle réinitialisé",
+    "reset_confirm": "Réinitialiser ce modèle ? Vos modifications seront perdues.",
+    "variables_title": "Variables disponibles",
+    "variables_count": "variables disponibles",
+    "no_template": "Aucun modèle personnalisé pour cette langue",
+    "create_hint": "Sauvegardez le contenu ci-dessous pour en créer un",
+    "template_title_label": "Titre du modèle",
+    "template_title_placeholder": "ex. Contrat de location de photobooth",
+    "template_content_label": "Contenu du modèle",
+    "content_placeholder": "Saisissez le contenu avec des {{variable}}...",
+    "unsaved": "Modifications non sauvegardées"
   }
 }

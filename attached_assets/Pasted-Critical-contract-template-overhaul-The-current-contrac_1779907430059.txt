@@ -1,0 +1,365 @@
+Critical contract template overhaul.
+
+The current contract model is not acceptable.
+
+Contracts are still too generic, partially English, and not adapted to photobooth rental businesses.
+
+We need a proper editable, multilingual, generic photobooth rental contract template system.
+
+Goal:
+Create a default photobooth rental contract template that can be automatically filled with company, client, event, equipment, pricing, deposit and package data.
+
+This must work for all supported languages:
+
+* French
+* English
+* German
+* Dutch
+* Spanish
+* Italian
+* Portuguese
+* Polish
+
+==================================================
+
+1. CONTRACT TEMPLATE CONTENT
+   ==================================================
+
+Create a generic photobooth rental contract template.
+
+Important:
+Do not hardcode any real person name like Jonathan BOQUILLON.
+Use generic dynamic variables.
+
+The contract should be structured like this:
+
+1. Contract title
+   Example:
+   Photobooth Rental Agreement
+
+2. Rental company / Provider information
+   Fields:
+
+* Company name
+* Legal representative / owner name
+* Address
+* Email
+* Phone
+* Website
+* VAT / registration number if available
+
+3. Client information
+   Fields:
+
+* First name
+* Last name
+* Company name if applicable
+* Address
+* Phone
+* Email
+
+4. Event information
+   Fields:
+
+* Event type
+* Event date
+* Start time
+* End time
+* Event location
+* Delivery / setup time
+* Pickup time
+
+5. Rented equipment
+   Fields:
+
+* Photobooth model
+* Camera
+* Printer
+* Computer / tablet
+* Lighting
+* Cables
+* Carrying cases
+* Accessories
+* Optional add-ons
+
+Allow the equipment list to be dynamic and editable.
+
+6. Package / service description
+   Fields:
+
+* Package name
+* Rental duration
+* Number of included prints
+* Digital gallery included yes/no
+* Custom template included yes/no
+* Delivery included yes/no
+* Setup included yes/no
+* On-site operator included yes/no
+* Additional options
+
+7. Price
+   Fields:
+
+* Rental price
+* Additional options
+* Delivery fees
+* Discount
+* Tax/VAT
+* Total amount
+* Currency from user settings
+
+Important:
+Use selected user currency.
+Do not hardcode dollars.
+Do not convert values yet.
+Only format with selected currency.
+
+8. Deposit / security guarantee
+   Fields:
+
+* Deposit amount
+* Deposit method
+* Conditions for keeping all or part of deposit
+* Return conditions
+
+9. Equipment condition
+   Generic clause:
+   The equipment is provided in working condition and must be returned in the same condition, normal wear excepted.
+
+10. Client responsibilities
+    The client agrees to:
+
+* use equipment normally
+* not dismantle equipment
+* protect equipment from rain, humidity, shock, theft and misuse
+* ensure access to electricity
+* return all accessories
+* pay for damages, loss or missing items
+* not sub-rent the equipment
+
+11. Provider responsibilities
+    The rental company agrees to:
+
+* provide working equipment
+* provide setup/use instructions
+* provide agreed package/service
+* provide support contact if needed
+
+12. Cancellation / postponement
+    Generic editable clause:
+
+* cancellation conditions
+* postponement conditions
+* refund rules
+* deposit retention rules
+
+13. Liability
+    Generic clause:
+    Provider is not responsible for issues caused by misuse, power failure, venue restrictions, lack of internet if required, or third-party interference.
+
+14. Acceptance and signature
+    Fields:
+
+* Place
+* Date
+* Client full name
+* Provider full name
+* “Read and approved” mention
+* Client signature
+* Provider signature
+
+==================================================
+2. TEMPLATE VARIABLES
+=====================
+
+Use variables everywhere.
+
+Examples:
+
+{{rental_company_name}}
+{{rental_company_representative}}
+{{rental_company_address}}
+{{rental_company_email}}
+{{rental_company_phone}}
+{{client_first_name}}
+{{client_last_name}}
+{{client_company_name}}
+{{client_address}}
+{{client_phone}}
+{{client_email}}
+{{event_type}}
+{{event_date}}
+{{event_start_time}}
+{{event_end_time}}
+{{event_location}}
+{{package_name}}
+{{rental_duration}}
+{{included_prints}}
+{{digital_gallery}}
+{{custom_template}}
+{{delivery_included}}
+{{setup_included}}
+{{operator_included}}
+{{equipment_list}}
+{{options_list}}
+{{subtotal}}
+{{tax_amount}}
+{{discount_amount}}
+{{total_amount}}
+{{currency}}
+{{deposit_amount}}
+{{payment_terms}}
+{{cancellation_terms}}
+{{signature_date}}
+{{signature_place}}
+
+==================================================
+3. CONTRACT TEMPLATE ADMIN
+==========================
+
+Create an admin contract template editor.
+
+Admin should be able to:
+
+* view default template
+* edit template text
+* edit clauses
+* reset to default template
+* preview with sample data
+* preview in each language
+* save changes
+
+Templates must be stored per language.
+
+Routes/pages:
+
+* Admin → Contracts → Templates
+  or
+* Admin → Settings → Document Templates
+
+==================================================
+4. CONTRACT GENERATION
+======================
+
+When generating a contract:
+
+* auto-fill all available data from:
+
+  * current user / rental company profile
+  * client profile
+  * event
+  * quote
+  * contract
+  * selected package
+  * equipment
+  * currency settings
+
+If data is missing:
+
+* show a placeholder field
+* do not leave English fallback text
+* do not show undefined/null
+
+==================================================
+5. MULTILINGUAL REQUIREMENTS
+============================
+
+The contract must be available in:
+
+* FR
+* EN
+* DE
+* NL
+* ES
+* IT
+* PT
+* PL
+
+If user language is French:
+
+* contract in French
+
+If user language is Spanish:
+
+* contract in Spanish
+
+etc.
+
+No hardcoded English.
+
+==================================================
+6. PRINT / PDF VIEW
+===================
+
+Fix contract print/export view.
+
+Requirements:
+
+* professional layout
+* HaloLight Hub branding
+* rental company details visible
+* client details visible
+* event details visible
+* equipment list visible
+* package/service details visible
+* price and deposit visible
+* signature section visible
+
+==================================================
+7. IMPORTANT UX
+===============
+
+This should feel like a photobooth rental contract, not a real estate contract.
+
+It must include:
+
+* equipment
+* accessories
+* prints
+* rental duration
+* delivery/setup
+* deposit
+* event location
+* service package
+* damage/missing equipment responsibility
+* client signature
+
+==================================================
+8. VERIFICATION
+===============
+
+Test:
+
+1. FR + EUR contract
+
+* French text
+* € amounts
+* provider info visible
+* client info visible
+* equipment visible
+* deposit visible
+
+2. EN + USD contract
+
+* English text
+* $ amounts
+
+3. ES + EUR contract
+
+* Spanish text
+* € amounts
+
+4. PL + PLN contract
+
+* Polish text
+* zł amounts
+
+Run typecheck.
+
+Provide:
+
+* files changed
+* new template structure
+* variables supported
+* languages supported
+* verification results

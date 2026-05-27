@@ -40,7 +40,8 @@
     "ai_knowledge": "AI Kennis",
     "backup": "Back-up",
     "users": "Gebruikers",
-    "resources": "Bronnen"
+    "resources": "Bronnen",
+    "contract_templates": "Contractsjablonen"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -1590,5 +1591,24 @@
     "toast_error": "Fout",
     "toast_mark_fail": "Kon les niet als voltooid markeren.",
     "toast_quiz_fail": "Kon quiz niet indienen."
+  },
+  "admin_contract_templates": {
+    "title": "Contractsjablonen",
+    "subtitle": "Bewerk verhuurovereenkomst sjablonen per taal",
+    "save_btn": "Wijzigingen opslaan",
+    "reset_btn": "Standaard herstellen",
+    "saving": "Opslaan...",
+    "saved": "Sjabloon opgeslagen",
+    "reset_success": "Sjabloon hersteld naar standaard",
+    "reset_confirm": "Dit sjabloon terugzetten naar de fabrieksinstelling? Uw wijzigingen gaan verloren.",
+    "variables_title": "Beschikbare variabelen",
+    "variables_count": "variabelen beschikbaar",
+    "no_template": "Geen aangepast sjabloon gevonden voor deze taal",
+    "create_hint": "Sla de onderstaande inhoud op om er een te maken",
+    "template_title_label": "Sjabloontitel",
+    "template_title_placeholder": "bijv. Verhuurovereenkomst Photobooth",
+    "template_content_label": "Sjablooninhoud",
+    "content_placeholder": "Voer inhoud in met {{variable}} plaatsaanduidingen...",
+    "unsaved": "Niet-opgeslagen wijzigingen"
   }
 }

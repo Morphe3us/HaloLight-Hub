@@ -40,7 +40,8 @@
     "ai_knowledge": "Conoscenza IA",
     "backup": "Backup",
     "users": "Utenti",
-    "resources": "Risorse"
+    "resources": "Risorse",
+    "contract_templates": "Modelli contratto"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -1590,5 +1591,24 @@
     "toast_error": "Errore",
     "toast_mark_fail": "Impossibile segnare come completata.",
     "toast_quiz_fail": "Impossibile inviare il quiz."
+  },
+  "admin_contract_templates": {
+    "title": "Modelli contratto",
+    "subtitle": "Modifica i modelli di contratto di noleggio photobooth per lingua",
+    "save_btn": "Salva modifiche",
+    "reset_btn": "Ripristina",
+    "saving": "Salvataggio...",
+    "saved": "Modello salvato",
+    "reset_success": "Modello ripristinato",
+    "reset_confirm": "Ripristinare questo modello al valore predefinito? Le modifiche andranno perse.",
+    "variables_title": "Variabili disponibili",
+    "variables_count": "variabili disponibili",
+    "no_template": "Nessun modello personalizzato trovato per questa lingua",
+    "create_hint": "Salvare il contenuto sottostante per crearne uno",
+    "template_title_label": "Titolo del modello",
+    "template_title_placeholder": "es. Contratto di noleggio photobooth",
+    "template_content_label": "Contenuto del modello",
+    "content_placeholder": "Inserire il contenuto con segnaposto {{variable}}...",
+    "unsaved": "Modifiche non salvate"
   }
 }
