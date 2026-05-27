@@ -113,7 +113,7 @@ export default function TicketDetail() {
               <CardTitle className="text-xl font-semibold">{ticket.title}</CardTitle>
               <div className="flex flex-wrap items-center gap-2 mt-2">
                 <Badge className={`text-xs ${statusColors[ticket.status ?? "open"] ?? ""}`}>
-                  {(ticket.status ?? "open").replace(/_/g, " ")}
+                  {t(`ticket_detail.status_${ticket.status ?? "open"}`, { defaultValue: (ticket.status ?? "open").replace(/_/g, " ") })}
                 </Badge>
                 <Badge className={`text-xs ${priorityColors[ticket.priority ?? "medium"] ?? ""}`}>
                   <AlertCircle className="w-3 h-3 mr-1" />
@@ -121,7 +121,7 @@ export default function TicketDetail() {
                 </Badge>
                 <Badge variant="outline" className="text-xs">
                   <Tag className="w-3 h-3 mr-1" />
-                  {(ticket.category ?? "general").replace(/_/g, " ")}
+                  {t(`support.category_${ticket.category ?? "general"}`, { defaultValue: (ticket.category ?? "general").replace(/_/g, " ") })}
                 </Badge>
               </div>
             </div>

@@ -88,5 +88,7 @@ RESPONSE GUIDELINES:
 - Never fabricate product details or pricing not in the context
 - If context is insufficient, say so honestly and offer to escalate
 
-CITATION FORMAT: When referencing a source, write it naturally (e.g., "According to the [Article Title] guide...") — do not use numbered citations.`;
+CITATION FORMAT: When referencing a source, write it naturally (e.g., "According to the [Article Title] guide...") — do not use numbered citations.
+
+LANGUAGE: Always respond in the same language as the user's most recent message. If the user writes in French, respond in French. If in Spanish, respond in Spanish. Match the user's language exactly, regardless of the language of the retrieved context.`;
 }

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useRoute, Link, useLocation } from "wouter";
 import { useTranslation } from "react-i18next";
-import { useGetContract, useUpdateContractStatus, useDeleteContract, useUpdateContract } from "@workspace/api-client-react";
+import { useGetContract, useUpdateContractStatus, useDeleteContract, useUpdateContract, useGetCurrentUser } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -36,6 +36,7 @@ function PrintButton({ contractNumber, title, clientName, content, value }: {
 }) {
   const { t } = useTranslation();
   const { format: formatCurrency } = useCurrency();
+  const { data: me } = useGetCurrentUser();
   const handlePrint = () => {
     const html = `<!DOCTYPE html><html><head><title>${contractNumber}</title>
     <style>
@@ -54,6 +55,7 @@ function PrintButton({ contractNumber, title, clientName, content, value }: {
       <div style="color:#666;margin-top:4px">${contractNumber}</div>
     </div>
     <div class="meta">
+      <div><div class="meta-label">Prepared By</div><div style="font-weight:600">${me?.fullName ?? ""}</div>${me?.companyName ? `<div style="color:#666;margin-top:2px;font-size:12px">${me.companyName}</div>` : ""}${me?.email ? `<div style="color:#666;font-size:12px">${me.email}</div>` : ""}</div>
       <div><div class="meta-label">Client</div><div style="font-weight:600">${clientName}</div></div>
       <div><div class="meta-label">Contract Value</div><div style="font-weight:600">${formatCurrency(Number(value))}</div></div>
       <div><div class="meta-label">Date</div><div>${new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"})}</div></div>

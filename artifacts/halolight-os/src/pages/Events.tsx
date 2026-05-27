@@ -26,6 +26,7 @@ import {
   Trash2,
   Clock,
   Tag,
+  XCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -150,6 +151,16 @@ export default function Events() {
     );
   };
 
+  const handleCancel = (id: string) => {
+    updateEvent(
+      { id, data: { status: "cancelled" } },
+      {
+        onSuccess: () => { toast({ title: t("events.toast_cancelled") }); refetch(); },
+        onError: () => toast({ title: t("events.toast_error"), variant: "destructive" }),
+      }
+    );
+  };
+
   return (
     <div className="space-y-8" data-testid="page-events">
       {/* Header */}
@@ -252,14 +263,27 @@ export default function Events() {
                       size="icon"
                       className="h-8 w-8 text-muted-foreground hover:text-foreground"
                       onClick={() => openEdit(ev)}
+                      title={t("common.edit")}
                     >
                       <Pencil className="w-3.5 h-3.5" />
                     </Button>
+                    {ev.status !== "cancelled" && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-warning"
+                        onClick={() => handleCancel(ev.id)}
+                        title={t("events.cancel_event")}
+                      >
+                        <XCircle className="w-3.5 h-3.5" />
+                      </Button>
+                    )}
                     <Button
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8 text-muted-foreground hover:text-destructive"
                       onClick={() => setDeleteId(ev.id)}
+                      title={t("events.delete_event")}
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </Button>

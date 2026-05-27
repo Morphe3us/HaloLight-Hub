@@ -1,6 +1,6 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { eq, and } from "drizzle-orm";
-import { db, onboardingStepsTable, userOnboardingProgressTable } from "@workspace/db";
+import { eq, and, count } from "drizzle-orm";
+import { db, onboardingStepsTable, userOnboardingProgressTable, usersTable, events } from "@workspace/db";
 import { requireAuth } from "../middlewares/requireAuth";
 import { getOrCreateUser } from "../lib/userSync";
 
@@ -48,6 +48,47 @@ router.patch("/onboarding/steps/:stepId/complete", requireAuth, async (req: Requ
     .where(eq(onboardingStepsTable.id, stepId));
 
   if (!step) { res.status(404).json({ error: "Step not found" }); return; }
+
+  // ── Validate real completion conditions for required steps ─────────────────
+  if (step.isRequired) {
+    const [freshUser] = await db.select().from(usersTable).where(eq(usersTable.id, user.id));
+    switch (step.key) {
+      case "complete_profile": {
+        if (!freshUser?.fullName?.trim() || !freshUser?.companyName?.trim()) {
+          res.status(422).json({
+            error: "profile_incomplete",
+            message: "Please add your full name and company name in Settings before completing this step.",
+          });
+          return;
+        }
+        break;
+      }
+      case "set_language": {
+        if (!freshUser?.language) {
+          res.status(422).json({
+            error: "language_not_set",
+            message: "Please select your preferred language in Settings before completing this step.",
+          });
+          return;
+        }
+        break;
+      }
+      case "create_first_event": {
+        const [{ eventCount }] = await db
+          .select({ eventCount: count() })
+          .from(events)
+          .where(eq(events.userId, user.id));
+        if (eventCount === 0) {
+          res.status(422).json({
+            error: "no_events",
+            message: "Please create your first event before completing this step.",
+          });
+          return;
+        }
+        break;
+      }
+    }
+  }
 
   const existing = await db
     .select()

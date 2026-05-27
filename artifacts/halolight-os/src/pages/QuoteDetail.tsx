@@ -1,6 +1,6 @@
 import { useRoute, Link } from "wouter";
 import { useTranslation } from "react-i18next";
-import { useGetQuote, useUpdateQuoteStatus, useDeleteQuote } from "@workspace/api-client-react";
+import { useGetQuote, useUpdateQuoteStatus, useDeleteQuote, useGetCurrentUser } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -34,16 +34,18 @@ function PrintPreview({ quoteNumber, title, clientName, clientEmail, items, subt
 }) {
   const { t } = useTranslation();
   const { format: formatCurrency } = useCurrency();
+  const { data: me } = useGetCurrentUser();
   const handlePrint = () => {
     const html = `<!DOCTYPE html><html><head><title>${quoteNumber}</title>
     <style>
       body{font-family:Arial,sans-serif;max-width:800px;margin:40px auto;color:#111;font-size:14px}
       h1{font-size:24px;margin:0}
       .header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:32px}
-      .brand{font-size:22px;font-weight:700;color:#7c3aed}
+      .brand{font-size:22px;font-weight:700;color:#DDB398}
       .meta{text-align:right;font-size:12px;color:#666}
       .section{margin-bottom:24px}
       .label{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#999;margin-bottom:4px}
+      .parties{display:flex;gap:64px;margin-bottom:32px;padding-bottom:24px;border-bottom:1px solid #eee}
       table{width:100%;border-collapse:collapse;margin-bottom:24px}
       th{background:#f5f5f5;text-align:left;padding:8px 12px;font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:#666}
       td{padding:10px 12px;border-bottom:1px solid #f0f0f0}
@@ -62,10 +64,19 @@ function PrintPreview({ quoteNumber, title, clientName, clientEmail, items, subt
         ${validUntil ? `<div style="margin-top:8px;font-size:11px;color:#999">VALID UNTIL</div><div>${new Date(validUntil).toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"})}</div>` : ""}
       </div>
     </div>
-    <div class="section">
-      <div class="label">Prepared For</div>
-      <div style="font-size:16px;font-weight:600">${clientName}</div>
-      ${clientEmail ? `<div style="color:#666">${clientEmail}</div>` : ""}
+    <div class="parties">
+      <div>
+        <div class="label">From</div>
+        <div style="font-size:15px;font-weight:600">${me?.fullName ?? ""}</div>
+        ${me?.companyName ? `<div style="color:#666;margin-top:2px">${me.companyName}</div>` : ""}
+        ${me?.email ? `<div style="color:#666">${me.email}</div>` : ""}
+        ${(me as { phone?: string } | undefined)?.phone ? `<div style="color:#666">${(me as { phone?: string }).phone}</div>` : ""}
+      </div>
+      <div>
+        <div class="label">Prepared For</div>
+        <div style="font-size:16px;font-weight:600">${clientName}</div>
+        ${clientEmail ? `<div style="color:#666">${clientEmail}</div>` : ""}
+      </div>
     </div>
     <table>
       <thead><tr><th style="width:50%">Description</th><th style="text-align:right">Qty</th><th style="text-align:right">Unit Price</th><th style="text-align:right">Total</th></tr></thead>

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CheckCircle2, Circle, Trophy, ArrowRight } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Onboarding() {
   const { t } = useTranslation();
@@ -12,13 +13,20 @@ export default function Onboarding() {
   const { data: stepsData, isLoading: isLoadingSteps } = useListOnboardingSteps();
   const { data: summary, isLoading: isLoadingSummary } = useGetOnboardingSummary();
   const completeStep = useCompleteOnboardingStep();
+  const { toast } = useToast();
 
   const handleComplete = (id: string) => {
     completeStep.mutate({ stepId: id }, {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: getListOnboardingStepsQueryKey() });
         queryClient.invalidateQueries({ queryKey: getGetOnboardingSummaryQueryKey() });
-      }
+        toast({ title: t("onboarding.step_completed") });
+      },
+      onError: (err: unknown) => {
+        const message = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
+          ?? t("onboarding.step_complete_error");
+        toast({ title: message, variant: "destructive" });
+      },
     });
   };
 

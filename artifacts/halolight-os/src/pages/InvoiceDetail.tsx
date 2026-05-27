@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useRoute, Link, useLocation } from "wouter";
 import { useTranslation } from "react-i18next";
-import { useGetInvoice, useUpdateInvoiceStatus, useDeleteInvoice } from "@workspace/api-client-react";
+import { useGetInvoice, useUpdateInvoiceStatus, useDeleteInvoice, useGetCurrentUser } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -40,6 +40,7 @@ function formatDate(d: string | null | undefined) {
 function PrintButton({ invoice, items }: { invoice: any; items: any[] }) {
   const { t } = useTranslation();
   const { format: formatCurrency } = useCurrency();
+  const { data: me } = useGetCurrentUser();
   const handlePrint = () => {
     const html = `<!DOCTYPE html><html><head><title>${invoice.invoiceNumber}</title>
     <style>
@@ -68,7 +69,10 @@ function PrintButton({ invoice, items }: { invoice: any; items: any[] }) {
       </div>
     </div>
     ${invoice.status === "paid" ? `<div class="paid-stamp">✓ PAID — ${invoice.paidAt ? new Date(invoice.paidAt).toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"}) : ""}${invoice.paymentMethod ? " via " + invoice.paymentMethod : ""}${invoice.paymentReference ? " — Ref: " + invoice.paymentReference : ""}</div>` : ""}
-    <div class="section"><div class="label">Bill To</div><div style="font-size:16px;font-weight:600">${invoice.clientName}</div>${invoice.clientEmail ? `<div style="color:#666">${invoice.clientEmail}</div>` : ""}</div>
+    <div style="display:flex;gap:64px;margin-bottom:28px;padding-bottom:24px;border-bottom:1px solid #eee">
+      <div><div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#999;margin-bottom:4px">From</div><div style="font-size:15px;font-weight:600">${me?.fullName ?? ""}</div>${me?.companyName ? `<div style="color:#666;margin-top:2px">${me.companyName}</div>` : ""}${me?.email ? `<div style="color:#666">${me.email}</div>` : ""}${(me as { phone?: string } | undefined)?.phone ? `<div style="color:#666">${(me as { phone?: string }).phone}</div>` : ""}</div>
+      <div><div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#999;margin-bottom:4px">Bill To</div><div style="font-size:16px;font-weight:600">${invoice.clientName}</div>${invoice.clientEmail ? `<div style="color:#666">${invoice.clientEmail}</div>` : ""}</div>
+    </div>
     <table>
       <thead><tr><th style="width:50%">Description</th><th style="text-align:right">Qty</th><th style="text-align:right">Unit Price</th><th style="text-align:right">Total</th></tr></thead>
       <tbody>${items.map((item: any) => `<tr><td>${item.description}</td><td style="text-align:right">${item.quantity}</td><td style="text-align:right">${formatCurrency(item.unitPrice)}</td><td style="text-align:right">${formatCurrency(item.total)}</td></tr>`).join("")}</tbody>

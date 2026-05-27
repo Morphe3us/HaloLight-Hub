@@ -76,7 +76,7 @@ export default function Community() {
                               <h3 className="font-semibold text-foreground">{channel.name}</h3>
                               <Badge className={`text-xs px-1.5 py-0 ${channelTypeBadge[channel.type ?? "public"] ?? ""}`}>
                                 <TypeIcon className="w-2.5 h-2.5 mr-0.5" />
-                                {channel.type}
+                                {t(`community.type_${channel.type ?? "public"}`, { defaultValue: channel.type ?? "public" })}
                               </Badge>
                             </div>
                             {channel.description && <p className="text-sm text-muted-foreground">{channel.description}</p>}
