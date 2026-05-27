@@ -355,11 +355,11 @@ function LessonFormModal({
 
   return (
     <Dialog open={open} onOpenChange={o => { if (!o) onClose(); }}>
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-lg max-h-[90vh] flex flex-col overflow-hidden">
+        <DialogHeader className="shrink-0">
           <DialogTitle>{isEdit ? t("admin_academy.lesson_form_edit") : t("admin_academy.lesson_form_create")}</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4 pt-1">
+        <form onSubmit={handleSubmit} className="space-y-4 pt-1 overflow-y-auto flex-1 pr-1">
           <div className="flex gap-1 flex-wrap">
             {LANGS.map(l => (
               <button key={l} type="button"
@@ -410,20 +410,20 @@ function LessonFormModal({
 
             {/* Embed URL */}
             <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground">
-                {t("admin_academy.label_embed_url", { defaultValue: "Embed URL" })} <span className="text-foreground font-medium">({LANG_LABELS[form.activeVideoLang]})</span>
+              <Label className="text-sm font-semibold text-foreground">
+                BunnyStream Embed URL <span className="text-xs font-normal text-muted-foreground">({LANG_LABELS[form.activeVideoLang]})</span>
               </Label>
               <Input
                 value={form.videoAssets[form.activeVideoLang]?.embedUrl ?? ""}
                 onChange={e => setVideoAssetField(form.activeVideoLang, "embedUrl", e.target.value)}
-                placeholder="https://iframe.mediadelivery.net/embed/{libId}/{videoId}"
+                placeholder="https://iframe.mediadelivery.net/embed/..."
               />
             </div>
 
             {/* Thumbnail URL */}
             <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground">
-                {t("admin_academy.label_thumbnail_url", { defaultValue: "Thumbnail URL" })} <span className="text-foreground font-medium">({LANG_LABELS[form.activeVideoLang]})</span>
+              <Label className="text-sm font-semibold text-foreground">
+                Thumbnail URL <span className="text-xs font-normal text-muted-foreground">({LANG_LABELS[form.activeVideoLang]})</span>
               </Label>
               <Input
                 value={form.videoAssets[form.activeVideoLang]?.thumbnailUrl ?? ""}
@@ -491,7 +491,7 @@ function LessonFormModal({
               placeholder={t("admin_academy.notes_placeholder")} />
           </div>
 
-          <DialogFooter className="pt-2">
+          <DialogFooter className="pt-2 shrink-0">
             <Button type="button" variant="outline" onClick={onClose} disabled={isPending}>{t("admin_academy.cancel")}</Button>
             <Button type="submit" disabled={isPending || !form.titleEn}>
               {isPending
