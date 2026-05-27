@@ -846,7 +846,9 @@
     "signature_place_label": "Miejsce podpisu",
     "cancellation_section": "Warunki anulowania",
     "cancellation_terms_label": "Warunki anulowania",
-    "provider_section": "Dane dostawcy (opcjonalne)"
+    "provider_section": "Dane dostawcy (opcjonalne)",
+    "tab_form": "Formularz",
+    "tab_preview": "Podgląd"
   },
   "invoices": {
     "title": "Faktury",

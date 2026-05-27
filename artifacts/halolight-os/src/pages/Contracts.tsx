@@ -1,17 +1,35 @@
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Link } from "wouter";
 import { useTranslation } from "react-i18next";
-import { useListContracts, useCreateContract, useDeleteContract, useListContractTemplates, useGetCurrentUser } from "@workspace/api-client-react";
+import {
+  useListContracts,
+  useCreateContract,
+  useDeleteContract,
+  useListContractTemplates,
+  useGetCurrentUser,
+} from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, FileSignature, Trash2, ChevronRight, CheckCircle2, AlertTriangle, XCircle, AlertCircle } from "lucide-react";
+import {
+  Plus,
+  FileSignature,
+  Trash2,
+  ChevronRight,
+  CheckCircle2,
+  AlertTriangle,
+  XCircle,
+  AlertCircle,
+  Eye,
+  FileText,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCurrency } from "@/lib/currency";
 import CustomerSearchCombobox from "@/components/CustomerSearchCombobox";
@@ -81,7 +99,9 @@ function ContractReadiness({ readiness }: { readiness: ReadinessSection[] }) {
       <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
         {t("contracts.readiness_section")}
       </p>
-      {readiness.map((s) => <ReadinessRow key={s.key} section={s} />)}
+      {readiness.map((s) => (
+        <ReadinessRow key={s.key} section={s} />
+      ))}
     </div>
   );
 }
@@ -151,9 +171,7 @@ function MissingInfoDialog({
             {t("common.cancel")}
           </Button>
           {!hasBlocking && (
-            <Button onClick={onConfirm}>
-              {t("contract_validation.continue_anyway")}
-            </Button>
+            <Button onClick={onConfirm}>{t("contract_validation.continue_anyway")}</Button>
           )}
           <Button variant={hasBlocking ? "default" : "outline"} onClick={onCancel}>
             {t("contract_validation.complete_info")}
@@ -166,7 +184,9 @@ function MissingInfoDialog({
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide pt-1 pb-0.5 border-b mb-1">{children}</p>
+    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide pt-1 pb-0.5 border-b mb-1">
+      {children}
+    </p>
   );
 }
 
@@ -182,17 +202,41 @@ export default function Contracts() {
   const [showMissingDialog, setShowMissingDialog] = useState(false);
   const [pendingValidation, setPendingValidation] = useState<ValidationResult | null>(null);
 
-  const EMPTY_CONTRACT_FORM: ContractFormData = {
-    title: "", clientName: "", clientEmail: "", clientPhone: "", clientCompany: "", clientAddress: "",
-    eventType: "", eventDate: "", eventStartTime: "", eventEndTime: "", eventLocation: "",
-    serviceName: "", rentalDuration: "", includedPrints: "", equipmentDescription: "",
-    value: "", currency: currencyCode ?? "EUR", taxRate: "0",
-    depositAmount: "", depositMethod: "",
-    paymentTerms: "", cancellationTerms: "", signaturePlace: "",
-    content: "", notes: "", templateId: "", leadId: "", quoteId: "",
-  };
+  // rawTemplate stores the unfilled template content — form.content is NOT used for saving
+  const [rawTemplate, setRawTemplate] = useState("");
 
-  const [form, setForm] = useState<ContractFormData>(EMPTY_CONTRACT_FORM);
+  const EMPTY_FORM = (): ContractFormData => ({
+    title: "",
+    clientName: "",
+    clientEmail: "",
+    clientPhone: "",
+    clientCompany: "",
+    clientAddress: "",
+    eventType: "",
+    eventDate: "",
+    eventStartTime: "",
+    eventEndTime: "",
+    eventLocation: "",
+    serviceName: "",
+    rentalDuration: "",
+    includedPrints: "",
+    equipmentDescription: "",
+    value: "",
+    currency: currencyCode ?? "EUR",
+    taxRate: "0",
+    depositAmount: "",
+    depositMethod: "",
+    paymentTerms: "",
+    cancellationTerms: "",
+    signaturePlace: "",
+    content: "",
+    notes: "",
+    templateId: "",
+    leadId: "",
+    quoteId: "",
+  });
+
+  const [form, setForm] = useState<ContractFormData>(EMPTY_FORM);
 
   const { data: currentUserData } = useGetCurrentUser();
   const currentUser = currentUserData as any;
@@ -215,11 +259,21 @@ export default function Contracts() {
     not_applicable: t("contract_validation.placeholder_not_applicable"),
   };
 
+  // Live preview: recomputed every time form fields change
+  const livePreview = useMemo(() => {
+    if (!rawTemplate) return "";
+    return fillAllVariables(rawTemplate, form, provider, lang, placeholders);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rawTemplate, form, provider.companyName, provider.firstName, provider.lastName, provider.email, provider.phone, lang]);
+
   const { data, isLoading } = useListContracts(
     { status: filterStatus !== "all" ? (filterStatus as any) : undefined },
     { query: { queryKey: ["contracts", filterStatus] } }
   );
-  const { data: templatesData } = useListContractTemplates({ lang }, { query: { queryKey: ["contract-templates", lang] } });
+  const { data: templatesData } = useListContractTemplates(
+    { lang },
+    { query: { queryKey: ["contract-templates", lang] } }
+  );
 
   const createMutation = useCreateContract({
     mutation: {
@@ -227,7 +281,8 @@ export default function Contracts() {
         qc.invalidateQueries({ queryKey: ["contracts"] });
         setShowCreate(false);
         setCustomerSearch("");
-        setForm({ ...EMPTY_CONTRACT_FORM, currency: currencyCode ?? "EUR" });
+        setRawTemplate("");
+        setForm(EMPTY_FORM());
         setShowMissingDialog(false);
         setPendingValidation(null);
         toast({ title: t("contracts.contract_created") });
@@ -237,21 +292,46 @@ export default function Contracts() {
 
   const deleteMutation = useDeleteContract({
     mutation: {
-      onSuccess: () => { qc.invalidateQueries({ queryKey: ["contracts"] }); toast({ title: t("contracts.contract_deleted") }); },
+      onSuccess: () => {
+        qc.invalidateQueries({ queryKey: ["contracts"] });
+        toast({ title: t("contracts.contract_deleted") });
+      },
     },
   });
 
   const contracts = data?.items ?? [];
-  const templates = templatesData?.items ?? [];
+  const templates = (templatesData as any)?.items ?? [];
+
+  // Auto-select default template for user's language when dialog opens and templates load
+  useEffect(() => {
+    if (showCreate && templates.length > 0 && !form.templateId) {
+      const preferred =
+        templates.find((t: any) => t.language === lang) ??
+        templates.find((t: any) => t.language === "en") ??
+        templates[0];
+      if (preferred) {
+        setRawTemplate(preferred.content);
+        setForm((f) => ({ ...f, templateId: preferred.id }));
+      }
+    }
+  }, [showCreate, templates.length, lang]);
 
   const handleTemplateSelect = (id: string) => {
-    const tpl = templates.find((tmpl) => tmpl.id === id);
-    const raw = tpl?.content ?? "";
-    const filled = fillAllVariables(raw, { ...form, templateId: id }, provider, lang, placeholders);
-    setForm((f) => ({ ...f, templateId: id, content: filled }));
+    const tpl = templates.find((t: any) => t.id === id);
+    if (tpl) {
+      setRawTemplate(tpl.content);
+      setForm((f) => ({ ...f, templateId: id }));
+    }
   };
 
-  const doCreate = (filledContent: string) => {
+  // The final content to save = fillAllVariables applied to raw template at save time
+  const getFinalContent = () => {
+    if (!rawTemplate) return form.content || "";
+    return fillAllVariables(rawTemplate, form, provider, lang, placeholders);
+  };
+
+  const doCreate = () => {
+    const finalContent = getFinalContent();
     createMutation.mutate({
       data: {
         title: form.title,
@@ -259,11 +339,15 @@ export default function Contracts() {
         clientEmail: form.clientEmail || undefined,
         clientPhone: form.clientPhone || undefined,
         clientCompany: form.clientCompany || undefined,
+        clientAddress: form.clientAddress || undefined,
+        eventType: form.eventType || undefined,
+        eventDate: form.eventDate || undefined,
+        currency: form.currency || undefined,
         leadId: form.leadId || undefined,
         quoteId: form.quoteId || undefined,
         value: form.value || "0",
         templateId: form.templateId || undefined,
-        content: filledContent,
+        content: finalContent,
         notes: form.notes || undefined,
       },
     });
@@ -276,20 +360,20 @@ export default function Contracts() {
       setShowMissingDialog(true);
       return;
     }
-    const filled = fillAllVariables(form.content, form, provider, lang, placeholders);
-    doCreate(filled);
+    doCreate();
   };
 
   const handleConfirmCreate = () => {
-    const filled = fillAllVariables(form.content, form, provider, lang, placeholders);
-    doCreate(filled);
+    doCreate();
     setShowMissingDialog(false);
   };
 
   const readiness = computeReadiness(form, provider);
 
-  const f = (key: keyof ContractFormData) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
-    setForm((prev) => ({ ...prev, [key]: e.target.value }));
+  const f =
+    (key: keyof ContractFormData) =>
+    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+      setForm((prev) => ({ ...prev, [key]: e.target.value }));
 
   return (
     <div className="space-y-6">
@@ -306,9 +390,15 @@ export default function Contracts() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
           { label: t("contracts.total_label"), value: String(contracts.length) },
-          { label: t("contracts.signed_label"), value: String(contracts.filter((c) => c.status === "signed" || c.status === "active").length) },
+          {
+            label: t("contracts.signed_label"),
+            value: String(contracts.filter((c) => c.status === "signed" || c.status === "active").length),
+          },
           { label: t("contracts.pending_label"), value: String(contracts.filter((c) => c.status === "sent").length) },
-          { label: t("contracts.contract_value"), value: formatCurrency(contracts.reduce((s, c) => s + Number(c.value), 0)) },
+          {
+            label: t("contracts.contract_value"),
+            value: formatCurrency(contracts.reduce((s, c) => s + Number(c.value), 0)),
+          },
         ].map((s) => (
           <div key={s.label} className="rounded-xl border bg-card p-4">
             <p className="text-xs text-muted-foreground font-medium">{s.label}</p>
@@ -319,10 +409,16 @@ export default function Contracts() {
 
       <div className="flex gap-2 items-center">
         <Select value={filterStatus} onValueChange={setFilterStatus}>
-          <SelectTrigger className="w-40"><SelectValue placeholder={t("contracts.all_statuses")} /></SelectTrigger>
+          <SelectTrigger className="w-40">
+            <SelectValue placeholder={t("contracts.all_statuses")} />
+          </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">{t("contracts.all_statuses")}</SelectItem>
-            {STATUS_KEYS.map((k) => <SelectItem key={k} value={k}>{t(`contracts.status_${k}`)}</SelectItem>)}
+            {STATUS_KEYS.map((k) => (
+              <SelectItem key={k} value={k}>
+                {t(`contracts.status_${k}`)}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
         <span className="text-sm text-muted-foreground">{t("contracts.count", { count: contracts.length })}</span>
@@ -341,11 +437,19 @@ export default function Contracts() {
             <table className="w-full text-sm min-w-[500px]">
               <thead className="bg-muted/40 border-b">
                 <tr>
-                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">{t("contracts.col_contract_num")}</th>
+                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">
+                    {t("contracts.col_contract_num")}
+                  </th>
                   <th className="text-left px-4 py-3 font-medium text-muted-foreground">{t("contracts.col_client")}</th>
-                  <th className="text-left px-4 py-3 font-medium text-muted-foreground hidden sm:table-cell">{t("common.status")}</th>
-                  <th className="text-left px-4 py-3 font-medium text-muted-foreground hidden md:table-cell">{t("contracts.col_signed")}</th>
-                  <th className="text-right px-4 py-3 font-medium text-muted-foreground">{t("contracts.value_section")}</th>
+                  <th className="text-left px-4 py-3 font-medium text-muted-foreground hidden sm:table-cell">
+                    {t("common.status")}
+                  </th>
+                  <th className="text-left px-4 py-3 font-medium text-muted-foreground hidden md:table-cell">
+                    {t("contracts.col_signed")}
+                  </th>
+                  <th className="text-right px-4 py-3 font-medium text-muted-foreground">
+                    {t("contracts.value_section")}
+                  </th>
                   <th className="px-4 py-3"></th>
                 </tr>
               </thead>
@@ -356,20 +460,37 @@ export default function Contracts() {
                     <tr key={c.id} className="hover:bg-muted/20 transition-colors group">
                       <td className="px-4 py-3">
                         <Link href={`/contracts/${c.id}`}>
-                          <span className="font-mono text-sm font-medium hover:text-primary cursor-pointer">{c.contractNumber}</span>
+                          <span className="font-mono text-sm font-medium hover:text-primary cursor-pointer">
+                            {c.contractNumber}
+                          </span>
                         </Link>
                         <p className="text-xs text-muted-foreground truncate max-w-[160px]">{c.title}</p>
                       </td>
                       <td className="px-4 py-3 font-medium">{c.clientName}</td>
                       <td className="px-4 py-3 hidden sm:table-cell">
-                        {color && <Badge variant="outline" className={cn("text-xs", color)}>{t(`contracts.status_${c.status}`)}</Badge>}
+                        {color && (
+                          <Badge variant="outline" className={cn("text-xs", color)}>
+                            {t(`contracts.status_${c.status}`)}
+                          </Badge>
+                        )}
                       </td>
-                      <td className="px-4 py-3 hidden md:table-cell text-muted-foreground text-xs">{formatDate(c.signedAt, lang)}</td>
+                      <td className="px-4 py-3 hidden md:table-cell text-muted-foreground text-xs">
+                        {formatDate(c.signedAt, lang)}
+                      </td>
                       <td className="px-4 py-3 text-right font-medium">{formatCurrency(c.value)}</td>
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Link href={`/contracts/${c.id}`}><Button variant="ghost" size="icon" className="h-7 w-7"><ChevronRight className="w-4 h-4" /></Button></Link>
-                          <button onClick={() => deleteMutation.mutate({ id: c.id })} className="text-muted-foreground hover:text-destructive p-1"><Trash2 className="w-4 h-4" /></button>
+                          <Link href={`/contracts/${c.id}`}>
+                            <Button variant="ghost" size="icon" className="h-7 w-7">
+                              <ChevronRight className="w-4 h-4" />
+                            </Button>
+                          </Link>
+                          <button
+                            onClick={() => deleteMutation.mutate({ id: c.id })}
+                            className="text-muted-foreground hover:text-destructive p-1"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -382,212 +503,294 @@ export default function Contracts() {
       </div>
 
       {/* ── Creation dialog ── */}
-      <Dialog open={showCreate} onOpenChange={(open) => {
-        setShowCreate(open);
-        if (!open) { setCustomerSearch(""); setForm({ ...EMPTY_CONTRACT_FORM, currency: currencyCode ?? "EUR" }); }
-      }}>
-        <DialogContent className="max-w-2xl flex flex-col max-h-[92vh]">
+      <Dialog
+        open={showCreate}
+        onOpenChange={(open) => {
+          setShowCreate(open);
+          if (!open) {
+            setCustomerSearch("");
+            setRawTemplate("");
+            setForm(EMPTY_FORM());
+          }
+        }}
+      >
+        <DialogContent className="max-w-3xl flex flex-col max-h-[94vh]">
           <DialogHeader className="shrink-0">
             <DialogTitle>{t("contracts.new_contract")}</DialogTitle>
           </DialogHeader>
 
-          <div className="overflow-y-auto flex-1 space-y-5 py-2 pr-1">
+          <Tabs defaultValue="form" className="flex flex-col flex-1 overflow-hidden">
+            <TabsList className="shrink-0 mx-auto mb-2">
+              <TabsTrigger value="form" className="gap-1.5">
+                <FileText className="w-3.5 h-3.5" /> {t("contracts.tab_form")}
+              </TabsTrigger>
+              <TabsTrigger value="preview" className="gap-1.5" disabled={!rawTemplate}>
+                <Eye className="w-3.5 h-3.5" /> {t("contracts.tab_preview")}
+              </TabsTrigger>
+            </TabsList>
 
-            {/* Customer search */}
-            <div className="space-y-1.5">
-              <Label>{t("sales_search.search_label")}</Label>
-              <CustomerSearchCombobox
-                value={customerSearch}
-                onChange={setCustomerSearch}
-                onSelect={(s) => {
-                  setForm((prev) => ({
-                    ...prev,
-                    clientName: s.name || prev.clientName,
-                    clientEmail: s.email ?? prev.clientEmail,
-                    clientPhone: s.phone ?? prev.clientPhone,
-                    clientCompany: s.company ?? prev.clientCompany,
-                    clientAddress: s.address ?? prev.clientAddress,
-                    eventType: s.eventType ?? prev.eventType,
-                    eventDate: s.eventDate ? s.eventDate.slice(0, 10) : prev.eventDate,
-                    eventLocation: s.eventLocation ?? prev.eventLocation,
-                    currency: s.currency ?? prev.currency,
-                    leadId: s.leadId ?? prev.leadId,
-                    quoteId: s.quoteId ?? prev.quoteId,
-                  }));
-                }}
-                onClear={() => setCustomerSearch("")}
-                existingEmail={form.clientEmail}
-              />
-              <p className="text-xs text-muted-foreground">{t("sales_search.or_create_new")}</p>
-            </div>
+            {/* ── FORM TAB ── */}
+            <TabsContent value="form" className="overflow-y-auto flex-1 space-y-5 py-1 pr-1 mt-0">
 
-            {/* Template */}
-            {templates.length > 0 && (
+              {/* Customer search */}
               <div className="space-y-1.5">
-                <Label>{t("contracts.template_label")}</Label>
-                <Select value={form.templateId} onValueChange={handleTemplateSelect}>
-                  <SelectTrigger><SelectValue placeholder={t("contracts.template_placeholder")} /></SelectTrigger>
-                  <SelectContent>
-                    {templates.map((tmpl) => <SelectItem key={tmpl.id} value={tmpl.id}>{tmpl.title}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+                <Label>{t("sales_search.search_label")}</Label>
+                <CustomerSearchCombobox
+                  value={customerSearch}
+                  onChange={setCustomerSearch}
+                  onSelect={(s) => {
+                    setForm((prev) => ({
+                      ...prev,
+                      clientName: s.name || prev.clientName,
+                      clientEmail: s.email ?? prev.clientEmail,
+                      clientPhone: s.phone ?? prev.clientPhone,
+                      clientCompany: s.company ?? prev.clientCompany,
+                      clientAddress: s.address ?? prev.clientAddress,
+                      eventType: s.eventType ?? prev.eventType,
+                      eventDate: s.eventDate ? s.eventDate.slice(0, 10) : prev.eventDate,
+                      eventLocation: s.eventLocation ?? prev.eventLocation,
+                      currency: s.currency ?? prev.currency,
+                      leadId: s.leadId ?? prev.leadId,
+                      quoteId: s.quoteId ?? prev.quoteId,
+                    }));
+                  }}
+                  onClear={() => setCustomerSearch("")}
+                  existingEmail={form.clientEmail}
+                />
+                <p className="text-xs text-muted-foreground">{t("sales_search.or_create_new")}</p>
               </div>
-            )}
 
-            {/* Title */}
-            <div className="space-y-1.5">
-              <Label>{t("contracts.title_label")} *</Label>
-              <Input value={form.title} onChange={f("title")} placeholder={t("contracts.title_placeholder")} />
-            </div>
-
-            {/* Client */}
-            <div className="space-y-2">
-              <SectionLabel>{t("contracts.client_section")}</SectionLabel>
-              <div className="grid grid-cols-2 gap-3">
+              {/* Template */}
+              {templates.length > 0 && (
                 <div className="space-y-1.5">
-                  <Label>{t("contracts.client_name_label")} *</Label>
-                  <Input value={form.clientName} onChange={f("clientName")} />
+                  <Label>{t("contracts.template_label")}</Label>
+                  <Select value={form.templateId} onValueChange={handleTemplateSelect}>
+                    <SelectTrigger>
+                      <SelectValue placeholder={t("contracts.template_placeholder")} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {templates.map((tmpl: any) => (
+                        <SelectItem key={tmpl.id} value={tmpl.id}>
+                          {tmpl.title}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {rawTemplate && (
+                    <p className="text-xs text-success flex items-center gap-1">
+                      <CheckCircle2 className="w-3 h-3" />
+                      Template loaded — preview updates as you fill the form.
+                    </p>
+                  )}
                 </div>
-                <div className="space-y-1.5">
-                  <Label>{t("contracts.client_email_label")} *</Label>
-                  <Input type="email" value={form.clientEmail} onChange={f("clientEmail")} />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>{t("contracts.client_phone_label")}</Label>
-                  <Input value={form.clientPhone} onChange={f("clientPhone")} />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>{t("contracts.client_company_label")}</Label>
-                  <Input value={form.clientCompany} onChange={f("clientCompany")} />
-                </div>
-                <div className="col-span-2 space-y-1.5">
-                  <Label>{t("contracts.client_address_label")}</Label>
-                  <Input value={form.clientAddress} onChange={f("clientAddress")} placeholder="123 Main St, City, Country" />
-                </div>
-              </div>
-            </div>
-
-            {/* Event */}
-            <div className="space-y-2">
-              <SectionLabel>{t("contracts.event_section")}</SectionLabel>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label>{t("contracts.event_type_label")}</Label>
-                  <Input value={form.eventType} onChange={f("eventType")} placeholder="Wedding, Corporate…" />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>{t("contracts.event_date_label")}</Label>
-                  <Input type="date" value={form.eventDate} onChange={f("eventDate")} />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>{t("contracts.event_start_time_label")}</Label>
-                  <Input type="time" value={form.eventStartTime} onChange={f("eventStartTime")} />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>{t("contracts.event_end_time_label")}</Label>
-                  <Input type="time" value={form.eventEndTime} onChange={f("eventEndTime")} />
-                </div>
-                <div className="col-span-2 space-y-1.5">
-                  <Label>{t("contracts.event_location_label")}</Label>
-                  <Input value={form.eventLocation} onChange={f("eventLocation")} placeholder="Venue name, City" />
-                </div>
-              </div>
-            </div>
-
-            {/* Service */}
-            <div className="space-y-2">
-              <SectionLabel>{t("contracts.service_section")}</SectionLabel>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="col-span-2 space-y-1.5">
-                  <Label>{t("contracts.service_name_label")}</Label>
-                  <Input value={form.serviceName} onChange={f("serviceName")} placeholder="Premium Photobooth Package" />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>{t("contracts.rental_duration_label")}</Label>
-                  <Input value={form.rentalDuration} onChange={f("rentalDuration")} placeholder="4 hours" />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>{t("contracts.included_prints_label")}</Label>
-                  <Input value={form.includedPrints} onChange={f("includedPrints")} placeholder="Unlimited" />
-                </div>
-                <div className="col-span-2 space-y-1.5">
-                  <Label>{t("contracts.equipment_description_label")}</Label>
-                  <Input value={form.equipmentDescription} onChange={f("equipmentDescription")} placeholder="Open-air booth, ring light, props" />
-                </div>
-              </div>
-            </div>
-
-            {/* Financial */}
-            <div className="space-y-2">
-              <SectionLabel>{t("contracts.financial_section")}</SectionLabel>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label>{t("contracts.value_dollar_label")} *</Label>
-                  <Input type="number" min="0" value={form.value} onChange={f("value")} placeholder="1500" />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>{t("contracts.currency_label")} *</Label>
-                  <Input value={form.currency} onChange={f("currency")} placeholder="EUR" maxLength={3} />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>{t("contracts.tax_rate_label")}</Label>
-                  <Input type="number" min="0" max="100" value={form.taxRate} onChange={f("taxRate")} placeholder="20" />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>{t("contracts.deposit_amount_label")}</Label>
-                  <Input type="number" min="0" value={form.depositAmount} onChange={f("depositAmount")} placeholder="300" />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>{t("contracts.deposit_method_label")}</Label>
-                  <Input value={form.depositMethod} onChange={f("depositMethod")} placeholder="Bank transfer" />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>{t("contracts.payment_terms_label")}</Label>
-                  <Input value={form.paymentTerms} onChange={f("paymentTerms")} placeholder="50% upfront, 50% on event day" />
-                </div>
-              </div>
-            </div>
-
-            {/* Cancellation */}
-            <div className="space-y-2">
-              <SectionLabel>{t("contracts.cancellation_section")}</SectionLabel>
-              <Textarea value={form.cancellationTerms} onChange={f("cancellationTerms")} rows={2} placeholder="e.g. Full refund if cancelled 30+ days before event…" />
-            </div>
-
-            {/* Signature */}
-            <div className="space-y-2">
-              <SectionLabel>{t("contracts.signature_section")}</SectionLabel>
-              <div className="space-y-1.5">
-                <Label>{t("contracts.signature_place_label")}</Label>
-                <Input value={form.signaturePlace} onChange={f("signaturePlace")} placeholder="Paris" />
-              </div>
-            </div>
-
-            {/* Contract content */}
-            <div className="space-y-1.5">
-              <Label>{t("contracts.content_label")}</Label>
-              <Textarea value={form.content} onChange={f("content")} rows={12} placeholder={t("contracts.content_placeholder")} className="font-mono text-xs" />
-              {form.content && (
-                <p className="text-xs text-muted-foreground">
-                  {t("contracts.content_label")} — variables will be filled on save.
-                </p>
               )}
-            </div>
 
-            {/* Notes */}
-            <div className="space-y-1.5">
-              <Label>{t("contracts.notes_label")}</Label>
-              <Textarea value={form.notes} onChange={f("notes")} rows={2} />
-            </div>
+              {/* Title */}
+              <div className="space-y-1.5">
+                <Label>{t("contracts.title_label")} *</Label>
+                <Input
+                  value={form.title}
+                  onChange={f("title")}
+                  placeholder={t("contracts.title_placeholder")}
+                />
+              </div>
 
-            {/* Readiness */}
-            <ContractReadiness readiness={readiness} />
+              {/* Client */}
+              <div className="space-y-2">
+                <SectionLabel>{t("contracts.client_section")}</SectionLabel>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label>{t("contracts.client_name_label")} *</Label>
+                    <Input value={form.clientName} onChange={f("clientName")} placeholder="Full name" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>{t("contracts.client_email_label")} *</Label>
+                    <Input type="email" value={form.clientEmail} onChange={f("clientEmail")} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>{t("contracts.client_phone_label")}</Label>
+                    <Input value={form.clientPhone} onChange={f("clientPhone")} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>{t("contracts.client_company_label")}</Label>
+                    <Input value={form.clientCompany} onChange={f("clientCompany")} />
+                  </div>
+                  <div className="col-span-2 space-y-1.5">
+                    <Label>{t("contracts.client_address_label")}</Label>
+                    <Input
+                      value={form.clientAddress}
+                      onChange={f("clientAddress")}
+                      placeholder="123 Main St, City, Country"
+                    />
+                  </div>
+                </div>
+              </div>
 
-          </div>
+              {/* Event */}
+              <div className="space-y-2">
+                <SectionLabel>{t("contracts.event_section")}</SectionLabel>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label>{t("contracts.event_type_label")}</Label>
+                    <Input value={form.eventType} onChange={f("eventType")} placeholder="Wedding, Corporate…" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>{t("contracts.event_date_label")}</Label>
+                    <Input type="date" value={form.eventDate} onChange={f("eventDate")} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>{t("contracts.event_start_time_label")}</Label>
+                    <Input type="time" value={form.eventStartTime} onChange={f("eventStartTime")} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>{t("contracts.event_end_time_label")}</Label>
+                    <Input type="time" value={form.eventEndTime} onChange={f("eventEndTime")} />
+                  </div>
+                  <div className="col-span-2 space-y-1.5">
+                    <Label>{t("contracts.event_location_label")}</Label>
+                    <Input value={form.eventLocation} onChange={f("eventLocation")} placeholder="Venue name, City" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Service */}
+              <div className="space-y-2">
+                <SectionLabel>{t("contracts.service_section")}</SectionLabel>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="col-span-2 space-y-1.5">
+                    <Label>{t("contracts.service_name_label")}</Label>
+                    <Input
+                      value={form.serviceName}
+                      onChange={f("serviceName")}
+                      placeholder="Premium Photobooth Package"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>{t("contracts.rental_duration_label")}</Label>
+                    <Input value={form.rentalDuration} onChange={f("rentalDuration")} placeholder="4 hours" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>{t("contracts.included_prints_label")}</Label>
+                    <Input value={form.includedPrints} onChange={f("includedPrints")} placeholder="Unlimited" />
+                  </div>
+                  <div className="col-span-2 space-y-1.5">
+                    <Label>{t("contracts.equipment_description_label")}</Label>
+                    <Input
+                      value={form.equipmentDescription}
+                      onChange={f("equipmentDescription")}
+                      placeholder="Open-air booth, ring light, props"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Financial */}
+              <div className="space-y-2">
+                <SectionLabel>{t("contracts.financial_section")}</SectionLabel>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label>{t("contracts.value_dollar_label")} *</Label>
+                    <Input type="number" min="0" value={form.value} onChange={f("value")} placeholder="1500" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>{t("contracts.currency_label")} *</Label>
+                    <Input value={form.currency} onChange={f("currency")} placeholder="EUR" maxLength={3} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>{t("contracts.tax_rate_label")}</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={form.taxRate}
+                      onChange={f("taxRate")}
+                      placeholder="20"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>{t("contracts.deposit_amount_label")}</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      value={form.depositAmount}
+                      onChange={f("depositAmount")}
+                      placeholder="300"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>{t("contracts.deposit_method_label")}</Label>
+                    <Input
+                      value={form.depositMethod}
+                      onChange={f("depositMethod")}
+                      placeholder="Bank transfer"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>{t("contracts.payment_terms_label")}</Label>
+                    <Input
+                      value={form.paymentTerms}
+                      onChange={f("paymentTerms")}
+                      placeholder="50% upfront, 50% on event day"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Cancellation */}
+              <div className="space-y-2">
+                <SectionLabel>{t("contracts.cancellation_section")}</SectionLabel>
+                <Textarea
+                  value={form.cancellationTerms}
+                  onChange={f("cancellationTerms")}
+                  rows={2}
+                  placeholder="e.g. Full refund if cancelled 30+ days before event…"
+                />
+              </div>
+
+              {/* Signature */}
+              <div className="space-y-2">
+                <SectionLabel>{t("contracts.signature_section")}</SectionLabel>
+                <div className="space-y-1.5">
+                  <Label>{t("contracts.signature_place_label")}</Label>
+                  <Input value={form.signaturePlace} onChange={f("signaturePlace")} placeholder="Paris" />
+                </div>
+              </div>
+
+              {/* Notes */}
+              <div className="space-y-1.5">
+                <Label>{t("contracts.notes_label")}</Label>
+                <Textarea value={form.notes} onChange={f("notes")} rows={2} />
+              </div>
+
+              {/* Readiness */}
+              <ContractReadiness readiness={readiness} />
+            </TabsContent>
+
+            {/* ── PREVIEW TAB ── */}
+            <TabsContent value="preview" className="flex-1 overflow-hidden mt-0">
+              <div className="h-full overflow-y-auto rounded-lg border bg-white dark:bg-muted/10 p-4">
+                {livePreview ? (
+                  <pre className="text-xs font-mono whitespace-pre-wrap leading-relaxed text-foreground">
+                    {livePreview}
+                  </pre>
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-40 text-muted-foreground gap-2">
+                    <FileText className="w-8 h-8 opacity-30" />
+                    <p className="text-sm">Select a template to see a live preview here.</p>
+                  </div>
+                )}
+              </div>
+            </TabsContent>
+          </Tabs>
 
           <DialogFooter className="shrink-0 border-t pt-4">
-            <Button variant="outline" onClick={() => setShowCreate(false)}>{t("common.cancel")}</Button>
-            <Button onClick={handleCreate} disabled={createMutation.isPending || !form.title}>
+            <Button variant="outline" onClick={() => setShowCreate(false)}>
+              {t("common.cancel")}
+            </Button>
+            <Button
+              onClick={handleCreate}
+              disabled={createMutation.isPending || !form.title}
+            >
               {createMutation.isPending ? t("contracts.creating") : t("contracts.create_contract_btn")}
             </Button>
           </DialogFooter>
@@ -599,7 +802,10 @@ export default function Contracts() {
         open={showMissingDialog}
         validation={pendingValidation}
         onConfirm={handleConfirmCreate}
-        onCancel={() => { setShowMissingDialog(false); setPendingValidation(null); }}
+        onCancel={() => {
+          setShowMissingDialog(false);
+          setPendingValidation(null);
+        }}
       />
     </div>
   );

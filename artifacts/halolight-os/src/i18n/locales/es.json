@@ -846,7 +846,9 @@
     "signature_place_label": "Lugar de firma",
     "cancellation_section": "Condiciones de cancelación",
     "cancellation_terms_label": "Condiciones de cancelación",
-    "provider_section": "Detalles del proveedor (opcional)"
+    "provider_section": "Detalles del proveedor (opcional)",
+    "tab_form": "Formulario",
+    "tab_preview": "Vista previa"
   },
   "invoices": {
     "title": "Facturas",

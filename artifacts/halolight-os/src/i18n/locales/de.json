@@ -846,7 +846,9 @@
     "signature_place_label": "Unterschriftsort",
     "cancellation_section": "Stornierungsbedingungen",
     "cancellation_terms_label": "Stornierungsbedingungen",
-    "provider_section": "Anbieterdetails (optional)"
+    "provider_section": "Anbieterdetails (optional)",
+    "tab_form": "Formular",
+    "tab_preview": "Vorschau"
   },
   "invoices": {
     "title": "Rechnungen",

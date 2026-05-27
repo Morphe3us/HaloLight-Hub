@@ -1,0 +1,209 @@
+Contract generation still does not use the form values correctly.
+
+Current bug:
+The contract is created, but the generated contract content does not properly use the information I filled in the form.
+
+Example:
+If I fill:
+
+* client details
+* address
+* event info
+* service/package
+* deposit
+* price
+* terms
+
+The final generated contract still does not correctly reflect those values.
+
+This means the form state is not correctly mapped into the contract template variables before save.
+
+Please debug the real data flow:
+
+Form fields
+→ contractForm state
+→ variable replacement map
+→ generated content preview
+→ API payload
+→ saved contract content
+→ detail/print view
+
+Required fix:
+
+1. Every visible form field must map to the correct contract variable.
+
+Examples:
+
+Client:
+
+* clientName → {{client_full_name}}, {{client_first_name}}, {{client_last_name}}
+* clientCompany → {{client_company_name}}
+* clientEmail → {{client_email}}
+* clientPhone → {{client_phone}}
+* clientAddress → {{client_address}}
+
+Provider:
+
+* user company → {{rental_company_name}}
+* user full name → {{rental_company_representative}}
+* user email → {{rental_company_email}}
+* user phone → {{rental_company_phone}}
+* user address if available → {{rental_company_address}}
+
+Event:
+
+* eventType → {{event_type}}
+* eventDate → {{event_date}}
+* eventStartTime → {{event_start_time}}
+* eventEndTime → {{event_end_time}}
+* eventLocation → {{event_location}}
+* setupTime → {{setup_time}}
+* pickupTime → {{pickup_time}}
+
+Service:
+
+* packageName → {{package_name}}
+* rentalDuration → {{rental_duration}}
+* includedPrints → {{included_prints}}
+* equipmentDescription → {{equipment_list}}
+* optionsList → {{options_list}}
+* digitalGallery → {{digital_gallery}}
+* customTemplate → {{custom_template}}
+* deliveryIncluded → {{delivery_included}}
+* setupIncluded → {{setup_included}}
+* operatorIncluded → {{operator_included}}
+
+Pricing:
+
+* rentalPrice → {{rental_price}}
+* optionsPrice → {{options_price}}
+* deliveryFees → {{delivery_fees}}
+* discountAmount → {{discount_amount}}
+* subtotal → {{subtotal}}
+* taxRate → {{tax_rate}}
+* taxAmount → {{tax_amount}}
+* totalAmount → {{total_amount}}
+* currency → {{currency}}
+
+Deposit:
+
+* depositAmount → {{deposit_amount}}
+* depositMethod → {{deposit_method}}
+* depositConditions → {{deposit_conditions}}
+* depositReturn → {{deposit_return}}
+
+Terms:
+
+* paymentTerms → {{payment_terms}}
+* cancellationTerms → {{cancellation_terms}}
+* signatureDate → {{signature_date}}
+* signaturePlace → {{signature_place}}
+
+2. Add a live contract preview in the New Contract modal.
+
+Before creating, show a “Preview contract” section where the user can see the generated text with actual values.
+
+This preview must update when form fields change.
+
+3. Add a debug-only check.
+
+Before saving, log or verify:
+
+* form state values
+* variable map values
+* generated content
+* payload sent to API
+
+Do not expose debug to normal users.
+
+4. Address autocomplete / verification.
+
+Add address autocomplete for:
+
+* client address
+* event location
+* provider/company address if editable
+
+Use Google Places API or another address provider if already configured.
+
+If not configured yet:
+
+* create environment variable:
+  GOOGLE_MAPS_API_KEY
+* keep it server-safe / frontend-safe according to Google Places requirements.
+* do not hardcode the key.
+
+Expected UX:
+When typing an address:
+
+* show suggestions
+* user selects one
+* store formatted address
+* optionally store placeId, city, postalCode, country, lat, lng if available
+
+If address cannot be verified:
+
+* allow manual entry
+* show “Unverified address” badge
+
+5. Address fields must be reused across the pipeline.
+
+If a lead already has an address:
+
+* quote pre-fills it
+* contract pre-fills it
+* invoice pre-fills it
+
+If event location exists:
+
+* contract must use it automatically.
+
+6. Validation must use the actual generated content.
+
+If the user filled a field, the missing info modal must NOT claim it is missing.
+
+7. Verification required.
+
+Test:
+
+A. Create contract manually:
+
+* fill client name
+* fill client address
+* fill event location
+* fill package
+* fill price
+* fill deposit
+* create contract
+  Expected:
+  All values appear in generated contract.
+
+B. Create contract from existing lead:
+
+* lead has address and event info
+  Expected:
+  contract prefilled and generated content uses lead values.
+
+C. Create contract from accepted quote:
+Expected:
+client/event/pricing/currency copied from quote.
+
+D. Address autocomplete:
+
+* type address
+* select suggestion
+* saved formatted address appears in generated contract.
+
+E. Print/export:
+
+* same values visible
+* no stale placeholder
+* no ignored form values
+* no raw {{variables}}
+
+Run typecheck and provide:
+
+* root cause
+* exact mapping fixed
+* files changed
+* verification summary

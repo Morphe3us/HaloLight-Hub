@@ -846,7 +846,9 @@
     "signature_place_label": "Ondertekeningsplaats",
     "cancellation_section": "Annuleringsvoorwaarden",
     "cancellation_terms_label": "Annuleringsvoorwaarden",
-    "provider_section": "Aanbiedergegevens (optioneel)"
+    "provider_section": "Aanbiedergegevens (optioneel)",
+    "tab_form": "Formulier",
+    "tab_preview": "Voorbeeld"
   },
   "invoices": {
     "title": "Facturen",

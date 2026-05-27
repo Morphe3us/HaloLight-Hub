@@ -846,7 +846,9 @@
     "signature_place_label": "Signature Place",
     "cancellation_section": "Cancellation Terms",
     "cancellation_terms_label": "Cancellation Terms",
-    "provider_section": "Provider Details (optional)"
+    "provider_section": "Provider Details (optional)",
+    "tab_form": "Form",
+    "tab_preview": "Preview"
   },
   "invoices": {
     "title": "Invoices",
