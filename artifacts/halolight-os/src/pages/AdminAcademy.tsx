@@ -483,6 +483,7 @@ function CourseDetailView({
   return (
     <div className="space-y-4">
       <LessonFormModal
+        key={`${lessonModal.lesson?.id ?? "new"}-${String(lessonModal.open)}`}
         open={lessonModal.open}
         onClose={() => setLessonModal({ open: false, moduleId: "" })}
         moduleId={lessonModal.moduleId}

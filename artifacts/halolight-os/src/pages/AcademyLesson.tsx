@@ -29,14 +29,26 @@ function getVideoEmbedUrl(url: string): string {
   if (!url) return "";
   try {
     const u = new URL(url);
+    // YouTube: youtu.be short link
     if (u.hostname === "youtu.be") {
       const videoId = u.pathname.slice(1);
       return videoId ? `https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1` : url;
     }
+    // YouTube: standard watch URL
     if (u.hostname.includes("youtube.com")) {
       const videoId = u.searchParams.get("v") ?? "";
       return videoId ? `https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1` : url;
     }
+    // BunnyStream: watch/player URL → iframe embed URL
+    // e.g. https://video.bunnycdn.com/play/{libraryId}/{videoId}
+    if (u.hostname === "video.bunnycdn.com" && u.pathname.startsWith("/play/")) {
+      const parts = u.pathname.split("/").filter(Boolean); // ["play", libraryId, videoId]
+      if (parts.length >= 3) {
+        return `https://iframe.mediadelivery.net/embed/${parts[1]}/${parts[2]}`;
+      }
+    }
+    // BunnyStream embed URL — already correct, pass through
+    // e.g. https://iframe.mediadelivery.net/embed/{libraryId}/{videoId}
     return url;
   } catch {
     return url;
