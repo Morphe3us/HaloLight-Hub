@@ -1,0 +1,124 @@
+Critical Academy language switching + dashboard counts bug.
+
+The Academy filtering is still not correct.
+
+Current behavior:
+
+* If I am in French, Academy shows French content.
+* But when I switch to Spanish, English, Italian, etc., Academy stays in French.
+* Dashboard still shows 224 videos/lessons total instead of the count for the selected user language.
+
+This means the language filtering is not reactive to language changes and/or the Academy/Dashboard queries are using stale cached data.
+
+Expected behavior:
+
+When user switches language in Settings:
+
+* Academy immediately updates to that language.
+* Course cards update.
+* Course detail updates.
+* Modules update.
+* Lessons update.
+* Videos update.
+* Progress updates.
+* Dashboard lesson/video counts update.
+* Watch time updates.
+* Continue learning updates.
+
+Example:
+
+FR:
+
+* show French module
+* count only French lessons
+
+ES:
+
+* show Spanish module
+* count only Spanish lessons
+
+EN:
+
+* show English module
+* count only English lessons
+
+Same for:
+
+* de
+* it
+* pt
+* pl
+* nl
+
+Important:
+The selected user language must be the single source of truth for the client Academy experience.
+
+Please debug and fix:
+
+1. React Query cache
+
+* Academy queries must include current language in their query key OR be invalidated when language changes.
+* Dashboard/progress queries must also refetch when language changes.
+* Changing language should invalidate:
+
+  * academy courses
+  * academy course detail
+  * academy lesson
+  * academy progress summary
+  * next lesson
+  * dashboard data
+
+2. Language source
+
+* Ensure frontend uses the current active i18n/user language, not stale DB value.
+* Ensure LanguageSync updates the app language and triggers query invalidation.
+* If API filters based on DB user.language, ensure Settings save completes before refetch.
+* If frontend filters based on i18n.language, ensure it recalculates when i18n.language changes.
+
+3. Public Academy API
+
+* Public /academy endpoints must filter by current saved user language.
+* No admin bypass.
+* No stale fallback to previously selected language.
+
+4. Dashboard counts
+   Fix dashboard summary:
+
+* Do not show 224 total videos/lessons.
+* Count only lessons available in the selected user language.
+* Progress should be calculated only for current language.
+* Watch time should be calculated only for current language.
+* Continue learning should use current language only.
+
+5. Verification required
+
+Test as admin on public /academy:
+
+A. Set language FR:
+
+* Academy shows only Français module
+* Dashboard count = French lesson count only
+
+B. Switch to ES:
+
+* Academy updates to Español module
+* Dashboard count = Spanish lesson count only
+* No French module remains visible
+
+C. Switch to EN:
+
+* Academy updates to English module
+* Dashboard count = English lesson count only
+
+D. Hard refresh:
+
+* selected language persists
+* Academy and Dashboard still show correct language-specific data
+
+Provide:
+
+* root cause
+* files changed
+* how cache invalidation was fixed
+* how dashboard count was fixed
+* verification result for FR, ES, EN

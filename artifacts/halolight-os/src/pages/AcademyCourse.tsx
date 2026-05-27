@@ -99,7 +99,9 @@ export default function AcademyCourse() {
   const { t, i18n } = useTranslation();
   const lang = i18n.language?.split("-")[0] ?? "en";
   const { courseId } = useParams<{ courseId: string }>();
-  const { data: course, isLoading: isLoadingCourse } = useGetCourse(courseId!);
+  // Pass lang so the server returns only this language's modules, and React Query
+  // creates a per-language cache slot (different cache key per language).
+  const { data: course, isLoading: isLoadingCourse } = useGetCourse(courseId!, { lang });
   if (isLoadingCourse) {
     return (
       <div className="space-y-8">

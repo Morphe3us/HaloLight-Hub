@@ -34,7 +34,12 @@ export default function Dashboard() {
       : t("dashboard.greeting_evening");
 
   const { data: user, isLoading: loadingUser } = useGetCurrentUser();
-  const { data: summary, isLoading: loadingSummary } = useGetDashboardSummary();
+  const { i18n } = useTranslation();
+  const dashLang = i18n.language?.split("-")[0] ?? "en";
+  // Per-language cache key ensures dashboard refetches when language changes
+  const { data: summary, isLoading: loadingSummary } = useGetDashboardSummary({
+    query: { queryKey: ["/api/dashboard/summary", dashLang] },
+  });
   const { data: notifications, isLoading: loadingNotifs } = useListNotifications({ limit: 3 });
   const { data: eventsData, isLoading: loadingEvents } = useListEvents({ status: "upcoming", limit: 4 });
 

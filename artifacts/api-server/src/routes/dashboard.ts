@@ -119,28 +119,58 @@ router.get("/dashboard/summary", requireAuth, async (req: Request, res: Response
   const onboardingPercent =
     allSteps.length > 0 ? Math.round((doneSteps.length / allSteps.length) * 100) : 0;
 
-  // Academy stats
+  // Academy stats — language-filtered (same detection logic as academy.ts)
+  const LANG_MOD_MAP: Record<string, string> = {
+    "english": "en", "english language": "en",
+    "french": "fr", "french language": "fr",
+    "spanish": "es", "spanish language": "es",
+    "german": "de", "german language": "de",
+    "dutch": "nl", "dutch language": "nl",
+    "italian": "it", "italian language": "it",
+    "portuguese": "pt", "portuguese language": "pt",
+    "polish": "pl", "polish language": "pl",
+  };
+  function detectLangTrack(title: unknown): string | null {
+    if (!title || typeof title !== "object") return null;
+    const t = ((title as Record<string, string>)["en"] ?? "").toLowerCase().trim();
+    return LANG_MOD_MAP[t] ?? null;
+  }
+
+  // Build course → modules map, compute language-visible module IDs
+  const courseModsByCourse = new Map<string, typeof allModules>();
+  for (const mod of allModules) {
+    const list = courseModsByCourse.get(mod.courseId) ?? [];
+    list.push(mod);
+    courseModsByCourse.set(mod.courseId, list);
+  }
+  const visibleModuleIds = new Set<string>();
+  for (const course of allCourses) {
+    const mods = courseModsByCourse.get(course.id) ?? [];
+    const hasLangMods = mods.some((m) => detectLangTrack(m.title) !== null);
+    if (!hasLangMods) { mods.forEach((m) => visibleModuleIds.add(m.id)); continue; }
+    const langMods = mods.filter((m) => detectLangTrack(m.title) === lang);
+    const chosen = langMods.length > 0 ? langMods : mods.filter((m) => detectLangTrack(m.title) === "en");
+    (chosen.length > 0 ? chosen : mods).forEach((m) => visibleModuleIds.add(m.id));
+  }
+  const visibleLessons = allLessons.filter((l) => visibleModuleIds.has(l.moduleId));
+
   const completedProgressIds = new Set(
     allProgress.filter((p) => p.completedAt).map((p) => p.lessonId)
   );
-  const academyLessonsCompleted = completedProgressIds.size;
-  const academyTotalLessons = allLessons.length;
+  const academyLessonsCompleted = visibleLessons.filter((l) => completedProgressIds.has(l.id)).length;
+  const academyTotalLessons = visibleLessons.length;
 
-  const modulesByCourse = new Map<string, string[]>();
-  for (const mod of allModules) {
-    const list = modulesByCourse.get(mod.courseId) ?? [];
-    list.push(mod.id);
-    modulesByCourse.set(mod.courseId, list);
-  }
   const lessonsByModule = new Map<string, string[]>();
-  for (const l of allLessons) {
+  for (const l of visibleLessons) {
     const list = lessonsByModule.get(l.moduleId) ?? [];
     list.push(l.id);
     lessonsByModule.set(l.moduleId, list);
   }
   let academyCoursesCompleted = 0;
   for (const course of allCourses) {
-    const mids = modulesByCourse.get(course.id) ?? [];
+    const mids = Array.from(visibleModuleIds).filter((mid) =>
+      (courseModsByCourse.get(course.id) ?? []).some((m) => m.id === mid)
+    );
     const lids = mids.flatMap((mid) => lessonsByModule.get(mid) ?? []);
     if (lids.length > 0 && lids.every((lid) => completedProgressIds.has(lid))) {
       academyCoursesCompleted++;
@@ -164,12 +194,12 @@ router.get("/dashboard/summary", requireAuth, async (req: Request, res: Response
     );
   const lowStockCount = lowStockRows.length;
 
-  // Next lesson — first incomplete lesson
+  // Next lesson — first incomplete lesson (within user's language track)
   const moduleMap = new Map(allModules.map((m) => [m.id, m]));
   const courseMap = new Map(allCourses.map((c) => [c.id, c]));
   const progressMap = new Map(allProgress.map((p) => [p.lessonId, p]));
 
-  const sortedLessons = [...allLessons].sort((a, b) => {
+  const sortedLessons = [...visibleLessons].sort((a, b) => {
     const ma = moduleMap.get(a.moduleId);
     const mb = moduleMap.get(b.moduleId);
     const ca = ma ? courseMap.get(ma.courseId) : undefined;

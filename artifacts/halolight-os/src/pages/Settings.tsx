@@ -109,7 +109,9 @@ export default function Settings() {
         i18n.changeLanguage(data.language);
         localStorage.setItem(LANG_STORAGE_KEY, data.language);
         toast({ title: t("settings.saved") });
-        queryClient.invalidateQueries({ queryKey: getGetCurrentUserQueryKey() });
+        // Invalidate ALL queries so language-dependent data (academy, dashboard, progress)
+        // is immediately refetched with the new language.
+        queryClient.invalidateQueries();
       },
       onError: () => {
         toast({ title: t("common.error"), variant: "destructive" });

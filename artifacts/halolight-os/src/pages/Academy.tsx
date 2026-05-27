@@ -24,9 +24,15 @@ const LEVEL_COLORS: Record<string, string> = {
 const THUMB_FALLBACK = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='450' viewBox='0 0 800 450'%3E%3Crect width='800' height='450' fill='%23DDB398' opacity='0.25'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='48' fill='%23DDB398'%3E▶%3C/text%3E%3C/svg%3E";
 
 export default function Academy() {
-  const { t } = useTranslation();
-  const { data: coursesData, isLoading: isLoadingCourses } = useListCourses();
-  const { data: progressSummary, isLoading: isLoadingProgress } = useGetAcademyProgressSummary();
+  const { t, i18n } = useTranslation();
+  const lang = i18n.language?.split("-")[0] ?? "en";
+
+  // Pass lang as a query param so React Query creates a per-language cache slot.
+  // The server uses this param (or falls back to user.language in DB) to filter modules.
+  const { data: coursesData, isLoading: isLoadingCourses } = useListCourses({ lang });
+  const { data: progressSummary, isLoading: isLoadingProgress } = useGetAcademyProgressSummary({
+    query: { queryKey: ["/api/academy/progress/summary", lang] },
+  });
 
   const isLoading = isLoadingCourses || isLoadingProgress;
 
