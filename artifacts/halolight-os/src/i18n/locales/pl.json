@@ -748,7 +748,10 @@
     "tax_label": "Podatek ({{rate}} %)",
     "print_btn": "Drukuj / PDF",
     "all_statuses": "Wszystkie statusy",
-    "create_quote_btn": "Utwórz ofertę"
+    "create_quote_btn": "Utwórz ofertę",
+    "print_quote_date": "Data oferty",
+    "print_from": "Od",
+    "print_prepared_for": "Przygotowany dla"
   },
   "contracts": {
     "title": "Umowy",
@@ -774,7 +777,7 @@
     "title_placeholder": "Wedding Package Agreement",
     "client_name_label": "Client Name",
     "client_email_label": "Client Email",
-    "value_label": "Contract Value ($)",
+    "value_label": "Wartość umowy",
     "content_label": "Content",
     "content_placeholder": "Contract terms and conditions…",
     "notes_label": "Notes",
@@ -802,14 +805,16 @@
     "count": "{{count}} umów",
     "value_section": "Wartość",
     "loading": "Ładowanie…",
-    "value_dollar_label": "Wartość ($)",
+    "value_dollar_label": "Wartość",
     "tax_label": "Podatek ({{rate}} %)",
     "signed_label2": "Podpisano",
     "document_section": "Dokument umowy",
     "total_label": "Łącznie umów",
     "pending_label": "Oczekujące",
     "all_statuses": "Wszystkie statusy",
-    "create_contract_btn": "Utwórz umowę"
+    "create_contract_btn": "Utwórz umowę",
+    "print_prepared_by": "Przygotowany przez",
+    "print_date": "Data"
   },
   "invoices": {
     "title": "Faktury",
@@ -882,7 +887,12 @@
     "all_statuses": "Wszystkie statusy",
     "create_invoice_btn": "Utwórz fakturę",
     "paid_label": "Zapłacono",
-    "payment_received_label": "Płatność otrzymana"
+    "payment_received_label": "Płatność otrzymana",
+    "print_invoice": "Faktura",
+    "print_invoice_date": "Data faktury",
+    "print_from": "Od",
+    "print_paid": "OPŁACONE",
+    "paid_on": "dnia"
   },
   "admin_analytics": {
     "title": "Panel analityczny",

@@ -748,7 +748,10 @@
     "tax_label": "Steuer ({{rate}} %)",
     "print_btn": "Drucken / PDF",
     "all_statuses": "Alle Status",
-    "create_quote_btn": "Angebot erstellen"
+    "create_quote_btn": "Angebot erstellen",
+    "print_quote_date": "Angebotsdatum",
+    "print_from": "Von",
+    "print_prepared_for": "Erstellt für"
   },
   "contracts": {
     "title": "Verträge",
@@ -774,7 +777,7 @@
     "title_placeholder": "Wedding Package Agreement",
     "client_name_label": "Client Name",
     "client_email_label": "Client Email",
-    "value_label": "Contract Value ($)",
+    "value_label": "Vertragswert",
     "content_label": "Content",
     "content_placeholder": "Contract terms and conditions…",
     "notes_label": "Notes",
@@ -802,14 +805,16 @@
     "count": "{{count}} Verträge",
     "value_section": "Wert",
     "loading": "Laden…",
-    "value_dollar_label": "Wert ($)",
+    "value_dollar_label": "Wert",
     "tax_label": "Steuer ({{rate}} %)",
     "signed_label2": "Unterzeichnet",
     "document_section": "Vertragsdokument",
     "total_label": "Verträge gesamt",
     "pending_label": "Ausstehend",
     "all_statuses": "Alle Status",
-    "create_contract_btn": "Vertrag erstellen"
+    "create_contract_btn": "Vertrag erstellen",
+    "print_prepared_by": "Erstellt von",
+    "print_date": "Datum"
   },
   "invoices": {
     "title": "Rechnungen",
@@ -882,7 +887,12 @@
     "all_statuses": "Alle Status",
     "create_invoice_btn": "Rechnung erstellen",
     "paid_label": "Bezahlt",
-    "payment_received_label": "Zahlung erhalten"
+    "payment_received_label": "Zahlung erhalten",
+    "print_invoice": "Rechnung",
+    "print_invoice_date": "Rechnungsdatum",
+    "print_from": "Von",
+    "print_paid": "BEZAHLT",
+    "paid_on": "am"
   },
   "admin_analytics": {
     "title": "Analyse-Dashboard",

@@ -32,22 +32,29 @@ const STATUS_ICONS: Record<string, React.ComponentType<{ className?: string }>> 
 
 const STATUS_KEYS = ["draft", "sent", "paid", "overdue", "cancelled"];
 
-function formatDate(d: string | null | undefined) {
+function formatDate(d: string | null | undefined, locale = "en") {
   if (!d) return "—";
-  return new Date(d).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+  return new Date(d).toLocaleDateString(locale, { year: "numeric", month: "long", day: "numeric" });
 }
 
-function PrintButton({ invoice, items }: { invoice: any; items: any[] }) {
+function PrintButton({ invoice, items, lang }: { invoice: any; items: any[]; lang: string }) {
   const { t } = useTranslation();
   const { format: formatCurrency } = useCurrency();
   const { data: me } = useGetCurrentUser();
   const handlePrint = () => {
+    const today = new Date().toLocaleDateString(lang, { year: "numeric", month: "long", day: "numeric" });
+    const dueDateStr = invoice.dueDate
+      ? new Date(invoice.dueDate).toLocaleDateString(lang, { year: "numeric", month: "long", day: "numeric" })
+      : null;
+    const paidAtStr = invoice.paidAt
+      ? new Date(invoice.paidAt).toLocaleDateString(lang, { month: "long", day: "numeric", year: "numeric" })
+      : "";
     const html = `<!DOCTYPE html><html><head><title>${invoice.invoiceNumber}</title>
     <style>
       body{font-family:Arial,sans-serif;max-width:800px;margin:40px auto;color:#111;font-size:14px}
       h1{font-size:24px;margin:0}
       .header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:32px}
-      .brand{font-size:22px;font-weight:700;color:#7c3aed}
+      .brand{font-size:22px;font-weight:700;color:#DDB398}
       .badge{display:inline-block;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;margin-top:8px;background:${invoice.status === "paid" ? "#d1fae5" : "#dbeafe"};color:${invoice.status === "paid" ? "#065f46" : "#1e40af"}}
       .section{margin-bottom:24px}
       .label{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#999;margin-bottom:4px}
@@ -62,28 +69,28 @@ function PrintButton({ invoice, items }: { invoice: any; items: any[] }) {
       @media print{body{margin:20px}}
     </style></head><body>
     <div class="header">
-      <div><div class="brand">HaloLight Hub</div><h1 style="margin-top:12px">INVOICE</h1><div style="color:#666;font-size:16px;margin-top:4px">${invoice.invoiceNumber}</div><span class="badge">${invoice.status.toUpperCase()}</span></div>
+      <div><div class="brand">HaloLight Hub</div><h1 style="margin-top:12px">${t("invoices.print_invoice").toUpperCase()}</h1><div style="color:#666;font-size:16px;margin-top:4px">${invoice.invoiceNumber}</div><span class="badge">${invoice.status.toUpperCase()}</span></div>
       <div style="text-align:right;font-size:12px;color:#666">
-        <div style="font-size:11px;color:#999">INVOICE DATE</div><div>${new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"})}</div>
-        ${invoice.dueDate ? `<div style="margin-top:8px;font-size:11px;color:#999">DUE DATE</div><div>${new Date(invoice.dueDate).toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"})}</div>` : ""}
+        <div style="font-size:11px;color:#999">${t("invoices.print_invoice_date").toUpperCase()}</div><div>${today}</div>
+        ${dueDateStr ? `<div style="margin-top:8px;font-size:11px;color:#999">${t("invoices.due_date_label").toUpperCase()}</div><div>${dueDateStr}</div>` : ""}
       </div>
     </div>
-    ${invoice.status === "paid" ? `<div class="paid-stamp">✓ PAID — ${invoice.paidAt ? new Date(invoice.paidAt).toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"}) : ""}${invoice.paymentMethod ? " via " + invoice.paymentMethod : ""}${invoice.paymentReference ? " — Ref: " + invoice.paymentReference : ""}</div>` : ""}
+    ${invoice.status === "paid" ? `<div class="paid-stamp">✓ ${t("invoices.print_paid")} — ${paidAtStr}${invoice.paymentMethod ? " " + t("invoices.via") + " " + invoice.paymentMethod : ""}${invoice.paymentReference ? " — " + t("invoices.ref_label") + " " + invoice.paymentReference : ""}</div>` : ""}
     <div style="display:flex;gap:64px;margin-bottom:28px;padding-bottom:24px;border-bottom:1px solid #eee">
-      <div><div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#999;margin-bottom:4px">From</div><div style="font-size:15px;font-weight:600">${me?.fullName ?? ""}</div>${me?.companyName ? `<div style="color:#666;margin-top:2px">${me.companyName}</div>` : ""}${me?.email ? `<div style="color:#666">${me.email}</div>` : ""}${(me as { phone?: string } | undefined)?.phone ? `<div style="color:#666">${(me as { phone?: string }).phone}</div>` : ""}</div>
-      <div><div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#999;margin-bottom:4px">Bill To</div><div style="font-size:16px;font-weight:600">${invoice.clientName}</div>${invoice.clientEmail ? `<div style="color:#666">${invoice.clientEmail}</div>` : ""}</div>
+      <div><div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#999;margin-bottom:4px">${t("invoices.print_from")}</div><div style="font-size:15px;font-weight:600">${me?.fullName ?? ""}</div>${me?.companyName ? `<div style="color:#666;margin-top:2px">${me.companyName}</div>` : ""}${me?.email ? `<div style="color:#666">${me.email}</div>` : ""}${(me as { phone?: string } | undefined)?.phone ? `<div style="color:#666">${(me as { phone?: string }).phone}</div>` : ""}</div>
+      <div><div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#999;margin-bottom:4px">${t("invoices.bill_to")}</div><div style="font-size:16px;font-weight:600">${invoice.clientName}</div>${invoice.clientEmail ? `<div style="color:#666">${invoice.clientEmail}</div>` : ""}</div>
     </div>
     <table>
-      <thead><tr><th style="width:50%">Description</th><th style="text-align:right">Qty</th><th style="text-align:right">Unit Price</th><th style="text-align:right">Total</th></tr></thead>
+      <thead><tr><th style="width:50%">${t("invoices.description_col")}</th><th style="text-align:right">${t("invoices.qty_col")}</th><th style="text-align:right">${t("invoices.unit_price_col")}</th><th style="text-align:right">${t("invoices.total_col")}</th></tr></thead>
       <tbody>${items.map((item: any) => `<tr><td>${item.description}</td><td style="text-align:right">${item.quantity}</td><td style="text-align:right">${formatCurrency(item.unitPrice)}</td><td style="text-align:right">${formatCurrency(item.total)}</td></tr>`).join("")}</tbody>
     </table>
     <table class="totals">
-      <tr><td>Subtotal</td><td>${formatCurrency(invoice.subtotal)}</td></tr>
-      <tr><td>Tax (${invoice.taxRate}%)</td><td>${formatCurrency(invoice.taxAmount)}</td></tr>
-      <tr class="grand"><td>Total</td><td>${formatCurrency(invoice.total)}</td></tr>
+      <tr><td>${t("invoices.subtotal_label")}</td><td>${formatCurrency(invoice.subtotal)}</td></tr>
+      <tr><td>${t("invoices.tax_label", { rate: invoice.taxRate })}</td><td>${formatCurrency(invoice.taxAmount)}</td></tr>
+      <tr class="grand"><td>${t("invoices.total_col")}</td><td>${formatCurrency(invoice.total)}</td></tr>
     </table>
-    ${invoice.notes ? `<div class="section"><div class="label">Notes</div><div style="font-size:13px;color:#666;white-space:pre-wrap">${invoice.notes}</div></div>` : ""}
-    ${invoice.terms ? `<div class="section"><div class="label">Terms</div><div style="font-size:13px;color:#666;white-space:pre-wrap">${invoice.terms}</div></div>` : ""}
+    ${invoice.notes ? `<div class="section"><div class="label">${t("invoices.notes_section")}</div><div style="font-size:13px;color:#666;white-space:pre-wrap">${invoice.notes}</div></div>` : ""}
+    ${invoice.terms ? `<div class="section"><div class="label">${t("invoices.payment_terms_section")}</div><div style="font-size:13px;color:#666;white-space:pre-wrap">${invoice.terms}</div></div>` : ""}
     </body></html>`;
     const w = window.open("", "_blank");
     if (w) { w.document.write(html); w.document.close(); w.focus(); w.print(); }
@@ -95,7 +102,8 @@ export default function InvoiceDetail() {
   const [, params] = useRoute("/invoices/:id");
   const id = params?.id ?? "";
   const [, navigate] = useLocation();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const lang = i18n.language?.split("-")[0] ?? "en";
   const { toast } = useToast();
   const qc = useQueryClient();
   const { format: formatCurrency } = useCurrency();
@@ -161,7 +169,7 @@ export default function InvoiceDetail() {
           </div>
         </div>
         <div className="flex gap-2 flex-wrap">
-          <PrintButton invoice={invoice} items={items} />
+          <PrintButton invoice={invoice} items={items} lang={lang} />
           {invoice.status !== "paid" && invoice.status !== "cancelled" && (
             <Button onClick={() => { setPaymentForm({ paidAmount: invoice.total, paymentMethod: "Bank Transfer", paymentReference: "" }); setShowMarkPaid(true); }} className="gap-2 bg-success hover:bg-success/90">
               <CheckCircle2 className="w-4 h-4" /> {t("invoices.mark_as_paid_btn")}
@@ -181,7 +189,7 @@ export default function InvoiceDetail() {
           <CheckCircle2 className="w-5 h-5 text-success shrink-0" />
           <div className="text-sm">
             <span className="font-semibold text-success">{t("invoices.payment_received_label")} — </span>
-            <span className="text-success">{formatCurrency(invoice.paidAmount ?? invoice.total)} on {formatDate(invoice.paidAt)}</span>
+            <span className="text-success">{formatCurrency(invoice.paidAmount ?? invoice.total)} {t("invoices.paid_on")} {formatDate(invoice.paidAt, lang)}</span>
             {invoice.paymentMethod && <span className="text-success"> {t("invoices.via")} {invoice.paymentMethod}</span>}
             {invoice.paymentReference && <span className="text-success"> · {t("invoices.ref_label")} {invoice.paymentReference}</span>}
           </div>
@@ -191,7 +199,7 @@ export default function InvoiceDetail() {
       {invoice.status === "overdue" && (
         <div className="rounded-xl bg-destructive/10 border border-destructive/30 p-4 flex items-center gap-3">
           <AlertCircle className="w-5 h-5 text-destructive shrink-0" />
-          <p className="text-sm text-destructive font-medium">{t("invoices.overdue_full", { date: formatDate(invoice.dueDate) })}</p>
+          <p className="text-sm text-destructive font-medium">{t("invoices.overdue_full", { date: formatDate(invoice.dueDate, lang) })}</p>
         </div>
       )}
 
@@ -206,10 +214,10 @@ export default function InvoiceDetail() {
         <div className="rounded-xl border bg-card p-5 space-y-3">
           <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">{t("invoices.dates_section")}</h3>
           <div className="space-y-1.5 text-sm">
-            <div className="flex justify-between"><span className="text-muted-foreground">{t("common.created")}</span><span>{formatDate(invoice.createdAt)}</span></div>
-            {invoice.dueDate && <div className="flex justify-between"><span className="text-muted-foreground">{t("invoices.due_date_label")}</span><span className={cn(invoice.status === "overdue" ? "text-destructive font-medium" : "")}>{formatDate(invoice.dueDate)}</span></div>}
-            {invoice.sentAt && <div className="flex justify-between"><span className="text-muted-foreground">{t("invoices.sent_label")}</span><span>{formatDate(invoice.sentAt)}</span></div>}
-            {invoice.paidAt && <div className="flex justify-between"><span className="text-muted-foreground">{t("invoices.paid_label")}</span><span className="text-success font-medium">{formatDate(invoice.paidAt)}</span></div>}
+            <div className="flex justify-between"><span className="text-muted-foreground">{t("common.created")}</span><span>{formatDate(invoice.createdAt, lang)}</span></div>
+            {invoice.dueDate && <div className="flex justify-between"><span className="text-muted-foreground">{t("invoices.due_date_label")}</span><span className={cn(invoice.status === "overdue" ? "text-destructive font-medium" : "")}>{formatDate(invoice.dueDate, lang)}</span></div>}
+            {invoice.sentAt && <div className="flex justify-between"><span className="text-muted-foreground">{t("invoices.sent_label")}</span><span>{formatDate(invoice.sentAt, lang)}</span></div>}
+            {invoice.paidAt && <div className="flex justify-between"><span className="text-muted-foreground">{t("invoices.paid_label")}</span><span className="text-success font-medium">{formatDate(invoice.paidAt, lang)}</span></div>}
           </div>
         </div>
         <div className="rounded-xl border bg-card p-5 space-y-3">

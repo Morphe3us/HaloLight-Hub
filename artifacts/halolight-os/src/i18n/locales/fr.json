@@ -748,7 +748,10 @@
     "tax_label": "Taxe ({{rate}} %)",
     "print_btn": "Imprimer / PDF",
     "all_statuses": "Tous les statuts",
-    "create_quote_btn": "Créer le devis"
+    "create_quote_btn": "Créer le devis",
+    "print_quote_date": "Date du devis",
+    "print_from": "De",
+    "print_prepared_for": "Préparé pour"
   },
   "contracts": {
     "title": "Contrats",
@@ -774,7 +777,7 @@
     "title_placeholder": "Accord forfait mariage",
     "client_name_label": "Nom du client",
     "client_email_label": "E-mail du client",
-    "value_label": "Valeur (€)",
+    "value_label": "Valeur du contrat",
     "content_label": "Contenu",
     "content_placeholder": "Conditions générales…",
     "notes_label": "Notes",
@@ -802,14 +805,16 @@
     "count": "{{count}} contrats",
     "value_section": "Valeur",
     "loading": "Chargement…",
-    "value_dollar_label": "Valeur ($)",
+    "value_dollar_label": "Valeur",
     "tax_label": "Taxe ({{rate}} %)",
     "signed_label2": "Signé",
     "document_section": "Document contractuel",
     "total_label": "Total des contrats",
     "pending_label": "En attente",
     "all_statuses": "Tous les statuts",
-    "create_contract_btn": "Créer le contrat"
+    "create_contract_btn": "Créer le contrat",
+    "print_prepared_by": "Préparé par",
+    "print_date": "Date"
   },
   "invoices": {
     "title": "Factures",
@@ -882,7 +887,12 @@
     "all_statuses": "Tous les statuts",
     "create_invoice_btn": "Créer la facture",
     "paid_label": "Payé",
-    "payment_received_label": "Paiement reçu"
+    "payment_received_label": "Paiement reçu",
+    "print_invoice": "Facture",
+    "print_invoice_date": "Date de facture",
+    "print_from": "De",
+    "print_paid": "PAYÉ",
+    "paid_on": "le"
   },
   "admin_analytics": {
     "title": "Tableau de bord analytique",

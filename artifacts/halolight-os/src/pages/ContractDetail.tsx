@@ -26,23 +26,24 @@ const STATUS_COLORS: Record<string, string> = {
 
 const STATUS_KEYS = ["draft", "sent", "signed", "active", "expired", "cancelled"];
 
-function formatDate(d: string | null | undefined) {
+function formatDate(d: string | null | undefined, locale = "en") {
   if (!d) return "—";
-  return new Date(d).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+  return new Date(d).toLocaleDateString(locale, { year: "numeric", month: "long", day: "numeric" });
 }
 
-function PrintButton({ contractNumber, title, clientName, content, value }: {
-  contractNumber: string; title: string; clientName: string; content: string; value: string;
+function PrintButton({ contractNumber, title, clientName, content, value, lang }: {
+  contractNumber: string; title: string; clientName: string; content: string; value: string; lang: string;
 }) {
   const { t } = useTranslation();
   const { format: formatCurrency } = useCurrency();
   const { data: me } = useGetCurrentUser();
   const handlePrint = () => {
+    const today = new Date().toLocaleDateString(lang, { year: "numeric", month: "long", day: "numeric" });
     const html = `<!DOCTYPE html><html><head><title>${contractNumber}</title>
     <style>
       body{font-family:Arial,sans-serif;max-width:800px;margin:40px auto;color:#111;font-size:14px;line-height:1.7}
       h1{font-size:22px;margin:0 0 4px}
-      .brand{font-size:22px;font-weight:700;color:#7c3aed;margin-bottom:24px}
+      .brand{font-size:22px;font-weight:700;color:#DDB398;margin-bottom:24px}
       .header{border-bottom:2px solid #eee;padding-bottom:24px;margin-bottom:24px}
       .meta{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;padding:16px;background:#f9f9f9;border-radius:8px;font-size:13px}
       .meta-label{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#999;margin-bottom:2px}
@@ -55,10 +56,10 @@ function PrintButton({ contractNumber, title, clientName, content, value }: {
       <div style="color:#666;margin-top:4px">${contractNumber}</div>
     </div>
     <div class="meta">
-      <div><div class="meta-label">Prepared By</div><div style="font-weight:600">${me?.fullName ?? ""}</div>${me?.companyName ? `<div style="color:#666;margin-top:2px;font-size:12px">${me.companyName}</div>` : ""}${me?.email ? `<div style="color:#666;font-size:12px">${me.email}</div>` : ""}</div>
-      <div><div class="meta-label">Client</div><div style="font-weight:600">${clientName}</div></div>
-      <div><div class="meta-label">Contract Value</div><div style="font-weight:600">${formatCurrency(Number(value))}</div></div>
-      <div><div class="meta-label">Date</div><div>${new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"})}</div></div>
+      <div><div class="meta-label">${t("contracts.print_prepared_by")}</div><div style="font-weight:600">${me?.fullName ?? ""}</div>${me?.companyName ? `<div style="color:#666;margin-top:2px;font-size:12px">${me.companyName}</div>` : ""}${me?.email ? `<div style="color:#666;font-size:12px">${me.email}</div>` : ""}</div>
+      <div><div class="meta-label">${t("contracts.client_section")}</div><div style="font-weight:600">${clientName}</div></div>
+      <div><div class="meta-label">${t("contracts.contract_value")}</div><div style="font-weight:600">${formatCurrency(Number(value))}</div></div>
+      <div><div class="meta-label">${t("contracts.print_date")}</div><div>${today}</div></div>
     </div>
     <div class="content">${content.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</div>
     </body></html>`;
@@ -72,7 +73,8 @@ export default function ContractDetail() {
   const [, params] = useRoute("/contracts/:id");
   const id = params?.id ?? "";
   const [, navigate] = useLocation();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const lang = i18n.language?.split("-")[0] ?? "en";
   const { toast } = useToast();
   const qc = useQueryClient();
   const { format: formatCurrency } = useCurrency();
@@ -141,7 +143,7 @@ export default function ContractDetail() {
           </div>
         </div>
         <div className="flex gap-2 flex-wrap">
-          <PrintButton contractNumber={contract.contractNumber} title={contract.title} clientName={contract.clientName} content={contract.content} value={contract.value} />
+          <PrintButton contractNumber={contract.contractNumber} title={contract.title} clientName={contract.clientName} content={contract.content} value={contract.value} lang={lang} />
           <Button variant="outline" onClick={startEdit} className="gap-2"><Edit2 className="w-4 h-4" /> {t("common.edit")}</Button>
           <Select value={contract.status} onValueChange={(s) => statusMutation.mutate({ id, data: { status: s as any } })}>
             <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
@@ -163,11 +165,11 @@ export default function ContractDetail() {
         <div className="rounded-xl border bg-card p-5 space-y-3">
           <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">{t("contracts.dates_section")}</h3>
           <div className="space-y-1.5 text-sm">
-            <div className="flex justify-between"><span className="text-muted-foreground">{t("common.created")}</span><span>{formatDate(contract.createdAt)}</span></div>
-            {contract.sentAt && <div className="flex justify-between"><span className="text-muted-foreground">{t("contracts.sent_label")}</span><span>{formatDate(contract.sentAt)}</span></div>}
-            {contract.signedAt && <div className="flex justify-between"><span className="text-muted-foreground">{t("contracts.signed_label2")}</span><span className="text-success font-medium">{formatDate(contract.signedAt)}</span></div>}
-            {contract.startDate && <div className="flex justify-between"><span className="text-muted-foreground">{t("contracts.start_label")}</span><span>{formatDate(contract.startDate)}</span></div>}
-            {contract.endDate && <div className="flex justify-between"><span className="text-muted-foreground">{t("contracts.end_label")}</span><span>{formatDate(contract.endDate)}</span></div>}
+            <div className="flex justify-between"><span className="text-muted-foreground">{t("common.created")}</span><span>{formatDate(contract.createdAt, lang)}</span></div>
+            {contract.sentAt && <div className="flex justify-between"><span className="text-muted-foreground">{t("contracts.sent_label")}</span><span>{formatDate(contract.sentAt, lang)}</span></div>}
+            {contract.signedAt && <div className="flex justify-between"><span className="text-muted-foreground">{t("contracts.signed_label2")}</span><span className="text-success font-medium">{formatDate(contract.signedAt, lang)}</span></div>}
+            {contract.startDate && <div className="flex justify-between"><span className="text-muted-foreground">{t("contracts.start_label")}</span><span>{formatDate(contract.startDate, lang)}</span></div>}
+            {contract.endDate && <div className="flex justify-between"><span className="text-muted-foreground">{t("contracts.end_label")}</span><span>{formatDate(contract.endDate, lang)}</span></div>}
           </div>
         </div>
         <div className="rounded-xl border bg-card p-5 space-y-3">

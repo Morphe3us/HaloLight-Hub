@@ -25,13 +25,13 @@ export const CURRENCY_LABELS: Record<string, string> = {
 export function formatCurrency(
   amount: number | string | null | undefined,
   currency = "EUR",
-  opts?: { divideBy100?: boolean }
+  opts?: { divideBy100?: boolean; locale?: string }
 ): string {
   let num = Number(amount ?? 0);
   if (isNaN(num)) return "—";
   if (opts?.divideBy100) num = num / 100;
   try {
-    return new Intl.NumberFormat(undefined, {
+    return new Intl.NumberFormat(opts?.locale ?? undefined, {
       style: "currency",
       currency,
       minimumFractionDigits: 0,
@@ -45,11 +45,12 @@ export function formatCurrency(
 export function useCurrency() {
   const { data: user } = useGetCurrentUser();
   const currency: string = (user as any)?.currency ?? "EUR";
+  const locale: string | undefined = (user as any)?.language ?? undefined;
   return {
     currency,
     format: (amount: number | string | null | undefined) =>
-      formatCurrency(amount, currency),
+      formatCurrency(amount, currency, { locale }),
     formatCents: (amount: number | string | null | undefined) =>
-      formatCurrency(amount, currency, { divideBy100: true }),
+      formatCurrency(amount, currency, { divideBy100: true, locale }),
   };
 }

@@ -748,7 +748,10 @@
     "tax_label": "Belasting ({{rate}} %)",
     "print_btn": "Afdrukken / PDF",
     "all_statuses": "Alle statussen",
-    "create_quote_btn": "Offerte aanmaken"
+    "create_quote_btn": "Offerte aanmaken",
+    "print_quote_date": "Offertedatum",
+    "print_from": "Van",
+    "print_prepared_for": "Opgesteld voor"
   },
   "contracts": {
     "title": "Contracten",
@@ -774,7 +777,7 @@
     "title_placeholder": "Wedding Package Agreement",
     "client_name_label": "Client Name",
     "client_email_label": "Client Email",
-    "value_label": "Contract Value ($)",
+    "value_label": "Contractwaarde",
     "content_label": "Content",
     "content_placeholder": "Contract terms and conditions…",
     "notes_label": "Notes",
@@ -802,14 +805,16 @@
     "count": "{{count}} contracten",
     "value_section": "Waarde",
     "loading": "Laden…",
-    "value_dollar_label": "Waarde ($)",
+    "value_dollar_label": "Waarde",
     "tax_label": "Belasting ({{rate}} %)",
     "signed_label2": "Ondertekend",
     "document_section": "Contractdocument",
     "total_label": "Totaal contracten",
     "pending_label": "In behandeling",
     "all_statuses": "Alle statussen",
-    "create_contract_btn": "Contract aanmaken"
+    "create_contract_btn": "Contract aanmaken",
+    "print_prepared_by": "Opgesteld door",
+    "print_date": "Datum"
   },
   "invoices": {
     "title": "Facturen",
@@ -882,7 +887,12 @@
     "all_statuses": "Alle statussen",
     "create_invoice_btn": "Factuur aanmaken",
     "paid_label": "Betaald",
-    "payment_received_label": "Betaling ontvangen"
+    "payment_received_label": "Betaling ontvangen",
+    "print_invoice": "Factuur",
+    "print_invoice_date": "Factuurdatum",
+    "print_from": "Van",
+    "print_paid": "BETAALD",
+    "paid_on": "op"
   },
   "admin_analytics": {
     "title": "Analytics-dashboard",

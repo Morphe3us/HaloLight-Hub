@@ -21,21 +21,26 @@ const STATUS_COLORS: Record<string, string> = {
 
 const STATUS_KEYS = ["draft", "sent", "accepted", "declined", "expired"];
 
-function formatDate(d: string | null | undefined) {
+function formatDate(d: string | null | undefined, locale = "en") {
   if (!d) return "—";
-  return new Date(d).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+  return new Date(d).toLocaleDateString(locale, { year: "numeric", month: "long", day: "numeric" });
 }
 
-function PrintPreview({ quoteNumber, title, clientName, clientEmail, items, subtotal, taxRate, taxAmount, total, notes, terms, validUntil }: {
+function PrintPreview({ quoteNumber, title, clientName, clientEmail, items, subtotal, taxRate, taxAmount, total, notes, terms, validUntil, lang }: {
   quoteNumber: string; title: string; clientName: string; clientEmail?: string | null;
   items: Array<{ description: string; quantity: string; unitPrice: string; total: string }>;
   subtotal: string; taxRate: string; taxAmount: string; total: string;
   notes?: string | null; terms?: string | null; validUntil?: string | null;
+  lang: string;
 }) {
   const { t } = useTranslation();
   const { format: formatCurrency } = useCurrency();
   const { data: me } = useGetCurrentUser();
   const handlePrint = () => {
+    const today = new Date().toLocaleDateString(lang, { year: "numeric", month: "long", day: "numeric" });
+    const validUntilStr = validUntil
+      ? new Date(validUntil).toLocaleDateString(lang, { year: "numeric", month: "long", day: "numeric" })
+      : null;
     const html = `<!DOCTYPE html><html><head><title>${quoteNumber}</title>
     <style>
       body{font-family:Arial,sans-serif;max-width:800px;margin:40px auto;color:#111;font-size:14px}
@@ -59,36 +64,36 @@ function PrintPreview({ quoteNumber, title, clientName, clientEmail, items, subt
     <div class="header">
       <div><div class="brand">HaloLight Hub</div><h1 style="margin-top:12px">${quoteNumber}</h1><div style="color:#666;margin-top:4px">${title}</div></div>
       <div class="meta">
-        <div style="font-size:11px;color:#999">QUOTE DATE</div>
-        <div>${new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"})}</div>
-        ${validUntil ? `<div style="margin-top:8px;font-size:11px;color:#999">VALID UNTIL</div><div>${new Date(validUntil).toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"})}</div>` : ""}
+        <div style="font-size:11px;color:#999">${t("quotes.print_quote_date").toUpperCase()}</div>
+        <div>${today}</div>
+        ${validUntilStr ? `<div style="margin-top:8px;font-size:11px;color:#999">${t("quotes.valid_until_label").toUpperCase()}</div><div>${validUntilStr}</div>` : ""}
       </div>
     </div>
     <div class="parties">
       <div>
-        <div class="label">From</div>
+        <div class="label">${t("quotes.print_from")}</div>
         <div style="font-size:15px;font-weight:600">${me?.fullName ?? ""}</div>
         ${me?.companyName ? `<div style="color:#666;margin-top:2px">${me.companyName}</div>` : ""}
         ${me?.email ? `<div style="color:#666">${me.email}</div>` : ""}
         ${(me as { phone?: string } | undefined)?.phone ? `<div style="color:#666">${(me as { phone?: string }).phone}</div>` : ""}
       </div>
       <div>
-        <div class="label">Prepared For</div>
+        <div class="label">${t("quotes.print_prepared_for")}</div>
         <div style="font-size:16px;font-weight:600">${clientName}</div>
         ${clientEmail ? `<div style="color:#666">${clientEmail}</div>` : ""}
       </div>
     </div>
     <table>
-      <thead><tr><th style="width:50%">Description</th><th style="text-align:right">Qty</th><th style="text-align:right">Unit Price</th><th style="text-align:right">Total</th></tr></thead>
+      <thead><tr><th style="width:50%">${t("quotes.description_col")}</th><th style="text-align:right">${t("quotes.qty_col")}</th><th style="text-align:right">${t("quotes.unit_price_col")}</th><th style="text-align:right">${t("quotes.total_col")}</th></tr></thead>
       <tbody>${items.map((item) => `<tr><td>${item.description}</td><td style="text-align:right">${item.quantity}</td><td style="text-align:right">${formatCurrency(item.unitPrice)}</td><td style="text-align:right">${formatCurrency(item.total)}</td></tr>`).join("")}</tbody>
     </table>
     <table class="totals">
-      <tr><td>Subtotal</td><td>${formatCurrency(subtotal)}</td></tr>
-      <tr><td>Tax (${taxRate}%)</td><td>${formatCurrency(taxAmount)}</td></tr>
-      <tr class="grand"><td style="font-weight:700">Total</td><td style="font-size:18px;font-weight:700">${formatCurrency(total)}</td></tr>
+      <tr><td>${t("quotes.subtotal")}</td><td>${formatCurrency(subtotal)}</td></tr>
+      <tr><td>${t("quotes.tax_label", { rate: taxRate })}</td><td>${formatCurrency(taxAmount)}</td></tr>
+      <tr class="grand"><td style="font-weight:700">${t("quotes.total_col")}</td><td style="font-size:18px;font-weight:700">${formatCurrency(total)}</td></tr>
     </table>
-    ${notes ? `<div class="section"><div class="label">Notes</div><div class="notes">${notes}</div></div>` : ""}
-    ${terms ? `<div class="section"><div class="label">Terms &amp; Conditions</div><div class="notes">${terms}</div></div>` : ""}
+    ${notes ? `<div class="section"><div class="label">${t("quotes.notes_section")}</div><div class="notes">${notes}</div></div>` : ""}
+    ${terms ? `<div class="section"><div class="label">${t("quotes.terms_section")}</div><div class="notes">${terms}</div></div>` : ""}
     </body></html>`;
     const w = window.open("", "_blank");
     if (w) { w.document.write(html); w.document.close(); w.focus(); w.print(); }
@@ -105,7 +110,8 @@ export default function QuoteDetail() {
   const [, params] = useRoute("/quotes/:id");
   const id = params?.id ?? "";
   const [, navigate] = useLocation();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const lang = i18n.language?.split("-")[0] ?? "en";
   const { toast } = useToast();
   const qc = useQueryClient();
   const { format: formatCurrency } = useCurrency();
@@ -159,6 +165,7 @@ export default function QuoteDetail() {
               notes={quote.notes}
               terms={quote.terms}
               validUntil={quote.validUntil}
+              lang={lang}
             />
           )}
           <Select value={quote.status} onValueChange={(s) => statusMutation.mutate({ id, data: { status: s as any } })}>
@@ -183,10 +190,10 @@ export default function QuoteDetail() {
         <div className="rounded-xl border bg-card p-5 space-y-3">
           <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">{t("quotes.dates_section")}</h3>
           <div className="space-y-2 text-sm">
-            <div className="flex justify-between"><span className="text-muted-foreground">{t("common.created")}</span><span>{formatDate(quote.createdAt)}</span></div>
-            <div className="flex justify-between"><span className="text-muted-foreground">{t("quotes.valid_until_label")}</span><span>{formatDate(quote.validUntil)}</span></div>
-            {quote.sentAt && <div className="flex justify-between"><span className="text-muted-foreground">{t("quotes.sent_label")}</span><span>{formatDate(quote.sentAt)}</span></div>}
-            {quote.acceptedAt && <div className="flex justify-between"><span className="text-muted-foreground">{t("quotes.accepted_at_label")}</span><span>{formatDate(quote.acceptedAt)}</span></div>}
+            <div className="flex justify-between"><span className="text-muted-foreground">{t("common.created")}</span><span>{formatDate(quote.createdAt, lang)}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">{t("quotes.valid_until_label")}</span><span>{formatDate(quote.validUntil, lang)}</span></div>
+            {quote.sentAt && <div className="flex justify-between"><span className="text-muted-foreground">{t("quotes.sent_label")}</span><span>{formatDate(quote.sentAt, lang)}</span></div>}
+            {quote.acceptedAt && <div className="flex justify-between"><span className="text-muted-foreground">{t("quotes.accepted_at_label")}</span><span>{formatDate(quote.acceptedAt, lang)}</span></div>}
           </div>
         </div>
 

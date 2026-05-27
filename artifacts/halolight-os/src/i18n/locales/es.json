@@ -748,7 +748,10 @@
     "tax_label": "Impuesto ({{rate}} %)",
     "print_btn": "Imprimir / PDF",
     "all_statuses": "Todos los estados",
-    "create_quote_btn": "Crear presupuesto"
+    "create_quote_btn": "Crear presupuesto",
+    "print_quote_date": "Fecha del presupuesto",
+    "print_from": "De",
+    "print_prepared_for": "Preparado para"
   },
   "contracts": {
     "title": "Contratos",
@@ -774,7 +777,7 @@
     "title_placeholder": "Wedding Package Agreement",
     "client_name_label": "Client Name",
     "client_email_label": "Client Email",
-    "value_label": "Contract Value ($)",
+    "value_label": "Valor del contrato",
     "content_label": "Content",
     "content_placeholder": "Contract terms and conditions…",
     "notes_label": "Notes",
@@ -802,14 +805,16 @@
     "count": "{{count}} contratos",
     "value_section": "Valor",
     "loading": "Cargando…",
-    "value_dollar_label": "Valor ($)",
+    "value_dollar_label": "Valor",
     "tax_label": "Impuesto ({{rate}} %)",
     "signed_label2": "Firmado",
     "document_section": "Documento del contrato",
     "total_label": "Total de contratos",
     "pending_label": "Pendiente",
     "all_statuses": "Todos los estados",
-    "create_contract_btn": "Crear contrato"
+    "create_contract_btn": "Crear contrato",
+    "print_prepared_by": "Preparado por",
+    "print_date": "Fecha"
   },
   "invoices": {
     "title": "Facturas",
@@ -882,7 +887,12 @@
     "all_statuses": "Todos los estados",
     "create_invoice_btn": "Crear factura",
     "paid_label": "Pagado",
-    "payment_received_label": "Pago recibido"
+    "payment_received_label": "Pago recibido",
+    "print_invoice": "Factura",
+    "print_invoice_date": "Fecha de factura",
+    "print_from": "De",
+    "print_paid": "PAGADO",
+    "paid_on": "el"
   },
   "admin_analytics": {
     "title": "Panel de análisis",

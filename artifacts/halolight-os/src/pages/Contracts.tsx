@@ -26,13 +26,14 @@ const STATUS_COLORS: Record<string, string> = {
 
 const STATUS_KEYS = ["draft", "sent", "signed", "active", "expired", "cancelled"];
 
-function formatDate(d: string | null | undefined) {
+function formatDate(d: string | null | undefined, locale = "en") {
   if (!d) return "—";
-  return new Date(d).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
+  return new Date(d).toLocaleDateString(locale, { year: "numeric", month: "short", day: "numeric" });
 }
 
 export default function Contracts() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const lang = i18n.language?.split("-")[0] ?? "en";
   const { toast } = useToast();
   const qc = useQueryClient();
   const { format: formatCurrency } = useCurrency();
@@ -157,7 +158,7 @@ export default function Contracts() {
                     <td className="px-4 py-3 hidden sm:table-cell">
                       {color && <Badge variant="outline" className={cn("text-xs", color)}>{t(`contracts.status_${c.status}`)}</Badge>}
                     </td>
-                    <td className="px-4 py-3 hidden md:table-cell text-muted-foreground text-xs">{formatDate(c.signedAt)}</td>
+                    <td className="px-4 py-3 hidden md:table-cell text-muted-foreground text-xs">{formatDate(c.signedAt, lang)}</td>
                     <td className="px-4 py-3 text-right font-medium">{formatCurrency(c.value)}</td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">

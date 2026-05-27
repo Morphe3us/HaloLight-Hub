@@ -1,0 +1,102 @@
+Critical commercial documents localization bug.
+
+Contracts are still generated in English and still use dollars, even when the user has selected another language and currency in Settings.
+
+Expected behavior:
+
+Commercial documents must follow the user/client settings:
+
+* Quotes
+* Contracts
+* Invoices
+
+Must use:
+
+1. Selected currency from Settings
+   Examples:
+
+* EUR → €
+* USD → $
+* GBP → £
+* PLN → zł
+* SEK → kr
+* JPY → ¥
+* CNY → ¥
+  etc.
+
+2. Selected language from Settings
+   Examples:
+
+* FR user → contract in French
+* ES user → contract in Spanish
+* DE user → contract in German
+* IT user → contract in Italian
+* PT user → contract in Portuguese
+* PL user → contract in Polish
+* NL user → contract in Dutch
+* EN user → contract in English
+
+Current bug:
+
+* Contract stays in English
+* Contract uses dollars even when another currency is selected
+
+Please audit and fix the full document generation pipeline.
+
+Check:
+
+* Contract creation form
+* Contract detail page
+* Contract print/export view
+* Invoice print/export view
+* Quote print/export view
+* PDF/print templates if any
+* currency formatting helper
+* useCurrency hook
+* i18n translation keys
+* server-side generated document text if applicable
+
+Requirements:
+
+1. No hardcoded "$"
+2. No hardcoded English in generated documents
+3. Use Intl.NumberFormat with selected user currency
+4. Use translation keys for:
+
+   * titles
+   * section labels
+   * totals
+   * dates
+   * payment terms
+   * legal clauses
+   * signatures
+   * statuses
+   * buttons
+5. Owner/loueur info must appear in the selected language document
+6. Client info must appear correctly
+7. Amounts must stay numerically unchanged, only formatting/currency symbol changes
+8. If conversion is not implemented, do not convert values — only format with selected currency
+9. Make sure print views and on-screen views match
+
+Verification required:
+
+Test with:
+
+* FR + EUR → French contract, € amounts
+* EN + USD → English contract, $ amounts
+* ES + EUR → Spanish contract, € amounts
+* PL + PLN → Polish contract, zł amounts
+* DE + EUR → German contract, € amounts
+
+Also verify:
+
+* Quotes
+* Contracts
+* Invoices
+
+Provide:
+
+* files changed
+* hardcoded currency symbols removed
+* hardcoded English strings removed
+* verification summary for all tested languages/currencies
