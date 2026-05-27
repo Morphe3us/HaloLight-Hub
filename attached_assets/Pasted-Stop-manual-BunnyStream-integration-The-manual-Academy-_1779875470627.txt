@@ -1,0 +1,141 @@
+Stop manual BunnyStream integration.
+
+The manual Academy video workflow is still not reliable and is blocking beta launch.
+
+I have a Bunny Stream API key and all videos are already uploaded in Bunny Stream collections by language.
+
+Goal:
+Build a direct Bunny Stream integration so HaloLight Hub can fetch and import videos automatically.
+
+Bunny Stream structure:
+
+Collections:
+
+* French
+* English
+* German
+* Dutch
+* Spanish
+* Italian
+* Portuguese
+* Polish
+
+Each collection contains the videos for that language.
+
+Required admin page:
+
+Admin → Academy → Bunny Stream Importer
+
+Features:
+
+1. Bunny API connection
+
+* Add secure environment variable:
+  BUNNY_STREAM_API_KEY
+* Add optional:
+  BUNNY_STREAM_LIBRARY_ID
+* Never expose the API key to the frontend.
+
+2. Fetch Bunny collections
+
+* List Bunny Stream collections
+* Show collection name
+* Show collection ID
+* Map each collection to a HaloLight language:
+  French → fr
+  English → en
+  German → de
+  Dutch → nl
+  Spanish → es
+  Italian → it
+  Portuguese → pt
+  Polish → pl
+
+3. Fetch videos per collection
+   For each video, retrieve:
+
+* title
+* video ID
+* collection ID
+* embed URL
+* thumbnail URL
+* preview animation URL if available
+* duration
+* status / processing state
+
+4. Import workflow
+   Admin should be able to:
+
+* select one or multiple collections
+* preview videos before import
+* assign videos to:
+
+  * course
+  * module
+  * lesson
+  * language
+* auto-create missing course/module/lesson
+* update existing lessons if title matches
+* store Bunny video assets per language
+
+5. Lesson video storage
+   Store assets like:
+
+videoAssets: {
+fr: {
+embedUrl: "...",
+thumbnailUrl: "...",
+previewUrl: "...",
+videoId: "..."
+},
+en: {
+embedUrl: "...",
+thumbnailUrl: "...",
+previewUrl: "...",
+videoId: "..."
+}
+}
+
+6. Client Academy rendering
+   After import:
+
+* course card shows thumbnail
+* course detail shows modules and lessons
+* lesson page shows Bunny iframe
+* video plays
+* correct language video is selected based on user language
+* fallback to English if selected language is missing
+
+7. Admin verification
+   Add a “Test video” button in the importer:
+
+* opens the Bunny iframe preview
+* confirms thumbnail loads
+* confirms embed URL is valid
+
+8. Debugging
+   Add clear logs/errors for:
+
+* invalid API key
+* missing library ID
+* collection fetch failure
+* video still processing
+* missing thumbnail
+* import conflict
+* duplicate lesson title
+
+9. Important
+
+* Do not rely on manual URL paste anymore as the main workflow.
+* Keep manual fields as fallback only.
+* Fix the current Academy 0 lessons / 0m issue as part of this.
+* Verify with a real Bunny video from the API.
+* Run typecheck.
+
+Provide:
+
+* exact Bunny API endpoints used
+* environment variables needed
+* files changed
+* how videos are mapped to lessons
+* verification steps
