@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { useParams, Link } from "wouter";
-import { useGetCourse, useGetCurrentUser } from "@workspace/api-client-react";
+import { useGetCourse } from "@workspace/api-client-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -77,13 +77,11 @@ type CourseModule = {
 
 /**
  * Client-side safety filter — mirrors server-side filterModulesForLang().
- * Admins see all modules. Regular users see only modules for their language.
+ * Always filters by language on public Academy pages — no role bypass.
  * Falls back to English if the user's language has no module.
- * Non-language-track modules (detectModuleLang = null) are always included.
+ * Non-language-track modules are always included.
  */
-function filterModulesByLang(mods: CourseModule[], lang: string, isAdmin: boolean): CourseModule[] {
-  if (isAdmin) return mods;
-
+function filterModulesByLang(mods: CourseModule[], lang: string): CourseModule[] {
   const hasLangMods = mods.some((m) => getModuleLang(m.title) !== null);
   if (!hasLangMods) return mods; // not a language-structured course
 
@@ -102,9 +100,6 @@ export default function AcademyCourse() {
   const lang = i18n.language?.split("-")[0] ?? "en";
   const { courseId } = useParams<{ courseId: string }>();
   const { data: course, isLoading: isLoadingCourse } = useGetCourse(courseId!);
-  const { data: currentUser } = useGetCurrentUser();
-  const isAdmin = currentUser?.role === "admin";
-
   if (isLoadingCourse) {
     return (
       <div className="space-y-8">
@@ -129,7 +124,7 @@ export default function AcademyCourse() {
   }
 
   // Apply client-side language filter (safety net on top of server-side filtering)
-  const visibleModules = filterModulesByLang(course.modules as CourseModule[], lang, isAdmin);
+  const visibleModules = filterModulesByLang(course.modules as CourseModule[], lang);
 
   const allVisibleLessons = visibleModules.flatMap((m) => m.lessons);
   const totalLessons = allVisibleLessons.length;

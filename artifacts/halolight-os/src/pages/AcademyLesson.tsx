@@ -4,7 +4,6 @@ import { useParams, useLocation, Link } from "wouter";
 import {
   useGetLesson,
   useGetCourse,
-  useGetCurrentUser,
   useUpdateLessonProgress,
   useSubmitQuiz,
 } from "@workspace/api-client-react";
@@ -104,11 +103,8 @@ function getModuleLang(title: string): string | null {
 
 function filterModulesByLang<T extends { title: string; lessons: unknown[] }>(
   mods: T[],
-  lang: string,
-  isAdmin: boolean
+  lang: string
 ): T[] {
-  if (isAdmin) return mods;
-
   const hasLangMods = mods.some((m) => getModuleLang(m.title) !== null);
   if (!hasLangMods) return mods;
 
@@ -129,7 +125,6 @@ export default function AcademyLesson() {
 
   const { data: lesson, isLoading: isLoadingLesson, refetch: refetchLesson } = useGetLesson(lessonId!);
   const { data: course, isLoading: isLoadingCourse } = useGetCourse(courseId!);
-  const { data: currentUser } = useGetCurrentUser();
   const { mutate: updateProgress } = useUpdateLessonProgress();
   const { mutate: submitQuiz } = useSubmitQuiz();
 
@@ -162,13 +157,11 @@ export default function AcademyLesson() {
   }
 
   const lang = i18n.language?.split("-")[0] ?? "en";
-  const isAdmin = currentUser?.role === "admin";
 
   // Apply client-side language filter for prev/next navigation — same logic as AcademyCourse.tsx
   const visibleModules = filterModulesByLang(
     course.modules as Array<{ id: string; title: string; lessons: Array<{ id: string; moduleTitle?: string }> }>,
-    lang,
-    isAdmin
+    lang
   );
 
   const allLessons = visibleModules.flatMap((m) =>

@@ -67,18 +67,15 @@ function detectModuleLang(title: unknown): string | null {
 }
 
 /**
- * For a client user, keeps only the module(s) matching their language.
+ * Keeps only the module(s) matching the user's language.
+ * Always applied on public /academy routes — regardless of role.
  * Falls back to English if no module exists for that language.
  * Regular (non-language-track) modules are always included.
- * Admins always see every module.
  */
 function filterModulesForLang<T extends { title: unknown }>(
   mods: T[],
-  lang: string,
-  isAdmin: boolean
+  lang: string
 ): T[] {
-  if (isAdmin) return mods;
-
   const hasLangModules = mods.some((m) => detectModuleLang(m.title) !== null);
   if (!hasLangModules) return mods; // regular course structure – no filtering needed
 
@@ -120,7 +117,6 @@ router.get("/academy/courses", requireAuth, async (req: Request, res: Response):
   if (!user) { res.status(401).json({ error: "Unauthorized" }); return; }
 
   const lang = (typeof req.query.lang === "string" ? req.query.lang : user.language) ?? "en";
-  const isAdmin = user.role === "admin";
 
   const allCourses = await db
     .select()
@@ -145,7 +141,7 @@ router.get("/academy/courses", requireAuth, async (req: Request, res: Response):
   }
   for (const c of allCourses) {
     const mods = modulesByCourse.get(c.id) ?? [];
-    filterModulesForLang(mods, lang, isAdmin).forEach((m) => visibleModuleIds.add(m.id));
+    filterModulesForLang(mods, lang).forEach((m) => visibleModuleIds.add(m.id));
   }
 
   const allLessonsForModules =
@@ -172,7 +168,7 @@ router.get("/academy/courses", requireAuth, async (req: Request, res: Response):
 
   const items = allCourses.map((c) => {
     const mods = modulesByCourse.get(c.id) ?? [];
-    const visibleMods = filterModulesForLang(mods, lang, isAdmin);
+    const visibleMods = filterModulesForLang(mods, lang);
     const visibleLessonIds = visibleMods.flatMap((m) => lessonsByModule.get(m.id) ?? []);
     const lessonCount = visibleLessonIds.length;
     const completedLessons = visibleLessonIds.filter((id) => completedLessonIds.has(id)).length;
@@ -202,7 +198,6 @@ router.get("/academy/courses/:id", requireAuth, async (req: Request, res: Respon
   if (!user) { res.status(401).json({ error: "Unauthorized" }); return; }
 
   const lang = (typeof req.query.lang === "string" ? req.query.lang : user.language) ?? "en";
-  const isAdmin = user.role === "admin";
   const courseId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
 
   const [course] = await db.select().from(courses).where(eq(courses.id, courseId));
@@ -214,7 +209,7 @@ router.get("/academy/courses/:id", requireAuth, async (req: Request, res: Respon
     .where(eq(courseModules.courseId, courseId))
     .orderBy(courseModules.order);
 
-  const visibleModules = filterModulesForLang(allModules, lang, isAdmin);
+  const visibleModules = filterModulesForLang(allModules, lang);
 
   const progressRows = await db
     .select()
@@ -437,7 +432,6 @@ router.get("/academy/progress/summary", requireAuth, async (req: Request, res: R
   if (!user) { res.status(401).json({ error: "Unauthorized" }); return; }
 
   const lang = (typeof req.query.lang === "string" ? req.query.lang : user.language) ?? "en";
-  const isAdmin = user.role === "admin";
 
   const allCourses = await db.select().from(courses).where(eq(courses.isPublished, true));
   const allModules = await db.select().from(courseModules);
@@ -459,7 +453,7 @@ router.get("/academy/progress/summary", requireAuth, async (req: Request, res: R
   const visibleModuleIds = new Set<string>();
   for (const c of allCourses) {
     const mods = courseModulesMap.get(c.id) ?? [];
-    filterModulesForLang(mods, lang, isAdmin).forEach((m) => visibleModuleIds.add(m.id));
+    filterModulesForLang(mods, lang).forEach((m) => visibleModuleIds.add(m.id));
   }
 
   const visibleLessons = allLessonsRaw.filter((l) => visibleModuleIds.has(l.moduleId));
@@ -486,7 +480,7 @@ router.get("/academy/progress/summary", requireAuth, async (req: Request, res: R
   let completedCourses = 0;
   for (const c of allCourses) {
     const mods = courseModulesMap.get(c.id) ?? [];
-    const visible = filterModulesForLang(mods, lang, isAdmin);
+    const visible = filterModulesForLang(mods, lang);
     const courseLessonIds = visible.flatMap((m) => lessonsByModule.get(m.id) ?? []);
     if (courseLessonIds.length > 0 && courseLessonIds.every((lid) => progressMap.get(lid)?.completedAt)) {
       completedCourses++;
@@ -512,7 +506,6 @@ router.get("/academy/progress/next-lesson", requireAuth, async (req: Request, re
   if (!user) { res.status(401).json({ error: "Unauthorized" }); return; }
 
   const lang = (typeof req.query.lang === "string" ? req.query.lang : user.language) ?? "en";
-  const isAdmin = user.role === "admin";
 
   const allCourses = await db
     .select()
@@ -533,7 +526,7 @@ router.get("/academy/progress/next-lesson", requireAuth, async (req: Request, re
   const visibleModuleIds = new Set<string>();
   for (const c of allCourses) {
     const mods = courseModulesMap.get(c.id) ?? [];
-    filterModulesForLang(mods, lang, isAdmin).forEach((m) => visibleModuleIds.add(m.id));
+    filterModulesForLang(mods, lang).forEach((m) => visibleModuleIds.add(m.id));
   }
 
   if (visibleModuleIds.size === 0) {
@@ -558,7 +551,7 @@ router.get("/academy/progress/next-lesson", requireAuth, async (req: Request, re
   const orderedLessons: typeof allLessonsRaw = [];
   for (const c of allCourses) {
     const mods = courseModulesMap.get(c.id) ?? [];
-    const visibleMods = filterModulesForLang(mods, lang, isAdmin);
+    const visibleMods = filterModulesForLang(mods, lang);
     for (const mod of visibleMods) {
       const modLessons = lessonsByModule.get(mod.id) ?? [];
       orderedLessons.push(...sortLessons(modLessons));

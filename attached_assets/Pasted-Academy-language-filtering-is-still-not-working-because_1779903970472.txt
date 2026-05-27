@@ -1,0 +1,105 @@
+Academy language filtering is still not working because the course structure is:
+
+One course contains multiple language modules.
+
+Example:
+Course: Business Photo Booth Class
+Modules:
+
+* English
+* Français
+* Español
+* Deutsch
+* Italiano
+* Português
+* Polski
+* Nederlands
+
+This is intentional.
+
+But the client Academy must NOT show all modules.
+
+Required behavior:
+
+Public/client Academy route `/academy`:
+
+* Always show ONLY the module matching the current user language.
+* This must apply even if the logged-in user is admin.
+* Admin status should NOT bypass filtering on the public Academy client pages.
+
+Admin Academy route `/admin/academy`:
+
+* Admin can see and manage all language modules.
+
+So:
+
+FR user on `/academy`:
+
+* show only module: Français
+* show only French lessons
+* course count = French lessons only
+* progress = French lessons only
+
+EN user on `/academy`:
+
+* show only module: English
+* show only English lessons
+
+ES user on `/academy`:
+
+* show only module: Español
+* show only Spanish lessons
+
+Same for:
+
+* de → Deutsch
+* it → Italiano
+* pt → Português
+* pl → Polski
+* nl → Nederlands
+
+Critical fix:
+
+Remove the admin bypass from public Academy endpoints/pages.
+
+Admin bypass should exist only for `/admin/academy`, not `/academy`.
+
+Current likely bug:
+Because I am admin, `/academy` still shows all modules.
+That is wrong. `/academy` should behave like the client experience regardless of admin role.
+
+Implementation requirements:
+
+1. Public Academy API endpoints must filter by user.language, not by user.role.
+2. Admin Academy API endpoints can return all modules.
+3. Frontend `/academy` must render only filtered modules.
+4. React Query cache must be invalidated/refetched after this change.
+5. Do not display empty accordions for other languages.
+6. Do not show 0/8 lessons for other languages.
+7. Course cards must count only lessons in the user language.
+8. Course detail must show only the language module.
+9. Lesson navigation must stay inside the same language module.
+10. Video resolution must use:
+
+* selected language asset
+* then EN fallback
+* never random fallback.
+
+Verification:
+
+Log in as Alan admin but open `/academy`:
+
+* If language is FR, only Français module should display.
+* English / Español / Deutsch modules should NOT display.
+
+Open `/admin/academy`:
+
+* all modules should still be visible for admin management.
+
+This is the exact expected split:
+
+* `/academy` = client language-filtered experience
+* `/admin/academy` = admin multilingual management experience
+
+Do not redesign.
+Fix only Academy public/client language filtering.
