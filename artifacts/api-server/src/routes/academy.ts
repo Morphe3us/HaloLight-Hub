@@ -1,5 +1,5 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, and, sql, inArray } from "drizzle-orm";
 import {
   db,
   courses,
@@ -15,6 +15,7 @@ import { getOrCreateUser } from "../lib/userSync";
 
 const router: IRouter = Router();
 
+// ── Locale helper ─────────────────────────────────────────────────────────────
 function resolveLocale(lang: unknown, obj: unknown): string {
   if (!obj || typeof obj !== "object") return "";
   const map = obj as Record<string, string>;
@@ -22,12 +23,104 @@ function resolveLocale(lang: unknown, obj: unknown): string {
   return map[l] ?? map["en"] ?? Object.values(map)[0] ?? "";
 }
 
-// GET /academy/courses
+// ── Language-module detection ─────────────────────────────────────────────────
+/**
+ * BunnyStream imports create one module per language (e.g. "English Language",
+ * "French Language", …). This map lets us detect those modules and filter by
+ * the user's preferred language.
+ */
+const LANG_MODULE_MAP: Record<string, string> = {
+  "english": "en",
+  "english language": "en",
+  "french": "fr",
+  "french language": "fr",
+  "spanish": "es",
+  "spanish language": "es",
+  "german": "de",
+  "german language": "de",
+  "dutch": "nl",
+  "dutch language": "nl",
+  "italian": "it",
+  "italian language": "it",
+  "portuguese": "pt",
+  "portuguese language": "pt",
+  "polish": "pl",
+  "polish language": "pl",
+};
+
+const LANG_NATIVE_NAMES: Record<string, string> = {
+  en: "English",
+  fr: "Français",
+  de: "Deutsch",
+  es: "Español",
+  it: "Italiano",
+  nl: "Nederlands",
+  pl: "Polski",
+  pt: "Português",
+};
+
+/** Returns the language code if the module title marks it as a language track, otherwise null. */
+function detectModuleLang(title: unknown): string | null {
+  if (!title || typeof title !== "object") return null;
+  const enTitle = ((title as Record<string, string>)["en"] ?? "").toLowerCase().trim();
+  return LANG_MODULE_MAP[enTitle] ?? null;
+}
+
+/**
+ * For a client user, keeps only the module(s) matching their language.
+ * Falls back to English if no module exists for that language.
+ * Regular (non-language-track) modules are always included.
+ * Admins always see every module.
+ */
+function filterModulesForLang<T extends { title: unknown }>(
+  mods: T[],
+  lang: string,
+  isAdmin: boolean
+): T[] {
+  if (isAdmin) return mods;
+
+  const hasLangModules = mods.some((m) => detectModuleLang(m.title) !== null);
+  if (!hasLangModules) return mods; // regular course structure – no filtering needed
+
+  const userLangMods = mods.filter((m) => detectModuleLang(m.title) === lang);
+  if (userLangMods.length > 0) return userLangMods;
+
+  // Fallback to English
+  const enMods = mods.filter((m) => detectModuleLang(m.title) === "en");
+  if (enMods.length > 0) return enMods;
+
+  return mods; // last resort
+}
+
+/**
+ * Sorts lessons in logical order:
+ *   Introduction / Intro  → first
+ *   VIDEO 1.1, 1.2, 2.1  → numeric order (major.minor)
+ *   Conclusion / Outro    → last
+ * Unrecognised titles preserve their stored `order` field.
+ */
+function sortLessons<T extends { title: unknown; order: number }>(rows: T[]): T[] {
+  const getSortKey = (l: T): number => {
+    const titleMap = l.title as Record<string, string> | null;
+    const t = (titleMap?.["en"] ?? "").toLowerCase().trim();
+    if (/\b(introduction|intro)\b/.test(t)) return 0;
+    if (/\b(conclusion|outro|final)\b/.test(t)) return 1_000_000;
+    const m = t.match(/(\d+)[.\-_](\d+)/);
+    if (m) return parseInt(m[1]) * 10_000 + parseInt(m[2]) * 100;
+    const s = t.match(/\b(\d+)\b/);
+    if (s) return parseInt(s[1]) * 10_000;
+    return (l.order + 1) * 100 + 500; // preserve relative order for unknowns
+  };
+  return [...rows].sort((a, b) => getSortKey(a) - getSortKey(b));
+}
+
+// ── GET /academy/courses ──────────────────────────────────────────────────────
 router.get("/academy/courses", requireAuth, async (req: Request, res: Response): Promise<void> => {
   const user = await getOrCreateUser(req);
   if (!user) { res.status(401).json({ error: "Unauthorized" }); return; }
 
-  const lang = req.query.lang ?? user.language ?? "en";
+  const lang = (typeof req.query.lang === "string" ? req.query.lang : user.language) ?? "en";
+  const isAdmin = user.role === "admin";
 
   const allCourses = await db
     .select()
@@ -35,86 +128,93 @@ router.get("/academy/courses", requireAuth, async (req: Request, res: Response):
     .where(eq(courses.isPublished, true))
     .orderBy(courses.order);
 
-  const moduleCountRows = await db
-    .select({ courseId: courseModules.courseId, count: sql<number>`count(*)::int` })
-    .from(courseModules)
-    .groupBy(courseModules.courseId);
+  if (allCourses.length === 0) { res.json({ items: [] }); return; }
 
-  const lessonCountRows = await db
-    .select({
-      courseId: courseModules.courseId,
-      count: sql<number>`count(${lessons.id})::int`,
-    })
-    .from(lessons)
-    .innerJoin(courseModules, eq(lessons.moduleId, courseModules.id))
-    .groupBy(courseModules.courseId);
+  const allModules = await db
+    .select()
+    .from(courseModules)
+    .where(inArray(courseModules.courseId, allCourses.map((c) => c.id)))
+    .orderBy(courseModules.order);
+
+  const visibleModuleIds = new Set<string>();
+  const modulesByCourse = new Map<string, typeof allModules>();
+  for (const mod of allModules) {
+    const list = modulesByCourse.get(mod.courseId) ?? [];
+    list.push(mod);
+    modulesByCourse.set(mod.courseId, list);
+  }
+  for (const c of allCourses) {
+    const mods = modulesByCourse.get(c.id) ?? [];
+    filterModulesForLang(mods, lang, isAdmin).forEach((m) => visibleModuleIds.add(m.id));
+  }
+
+  const allLessonsForModules =
+    visibleModuleIds.size > 0
+      ? await db
+          .select({ id: lessons.id, moduleId: lessons.moduleId })
+          .from(lessons)
+          .where(and(inArray(lessons.moduleId, Array.from(visibleModuleIds)), eq(lessons.isPublished, true)))
+      : [];
+
+  const lessonsByModule = new Map<string, string[]>();
+  for (const l of allLessonsForModules) {
+    const list = lessonsByModule.get(l.moduleId) ?? [];
+    list.push(l.id);
+    lessonsByModule.set(l.moduleId, list);
+  }
 
   const progressRows = await db
     .select({ lessonId: userLessonProgress.lessonId })
     .from(userLessonProgress)
-    .where(
-      and(
-        eq(userLessonProgress.userId, user.id),
-        sql`${userLessonProgress.completedAt} IS NOT NULL`
-      )
-    );
+    .where(and(eq(userLessonProgress.userId, user.id), sql`${userLessonProgress.completedAt} IS NOT NULL`));
 
-  // Build lookup maps
   const completedLessonIds = new Set(progressRows.map((p) => p.lessonId));
 
-  // We need to know which lessons belong to which course to compute completedLessons per course
-  const allLessonsWithCourse = await db
-    .select({
-      lessonId: lessons.id,
-      courseId: courseModules.courseId,
-    })
-    .from(lessons)
-    .innerJoin(courseModules, eq(lessons.moduleId, courseModules.id));
+  const items = allCourses.map((c) => {
+    const mods = modulesByCourse.get(c.id) ?? [];
+    const visibleMods = filterModulesForLang(mods, lang, isAdmin);
+    const visibleLessonIds = visibleMods.flatMap((m) => lessonsByModule.get(m.id) ?? []);
+    const lessonCount = visibleLessonIds.length;
+    const completedLessons = visibleLessonIds.filter((id) => completedLessonIds.has(id)).length;
 
-  const completedPerCourse = new Map<string, number>();
-  for (const l of allLessonsWithCourse) {
-    if (completedLessonIds.has(l.lessonId)) {
-      completedPerCourse.set(l.courseId, (completedPerCourse.get(l.courseId) ?? 0) + 1);
-    }
-  }
-
-  const moduleCountMap = new Map(moduleCountRows.map((r) => [r.courseId, r.count]));
-  const lessonCountMap = new Map(lessonCountRows.map((r) => [r.courseId, r.count]));
-
-  const items = allCourses.map((c) => ({
-    id: c.id,
-    slug: c.slug,
-    title: resolveLocale(lang, c.title),
-    description: resolveLocale(lang, c.description),
-    category: c.category,
-    level: c.level,
-    order: c.order,
-    thumbnailUrl: c.thumbnailUrl,
-    moduleCount: moduleCountMap.get(c.id) ?? 0,
-    lessonCount: lessonCountMap.get(c.id) ?? 0,
-    totalDurationSeconds: c.totalDurationSeconds,
-    completedLessons: completedPerCourse.get(c.id) ?? 0,
-  }));
+    return {
+      id: c.id,
+      slug: c.slug,
+      title: resolveLocale(lang, c.title),
+      description: resolveLocale(lang, c.description),
+      category: c.category,
+      level: c.level,
+      order: c.order,
+      thumbnailUrl: c.thumbnailUrl,
+      moduleCount: visibleMods.length,
+      lessonCount,
+      totalDurationSeconds: c.totalDurationSeconds,
+      completedLessons,
+    };
+  });
 
   res.json({ items });
 });
 
-// GET /academy/courses/:id
+// ── GET /academy/courses/:id ──────────────────────────────────────────────────
 router.get("/academy/courses/:id", requireAuth, async (req: Request, res: Response): Promise<void> => {
   const user = await getOrCreateUser(req);
   if (!user) { res.status(401).json({ error: "Unauthorized" }); return; }
 
-  const lang = req.query.lang ?? user.language ?? "en";
+  const lang = (typeof req.query.lang === "string" ? req.query.lang : user.language) ?? "en";
+  const isAdmin = user.role === "admin";
   const courseId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
 
   const [course] = await db.select().from(courses).where(eq(courses.id, courseId));
   if (!course) { res.status(404).json({ error: "Course not found" }); return; }
 
-  const modules = await db
+  const allModules = await db
     .select()
     .from(courseModules)
     .where(eq(courseModules.courseId, courseId))
     .orderBy(courseModules.order);
+
+  const visibleModules = filterModulesForLang(allModules, lang, isAdmin);
 
   const progressRows = await db
     .select()
@@ -124,19 +224,26 @@ router.get("/academy/courses/:id", requireAuth, async (req: Request, res: Respon
   const progressMap = new Map(progressRows.map((p) => [p.lessonId, p]));
 
   const modulesWithLessons = await Promise.all(
-    modules.map(async (mod) => {
+    visibleModules.map(async (mod) => {
       const lessonRows = await db
         .select()
         .from(lessons)
-        .where(and(eq(lessons.moduleId, mod.id), eq(lessons.isPublished, true)))
-        .orderBy(lessons.order);
+        .where(and(eq(lessons.moduleId, mod.id), eq(lessons.isPublished, true)));
+
+      const sortedLessons = sortLessons(lessonRows);
+
+      // For language-track modules, use the native language name as the title
+      const moduleLangCode = detectModuleLang(mod.title);
+      const moduleTitle = moduleLangCode
+        ? (LANG_NATIVE_NAMES[moduleLangCode] ?? resolveLocale(lang, mod.title))
+        : resolveLocale(lang, mod.title);
 
       return {
         id: mod.id,
         courseId: mod.courseId,
-        title: resolveLocale(lang, mod.title),
+        title: moduleTitle,
         order: mod.order,
-        lessons: lessonRows.map((l) => {
+        lessons: sortedLessons.map((l) => {
           const p = progressMap.get(l.id);
           return {
             id: l.id,
@@ -175,12 +282,12 @@ router.get("/academy/courses/:id", requireAuth, async (req: Request, res: Respon
   });
 });
 
-// GET /academy/lessons/:id
+// ── GET /academy/lessons/:id ──────────────────────────────────────────────────
 router.get("/academy/lessons/:id", requireAuth, async (req: Request, res: Response): Promise<void> => {
   const user = await getOrCreateUser(req);
   if (!user) { res.status(401).json({ error: "Unauthorized" }); return; }
 
-  const lang = req.query.lang ?? user.language ?? "en";
+  const lang = (typeof req.query.lang === "string" ? req.query.lang : user.language) ?? "en";
   const lessonId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
 
   const [lesson] = await db.select().from(lessons).where(eq(lessons.id, lessonId));
@@ -240,7 +347,7 @@ router.get("/academy/lessons/:id", requireAuth, async (req: Request, res: Respon
   });
 });
 
-// PATCH /academy/lessons/:id/progress
+// ── PATCH /academy/lessons/:id/progress ──────────────────────────────────────
 router.patch("/academy/lessons/:id/progress", requireAuth, async (req: Request, res: Response): Promise<void> => {
   const user = await getOrCreateUser(req);
   if (!user) { res.status(401).json({ error: "Unauthorized" }); return; }
@@ -287,7 +394,7 @@ router.patch("/academy/lessons/:id/progress", requireAuth, async (req: Request, 
   });
 });
 
-// POST /academy/lessons/:id/quiz
+// ── POST /academy/lessons/:id/quiz ────────────────────────────────────────────
 router.post("/academy/lessons/:id/quiz", requireAuth, async (req: Request, res: Response): Promise<void> => {
   const user = await getOrCreateUser(req);
   if (!user) { res.status(401).json({ error: "Unauthorized" }); return; }
@@ -324,48 +431,63 @@ router.post("/academy/lessons/:id/quiz", requireAuth, async (req: Request, res: 
   res.json({ score, total, passed, answers: answerDetails });
 });
 
-// GET /academy/progress/summary
+// ── GET /academy/progress/summary ────────────────────────────────────────────
 router.get("/academy/progress/summary", requireAuth, async (req: Request, res: Response): Promise<void> => {
   const user = await getOrCreateUser(req);
   if (!user) { res.status(401).json({ error: "Unauthorized" }); return; }
 
+  const lang = (typeof req.query.lang === "string" ? req.query.lang : user.language) ?? "en";
+  const isAdmin = user.role === "admin";
+
   const allCourses = await db.select().from(courses).where(eq(courses.isPublished, true));
   const allModules = await db.select().from(courseModules);
-  const allLessons = await db.select().from(lessons).where(eq(lessons.isPublished, true));
+  const allLessonsRaw = await db.select().from(lessons).where(eq(lessons.isPublished, true));
   const allProgress = await db
     .select()
     .from(userLessonProgress)
     .where(eq(userLessonProgress.userId, user.id));
 
-  const modulesByCourse = new Map<string, string[]>();
+  // Build course → module map
+  const courseModulesMap = new Map<string, typeof allModules>();
   for (const mod of allModules) {
-    const list = modulesByCourse.get(mod.courseId) ?? [];
-    list.push(mod.id);
-    modulesByCourse.set(mod.courseId, list);
+    const list = courseModulesMap.get(mod.courseId) ?? [];
+    list.push(mod);
+    courseModulesMap.set(mod.courseId, list);
   }
 
+  // Collect visible module IDs for this user
+  const visibleModuleIds = new Set<string>();
+  for (const c of allCourses) {
+    const mods = courseModulesMap.get(c.id) ?? [];
+    filterModulesForLang(mods, lang, isAdmin).forEach((m) => visibleModuleIds.add(m.id));
+  }
+
+  const visibleLessons = allLessonsRaw.filter((l) => visibleModuleIds.has(l.moduleId));
+  const visibleLessonIds = new Set(visibleLessons.map((l) => l.id));
+
+  const relevantProgress = allProgress.filter((p) => visibleLessonIds.has(p.lessonId));
+  const totalLessons = visibleLessons.length;
+  const completedLessons = relevantProgress.filter((p) => p.completedAt).length;
+  const totalDurationSeconds = visibleLessons.reduce((sum, l) => sum + l.durationSeconds, 0);
+  const watchedDurationSeconds = relevantProgress.reduce((sum, p) => {
+    const lesson = visibleLessons.find((l) => l.id === p.lessonId);
+    return sum + Math.round(((lesson?.durationSeconds ?? 0) * p.watchPercent) / 100);
+  }, 0);
+
+  // Build lesson sets per module for course-completion check
   const lessonsByModule = new Map<string, string[]>();
-  for (const l of allLessons) {
+  for (const l of visibleLessons) {
     const list = lessonsByModule.get(l.moduleId) ?? [];
     list.push(l.id);
     lessonsByModule.set(l.moduleId, list);
   }
-
   const progressMap = new Map(allProgress.map((p) => [p.lessonId, p]));
 
-  const totalLessons = allLessons.length;
-  const completedLessons = allProgress.filter((p) => p.completedAt).length;
-  const totalDurationSeconds = allLessons.reduce((sum, l) => sum + l.durationSeconds, 0);
-  const watchedDurationSeconds = allProgress.reduce((sum, p) => {
-    const lesson = allLessons.find((l) => l.id === p.lessonId);
-    return sum + Math.round(((lesson?.durationSeconds ?? 0) * p.watchPercent) / 100);
-  }, 0);
-
-  // A course is "completed" when all its lessons are completed
   let completedCourses = 0;
-  for (const course of allCourses) {
-    const mids = modulesByCourse.get(course.id) ?? [];
-    const courseLessonIds = mids.flatMap((mid) => lessonsByModule.get(mid) ?? []);
+  for (const c of allCourses) {
+    const mods = courseModulesMap.get(c.id) ?? [];
+    const visible = filterModulesForLang(mods, lang, isAdmin);
+    const courseLessonIds = visible.flatMap((m) => lessonsByModule.get(m.id) ?? []);
     if (courseLessonIds.length > 0 && courseLessonIds.every((lid) => progressMap.get(lid)?.completedAt)) {
       completedCourses++;
     }
@@ -384,12 +506,13 @@ router.get("/academy/progress/summary", requireAuth, async (req: Request, res: R
   });
 });
 
-// GET /academy/progress/next-lesson
+// ── GET /academy/progress/next-lesson ────────────────────────────────────────
 router.get("/academy/progress/next-lesson", requireAuth, async (req: Request, res: Response): Promise<void> => {
   const user = await getOrCreateUser(req);
   if (!user) { res.status(401).json({ error: "Unauthorized" }); return; }
 
-  const lang = req.query.lang ?? user.language ?? "en";
+  const lang = (typeof req.query.lang === "string" ? req.query.lang : user.language) ?? "en";
+  const isAdmin = user.role === "admin";
 
   const allCourses = await db
     .select()
@@ -398,11 +521,49 @@ router.get("/academy/progress/next-lesson", requireAuth, async (req: Request, re
     .orderBy(courses.order);
 
   const allModules = await db.select().from(courseModules).orderBy(courseModules.order);
-  const allLessons = await db
+
+  // Build course → module map and collect visible module IDs
+  const courseModulesMap = new Map<string, typeof allModules>();
+  for (const mod of allModules) {
+    const list = courseModulesMap.get(mod.courseId) ?? [];
+    list.push(mod);
+    courseModulesMap.set(mod.courseId, list);
+  }
+
+  const visibleModuleIds = new Set<string>();
+  for (const c of allCourses) {
+    const mods = courseModulesMap.get(c.id) ?? [];
+    filterModulesForLang(mods, lang, isAdmin).forEach((m) => visibleModuleIds.add(m.id));
+  }
+
+  if (visibleModuleIds.size === 0) {
+    res.status(404).json({ error: "No lessons available" });
+    return;
+  }
+
+  const allLessonsRaw = await db
     .select()
     .from(lessons)
-    .where(eq(lessons.isPublished, true))
-    .orderBy(lessons.order);
+    .where(and(eq(lessons.isPublished, true), inArray(lessons.moduleId, Array.from(visibleModuleIds))));
+
+  // Group by module for smart sorting
+  const lessonsByModule = new Map<string, typeof allLessonsRaw>();
+  for (const l of allLessonsRaw) {
+    const list = lessonsByModule.get(l.moduleId) ?? [];
+    list.push(l);
+    lessonsByModule.set(l.moduleId, list);
+  }
+
+  // Build globally ordered list: course order → module order → sorted lessons
+  const orderedLessons: typeof allLessonsRaw = [];
+  for (const c of allCourses) {
+    const mods = courseModulesMap.get(c.id) ?? [];
+    const visibleMods = filterModulesForLang(mods, lang, isAdmin);
+    for (const mod of visibleMods) {
+      const modLessons = lessonsByModule.get(mod.id) ?? [];
+      orderedLessons.push(...sortLessons(modLessons));
+    }
+  }
 
   const allProgress = await db
     .select()
@@ -411,12 +572,10 @@ router.get("/academy/progress/next-lesson", requireAuth, async (req: Request, re
 
   const completedIds = new Set(allProgress.filter((p) => p.completedAt).map((p) => p.lessonId));
   const progressMap = new Map(allProgress.map((p) => [p.lessonId, p]));
-
   const moduleMap = new Map(allModules.map((m) => [m.id, m]));
   const courseMap = new Map(allCourses.map((c) => [c.id, c]));
 
-  // Find the first incomplete lesson in order
-  for (const lesson of allLessons) {
+  for (const lesson of orderedLessons) {
     if (!completedIds.has(lesson.id)) {
       const mod = moduleMap.get(lesson.moduleId);
       if (!mod) continue;
@@ -438,8 +597,8 @@ router.get("/academy/progress/next-lesson", requireAuth, async (req: Request, re
     }
   }
 
-  // All lessons complete — return first lesson as review
-  const firstLesson = allLessons[0];
+  // All complete — return first lesson as review prompt
+  const firstLesson = orderedLessons[0];
   if (firstLesson) {
     const mod = moduleMap.get(firstLesson.moduleId);
     const course = mod ? courseMap.get(mod.courseId) : undefined;

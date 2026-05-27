@@ -1,0 +1,128 @@
+Academy language structure + rendering cleanup.
+
+Current issue:
+The Academy now imports videos, but the course structure is wrong for the client experience.
+
+Observed:
+
+* Course shows 160 lessons total.
+* Course page displays modules for all languages:
+
+  * English Language
+  * French Language
+  * Spanish Language
+  * etc.
+* In French user mode, the user should NOT see English / Spanish / German modules.
+* French user should only see French content.
+* English user should only see English content.
+* Same for every language.
+
+Expected behavior:
+
+If user language = FR:
+
+* show only French module(s)
+* show only French lessons
+* use videoAssets.fr
+* hide English / Spanish / German / etc. modules
+
+If user language = EN:
+
+* show only English module(s)
+* show only English lessons
+* use videoAssets.en
+
+Same for:
+
+* de
+* nl
+* es
+* it
+* pt
+* pl
+
+Requirements:
+
+1. Academy client filtering
+
+* Filter modules by current user language.
+* Do not show language modules that do not match the selected user language.
+* Do not count lessons from other languages in the client UI.
+* Course count should show lessons available for the current language only.
+* Example: FR user should see 20 lessons, not 160.
+
+2. Admin Academy
+
+* Admin can still see all language modules.
+* Admin can manage all languages.
+* Client view must be language-filtered.
+
+3. Lesson ordering
+   Current issue:
+   Conclusion appears before the main content.
+
+Fix ordering:
+
+* Introduction first
+* Video 1.1
+* Video 1.2
+* Video 2.1
+* Video 2.2
+* …
+* Conclusion last
+
+Do not sort alphabetically.
+Sort using the video numbering pattern in the title:
+
+* INTRODUCTION / Introduction = first
+* VIDEO 1.1, 1.2, 2.1, etc. = numeric order
+* CONCLUSION = last
+
+4. Language labels
+   Translate module labels in client Academy:
+
+* French Language → Français
+* English Language → English / Anglais depending UI language
+* German Language → Allemand
+  etc.
+
+But ideally, client should not see other language modules at all.
+
+5. Bunny video resolution
+   For client Academy:
+
+* selected user language asset first
+* English fallback only if selected language missing
+* never fallback randomly to Portuguese/Spanish/etc.
+* if no valid asset, show “Video not available in this language yet.”
+
+6. Counts and progress
+   Fix:
+
+* 0/20 lessons showing incorrectly
+* 160 lessons total showing when user only has one language
+* progress should be calculated only against lessons available in current user language.
+
+7. Verification
+   Test with French user:
+
+* Course card shows around 20 lessons, not 160
+* Course detail shows only French module/content
+* Introduction first
+* Conclusion last
+* French videos play
+
+Test with English user:
+
+* Course detail shows only English module/content
+* English videos play
+
+Test with Spanish user:
+
+* Course detail shows only Spanish module/content
+* Spanish videos play
+
+Important:
+Do not redesign Academy.
+Do not change Bunny importer.
+Fix only Academy language filtering, lesson ordering, counts, and client rendering.

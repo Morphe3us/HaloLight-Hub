@@ -1,0 +1,76 @@
+Also fix the main Academy page counts and cards.
+
+Current Academy list page still shows global multilingual totals:
+
+* Formation Business Photobooth = 160 lessons / 8 modules
+* Création et communication = 64 lessons / 8 modules
+* Progression = 0 / 224 lessons
+* Watch time = based on all languages
+
+This is wrong for a French user.
+
+Expected behavior:
+
+If user language = FR:
+
+* Course card counts should show only French lessons/modules
+* Business course should show around 20 French lessons, not 160
+* Creation/Communication should show only French lessons, not 64
+* Total progress should be based only on French-visible lessons
+* Watch time should be based only on French-visible lessons
+* Course thumbnails should use French asset first, then English fallback only
+
+Same behavior for every language:
+
+* EN only counts English content
+* ES only counts Spanish content
+* DE only counts German content
+* etc.
+
+Fix required:
+
+1. Main Academy page:
+
+* Filter visible modules by user language
+* Count only lessons belonging to current user language
+* Calculate progress only for current user language
+* Calculate total watch time only for current user language
+* Display thumbnails from the selected language only, fallback EN only
+
+2. Course cards:
+
+* Show language-specific lesson count
+* Show language-specific module count
+* Show language-specific duration
+* Do not show multilingual totals
+
+3. Course detail page:
+
+* Show only modules/lessons for the selected language
+* Do not display other language modules
+* Progress count should match visible lessons
+
+4. Lesson ordering:
+
+* Introduction first
+* Numbered videos in numeric order
+* Conclusion last
+
+5. Verification:
+   French user:
+
+* Academy dashboard should NOT show 224 total lessons
+* Business card should NOT show 160 lessons
+* User should only see French content
+
+English user:
+
+* only English content and counts
+
+Spanish user:
+
+* only Spanish content and counts
+
+Do not change admin view.
+Admin may still see global multilingual totals.
+Client Academy must be language-filtered.
