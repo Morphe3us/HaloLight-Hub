@@ -1,0 +1,236 @@
+Contract creation validation + missing information handling.
+
+Current issue:
+A contract can be created even when important information is missing.
+
+This creates incomplete contracts with missing client/provider/event fields.
+
+Expected behavior:
+Before creating or generating a contract, the app must validate required information and show a clear message if something is missing.
+
+Do not silently generate incomplete contracts.
+
+==================================================
+
+1. REQUIRED CONTRACT FIELDS
+   ==================================================
+
+A contract should require, at minimum:
+
+Provider / rental company:
+
+* company name
+* representative/full name
+* email
+* phone
+
+Client:
+
+* client first name or full name
+* email
+* phone
+* address if available, otherwise show “Not provided”
+
+Event:
+
+* event type
+* event date
+* event location if available, otherwise show “Not provided”
+
+Service:
+
+* package/service name
+* rental duration if available
+* included prints if available
+* equipment/service description
+
+Financial:
+
+* total amount
+* currency
+* deposit amount if required
+* payment terms if available
+
+==================================================
+2. VALIDATION UX
+================
+
+When user tries to create/generate a contract with missing fields:
+
+Show a clear alert/modal:
+
+“Missing information”
+
+Then list missing fields:
+
+Example:
+
+* Client address is missing
+* Event location is missing
+* Deposit amount is missing
+* Equipment list is missing
+
+Give actions:
+
+* Complete missing information
+* Continue anyway with “Not provided” placeholders
+* Cancel
+
+Important:
+For legally important fields, block creation unless filled:
+
+* client name
+* client email
+* total amount
+* currency
+* provider company/name
+
+For optional fields, allow fallback:
+
+* address → “Not provided”
+* equipment details → “To be specified”
+* deposit amount → “No deposit specified”
+* event location → “Not provided”
+
+==================================================
+3. PLACEHOLDER HANDLING
+=======================
+
+Never show raw template variables like:
+
+{{client_address}}
+{{deposit_amount}}
+{{equipment_list}}
+
+If data is missing, replace with localized fallback text:
+
+French:
+
+* Non renseigné
+* À préciser
+* Aucune caution renseignée
+
+English:
+
+* Not provided
+* To be specified
+* No deposit specified
+
+And equivalent translations for:
+
+* DE
+* ES
+* IT
+* PT
+* PL
+* NL
+
+==================================================
+4. PREFILL IMPROVEMENT
+======================
+
+When creating contract from:
+
+* lead
+* quote
+* client
+* existing customer suggestion
+
+Prefill as much as possible:
+
+* client name
+* company
+* email
+* phone
+* address
+* event type
+* event date
+* event location
+* total amount
+* currency
+* package/service name
+* equipment/service notes
+
+If address is available from previous pipeline records, use it automatically.
+
+If not available, show the field as missing/optional.
+
+==================================================
+5. CONTRACT TEMPLATE VARIABLE CHECK
+===================================
+
+Before saving/generating the contract:
+
+Scan the final rendered contract text.
+
+If any unresolved variables remain:
+
+* show warning
+* list unresolved variables
+* replace optional unresolved variables with localized fallback
+* block legally critical unresolved variables
+
+Example:
+Unresolved:
+{{client_address}}
+{{deposit_amount}}
+
+Show:
+“Some contract fields are incomplete.”
+
+==================================================
+6. UI REQUIREMENTS
+==================
+
+In the New Contract modal:
+
+Add a “Contract readiness” section before creation:
+
+* Client info: Complete / Missing
+* Provider info: Complete / Missing
+* Event info: Complete / Missing
+* Pricing: Complete / Missing
+* Equipment/service: Complete / Missing
+
+Use green/yellow/red indicators.
+
+==================================================
+7. VERIFICATION
+===============
+
+Test cases:
+
+1. Create contract from complete quote:
+
+* no warning
+* all fields prefilled
+* no raw variables
+
+2. Create contract missing address:
+
+* warning shows “Client address missing”
+* can continue with “Not provided”
+
+3. Create contract missing client email:
+
+* blocked until completed
+
+4. Create contract missing total amount:
+
+* blocked until completed
+
+5. Create contract from existing lead with address:
+
+* address is automatically prefilled
+
+6. Print/export contract:
+
+* no {{variable}} placeholders visible
+* localized fallback text appears where allowed
+
+Run typecheck and provide:
+
+* fields validated
+* blocking vs optional rules
+* files changed
+* verification results
