@@ -232,7 +232,7 @@ export default function AdminBunnyImporter({ onBack }: { onBack: () => void }) {
   const collections = collectionsData?.items ?? [];
 
   // Videos for selected collection — fetches ALL pages server-side
-  const { data: videosData, isLoading: videosLoading } = useQuery<{ items: BunnyVideo[]; total: number; totalReported: number; pagesLoaded: number }>({
+  const { data: videosData, isLoading: videosLoading } = useQuery<{ items: BunnyVideo[]; total: number; totalReported: number; pagesLoaded: number; requestedCollectionId: string; detectedLanguage: string; totalVideosReturned: number; pagesFetched: number }>({
     queryKey: ["bunny-videos", selectedCollection?.guid],
     queryFn: () => apiFetch(`/admin/bunny/collections/${selectedCollection!.guid}/videos`),
     enabled: !!selectedCollection,
@@ -487,7 +487,7 @@ export default function AdminBunnyImporter({ onBack }: { onBack: () => void }) {
                     <div className="flex items-center gap-1.5 rounded-lg border border-success/30 bg-success/5 px-3 py-1.5 shrink-0">
                       <CheckCircle2 className="w-3.5 h-3.5 text-success" />
                       <span className="text-xs font-semibold text-success">
-                        Importing into: {langLabel} ({selectedLang.toUpperCase()}) only
+                        {langLabel} ({selectedLang.toUpperCase()}) only
                       </span>
                     </div>
                   ) : (
@@ -508,12 +508,30 @@ export default function AdminBunnyImporter({ onBack }: { onBack: () => void }) {
                   <p className="text-sm text-muted-foreground py-2">No videos in this collection.</p>
                 ) : (
                   <div className="space-y-2">
-                    <div className="flex items-center justify-between gap-3 pb-1">
+                    {/* Debug info from API */}
+                  {videosData && (
+                    <div className="rounded-lg border border-border bg-muted/20 px-3 py-2 mb-2 grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-1 text-xs">
+                      <div>
+                        <span className="text-muted-foreground">Collection ID: </span>
+                        <span className="font-mono text-foreground">{videosData.requestedCollectionId?.slice(0, 12)}…</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Language: </span>
+                        <span className="font-semibold text-success">{videosData.detectedLanguage?.toUpperCase()}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Videos returned: </span>
+                        <span className="font-semibold text-foreground">{videosData.totalVideosReturned}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Pages fetched: </span>
+                        <span className="font-semibold text-foreground">{videosData.pagesFetched}</span>
+                      </div>
+                    </div>
+                  )}
+                  <div className="flex items-center justify-between gap-3 pb-1">
                       <p className="text-xs text-muted-foreground">
                         {selectedRows.length} of {importRows.length} selected for import
-                        {videosData?.pagesLoaded && videosData.pagesLoaded > 1 && (
-                          <span className="ml-2 text-muted-foreground/60">· {videosData.pagesLoaded} pages fetched</span>
-                        )}
                       </p>
                       <div className="flex gap-2">
                         <Button variant="ghost" size="sm" className="text-xs h-7 px-2" onClick={() => setImportRows(r => r.map(row => ({ ...row, selected: row.video.isReady })))}>Select ready</Button>

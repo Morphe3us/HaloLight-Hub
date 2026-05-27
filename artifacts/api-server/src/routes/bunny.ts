@@ -145,12 +145,23 @@ router.get("/admin/bunny/collections/:collectionId/videos", requireAuth, async (
   const { collectionId } = req.params;
   const ITEMS_PER_PAGE = 100; // BunnyStream max per page
 
+  // Reject unknown collection IDs before hitting Bunny API
+  const detectedLanguage = COLLECTION_ID_TO_LANG[collectionId];
+  if (!detectedLanguage) {
+    res.status(400).json({
+      error: `Collection ID "${collectionId}" is not in the fixed language mapping. Browsing blocked.`,
+      requestedCollectionId: collectionId,
+    });
+    return;
+  }
+
   try {
     // Get library info for pull zone hostname
     const lib = await bunnyGet(`/library/${cfg.libraryId}`, cfg.apiKey) as Record<string, unknown>;
     const pullZoneHostname = String(lib["PullZoneHostname"] ?? "");
 
-    // Paginate through all pages until exhausted
+    // Paginate through all pages for this collection only.
+    // BunnyStream's filter param is "collection" (not "collectionId").
     const allRawItems: unknown[] = [];
     let page = 1;
     let totalItems = 0;
@@ -158,7 +169,7 @@ router.get("/admin/bunny/collections/:collectionId/videos", requireAuth, async (
 
     do {
       const data = await bunnyGet(
-        `/library/${cfg.libraryId}/videos?collectionId=${collectionId}&page=${page}&itemsPerPage=${ITEMS_PER_PAGE}&orderBy=title`,
+        `/library/${cfg.libraryId}/videos?collection=${encodeURIComponent(collectionId)}&page=${page}&itemsPerPage=${ITEMS_PER_PAGE}&orderBy=title`,
         cfg.apiKey,
       ) as Record<string, unknown>;
 
@@ -177,7 +188,7 @@ router.get("/admin/bunny/collections/:collectionId/videos", requireAuth, async (
 
     // Deduplicate by guid in case of API overlap
     const seenGuids = new Set<string>();
-    const uniqueItems = allRawItems.filter((v: unknown) => {
+    const uniqueRaw = allRawItems.filter((v: unknown) => {
       const vid = v as Record<string, unknown>;
       const guid = String(vid["guid"] ?? "");
       if (seenGuids.has(guid)) return false;
@@ -185,7 +196,19 @@ router.get("/admin/bunny/collections/:collectionId/videos", requireAuth, async (
       return true;
     });
 
-    const items = uniqueItems
+    // Double-check: discard any videos the API returned that don't belong to this collection.
+    // This guards against BunnyStream silently ignoring the filter parameter.
+    const filteredRaw = uniqueRaw.filter((v: unknown) => {
+      const vid = v as Record<string, unknown>;
+      return String(vid["collectionId"] ?? "") === collectionId;
+    });
+
+    const crossCollectionCount = uniqueRaw.length - filteredRaw.length;
+    if (crossCollectionCount > 0) {
+      req.log.warn({ collectionId, crossCollectionCount }, "BunnyStream returned videos from other collections — they have been stripped");
+    }
+
+    const items = filteredRaw
       .map((v: unknown) => {
         const vid = v as Record<string, unknown>;
         const videoId = String(vid["guid"] ?? "");
@@ -208,9 +231,22 @@ router.get("/admin/bunny/collections/:collectionId/videos", requireAuth, async (
       })
       .sort((a, b) => a.title.localeCompare(b.title));
 
-    req.log.info({ collectionId, pagesLoaded, totalFetched: items.length, totalReported: totalItems }, "BunnyStream videos fetched");
+    req.log.info(
+      { requestedCollectionId: collectionId, detectedLanguage, pagesLoaded, totalFetched: items.length, totalReported: totalItems },
+      "BunnyStream videos fetched",
+    );
 
-    res.json({ items, total: items.length, totalReported: totalItems, pagesLoaded, collectionId });
+    res.json({
+      items,
+      total: items.length,
+      totalReported: totalItems,
+      pagesLoaded: pagesLoaded,
+      // Debug fields
+      requestedCollectionId: collectionId,
+      detectedLanguage,
+      totalVideosReturned: items.length,
+      pagesFetched: pagesLoaded,
+    });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     req.log.error({ err }, "BunnyStream videos fetch failed");
