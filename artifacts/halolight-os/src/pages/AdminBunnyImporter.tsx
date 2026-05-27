@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -14,14 +14,15 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import {
   CheckCircle2, XCircle, Loader2, Play, RefreshCw,
-  Download, ChevronDown, ChevronRight, Globe, AlertTriangle,
-  Link as LinkIcon, ArrowLeft, Video, Info,
+  Globe, AlertTriangle, ArrowLeft, Video, ShieldAlert,
 } from "lucide-react";
 
 const LANG_LABELS: Record<string, string> = {
   en: "English", fr: "Français", de: "Deutsch", nl: "Nederlands",
   es: "Español", it: "Italiano", pt: "Português", pl: "Polski",
 };
+
+const LANG_OPTIONS = Object.entries(LANG_LABELS).map(([code, label]) => ({ code, label }));
 
 type BunnyStatus = {
   connected: boolean; error?: string;
@@ -46,13 +47,21 @@ type AdminLesson = { id: string; title: string };
 
 type ImportRow = {
   video: BunnyVideo;
-  lang: string;
   courseId: string;
   moduleId: string;
   lessonId: string;
   newModuleName: string;
   newLessonName: string;
   selected: boolean;
+};
+
+type ImportResult = {
+  imported: number;
+  created: number;
+  updated: number;
+  errors: string[];
+  collectionName?: string;
+  langCode?: string;
 };
 
 async function apiFetch(path: string, opts?: RequestInit) {
@@ -128,6 +137,61 @@ function VideoPreviewDialog({ video, open, onClose }: { video: BunnyVideo | null
   );
 }
 
+// ─── Confirmation Dialog ───────────────────────────────────────────────────
+
+function ConfirmImportDialog({
+  open, onClose, onConfirm, importing,
+  collectionName, langCode, count,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  importing: boolean;
+  collectionName: string;
+  langCode: string;
+  count: number;
+}) {
+  const langLabel = LANG_LABELS[langCode] ?? langCode.toUpperCase();
+  return (
+    <Dialog open={open} onOpenChange={o => { if (!o && !importing) onClose(); }}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <ShieldAlert className="w-5 h-5 text-warning" /> Confirm Import
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="rounded-lg border border-warning/30 bg-warning/5 p-4 text-sm">
+            <p className="font-semibold text-foreground mb-1">Import summary</p>
+            <p className="text-muted-foreground">
+              You are about to import{" "}
+              <span className="font-semibold text-foreground">{count} video{count !== 1 ? "s" : ""}</span>{" "}
+              from collection{" "}
+              <span className="font-semibold text-foreground">"{collectionName}"</span>{" "}
+              into language{" "}
+              <span className="font-semibold text-foreground">{langLabel} ({langCode.toUpperCase()})</span>{" "}
+              only.
+            </p>
+          </div>
+          <ul className="text-xs text-muted-foreground space-y-1 pl-1">
+            <li>• Only <code className="font-mono bg-muted px-1 rounded">videoAssets.{langCode}</code> will be written</li>
+            <li>• No other language assets will be modified</li>
+            <li>• Existing assets in other languages are untouched</li>
+            <li>• If a lesson already has <code className="font-mono bg-muted px-1 rounded">{langCode}</code> assets, they will be overwritten</li>
+          </ul>
+        </div>
+        <DialogFooter className="gap-2">
+          <Button variant="outline" onClick={onClose} disabled={importing}>Cancel</Button>
+          <Button onClick={onConfirm} disabled={importing}>
+            {importing && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+            Import {count} video{count !== 1 ? "s" : ""} → {langCode.toUpperCase()}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // ─── Main Page ─────────────────────────────────────────────────────────────
 
 export default function AdminBunnyImporter({ onBack }: { onBack: () => void }) {
@@ -135,11 +199,14 @@ export default function AdminBunnyImporter({ onBack }: { onBack: () => void }) {
   const qc = useQueryClient();
 
   const [selectedCollection, setSelectedCollection] = useState<BunnyCollection | null>(null);
+  // Explicit language mapping: collection guid → chosen lang code (admin-selected, not auto-detected)
+  const [collectionLangMap, setCollectionLangMap] = useState<Record<string, string>>({});
   const [importRows, setImportRows] = useState<ImportRow[]>([]);
   const [previewVideo, setPreviewVideo] = useState<BunnyVideo | null>(null);
   const [courses, setCourses] = useState<AdminCourse[]>([]);
   const [importing, setImporting] = useState(false);
-  const [importResult, setImportResult] = useState<{ imported: number; created: number; updated: number; errors: string[] } | null>(null);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [importResult, setImportResult] = useState<ImportResult | null>(null);
 
   // Status
   const { data: status, isLoading: statusLoading, refetch: refetchStatus } = useQuery<BunnyStatus>({
@@ -154,6 +221,22 @@ export default function AdminBunnyImporter({ onBack }: { onBack: () => void }) {
     enabled: !!status?.connected,
   });
   const collections = collectionsData?.items ?? [];
+
+  // When collections load, pre-populate lang map with auto-detected values as a starting suggestion only
+  // Admin must explicitly confirm/change before importing
+  useEffect(() => {
+    const items = collectionsData?.items;
+    if (!items?.length) return;
+    setCollectionLangMap(prev => {
+      const next = { ...prev };
+      for (const col of items) {
+        if (!next[col.guid]) {
+          next[col.guid] = col.lang; // suggestion only — admin sees it and can change
+        }
+      }
+      return next;
+    });
+  }, [collectionsData]);
 
   // Videos for selected collection — fetches ALL pages server-side
   const { data: videosData, isLoading: videosLoading } = useQuery<{ items: BunnyVideo[]; total: number; totalReported: number; pagesLoaded: number }>({
@@ -181,13 +264,11 @@ export default function AdminBunnyImporter({ onBack }: { onBack: () => void }) {
     }).catch(() => {});
   }, []);
 
-  // When videos load, build import rows with defaults
+  // When videos load, build import rows (no lang field — lang is collection-level)
   useEffect(() => {
     if (!videos.length) { setImportRows([]); return; }
-    const lang = selectedCollection?.lang ?? "en";
     setImportRows(videos.map(v => ({
       video: v,
-      lang,
       courseId: "",
       moduleId: "",
       lessonId: "",
@@ -195,7 +276,7 @@ export default function AdminBunnyImporter({ onBack }: { onBack: () => void }) {
       newLessonName: v.title,
       selected: v.isReady,
     })));
-  }, [videos, selectedCollection?.lang]);
+  }, [videos]);
 
   const updateRow = (idx: number, patch: Partial<ImportRow>) => {
     setImportRows(rows => rows.map((r, i) => i === idx ? { ...r, ...patch } : r));
@@ -203,33 +284,49 @@ export default function AdminBunnyImporter({ onBack }: { onBack: () => void }) {
 
   const selectedRows = importRows.filter(r => r.selected);
 
-  const handleImport = async () => {
+  // The authoritative language for this collection — must be explicitly set
+  const selectedLang = selectedCollection ? (collectionLangMap[selectedCollection.guid] ?? "") : "";
+  const langLabel = selectedLang ? (LANG_LABELS[selectedLang] ?? selectedLang.toUpperCase()) : "";
+
+  const handleImportClick = () => {
     if (!selectedRows.length) return;
+    if (!selectedLang) {
+      toast({ title: "Select a language for this collection before importing", variant: "destructive" });
+      return;
+    }
+    setShowConfirm(true);
+  };
+
+  const handleImportConfirm = async () => {
     setImporting(true);
-    setImportResult(null);
     try {
       const items = selectedRows.map(r => ({
         videoId: r.video.guid,
-        lang: r.lang,
+        lang: selectedLang, // single authoritative lang — never per-row
         embedUrl: r.video.embedUrl,
         thumbnailUrl: r.video.thumbnailUrl,
         previewUrl: r.video.previewUrl || undefined,
         durationSeconds: r.video.durationSeconds,
         videoTitle: r.video.title,
         courseId: r.courseId || undefined,
-        moduleId: r.moduleId || undefined,
-        lessonId: r.lessonId || undefined,
-        newModuleName: r.newModuleName || undefined,
+        moduleId: r.moduleId !== "__new__" ? r.moduleId || undefined : undefined,
+        lessonId: r.lessonId !== "__new__" ? r.lessonId || undefined : undefined,
+        newModuleName: r.moduleId === "__new__" ? r.newModuleName || undefined : undefined,
         newLessonName: r.newLessonName || r.video.title,
       }));
       const result = await apiFetch("/admin/bunny/import", {
         method: "POST",
         body: JSON.stringify({ items }),
       });
-      setImportResult(result);
+      setImportResult({
+        ...result,
+        collectionName: selectedCollection?.name,
+        langCode: selectedLang,
+      });
+      setShowConfirm(false);
       qc.invalidateQueries({ queryKey: ["/api/admin/academy/courses"] });
-      if (result.errors?.length === 0) {
-        toast({ title: `Imported ${result.imported} video${result.imported !== 1 ? "s" : ""} successfully` });
+      if ((result.errors?.length ?? 0) === 0) {
+        toast({ title: `Imported ${result.imported} video${result.imported !== 1 ? "s" : ""} → ${selectedLang.toUpperCase()} successfully` });
       } else {
         toast({ title: `Imported with ${result.errors.length} error(s)`, variant: "destructive" });
       }
@@ -248,6 +345,15 @@ export default function AdminBunnyImporter({ onBack }: { onBack: () => void }) {
   return (
     <div className="space-y-5">
       <VideoPreviewDialog video={previewVideo} open={!!previewVideo} onClose={() => setPreviewVideo(null)} />
+      <ConfirmImportDialog
+        open={showConfirm}
+        onClose={() => setShowConfirm(false)}
+        onConfirm={handleImportConfirm}
+        importing={importing}
+        collectionName={selectedCollection?.name ?? ""}
+        langCode={selectedLang}
+        count={selectedRows.length}
+      />
 
       <div className="flex items-center gap-3">
         <Button variant="ghost" size="sm" className="gap-1.5 -ml-1" onClick={onBack}>
@@ -294,11 +400,11 @@ export default function AdminBunnyImporter({ onBack }: { onBack: () => void }) {
 
       {status?.connected && (
         <>
-          {/* Collections */}
+          {/* Step 1 — Collection language mapping table */}
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <Globe className="w-4 h-4" /> Step 1 — Select a Language Collection
+                <Globe className="w-4 h-4" /> Step 1 — Set Language for Each Collection
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-0">
@@ -307,27 +413,98 @@ export default function AdminBunnyImporter({ onBack }: { onBack: () => void }) {
               ) : collections.length === 0 ? (
                 <p className="text-sm text-muted-foreground py-2">No collections found in this library.</p>
               ) : (
-                <div className="flex gap-2 flex-wrap">
-                  {collections.map(col => (
-                    <button key={col.guid} onClick={() => setSelectedCollection(col)}
-                      className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm transition-colors ${selectedCollection?.guid === col.guid ? "border-primary bg-primary/5 text-foreground" : "border-border bg-muted/30 text-muted-foreground hover:border-border/80"}`}>
-                      <span className="font-medium">{col.name}</span>
-                      <span className="text-xs px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-mono">{col.lang}</span>
-                      <span className="text-xs text-muted-foreground">{col.videoCount} videos</span>
-                    </button>
-                  ))}
+                <div className="space-y-2">
+                  <p className="text-xs text-muted-foreground pb-1">
+                    Confirm the exact HaloLight language for each collection. Videos import into <strong>only</strong> the selected language key.
+                  </p>
+                  <div className="rounded-lg border border-border overflow-hidden">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="bg-muted/40 border-b border-border">
+                          <th className="text-left px-3 py-2 text-xs font-semibold text-muted-foreground">Collection Name</th>
+                          <th className="text-left px-3 py-2 text-xs font-semibold text-muted-foreground">Videos</th>
+                          <th className="text-left px-3 py-2 text-xs font-semibold text-muted-foreground w-48">HaloLight Language</th>
+                          <th className="px-3 py-2 w-24"></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {collections.map((col, i) => {
+                          const chosenLang = collectionLangMap[col.guid] ?? "";
+                          const isSelected = selectedCollection?.guid === col.guid;
+                          return (
+                            <tr key={col.guid} className={`border-b border-border last:border-0 transition-colors ${isSelected ? "bg-primary/4" : i % 2 === 0 ? "bg-background" : "bg-muted/10"}`}>
+                              <td className="px-3 py-2">
+                                <span className="font-medium text-foreground">{col.name}</span>
+                                <span className="ml-2 font-mono text-xs text-muted-foreground">{col.guid.slice(0, 8)}…</span>
+                              </td>
+                              <td className="px-3 py-2 text-muted-foreground text-xs">{col.videoCount}</td>
+                              <td className="px-3 py-2">
+                                <Select
+                                  value={chosenLang}
+                                  onValueChange={v => setCollectionLangMap(prev => ({ ...prev, [col.guid]: v }))}
+                                >
+                                  <SelectTrigger className="h-8 text-xs w-44">
+                                    <SelectValue placeholder="Select language…" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {LANG_OPTIONS.map(({ code, label }) => (
+                                      <SelectItem key={code} value={code}>
+                                        {label} ({code})
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </td>
+                              <td className="px-3 py-2">
+                                <Button
+                                  variant={isSelected ? "default" : "outline"}
+                                  size="sm"
+                                  className="h-7 text-xs w-full"
+                                  disabled={!chosenLang}
+                                  onClick={() => setSelectedCollection(col)}
+                                >
+                                  {isSelected ? "Selected" : "Browse"}
+                                </Button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                  {collections.some(c => !collectionLangMap[c.guid]) && (
+                    <p className="text-xs text-warning flex items-center gap-1.5 pt-1">
+                      <AlertTriangle className="w-3.5 h-3.5" /> Some collections have no language set — you must select a language before importing from them.
+                    </p>
+                  )}
                 </div>
               )}
             </CardContent>
           </Card>
 
-          {/* Videos */}
+          {/* Step 2 — Videos */}
           {selectedCollection && (
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                  <Play className="w-4 h-4" /> Step 2 — Videos in "{selectedCollection.name}" ({selectedCollection.lang.toUpperCase()})
-                </CardTitle>
+                <div className="flex items-start justify-between gap-3">
+                  <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                    <Play className="w-4 h-4" /> Step 2 — Videos in "{selectedCollection.name}"
+                  </CardTitle>
+                  {/* Language lock badge */}
+                  {selectedLang ? (
+                    <div className="flex items-center gap-1.5 rounded-lg border border-success/30 bg-success/5 px-3 py-1.5 shrink-0">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-success" />
+                      <span className="text-xs font-semibold text-success">
+                        Importing into: {langLabel} ({selectedLang.toUpperCase()}) only
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1.5 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-1.5 shrink-0">
+                      <XCircle className="w-3.5 h-3.5 text-destructive" />
+                      <span className="text-xs font-semibold text-destructive">No language selected — set it in Step 1</span>
+                    </div>
+                  )}
+                </div>
               </CardHeader>
               <CardContent className="pt-0">
                 {videosLoading ? (
@@ -359,7 +536,6 @@ export default function AdminBunnyImporter({ onBack }: { onBack: () => void }) {
                       return (
                         <div key={row.video.guid} className={`rounded-xl border p-3 transition-colors ${row.selected ? "border-primary/30 bg-primary/3" : "border-border bg-muted/10"}`}>
                           <div className="flex items-start gap-3">
-                            {/* Checkbox + thumbnail */}
                             <input type="checkbox" checked={row.selected} onChange={e => updateRow(idx, { selected: e.target.checked })}
                               className="mt-1 rounded shrink-0 w-4 h-4 accent-primary cursor-pointer" />
                             {row.video.thumbnailUrl ? (
@@ -385,19 +561,6 @@ export default function AdminBunnyImporter({ onBack }: { onBack: () => void }) {
 
                           {row.selected && (
                             <div className="mt-3 pt-3 border-t border-border grid grid-cols-1 sm:grid-cols-2 gap-2">
-                              {/* Language override */}
-                              <div className="space-y-1">
-                                <Label className="text-xs font-medium">Language</Label>
-                                <Select value={row.lang} onValueChange={v => updateRow(idx, { lang: v })}>
-                                  <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                                  <SelectContent>
-                                    {Object.entries(LANG_LABELS).map(([k, v]) => (
-                                      <SelectItem key={k} value={k}>{v} ({k})</SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </div>
-
                               {/* Course */}
                               <div className="space-y-1">
                                 <Label className="text-xs font-medium">Course</Label>
@@ -407,6 +570,13 @@ export default function AdminBunnyImporter({ onBack }: { onBack: () => void }) {
                                     {courses.map(c => <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>)}
                                   </SelectContent>
                                 </Select>
+                              </div>
+
+                              {/* Lesson name */}
+                              <div className="space-y-1">
+                                <Label className="text-xs font-medium">Lesson name</Label>
+                                <Input className="h-8 text-xs" placeholder="Defaults to video title"
+                                  value={row.newLessonName} onChange={e => updateRow(idx, { newLessonName: e.target.value })} />
                               </div>
 
                               {row.courseId && (
@@ -427,29 +597,17 @@ export default function AdminBunnyImporter({ onBack }: { onBack: () => void }) {
                                     )}
                                   </div>
 
-                                  {/* Lesson */}
-                                  {(row.moduleId && row.moduleId !== "__new__") && (
+                                  {/* Lesson (existing) */}
+                                  {row.moduleId && row.moduleId !== "__new__" && (
                                     <div className="space-y-1">
-                                      <Label className="text-xs font-medium">Lesson</Label>
+                                      <Label className="text-xs font-medium">Assign to existing lesson</Label>
                                       <Select value={row.lessonId} onValueChange={v => updateRow(idx, { lessonId: v })}>
-                                        <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select or create…" /></SelectTrigger>
+                                        <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Or create new…" /></SelectTrigger>
                                         <SelectContent>
-                                          <SelectItem value="__new__">+ Create new lesson…</SelectItem>
+                                          <SelectItem value="__new__">+ Create new lesson</SelectItem>
                                           {moduleLessons.map(l => <SelectItem key={l.id} value={l.id}>{l.title}</SelectItem>)}
                                         </SelectContent>
                                       </Select>
-                                      {(row.lessonId === "__new__" || !row.lessonId) && (
-                                        <Input className="h-7 text-xs mt-1" placeholder="Lesson name (defaults to video title)"
-                                          value={row.newLessonName} onChange={e => updateRow(idx, { newLessonName: e.target.value })} />
-                                      )}
-                                    </div>
-                                  )}
-
-                                  {row.moduleId === "__new__" && (
-                                    <div className="space-y-1">
-                                      <Label className="text-xs font-medium">Lesson name</Label>
-                                      <Input className="h-7 text-xs" placeholder="Lesson name (defaults to video title)"
-                                        value={row.newLessonName} onChange={e => updateRow(idx, { newLessonName: e.target.value })} />
                                     </div>
                                   )}
                                 </>
@@ -460,63 +618,79 @@ export default function AdminBunnyImporter({ onBack }: { onBack: () => void }) {
                       );
                     })}
 
-                    {/* Import button */}
-                    <div className="pt-3 flex items-center justify-between gap-3 border-t border-border">
-                      <p className="text-sm text-muted-foreground">
-                        {selectedRows.length} video{selectedRows.length !== 1 ? "s" : ""} ready to import
-                      </p>
-                      <Button
-                        className="gap-1.5"
-                        disabled={!selectedRows.length || importing || selectedRows.some(r => !r.courseId)}
-                        onClick={handleImport}
-                      >
-                        {importing ? <><Loader2 className="w-4 h-4 animate-spin" /> Importing…</> : <><Download className="w-4 h-4" /> Import {selectedRows.length} video{selectedRows.length !== 1 ? "s" : ""}</>}
-                      </Button>
-                    </div>
-
-                    {selectedRows.some(r => r.selected && !r.courseId) && (
-                      <div className="flex items-center gap-2 text-xs text-warning bg-warning/10 rounded-lg px-3 py-2">
-                        <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
-                        Some selected videos have no course assigned. Assign a course before importing.
-                      </div>
-                    )}
-
-                    {/* Import result */}
-                    {importResult && (
-                      <div className={`rounded-xl border p-4 space-y-2 ${importResult.errors.length ? "border-warning/30 bg-warning/5" : "border-success/30 bg-success/5"}`}>
-                        <div className="flex items-center gap-2">
-                          {importResult.errors.length === 0
-                            ? <CheckCircle2 className="w-4 h-4 text-success" />
-                            : <AlertTriangle className="w-4 h-4 text-warning" />}
-                          <span className="font-semibold text-sm">
-                            Import complete — {importResult.imported} imported, {importResult.created} created, {importResult.updated} updated
+                    {/* Import bar */}
+                    <div className="pt-2 flex items-center justify-between gap-3 border-t border-border mt-2">
+                      <div className="text-xs text-muted-foreground">
+                        {selectedRows.length > 0 && selectedLang && (
+                          <span>
+                            Ready to import <strong>{selectedRows.length}</strong> video{selectedRows.length !== 1 ? "s" : ""} →{" "}
+                            <code className="font-mono bg-muted px-1 rounded">videoAssets.{selectedLang}</code>
                           </span>
-                        </div>
-                        {importResult.errors.length > 0 && (
-                          <ul className="text-xs text-destructive space-y-0.5 pl-6 list-disc">
-                            {importResult.errors.map((e, i) => <li key={i}>{e}</li>)}
-                          </ul>
+                        )}
+                        {!selectedLang && (
+                          <span className="text-destructive flex items-center gap-1"><XCircle className="w-3.5 h-3.5" /> Set language in Step 1 before importing</span>
                         )}
                       </div>
-                    )}
+                      <Button
+                        onClick={handleImportClick}
+                        disabled={!selectedRows.length || !selectedLang || importing}
+                        className="gap-2"
+                      >
+                        {importing && <Loader2 className="w-4 h-4 animate-spin" />}
+                        Import {selectedRows.length > 0 ? `${selectedRows.length} videos` : "videos"} → {selectedLang ? selectedLang.toUpperCase() : "…"}
+                      </Button>
+                    </div>
                   </div>
                 )}
               </CardContent>
             </Card>
           )}
+
+          {/* Import result */}
+          {importResult && (
+            <Card className={`border-${importResult.errors.length === 0 ? "success" : "warning"}/30 bg-${importResult.errors.length === 0 ? "success" : "warning"}/5`}>
+              <CardContent className="p-4">
+                <div className="flex items-start gap-3">
+                  {importResult.errors.length === 0 ? (
+                    <CheckCircle2 className="w-5 h-5 text-success shrink-0 mt-0.5" />
+                  ) : (
+                    <AlertTriangle className="w-5 h-5 text-warning shrink-0 mt-0.5" />
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-foreground mb-2">Import complete</p>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                      <div>
+                        <p className="text-muted-foreground">Collection</p>
+                        <p className="font-medium text-foreground">{importResult.collectionName ?? "—"}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Language key written</p>
+                        <p className="font-mono font-medium text-foreground">videoAssets.{importResult.langCode}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Lessons updated</p>
+                        <p className="font-medium text-foreground">{importResult.updated}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Lessons created</p>
+                        <p className="font-medium text-foreground">{importResult.created}</p>
+                      </div>
+                    </div>
+                    {importResult.errors.length > 0 && (
+                      <div className="mt-3 space-y-1">
+                        <p className="text-xs font-semibold text-destructive">Errors ({importResult.errors.length})</p>
+                        {importResult.errors.map((e, i) => (
+                          <p key={i} className="text-xs text-destructive">{e}</p>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </>
       )}
-
-      {/* Info card */}
-      <Card className="border-dashed">
-        <CardContent className="p-4 flex items-start gap-3 text-sm text-muted-foreground">
-          <Info className="w-4 h-4 shrink-0 mt-0.5" />
-          <div className="space-y-1">
-            <p><strong className="text-foreground">How it works:</strong> Select a language collection → videos load from BunnyStream → assign each to a course + module + lesson → click Import. The Embed URL, Thumbnail, Preview URL, and Video ID are stored per language on the lesson.</p>
-            <p>After import, the client Academy lesson page will show the BunnyStream iframe for the user's language, falling back to English if their language is not available.</p>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }

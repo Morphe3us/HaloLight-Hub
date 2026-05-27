@@ -1,0 +1,69 @@
+Critical BunnyStream language mapping bug.
+
+The BunnyStream Importer is assigning videos to the wrong languages.
+
+Example:
+When selecting Spanish, videos/assets are also being assigned to Portuguese, French, or other languages. This is completely wrong and is wasting a lot of time.
+
+Root issue:
+The platform should NOT guess or auto-detect languages loosely if it creates wrong mappings.
+
+Required fix:
+
+1. Disable fuzzy language auto-detection for import.
+2. Each Bunny collection must have ONE explicit language mapping selected by admin.
+3. A collection mapped to Spanish must ONLY import into:
+   videoAssets.es
+4. A collection mapped to Portuguese must ONLY import into:
+   videoAssets.pt
+5. A collection mapped to French must ONLY import into:
+   videoAssets.fr
+6. Never write the same video into multiple languages unless the admin explicitly selects that.
+7. Never overwrite another language’s videoAssets during import.
+
+Add a clear mapping table in BunnyStream Importer:
+
+Collection Name | Collection ID | Selected HaloLight Language
+
+Language dropdown options:
+- French → fr
+- English → en
+- German → de
+- Dutch → nl
+- Spanish → es
+- Italian → it
+- Portuguese → pt
+- Polish → pl
+
+Import rules:
+- Use only the selected language code from the dropdown.
+- Do not infer language from video title.
+- Do not infer language from collection name after admin selects it.
+- Do not fallback to another language during import.
+- Do not update EN/FR/PT/etc unless that language was explicitly selected.
+
+Before importing:
+Show a confirmation summary:
+
+“You are about to import 42 videos from collection Spanish into language ES only.”
+
+After importing:
+Show exact result:
+- collection imported
+- language used
+- lessons updated
+- videoAssets language key updated
+
+Add safeguards:
+- If selected language is missing, block import.
+- If import would overwrite existing videoAssets in another language, block it.
+- If import would overwrite same language assets, show confirmation.
+
+Verification required:
+- Import Spanish collection → only videoAssets.es changes.
+- Import Portuguese collection → only videoAssets.pt changes.
+- Import French collection → only videoAssets.fr changes.
+- Existing language assets remain untouched.
+- Client Academy uses correct video based on user language.
+
+This is blocking beta launch. Fix only BunnyStream language mapping/import safety. Do not redesign anything else.
