@@ -53,7 +53,8 @@ type AdminModule = {
 
 type AdminLesson = {
   id: string; moduleId: string; title: Record<string, string>; description?: Record<string, string> | null;
-  videoUrl: string; videoUrls?: Record<string, string> | null; durationSeconds: number; order: number; isPublished: boolean; notes?: string | null;
+  videoUrl: string; videoUrls?: Record<string, string> | null; thumbnailUrl?: string | null;
+  durationSeconds: number; order: number; isPublished: boolean; notes?: string | null;
 };
 
 function mlObj(langs: string[], val: string): Record<string, string> {
@@ -269,6 +270,7 @@ function LessonFormModal({
     titlesByLang: { ...(lesson?.title ?? {}) } as Record<string, string>,
     videoUrl: lesson?.videoUrl ?? "",
     videoUrlsByLang: { ...(lesson?.videoUrls ?? {}) } as Record<string, string>,
+    thumbnailUrl: lesson?.thumbnailUrl ?? "",
     durationSeconds: String(lesson?.durationSeconds ?? 0),
     isPublished: lesson?.isPublished ?? false,
     notes: lesson?.notes ?? "",
@@ -306,6 +308,7 @@ function LessonFormModal({
       title: { en: form.titleEn, ...form.titlesByLang },
       videoUrl: form.videoUrl || undefined,
       videoUrls: hasAnyVideoUrl ? cleanVideoUrls : undefined,
+      thumbnailUrl: form.thumbnailUrl || null,
       durationSeconds: parseInt(form.durationSeconds, 10) || 0,
       isPublished: form.isPublished,
       notes: form.notes || null,
@@ -371,6 +374,22 @@ function LessonFormModal({
               placeholder={`BunnyStream / YouTube URL for ${LANG_LABELS[form.activeVideoLang]}`}
             />
             <p className="text-xs text-muted-foreground">{t("admin_academy.video_url_hint", { defaultValue: "EN is used as the default fallback when a language-specific URL is not set." })}</p>
+          </div>
+
+          {/* Thumbnail URL */}
+          <div className="space-y-1.5">
+            <Label>{t("admin_academy.label_thumbnail_url", { defaultValue: "Thumbnail URL" })}</Label>
+            <Input
+              value={form.thumbnailUrl}
+              onChange={e => setForm(f => ({ ...f, thumbnailUrl: e.target.value }))}
+              placeholder="https://your-cdn.b-cdn.net/VIDEO_ID/thumbnail.jpg"
+            />
+            {form.thumbnailUrl && (
+              <div className="mt-1 rounded-lg overflow-hidden h-24 w-40 bg-muted border border-border">
+                <img src={form.thumbnailUrl} alt="Thumbnail preview" className="w-full h-full object-cover" onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+              </div>
+            )}
+            <p className="text-xs text-muted-foreground">{t("admin_academy.thumbnail_hint", { defaultValue: "BunnyStream: https://your-pullzone.b-cdn.net/VIDEO_ID/thumbnail.jpg — paste or leave blank." })}</p>
           </div>
 
           <div className="grid grid-cols-2 gap-3">

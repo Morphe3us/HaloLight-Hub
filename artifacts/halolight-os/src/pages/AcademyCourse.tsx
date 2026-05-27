@@ -169,15 +169,31 @@ export default function AcademyCourse() {
                       return (
                         <Link key={lesson.id} href={`/academy/${course.id}/${lesson.id}`}>
                           <div className="flex items-center gap-4 px-5 py-3.5 hover:bg-muted transition-colors cursor-pointer group">
-                            <div className={cn(
-                              "h-8 w-8 rounded-full flex items-center justify-center flex-shrink-0 transition-colors",
-                              isCompleted ? "bg-success/15" : "bg-muted group-hover:bg-primary/10"
-                            )}>
-                              {isCompleted
-                                ? <CheckCircle2 className="w-4 h-4 text-success" />
-                                : <PlayCircle className={cn("w-4 h-4", "text-muted-foreground group-hover:text-primary")} />
-                              }
-                            </div>
+                            {/* Thumbnail or icon */}
+                            {(lesson as { thumbnailUrl?: string | null }).thumbnailUrl ? (
+                              <div className="h-10 w-16 rounded-md overflow-hidden flex-shrink-0 bg-muted relative">
+                                <img
+                                  src={(lesson as { thumbnailUrl?: string | null }).thumbnailUrl!}
+                                  alt={lesson.title}
+                                  className="w-full h-full object-cover"
+                                />
+                                {isCompleted && (
+                                  <div className="absolute inset-0 bg-success/40 flex items-center justify-center">
+                                    <CheckCircle2 className="w-4 h-4 text-white" />
+                                  </div>
+                                )}
+                              </div>
+                            ) : (
+                              <div className={cn(
+                                "h-8 w-8 rounded-full flex items-center justify-center flex-shrink-0 transition-colors",
+                                isCompleted ? "bg-success/15" : "bg-muted group-hover:bg-primary/10"
+                              )}>
+                                {isCompleted
+                                  ? <CheckCircle2 className="w-4 h-4 text-success" />
+                                  : <PlayCircle className={cn("w-4 h-4", "text-muted-foreground group-hover:text-primary")} />
+                                }
+                              </div>
+                            )}
                             <div className="flex-1 min-w-0">
                               <p className={cn(
                                 "text-sm font-medium truncate",

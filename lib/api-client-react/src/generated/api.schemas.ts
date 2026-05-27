@@ -250,6 +250,7 @@ export interface LessonSummary {
   durationSeconds: number;
   order: number;
   isPublished: boolean;
+  thumbnailUrl?: string | null;
   /** @nullable */
   completedAt: string | null;
   /** @nullable */
@@ -312,6 +313,7 @@ export interface LessonDetail {
   title: string;
   videoUrl: string;
   videoUrls?: LessonDetailVideoUrls;
+  thumbnailUrl?: string | null;
   durationSeconds: number;
   order: number;
   resources: LessonResource[];
@@ -1795,6 +1797,7 @@ export interface AdminLesson {
   description?: AdminLessonDescription;
   videoUrl: string;
   videoUrls?: AdminLessonVideoUrls;
+  thumbnailUrl?: string | null;
   durationSeconds: number;
   order: number;
   isPublished: boolean;
@@ -1910,6 +1913,7 @@ export interface CreateLessonInput {
   description?: CreateLessonInputDescription;
   videoUrl?: string | null;
   videoUrls?: CreateLessonInputVideoUrls;
+  thumbnailUrl?: string | null;
   durationSeconds?: number;
   isPublished?: boolean;
   notes?: string | null;
@@ -1926,6 +1930,7 @@ export interface UpdateLessonInput {
   description?: UpdateLessonInputDescription;
   videoUrl?: string | null;
   videoUrls?: UpdateLessonInputVideoUrls;
+  thumbnailUrl?: string | null;
   durationSeconds?: number;
   isPublished?: boolean;
   notes?: string | null;

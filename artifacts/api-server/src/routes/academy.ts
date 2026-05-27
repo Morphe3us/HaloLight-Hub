@@ -145,6 +145,7 @@ router.get("/academy/courses/:id", requireAuth, async (req: Request, res: Respon
             durationSeconds: l.durationSeconds,
             order: l.order,
             isPublished: l.isPublished,
+            thumbnailUrl: l.thumbnailUrl ?? null,
             completedAt: p?.completedAt?.toISOString() ?? null,
             watchPercent: p?.watchPercent ?? null,
           };
@@ -211,6 +212,7 @@ router.get("/academy/lessons/:id", requireAuth, async (req: Request, res: Respon
     title: resolveLocale(lang, lesson.title),
     videoUrl: lesson.videoUrl,
     videoUrls: lesson.videoUrls ?? null,
+    thumbnailUrl: lesson.thumbnailUrl ?? null,
     durationSeconds: lesson.durationSeconds,
     order: lesson.order,
     resources: resources.map((r) => ({

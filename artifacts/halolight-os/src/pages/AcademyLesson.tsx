@@ -155,6 +155,7 @@ export default function AcademyLesson() {
   const videoUrls = lesson.videoUrls as Record<string, string> | null | undefined;
   const resolvedVideoUrl = videoUrls?.[lang] ?? videoUrls?.["en"] ?? lesson.videoUrl ?? "";
   const embedUrl = getVideoEmbedUrl(resolvedVideoUrl);
+  const thumbnailUrl = (lesson as { thumbnailUrl?: string | null }).thumbnailUrl ?? null;
 
   return (
     <div className="space-y-6" data-testid="page-academy-lesson">
@@ -182,14 +183,27 @@ export default function AcademyLesson() {
 
       {/* Video Player */}
       {embedUrl ? (
-        <div className="relative bg-black rounded-2xl overflow-hidden shadow-lg aspect-video">
+        <div
+          className="relative bg-black rounded-2xl overflow-hidden shadow-lg aspect-video"
+          style={thumbnailUrl ? { backgroundImage: `url(${thumbnailUrl})`, backgroundSize: "cover", backgroundPosition: "center" } : undefined}
+        >
           <iframe
             src={embedUrl}
             title={lesson.title}
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+            referrerPolicy="strict-origin-when-cross-origin"
             allowFullScreen
             className="w-full h-full"
+            style={{ border: "none" }}
           />
+        </div>
+      ) : thumbnailUrl ? (
+        <div className="relative rounded-2xl overflow-hidden shadow-sm aspect-video bg-black">
+          <img src={thumbnailUrl} alt={lesson.title} className="w-full h-full object-cover opacity-60" />
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-white">
+            <Video className="w-12 h-12 opacity-60" />
+            <p className="text-sm">{t("academy_lesson.no_video", { defaultValue: "No video available for this lesson." })}</p>
+          </div>
         </div>
       ) : (
         <div className="relative bg-muted rounded-2xl overflow-hidden shadow-sm aspect-video flex flex-col items-center justify-center gap-3 text-muted-foreground">

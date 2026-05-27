@@ -3254,6 +3254,9 @@ components:
           type: integer
         isPublished:
           type: boolean
+        thumbnailUrl:
+          type: string
+          nullable: true
         completedAt:
           type: ["string", "null"]
           format: date-time
@@ -3338,6 +3341,9 @@ components:
           type: object
           additionalProperties:
             type: string
+          nullable: true
+        thumbnailUrl:
+          type: string
           nullable: true
         durationSeconds:
           type: integer
@@ -5384,6 +5390,7 @@ components:
         description: { type: object, additionalProperties: { type: string }, nullable: true }
         videoUrl: { type: string }
         videoUrls: { type: object, additionalProperties: { type: string }, nullable: true }
+        thumbnailUrl: { type: string, nullable: true }
         durationSeconds: { type: integer }
         order: { type: integer }
         isPublished: { type: boolean }
@@ -5398,6 +5405,7 @@ components:
         description: { type: object, additionalProperties: { type: string }, nullable: true }
         videoUrl: { type: string, nullable: true }
         videoUrls: { type: object, additionalProperties: { type: string }, nullable: true }
+        thumbnailUrl: { type: string, nullable: true }
         durationSeconds: { type: integer }
         isPublished: { type: boolean }
         notes: { type: string, nullable: true }
@@ -5409,6 +5417,7 @@ components:
         description: { type: object, additionalProperties: { type: string }, nullable: true }
         videoUrl: { type: string, nullable: true }
         videoUrls: { type: object, additionalProperties: { type: string }, nullable: true }
+        thumbnailUrl: { type: string, nullable: true }
         durationSeconds: { type: integer }
         isPublished: { type: boolean }
         notes: { type: string, nullable: true }

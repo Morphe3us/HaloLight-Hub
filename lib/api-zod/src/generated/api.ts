@@ -431,6 +431,7 @@ export const GetCourseResponse = zod.object({
   "durationSeconds": zod.number(),
   "order": zod.number(),
   "isPublished": zod.boolean(),
+  "thumbnailUrl": zod.string().nullish(),
   "completedAt": zod.coerce.date().nullable(),
   "watchPercent": zod.number().nullish()
 }))
@@ -457,6 +458,7 @@ export const GetLessonResponse = zod.object({
   "title": zod.string(),
   "videoUrl": zod.string(),
   "videoUrls": zod.record(zod.string(), zod.string()).nullish(),
+  "thumbnailUrl": zod.string().nullish(),
   "durationSeconds": zod.number(),
   "order": zod.number(),
   "resources": zod.array(zod.object({
@@ -3058,6 +3060,7 @@ export const GetAdminCourseDetailResponse = zod.object({
   "description": zod.record(zod.string(), zod.string()).nullish(),
   "videoUrl": zod.string(),
   "videoUrls": zod.record(zod.string(), zod.string()).nullish(),
+  "thumbnailUrl": zod.string().nullish(),
   "durationSeconds": zod.number(),
   "order": zod.number(),
   "isPublished": zod.boolean(),
@@ -3158,6 +3161,7 @@ export const UpdateAdminModuleResponse = zod.object({
   "description": zod.record(zod.string(), zod.string()).nullish(),
   "videoUrl": zod.string(),
   "videoUrls": zod.record(zod.string(), zod.string()).nullish(),
+  "thumbnailUrl": zod.string().nullish(),
   "durationSeconds": zod.number(),
   "order": zod.number(),
   "isPublished": zod.boolean(),
@@ -3183,6 +3187,7 @@ export const CreateAdminLessonBody = zod.object({
   "description": zod.record(zod.string(), zod.string()).nullish(),
   "videoUrl": zod.string().nullish(),
   "videoUrls": zod.record(zod.string(), zod.string()).nullish(),
+  "thumbnailUrl": zod.string().nullish(),
   "durationSeconds": zod.number().optional(),
   "isPublished": zod.boolean().optional(),
   "notes": zod.string().nullish()
@@ -3201,6 +3206,7 @@ export const UpdateAdminLessonBody = zod.object({
   "description": zod.record(zod.string(), zod.string()).nullish(),
   "videoUrl": zod.string().nullish(),
   "videoUrls": zod.record(zod.string(), zod.string()).nullish(),
+  "thumbnailUrl": zod.string().nullish(),
   "durationSeconds": zod.number().optional(),
   "isPublished": zod.boolean().optional(),
   "notes": zod.string().nullish(),
@@ -3214,6 +3220,7 @@ export const UpdateAdminLessonResponse = zod.object({
   "description": zod.record(zod.string(), zod.string()).nullish(),
   "videoUrl": zod.string(),
   "videoUrls": zod.record(zod.string(), zod.string()).nullish(),
+  "thumbnailUrl": zod.string().nullish(),
   "durationSeconds": zod.number(),
   "order": zod.number(),
   "isPublished": zod.boolean(),
