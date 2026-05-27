@@ -154,13 +154,16 @@ export default function AcademyLesson() {
   const lang = i18n.language?.split("-")[0] ?? "en";
   type VideoAsset = { embedUrl?: string; thumbnailUrl?: string; previewUrl?: string; videoId?: string };
   const videoAssets = (lesson as { videoAssets?: Record<string, VideoAsset> | null }).videoAssets;
-  const asset = videoAssets?.[lang] ?? videoAssets?.["en"];
+  // Resolution order: user lang → "en" → first available asset (catches single-language imports like fr/es/pt)
+  const firstAvailableAsset = videoAssets ? Object.values(videoAssets)[0] : undefined;
+  const asset = videoAssets?.[lang] ?? videoAssets?.["en"] ?? firstAvailableAsset;
+  const resolvedLang = videoAssets?.[lang] ? lang : videoAssets?.["en"] ? "en" : (videoAssets ? Object.keys(videoAssets)[0] : null);
   const videoUrls = lesson.videoUrls as Record<string, string> | null | undefined;
-  // Resolution chain: videoAssets[lang].embedUrl → videoAssets.en.embedUrl → videoUrls[lang] → videoUrls.en → lesson.videoUrl (legacy)
+  // Resolution chain: videoAssets[lang].embedUrl → videoAssets.en.embedUrl → first available asset → videoUrls[lang] → videoUrls.en → lesson.videoUrl (legacy)
   const resolvedVideoUrl = asset?.embedUrl ?? videoUrls?.[lang] ?? videoUrls?.["en"] ?? lesson.videoUrl ?? "";
   const embedUrl = getVideoEmbedUrl(resolvedVideoUrl);
-  // Thumbnail chain: videoAssets[lang].thumbnailUrl → videoAssets.en.thumbnailUrl → lesson.thumbnailUrl (legacy)
-  const thumbnailUrl = asset?.thumbnailUrl ?? videoAssets?.["en"]?.thumbnailUrl ?? (lesson as { thumbnailUrl?: string | null }).thumbnailUrl ?? null;
+  // Thumbnail chain: videoAssets[lang].thumbnailUrl → videoAssets.en.thumbnailUrl → first available → lesson.thumbnailUrl (legacy)
+  const thumbnailUrl = asset?.thumbnailUrl || videoAssets?.["en"]?.thumbnailUrl || firstAvailableAsset?.thumbnailUrl || (lesson as { thumbnailUrl?: string | null }).thumbnailUrl || null;
 
   return (
     <div className="space-y-6" data-testid="page-academy-lesson">
@@ -215,6 +218,23 @@ export default function AcademyLesson() {
           <Video className="w-12 h-12 opacity-30" />
           <p className="text-sm">{t("academy_lesson.no_video", { defaultValue: "No video available for this lesson." })}</p>
         </div>
+      )}
+
+      {/* Debug panel — rendering chain */}
+      {process.env.NODE_ENV === "development" && (
+        <details className="rounded-lg border border-border bg-muted/20 text-xs font-mono">
+          <summary className="px-3 py-2 cursor-pointer text-muted-foreground select-none">Debug: video rendering chain</summary>
+          <div className="px-3 pb-3 pt-1 space-y-1 text-muted-foreground">
+            <p><span className="text-foreground font-semibold">Course ID:</span> {(lesson as { moduleId?: string }).moduleId ?? "—"}</p>
+            <p><span className="text-foreground font-semibold">Lesson ID:</span> {lesson.id}</p>
+            <p><span className="text-foreground font-semibold">Selected language:</span> {lang}</p>
+            <p><span className="text-foreground font-semibold">Resolved asset lang:</span> {resolvedLang ?? "none"}</p>
+            <p><span className="text-foreground font-semibold">videoAssets keys:</span> {videoAssets ? Object.keys(videoAssets).join(", ") : "null"}</p>
+            <p><span className="text-foreground font-semibold">Resolved embed URL:</span> {resolvedVideoUrl || "(empty)"}</p>
+            <p><span className="text-foreground font-semibold">Final iframe src:</span> {embedUrl || "(empty — no video)"}</p>
+            <p><span className="text-foreground font-semibold">Thumbnail URL:</span> {thumbnailUrl || "(none)"}</p>
+          </div>
+        </details>
       )}
 
       {/* Mark Complete */}

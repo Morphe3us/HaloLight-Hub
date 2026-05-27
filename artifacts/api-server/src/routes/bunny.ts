@@ -297,7 +297,13 @@ router.post("/admin/bunny/import", requireAuth, async (req: Request, res: Respon
         continue;
       }
 
-      const newAsset = { embedUrl, thumbnailUrl, previewUrl: previewUrl || undefined, videoId };
+      // Don't persist empty strings — omit missing fields entirely
+      const newAsset = {
+        embedUrl,
+        ...(thumbnailUrl ? { thumbnailUrl } : {}),
+        ...(previewUrl ? { previewUrl } : {}),
+        videoId,
+      };
 
       // Resolve the lesson
       let lessonId = item.lessonId;
@@ -360,7 +366,7 @@ router.post("/admin/bunny/import", requireAuth, async (req: Request, res: Respon
             videoAssets: { [lang]: newAsset } as Record<string, typeof newAsset>,
             durationSeconds,
             order: existingLessons.length + 1,
-            isPublished: false,
+            isPublished: true, // publish immediately so client Academy can see it
           }).returning();
           lessonId = newLesson.id;
           created++;

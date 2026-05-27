@@ -180,7 +180,8 @@ export default function AcademyCourse() {
                       const isCompleted = !!lesson.completedAt;
                       type VA = { thumbnailUrl?: string };
                       const va = (lesson as { videoAssets?: Record<string, VA> | null }).videoAssets;
-                      const thumb = va?.[lang]?.thumbnailUrl ?? va?.["en"]?.thumbnailUrl ?? (lesson as { thumbnailUrl?: string | null }).thumbnailUrl ?? null;
+                      const firstVa = va ? Object.values(va)[0] : undefined;
+                      const thumb = va?.[lang]?.thumbnailUrl || va?.["en"]?.thumbnailUrl || firstVa?.thumbnailUrl || (lesson as { thumbnailUrl?: string | null }).thumbnailUrl || null;
                       return (
                         <Link key={lesson.id} href={`/academy/${course.id}/${lesson.id}`}>
                           <div className="flex items-center gap-4 px-5 py-3.5 hover:bg-muted transition-colors cursor-pointer group">
