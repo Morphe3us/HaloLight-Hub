@@ -149,41 +149,74 @@ router.get("/admin/bunny/collections/:collectionId/videos", requireAuth, async (
   if (!cfg) { res.status(400).json({ error: "BunnyStream not configured" }); return; }
 
   const { collectionId } = req.params;
+  const ITEMS_PER_PAGE = 100; // BunnyStream max per page
 
   try {
     // Get library info for pull zone hostname
     const lib = await bunnyGet(`/library/${cfg.libraryId}`, cfg.apiKey) as Record<string, unknown>;
     const pullZoneHostname = String(lib["PullZoneHostname"] ?? "");
 
-    // Get videos for this collection
-    const data = await bunnyGet(
-      `/library/${cfg.libraryId}/videos?collectionId=${collectionId}&page=1&itemsPerPage=200&orderBy=title`,
-      cfg.apiKey,
-    ) as Record<string, unknown>;
+    // Paginate through all pages until exhausted
+    const allRawItems: unknown[] = [];
+    let page = 1;
+    let totalItems = 0;
+    let pagesLoaded = 0;
 
-    const rawItems = (data["items"] as unknown[]) ?? [];
-    const items = rawItems.map((v: unknown) => {
+    do {
+      const data = await bunnyGet(
+        `/library/${cfg.libraryId}/videos?collectionId=${collectionId}&page=${page}&itemsPerPage=${ITEMS_PER_PAGE}&orderBy=title`,
+        cfg.apiKey,
+      ) as Record<string, unknown>;
+
+      const pageItems = (data["items"] as unknown[]) ?? [];
+      totalItems = Number(data["totalItems"] ?? pageItems.length);
+      allRawItems.push(...pageItems);
+      pagesLoaded++;
+
+      // Stop if this page returned fewer items than requested (last page)
+      if (pageItems.length < ITEMS_PER_PAGE) break;
+      // Stop if we already have all items reported by the API
+      if (allRawItems.length >= totalItems) break;
+
+      page++;
+    } while (true);
+
+    // Deduplicate by guid in case of API overlap
+    const seenGuids = new Set<string>();
+    const uniqueItems = allRawItems.filter((v: unknown) => {
       const vid = v as Record<string, unknown>;
-      const videoId = String(vid["guid"] ?? "");
-      const status = Number(vid["status"] ?? 0);
-      const isReady = status === 4;
-      return {
-        guid: videoId,
-        title: String(vid["title"] ?? ""),
-        collectionId: String(vid["collectionId"] ?? ""),
-        durationSeconds: Number(vid["length"] ?? 0),
-        status,
-        statusLabel: statusLabel(status),
-        isReady,
-        embedUrl: buildEmbedUrl(cfg.libraryId, videoId),
-        thumbnailUrl: pullZoneHostname ? buildThumbnailUrl(pullZoneHostname, videoId) : "",
-        previewUrl: pullZoneHostname ? buildPreviewUrl(pullZoneHostname, videoId) : "",
-        width: Number(vid["width"] ?? 0),
-        height: Number(vid["height"] ?? 0),
-      };
+      const guid = String(vid["guid"] ?? "");
+      if (seenGuids.has(guid)) return false;
+      seenGuids.add(guid);
+      return true;
     });
 
-    res.json({ items, total: items.length, collectionId });
+    const items = uniqueItems
+      .map((v: unknown) => {
+        const vid = v as Record<string, unknown>;
+        const videoId = String(vid["guid"] ?? "");
+        const status = Number(vid["status"] ?? 0);
+        const isReady = status === 4;
+        return {
+          guid: videoId,
+          title: String(vid["title"] ?? ""),
+          collectionId: String(vid["collectionId"] ?? ""),
+          durationSeconds: Number(vid["length"] ?? 0),
+          status,
+          statusLabel: statusLabel(status),
+          isReady,
+          embedUrl: buildEmbedUrl(cfg.libraryId, videoId),
+          thumbnailUrl: pullZoneHostname ? buildThumbnailUrl(pullZoneHostname, videoId) : "",
+          previewUrl: pullZoneHostname ? buildPreviewUrl(pullZoneHostname, videoId) : "",
+          width: Number(vid["width"] ?? 0),
+          height: Number(vid["height"] ?? 0),
+        };
+      })
+      .sort((a, b) => a.title.localeCompare(b.title));
+
+    req.log.info({ collectionId, pagesLoaded, totalFetched: items.length, totalReported: totalItems }, "BunnyStream videos fetched");
+
+    res.json({ items, total: items.length, totalReported: totalItems, pagesLoaded, collectionId });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     req.log.error({ err }, "BunnyStream videos fetch failed");

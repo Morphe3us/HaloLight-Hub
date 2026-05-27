@@ -155,8 +155,8 @@ export default function AdminBunnyImporter({ onBack }: { onBack: () => void }) {
   });
   const collections = collectionsData?.items ?? [];
 
-  // Videos for selected collection
-  const { data: videosData, isLoading: videosLoading } = useQuery<{ items: BunnyVideo[]; total: number }>({
+  // Videos for selected collection — fetches ALL pages server-side
+  const { data: videosData, isLoading: videosLoading } = useQuery<{ items: BunnyVideo[]; total: number; totalReported: number; pagesLoaded: number }>({
     queryKey: ["bunny-videos", selectedCollection?.guid],
     queryFn: () => apiFetch(`/admin/bunny/collections/${selectedCollection!.guid}/videos`),
     enabled: !!selectedCollection,
@@ -331,13 +331,21 @@ export default function AdminBunnyImporter({ onBack }: { onBack: () => void }) {
               </CardHeader>
               <CardContent className="pt-0">
                 {videosLoading ? (
-                  <div className="flex items-center gap-2 text-muted-foreground text-sm py-4"><Loader2 className="w-4 h-4 animate-spin" /> Loading videos…</div>
+                  <div className="flex flex-col gap-1.5 py-4">
+                    <div className="flex items-center gap-2 text-muted-foreground text-sm"><Loader2 className="w-4 h-4 animate-spin" /> Fetching all pages from BunnyStream…</div>
+                    <p className="text-xs text-muted-foreground pl-6">This may take a moment for large collections.</p>
+                  </div>
                 ) : videos.length === 0 ? (
                   <p className="text-sm text-muted-foreground py-2">No videos in this collection.</p>
                 ) : (
                   <div className="space-y-2">
                     <div className="flex items-center justify-between gap-3 pb-1">
-                      <p className="text-xs text-muted-foreground">{selectedRows.length} of {importRows.length} selected for import</p>
+                      <p className="text-xs text-muted-foreground">
+                        {selectedRows.length} of {importRows.length} selected for import
+                        {videosData?.pagesLoaded && videosData.pagesLoaded > 1 && (
+                          <span className="ml-2 text-muted-foreground/60">· {videosData.pagesLoaded} pages fetched</span>
+                        )}
+                      </p>
                       <div className="flex gap-2">
                         <Button variant="ghost" size="sm" className="text-xs h-7 px-2" onClick={() => setImportRows(r => r.map(row => ({ ...row, selected: row.video.isReady })))}>Select ready</Button>
                         <Button variant="ghost" size="sm" className="text-xs h-7 px-2" onClick={() => setImportRows(r => r.map(row => ({ ...row, selected: true })))}>Select all</Button>
