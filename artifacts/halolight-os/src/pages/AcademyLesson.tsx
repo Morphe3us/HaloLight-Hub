@@ -44,11 +44,22 @@ function getVideoEmbedUrl(url: string): string {
     if (u.hostname === "video.bunnycdn.com" && u.pathname.startsWith("/play/")) {
       const parts = u.pathname.split("/").filter(Boolean); // ["play", libraryId, videoId]
       if (parts.length >= 3) {
-        return `https://iframe.mediadelivery.net/embed/${parts[1]}/${parts[2]}`;
+        return `https://iframe.mediadelivery.net/embed/${parts[1]}/${parts[2]}?controls=true&autoplay=false&loop=false&muted=false&preload=true&responsive=true`;
       }
     }
-    // BunnyStream embed URL — already correct, pass through
+    // BunnyStream embed URL — already correct, append player params if not already present
     // e.g. https://iframe.mediadelivery.net/embed/{libraryId}/{videoId}
+    if (u.hostname === "iframe.mediadelivery.net") {
+      if (!u.searchParams.has("controls")) {
+        u.searchParams.set("controls", "true");
+        u.searchParams.set("autoplay", "false");
+        u.searchParams.set("loop", "false");
+        u.searchParams.set("muted", "false");
+        u.searchParams.set("preload", "true");
+        u.searchParams.set("responsive", "true");
+        return u.toString();
+      }
+    }
     return url;
   } catch {
     return url;
@@ -198,8 +209,7 @@ export default function AcademyLesson() {
           <iframe
             src={embedUrl}
             title={lesson.title}
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-            referrerPolicy="strict-origin-when-cross-origin"
+            allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture; fullscreen"
             allowFullScreen
             className="w-full h-full"
             style={{ border: "none" }}

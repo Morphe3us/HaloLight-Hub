@@ -66,10 +66,18 @@ export default defineConfig({
     fs: {
       strict: true,
     },
+    headers: {
+      // Allow nested BunnyStream iframes to use autoplay, fullscreen, and encrypted-media
+      // even when the app itself is embedded inside Replit's preview iframe.
+      "Permissions-Policy": "autoplay=*, fullscreen=*, encrypted-media=*, picture-in-picture=*, gyroscope=*, accelerometer=*",
+    },
   },
   preview: {
     port,
     host: "0.0.0.0",
     allowedHosts: true,
+    headers: {
+      "Permissions-Policy": "autoplay=*, fullscreen=*, encrypted-media=*, picture-in-picture=*, gyroscope=*, accelerometer=*",
+    },
   },
 });
