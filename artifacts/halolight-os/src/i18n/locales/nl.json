@@ -837,7 +837,16 @@
     "deposit_amount_label": "Borgbedrag",
     "payment_terms_label": "Betalingsvoorwaarden",
     "currency_label": "Valuta",
-    "readiness_section": "Contractgereedheid"
+    "readiness_section": "Contractgereedheid",
+    "event_start_time_label": "Starttijd",
+    "event_end_time_label": "Eindtijd",
+    "tax_rate_label": "BTW-tarief (%)",
+    "deposit_method_label": "Borgbetalingswijze",
+    "signature_section": "Handtekening",
+    "signature_place_label": "Ondertekeningsplaats",
+    "cancellation_section": "Annuleringsvoorwaarden",
+    "cancellation_terms_label": "Annuleringsvoorwaarden",
+    "provider_section": "Aanbiedergegevens (optioneel)"
   },
   "invoices": {
     "title": "Facturen",
@@ -1718,6 +1727,12 @@
     "readiness_pricing": "Prijsstelling",
     "readiness_complete": "Volledig",
     "readiness_partial": "Gedeeltelijk",
-    "readiness_missing": "Ontbrekend"
+    "readiness_missing": "Ontbrekend",
+    "placeholder_not_included": "Niet inbegrepen",
+    "placeholder_no_options": "Geen aanvullende opties",
+    "placeholder_no_delivery_fees": "Geen leveringskosten",
+    "placeholder_not_applicable": "Niet van toepassing",
+    "optional_summary": "Sommige optionele informatie ontbreekt en wordt vervangen door standaardtekst.",
+    "field_currency": "Valuta"
   }
 }

@@ -837,7 +837,16 @@
     "deposit_amount_label": "Montant de la caution",
     "payment_terms_label": "Conditions de paiement",
     "currency_label": "Devise",
-    "readiness_section": "État du contrat"
+    "readiness_section": "État du contrat",
+    "event_start_time_label": "Heure de début",
+    "event_end_time_label": "Heure de fin",
+    "tax_rate_label": "Taux TVA (%)",
+    "deposit_method_label": "Mode de paiement caution",
+    "signature_section": "Signature",
+    "signature_place_label": "Lieu de signature",
+    "cancellation_section": "Conditions d'annulation",
+    "cancellation_terms_label": "Conditions d'annulation",
+    "provider_section": "Informations prestataire (optionnel)"
   },
   "invoices": {
     "title": "Factures",
@@ -1718,6 +1727,12 @@
     "readiness_pricing": "Tarification",
     "readiness_complete": "Complet",
     "readiness_partial": "Partiel",
-    "readiness_missing": "Manquant"
+    "readiness_missing": "Manquant",
+    "placeholder_not_included": "Non inclus",
+    "placeholder_no_options": "Aucune option supplémentaire",
+    "placeholder_no_delivery_fees": "Aucun frais de livraison",
+    "placeholder_not_applicable": "Non applicable",
+    "optional_summary": "Certaines informations optionnelles sont manquantes et seront remplacées par du texte par défaut.",
+    "field_currency": "Devise"
   }
 }

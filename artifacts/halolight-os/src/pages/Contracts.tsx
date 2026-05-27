@@ -20,6 +20,7 @@ import {
   type ProviderData,
   type ValidationResult,
   type ReadinessSection,
+  type PlaceholderSet,
   computeReadiness,
   validateContract,
   fillAllVariables,
@@ -59,7 +60,7 @@ function ReadinessRow({ section }: { section: ReadinessSection }) {
         <AlertTriangle className="w-3.5 h-3.5 text-warning shrink-0" />
         <span className="text-xs text-warning font-medium">{label}</span>
         <span className="text-xs text-muted-foreground ml-auto">
-          {section.presentCount}/{section.totalCount} {t("contract_validation.readiness_partial")}
+          {section.presentCount}/{section.totalCount} — {t("contract_validation.readiness_partial")}
         </span>
       </div>
     );
@@ -100,67 +101,57 @@ function MissingInfoDialog({
   if (!validation) return null;
   const hasBlocking = validation.blocking.length > 0;
   const hasOptional = validation.optional.length > 0;
-  const hasUnresolved = validation.unresolved.length > 0;
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) onCancel(); }}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
+      <DialogContent className="max-w-md flex flex-col max-h-[80vh]">
+        <DialogHeader className="shrink-0">
           <DialogTitle className="flex items-center gap-2">
-            <AlertCircle className={cn("w-5 h-5", hasBlocking ? "text-destructive" : "text-warning")} />
+            <AlertCircle className={cn("w-5 h-5 shrink-0", hasBlocking ? "text-destructive" : "text-warning")} />
             {t("contract_validation.missing_title")}
           </DialogTitle>
         </DialogHeader>
-        <div className="space-y-4 py-1">
+
+        <div className="overflow-y-auto flex-1 py-2 space-y-4">
           {hasBlocking && (
             <div className="space-y-2">
-              <p className="text-sm text-destructive font-medium">{t("contract_validation.blocking_intro")}</p>
-              <ul className="space-y-1">
+              <p className="text-sm font-medium text-destructive">{t("contract_validation.blocking_intro")}</p>
+              <ul className="space-y-1.5">
                 {validation.blocking.map((f) => (
                   <li key={f} className="flex items-center gap-2 text-sm">
                     <XCircle className="w-3.5 h-3.5 text-destructive shrink-0" />
-                    {t(`contract_validation.${f}`)}
+                    <span>{t(`contract_validation.${f}`)}</span>
                   </li>
                 ))}
               </ul>
             </div>
           )}
-          {!hasBlocking && (hasOptional || hasUnresolved) && (
-            <div className="space-y-2">
-              <p className="text-sm text-warning font-medium">{t("contract_validation.optional_intro")}</p>
-              {hasOptional && (
-                <ul className="space-y-1">
-                  {validation.optional.map(({ field, placeholderKey }) => (
-                    <li key={field} className="flex items-start gap-2 text-sm">
-                      <AlertTriangle className="w-3.5 h-3.5 text-warning shrink-0 mt-0.5" />
-                      <span>
-                        {t(`contract_validation.${field}`)}
-                        <span className="text-muted-foreground"> → "{t(`contract_validation.${placeholderKey}`)}"</span>
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-              {hasUnresolved && (
-                <>
-                  <p className="text-sm text-warning font-medium mt-2">{t("contract_validation.unresolved_intro")}</p>
-                  <ul className="space-y-1">
-                    {validation.unresolved.map((v) => (
-                      <li key={v} className="flex items-center gap-2 text-sm font-mono text-xs text-muted-foreground">
-                        <AlertTriangle className="w-3.5 h-3.5 text-warning shrink-0" />
-                        {v}
-                      </li>
-                    ))}
-                  </ul>
-                </>
-              )}
+
+          {!hasBlocking && hasOptional && (
+            <div className="space-y-3">
+              <p className="text-sm text-warning font-medium">{t("contract_validation.optional_summary")}</p>
+              <ul className="space-y-1.5 border rounded-lg p-3 bg-warning/5">
+                {validation.optional.map(({ field, placeholderKey }) => (
+                  <li key={field} className="flex items-start gap-2 text-sm">
+                    <AlertTriangle className="w-3.5 h-3.5 text-warning shrink-0 mt-0.5" />
+                    <span>
+                      {t(`contract_validation.${field}`)}
+                      <span className="text-muted-foreground"> → "{t(`contract_validation.${placeholderKey}`)}"</span>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              <p className="text-xs text-muted-foreground">{t("contract_validation.optional_intro")}</p>
             </div>
           )}
         </div>
-        <DialogFooter className="flex-col sm:flex-row gap-2">
-          <Button variant="outline" onClick={onCancel} className="sm:mr-auto">{t("common.cancel")}</Button>
+
+        <DialogFooter className="shrink-0 border-t pt-4 flex-col sm:flex-row gap-2">
+          <Button variant="outline" onClick={onCancel} className="sm:mr-auto">
+            {t("common.cancel")}
+          </Button>
           {!hasBlocking && (
-            <Button onClick={onConfirm} variant="default">
+            <Button onClick={onConfirm}>
               {t("contract_validation.continue_anyway")}
             </Button>
           )}
@@ -170,6 +161,12 @@ function MissingInfoDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide pt-1 pb-0.5 border-b mb-1">{children}</p>
   );
 }
 
@@ -187,9 +184,11 @@ export default function Contracts() {
 
   const EMPTY_CONTRACT_FORM: ContractFormData = {
     title: "", clientName: "", clientEmail: "", clientPhone: "", clientCompany: "", clientAddress: "",
-    eventType: "", eventDate: "", eventLocation: "",
+    eventType: "", eventDate: "", eventStartTime: "", eventEndTime: "", eventLocation: "",
     serviceName: "", rentalDuration: "", includedPrints: "", equipmentDescription: "",
-    value: "", currency: currencyCode ?? "EUR", depositAmount: "", paymentTerms: "",
+    value: "", currency: currencyCode ?? "EUR", taxRate: "0",
+    depositAmount: "", depositMethod: "",
+    paymentTerms: "", cancellationTerms: "", signaturePlace: "",
     content: "", notes: "", templateId: "", leadId: "", quoteId: "",
   };
 
@@ -206,10 +205,14 @@ export default function Contracts() {
     phone: currentUser?.phone,
   };
 
-  const placeholders = {
+  const placeholders: PlaceholderSet = {
     not_provided: t("contract_validation.placeholder_not_provided"),
     to_be_specified: t("contract_validation.placeholder_to_be_specified"),
     no_deposit: t("contract_validation.placeholder_no_deposit"),
+    not_included: t("contract_validation.placeholder_not_included"),
+    no_options: t("contract_validation.placeholder_no_options"),
+    no_delivery_fees: t("contract_validation.placeholder_no_delivery_fees"),
+    not_applicable: t("contract_validation.placeholder_not_applicable"),
   };
 
   const { data, isLoading } = useListContracts(
@@ -245,7 +248,7 @@ export default function Contracts() {
     const tpl = templates.find((tmpl) => tmpl.id === id);
     const raw = tpl?.content ?? "";
     const filled = fillAllVariables(raw, { ...form, templateId: id }, provider, lang, placeholders);
-    setForm({ ...form, templateId: id, content: filled });
+    setForm((f) => ({ ...f, templateId: id, content: filled }));
   };
 
   const doCreate = (filledContent: string) => {
@@ -268,7 +271,7 @@ export default function Contracts() {
 
   const handleCreate = () => {
     const validation = validateContract(form, provider);
-    if (validation.blocking.length > 0 || validation.optional.length > 0 || validation.unresolved.length > 0) {
+    if (validation.blocking.length > 0 || validation.optional.length > 0) {
       setPendingValidation(validation);
       setShowMissingDialog(true);
       return;
@@ -283,12 +286,10 @@ export default function Contracts() {
     setShowMissingDialog(false);
   };
 
-  const handleMissingDialogCancel = () => {
-    setShowMissingDialog(false);
-    setPendingValidation(null);
-  };
-
   const readiness = computeReadiness(form, provider);
+
+  const f = (key: keyof ContractFormData) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+    setForm((prev) => ({ ...prev, [key]: e.target.value }));
 
   return (
     <div className="space-y-6">
@@ -297,7 +298,9 @@ export default function Contracts() {
           <h1 className="text-2xl font-bold tracking-tight">{t("contracts.title")}</h1>
           <p className="text-muted-foreground text-sm mt-1">{t("contracts.subtitle")}</p>
         </div>
-        <Button onClick={() => setShowCreate(true)} className="gap-2 shrink-0"><Plus className="w-4 h-4" /> {t("contracts.new_contract")}</Button>
+        <Button onClick={() => setShowCreate(true)} className="gap-2 shrink-0">
+          <Plus className="w-4 h-4" /> {t("contracts.new_contract")}
+        </Button>
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -378,33 +381,38 @@ export default function Contracts() {
         )}
       </div>
 
+      {/* ── Creation dialog ── */}
       <Dialog open={showCreate} onOpenChange={(open) => {
         setShowCreate(open);
         if (!open) { setCustomerSearch(""); setForm({ ...EMPTY_CONTRACT_FORM, currency: currencyCode ?? "EUR" }); }
       }}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>{t("contracts.new_contract")}</DialogTitle></DialogHeader>
-          <div className="space-y-5 py-2">
+        <DialogContent className="max-w-2xl flex flex-col max-h-[92vh]">
+          <DialogHeader className="shrink-0">
+            <DialogTitle>{t("contracts.new_contract")}</DialogTitle>
+          </DialogHeader>
 
+          <div className="overflow-y-auto flex-1 space-y-5 py-2 pr-1">
+
+            {/* Customer search */}
             <div className="space-y-1.5">
               <Label>{t("sales_search.search_label")}</Label>
               <CustomerSearchCombobox
                 value={customerSearch}
                 onChange={setCustomerSearch}
                 onSelect={(s) => {
-                  setForm((f) => ({
-                    ...f,
-                    clientName: s.name,
-                    clientEmail: s.email ?? f.clientEmail,
-                    clientPhone: s.phone ?? f.clientPhone,
-                    clientCompany: s.company ?? f.clientCompany,
-                    clientAddress: s.address ?? f.clientAddress,
-                    eventType: s.eventType ?? f.eventType,
-                    eventDate: s.eventDate ? s.eventDate.slice(0, 10) : f.eventDate,
-                    eventLocation: s.eventLocation ?? f.eventLocation,
-                    currency: s.currency ?? f.currency,
-                    leadId: s.leadId ?? f.leadId,
-                    quoteId: s.quoteId ?? f.quoteId,
+                  setForm((prev) => ({
+                    ...prev,
+                    clientName: s.name || prev.clientName,
+                    clientEmail: s.email ?? prev.clientEmail,
+                    clientPhone: s.phone ?? prev.clientPhone,
+                    clientCompany: s.company ?? prev.clientCompany,
+                    clientAddress: s.address ?? prev.clientAddress,
+                    eventType: s.eventType ?? prev.eventType,
+                    eventDate: s.eventDate ? s.eventDate.slice(0, 10) : prev.eventDate,
+                    eventLocation: s.eventLocation ?? prev.eventLocation,
+                    currency: s.currency ?? prev.currency,
+                    leadId: s.leadId ?? prev.leadId,
+                    quoteId: s.quoteId ?? prev.quoteId,
                   }));
                 }}
                 onClear={() => setCustomerSearch("")}
@@ -413,6 +421,7 @@ export default function Contracts() {
               <p className="text-xs text-muted-foreground">{t("sales_search.or_create_new")}</p>
             </div>
 
+            {/* Template */}
             {templates.length > 0 && (
               <div className="space-y-1.5">
                 <Label>{t("contracts.template_label")}</Label>
@@ -425,129 +434,172 @@ export default function Contracts() {
               </div>
             )}
 
+            {/* Title */}
             <div className="space-y-1.5">
               <Label>{t("contracts.title_label")} *</Label>
-              <Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder={t("contracts.title_placeholder")} />
+              <Input value={form.title} onChange={f("title")} placeholder={t("contracts.title_placeholder")} />
             </div>
 
+            {/* Client */}
             <div className="space-y-2">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t("contracts.client_section")}</p>
+              <SectionLabel>{t("contracts.client_section")}</SectionLabel>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <Label>{t("contracts.client_name_label")} *</Label>
-                  <Input value={form.clientName} onChange={(e) => setForm({ ...form, clientName: e.target.value })} />
+                  <Input value={form.clientName} onChange={f("clientName")} />
                 </div>
                 <div className="space-y-1.5">
                   <Label>{t("contracts.client_email_label")} *</Label>
-                  <Input type="email" value={form.clientEmail} onChange={(e) => setForm({ ...form, clientEmail: e.target.value })} />
+                  <Input type="email" value={form.clientEmail} onChange={f("clientEmail")} />
                 </div>
                 <div className="space-y-1.5">
                   <Label>{t("contracts.client_phone_label")}</Label>
-                  <Input value={form.clientPhone} onChange={(e) => setForm({ ...form, clientPhone: e.target.value })} />
+                  <Input value={form.clientPhone} onChange={f("clientPhone")} />
                 </div>
                 <div className="space-y-1.5">
                   <Label>{t("contracts.client_company_label")}</Label>
-                  <Input value={form.clientCompany} onChange={(e) => setForm({ ...form, clientCompany: e.target.value })} />
+                  <Input value={form.clientCompany} onChange={f("clientCompany")} />
                 </div>
                 <div className="col-span-2 space-y-1.5">
                   <Label>{t("contracts.client_address_label")}</Label>
-                  <Input value={form.clientAddress} onChange={(e) => setForm({ ...form, clientAddress: e.target.value })} placeholder="123 Main St, City, Country" />
+                  <Input value={form.clientAddress} onChange={f("clientAddress")} placeholder="123 Main St, City, Country" />
                 </div>
               </div>
             </div>
 
+            {/* Event */}
             <div className="space-y-2">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t("contracts.event_section")}</p>
+              <SectionLabel>{t("contracts.event_section")}</SectionLabel>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <Label>{t("contracts.event_type_label")}</Label>
-                  <Input value={form.eventType} onChange={(e) => setForm({ ...form, eventType: e.target.value })} placeholder="Wedding, Corporate…" />
+                  <Input value={form.eventType} onChange={f("eventType")} placeholder="Wedding, Corporate…" />
                 </div>
                 <div className="space-y-1.5">
                   <Label>{t("contracts.event_date_label")}</Label>
-                  <Input type="date" value={form.eventDate} onChange={(e) => setForm({ ...form, eventDate: e.target.value })} />
+                  <Input type="date" value={form.eventDate} onChange={f("eventDate")} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>{t("contracts.event_start_time_label")}</Label>
+                  <Input type="time" value={form.eventStartTime} onChange={f("eventStartTime")} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>{t("contracts.event_end_time_label")}</Label>
+                  <Input type="time" value={form.eventEndTime} onChange={f("eventEndTime")} />
                 </div>
                 <div className="col-span-2 space-y-1.5">
                   <Label>{t("contracts.event_location_label")}</Label>
-                  <Input value={form.eventLocation} onChange={(e) => setForm({ ...form, eventLocation: e.target.value })} placeholder="Venue name, City" />
+                  <Input value={form.eventLocation} onChange={f("eventLocation")} placeholder="Venue name, City" />
                 </div>
               </div>
             </div>
 
+            {/* Service */}
             <div className="space-y-2">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t("contracts.service_section")}</p>
+              <SectionLabel>{t("contracts.service_section")}</SectionLabel>
               <div className="grid grid-cols-2 gap-3">
                 <div className="col-span-2 space-y-1.5">
                   <Label>{t("contracts.service_name_label")}</Label>
-                  <Input value={form.serviceName} onChange={(e) => setForm({ ...form, serviceName: e.target.value })} placeholder="Premium Photobooth Package" />
+                  <Input value={form.serviceName} onChange={f("serviceName")} placeholder="Premium Photobooth Package" />
                 </div>
                 <div className="space-y-1.5">
                   <Label>{t("contracts.rental_duration_label")}</Label>
-                  <Input value={form.rentalDuration} onChange={(e) => setForm({ ...form, rentalDuration: e.target.value })} placeholder="4 hours" />
+                  <Input value={form.rentalDuration} onChange={f("rentalDuration")} placeholder="4 hours" />
                 </div>
                 <div className="space-y-1.5">
                   <Label>{t("contracts.included_prints_label")}</Label>
-                  <Input value={form.includedPrints} onChange={(e) => setForm({ ...form, includedPrints: e.target.value })} placeholder="Unlimited" />
+                  <Input value={form.includedPrints} onChange={f("includedPrints")} placeholder="Unlimited" />
                 </div>
                 <div className="col-span-2 space-y-1.5">
                   <Label>{t("contracts.equipment_description_label")}</Label>
-                  <Input value={form.equipmentDescription} onChange={(e) => setForm({ ...form, equipmentDescription: e.target.value })} placeholder="Open-air booth, ring light, props" />
+                  <Input value={form.equipmentDescription} onChange={f("equipmentDescription")} placeholder="Open-air booth, ring light, props" />
                 </div>
               </div>
             </div>
 
+            {/* Financial */}
             <div className="space-y-2">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t("contracts.financial_section")}</p>
+              <SectionLabel>{t("contracts.financial_section")}</SectionLabel>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <Label>{t("contracts.value_dollar_label")} *</Label>
-                  <Input type="number" min="0" value={form.value} onChange={(e) => setForm({ ...form, value: e.target.value })} placeholder="1500" />
+                  <Input type="number" min="0" value={form.value} onChange={f("value")} placeholder="1500" />
                 </div>
                 <div className="space-y-1.5">
-                  <Label>{t("contracts.currency_label")}</Label>
-                  <Input value={form.currency} onChange={(e) => setForm({ ...form, currency: e.target.value })} placeholder="EUR" maxLength={3} />
+                  <Label>{t("contracts.currency_label")} *</Label>
+                  <Input value={form.currency} onChange={f("currency")} placeholder="EUR" maxLength={3} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>{t("contracts.tax_rate_label")}</Label>
+                  <Input type="number" min="0" max="100" value={form.taxRate} onChange={f("taxRate")} placeholder="20" />
                 </div>
                 <div className="space-y-1.5">
                   <Label>{t("contracts.deposit_amount_label")}</Label>
-                  <Input type="number" min="0" value={form.depositAmount} onChange={(e) => setForm({ ...form, depositAmount: e.target.value })} placeholder="300" />
+                  <Input type="number" min="0" value={form.depositAmount} onChange={f("depositAmount")} placeholder="300" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>{t("contracts.deposit_method_label")}</Label>
+                  <Input value={form.depositMethod} onChange={f("depositMethod")} placeholder="Bank transfer" />
                 </div>
                 <div className="space-y-1.5">
                   <Label>{t("contracts.payment_terms_label")}</Label>
-                  <Input value={form.paymentTerms} onChange={(e) => setForm({ ...form, paymentTerms: e.target.value })} placeholder="50% upfront, 50% on event day" />
+                  <Input value={form.paymentTerms} onChange={f("paymentTerms")} placeholder="50% upfront, 50% on event day" />
                 </div>
               </div>
             </div>
 
+            {/* Cancellation */}
+            <div className="space-y-2">
+              <SectionLabel>{t("contracts.cancellation_section")}</SectionLabel>
+              <Textarea value={form.cancellationTerms} onChange={f("cancellationTerms")} rows={2} placeholder="e.g. Full refund if cancelled 30+ days before event…" />
+            </div>
+
+            {/* Signature */}
+            <div className="space-y-2">
+              <SectionLabel>{t("contracts.signature_section")}</SectionLabel>
+              <div className="space-y-1.5">
+                <Label>{t("contracts.signature_place_label")}</Label>
+                <Input value={form.signaturePlace} onChange={f("signaturePlace")} placeholder="Paris" />
+              </div>
+            </div>
+
+            {/* Contract content */}
             <div className="space-y-1.5">
               <Label>{t("contracts.content_label")}</Label>
-              <Textarea value={form.content} onChange={(e) => setForm({ ...form, content: e.target.value })} rows={10} placeholder={t("contracts.content_placeholder")} className="font-mono text-xs" />
+              <Textarea value={form.content} onChange={f("content")} rows={12} placeholder={t("contracts.content_placeholder")} className="font-mono text-xs" />
+              {form.content && (
+                <p className="text-xs text-muted-foreground">
+                  {t("contracts.content_label")} — variables will be filled on save.
+                </p>
+              )}
             </div>
 
+            {/* Notes */}
             <div className="space-y-1.5">
               <Label>{t("contracts.notes_label")}</Label>
-              <Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={2} />
+              <Textarea value={form.notes} onChange={f("notes")} rows={2} />
             </div>
 
+            {/* Readiness */}
             <ContractReadiness readiness={readiness} />
 
           </div>
-          <DialogFooter>
+
+          <DialogFooter className="shrink-0 border-t pt-4">
             <Button variant="outline" onClick={() => setShowCreate(false)}>{t("common.cancel")}</Button>
-            <Button
-              onClick={handleCreate}
-              disabled={createMutation.isPending || !form.title}
-            >
+            <Button onClick={handleCreate} disabled={createMutation.isPending || !form.title}>
               {createMutation.isPending ? t("contracts.creating") : t("contracts.create_contract_btn")}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
+      {/* ── Missing info dialog ── */}
       <MissingInfoDialog
         open={showMissingDialog}
         validation={pendingValidation}
         onConfirm={handleConfirmCreate}
-        onCancel={handleMissingDialogCancel}
+        onCancel={() => { setShowMissingDialog(false); setPendingValidation(null); }}
       />
     </div>
   );

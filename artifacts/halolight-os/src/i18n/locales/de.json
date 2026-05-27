@@ -837,7 +837,16 @@
     "deposit_amount_label": "Kautionsbetrag",
     "payment_terms_label": "Zahlungsbedingungen",
     "currency_label": "Währung",
-    "readiness_section": "Vertragsbereitschaft"
+    "readiness_section": "Vertragsbereitschaft",
+    "event_start_time_label": "Startzeit",
+    "event_end_time_label": "Endzeit",
+    "tax_rate_label": "MwSt.-Satz (%)",
+    "deposit_method_label": "Kautionszahlungsart",
+    "signature_section": "Unterschrift",
+    "signature_place_label": "Unterschriftsort",
+    "cancellation_section": "Stornierungsbedingungen",
+    "cancellation_terms_label": "Stornierungsbedingungen",
+    "provider_section": "Anbieterdetails (optional)"
   },
   "invoices": {
     "title": "Rechnungen",
@@ -1718,6 +1727,12 @@
     "readiness_pricing": "Preisgestaltung",
     "readiness_complete": "Vollständig",
     "readiness_partial": "Teilweise",
-    "readiness_missing": "Fehlend"
+    "readiness_missing": "Fehlend",
+    "placeholder_not_included": "Nicht enthalten",
+    "placeholder_no_options": "Keine zusätzlichen Optionen",
+    "placeholder_no_delivery_fees": "Keine Liefergebühren",
+    "placeholder_not_applicable": "Nicht zutreffend",
+    "optional_summary": "Einige optionale Informationen fehlen und werden durch Standardtext ersetzt.",
+    "field_currency": "Währung"
   }
 }

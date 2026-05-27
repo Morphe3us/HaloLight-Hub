@@ -1,0 +1,200 @@
+Contract validation UX is still broken.
+
+Current issue:
+When creating a contract, the missing information modal displays a huge list of raw technical variables:
+
+{{contract_number}}
+{{rental_company_address}}
+{{rental_company_website}}
+{{rental_company_vat}}
+{{client_first_name}}
+{{client_last_name}}
+{{package_name}}
+{{options_list}}
+{{deposit_method}}
+{{signature_place}}
+etc.
+
+This is not acceptable UX.
+
+The readiness panel says everything is complete, but the modal still shows dozens of unresolved variables.
+
+Fix required:
+
+1. Do not show raw template variable names to the user.
+   Never display:
+   {{client_first_name}}
+   {{rental_company_vat}}
+   {{options_list}}
+   etc.
+
+Instead show human-readable labels:
+
+* Client first name
+* Rental company address
+* Package name
+* Options list
+* Deposit method
+
+2. Map every supported contract variable.
+
+If a variable exists in the default template, it must be handled by the variable replacement system.
+
+Supported variables must include at least:
+
+{{contract_number}}
+{{rental_company_name}}
+{{rental_company_representative}}
+{{rental_company_address}}
+{{rental_company_email}}
+{{rental_company_phone}}
+{{rental_company_website}}
+{{rental_company_vat}}
+
+{{client_first_name}}
+{{client_last_name}}
+{{client_full_name}}
+{{client_company_name}}
+{{client_address}}
+{{client_phone}}
+{{client_email}}
+
+{{event_type}}
+{{event_date}}
+{{event_start_time}}
+{{event_end_time}}
+{{event_location}}
+{{setup_time}}
+{{pickup_time}}
+
+{{package_name}}
+{{rental_duration}}
+{{included_prints}}
+{{digital_gallery}}
+{{custom_template}}
+{{delivery_included}}
+{{setup_included}}
+{{operator_included}}
+{{equipment_list}}
+{{options_list}}
+
+{{rental_price}}
+{{options_price}}
+{{delivery_fees}}
+{{discount_amount}}
+{{subtotal}}
+{{tax_rate}}
+{{tax_amount}}
+{{total_amount}}
+{{currency}}
+
+{{deposit_amount}}
+{{deposit_method}}
+{{deposit_conditions}}
+{{deposit_return}}
+
+{{payment_terms}}
+{{cancellation_terms}}
+{{signature_date}}
+{{signature_place}}
+
+3. Add default localized fallback values for optional variables.
+
+Examples in French:
+
+* Non renseigné
+* À préciser
+* Non inclus
+* Inclus
+* Aucune caution renseignée
+* Aucun frais de livraison
+* Aucune option supplémentaire
+* Non applicable
+
+English:
+
+* Not provided
+* To be specified
+* Not included
+* Included
+* No deposit specified
+* No delivery fees
+* No additional options
+* Not applicable
+
+And equivalents for all 8 languages.
+
+4. Blocking vs optional variables.
+
+Only block contract creation for truly critical fields:
+
+* provider company/name
+* client name
+* client email
+* total amount
+* currency
+
+Do NOT block or warn heavily for optional fields like:
+
+* website
+* VAT number
+* pickup time
+* setup time
+* options list
+* digital gallery
+* custom template
+* delivery included
+* operator included
+* deposit method
+* signature place
+
+These should be automatically replaced with localized fallback text.
+
+5. The missing information modal should be short and useful.
+
+If only optional fields are missing, show:
+
+“Some optional information is missing and will be replaced with default text.”
+
+Then list only important optional fields in readable form, not 30 technical variables.
+
+6. If the user clicks “Continue with placeholders”:
+   The final contract must contain:
+
+* localized fallback text
+* no raw {{variables}}
+
+7. Add final safety check:
+   Before saving the contract, scan the final content.
+   If any {{...}} remains:
+
+* replace it with localized “À préciser / To be specified”
+* do not save raw template variables.
+
+8. Fix the modal layout.
+   The modal is too tall and difficult to use.
+   Make it scrollable with sticky footer buttons:
+
+* Cancel
+* Continue with placeholders
+* Complete missing information
+
+9. Verification:
+
+Create a contract with missing optional fields:
+
+* no huge raw variable list
+* readable warning only
+* contract can be created
+* final contract contains no {{variables}}
+
+Create a contract missing client email:
+
+* blocked with clear human-readable message
+
+Create a complete contract:
+
+* no warning
+* creates directly
+
+Run typecheck and provide exact variables mapped, fallbacks added, and screenshots/verification.

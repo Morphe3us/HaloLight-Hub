@@ -837,7 +837,16 @@
     "deposit_amount_label": "Importo del deposito",
     "payment_terms_label": "Condizioni di pagamento",
     "currency_label": "Valuta",
-    "readiness_section": "Stato del contratto"
+    "readiness_section": "Stato del contratto",
+    "event_start_time_label": "Ora di inizio",
+    "event_end_time_label": "Ora di fine",
+    "tax_rate_label": "Aliquota IVA (%)",
+    "deposit_method_label": "Metodo di deposito",
+    "signature_section": "Firma",
+    "signature_place_label": "Luogo di firma",
+    "cancellation_section": "Condizioni di cancellazione",
+    "cancellation_terms_label": "Condizioni di cancellazione",
+    "provider_section": "Dettagli fornitore (opzionale)"
   },
   "invoices": {
     "title": "Fatture",
@@ -1718,6 +1727,12 @@
     "readiness_pricing": "Prezzi",
     "readiness_complete": "Completo",
     "readiness_partial": "Parziale",
-    "readiness_missing": "Mancante"
+    "readiness_missing": "Mancante",
+    "placeholder_not_included": "Non incluso",
+    "placeholder_no_options": "Nessuna opzione aggiuntiva",
+    "placeholder_no_delivery_fees": "Nessun costo di consegna",
+    "placeholder_not_applicable": "Non applicabile",
+    "optional_summary": "Alcune informazioni opzionali mancano e saranno sostituite da testo predefinito.",
+    "field_currency": "Valuta"
   }
 }

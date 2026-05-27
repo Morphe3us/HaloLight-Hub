@@ -837,7 +837,16 @@
     "deposit_amount_label": "Kwota kaucji",
     "payment_terms_label": "Warunki płatności",
     "currency_label": "Waluta",
-    "readiness_section": "Gotowość umowy"
+    "readiness_section": "Gotowość umowy",
+    "event_start_time_label": "Godzina rozpoczęcia",
+    "event_end_time_label": "Godzina zakończenia",
+    "tax_rate_label": "Stawka VAT (%)",
+    "deposit_method_label": "Forma wpłaty kaucji",
+    "signature_section": "Podpis",
+    "signature_place_label": "Miejsce podpisu",
+    "cancellation_section": "Warunki anulowania",
+    "cancellation_terms_label": "Warunki anulowania",
+    "provider_section": "Dane dostawcy (opcjonalne)"
   },
   "invoices": {
     "title": "Faktury",
@@ -1718,6 +1727,12 @@
     "readiness_pricing": "Ceny",
     "readiness_complete": "Kompletne",
     "readiness_partial": "Częściowe",
-    "readiness_missing": "Brakujące"
+    "readiness_missing": "Brakujące",
+    "placeholder_not_included": "Nie wliczone",
+    "placeholder_no_options": "Brak dodatkowych opcji",
+    "placeholder_no_delivery_fees": "Brak kosztów dostawy",
+    "placeholder_not_applicable": "Nie dotyczy",
+    "optional_summary": "Brakuje niektórych opcjonalnych informacji i zostaną zastąpione domyślnym tekstem.",
+    "field_currency": "Waluta"
   }
 }

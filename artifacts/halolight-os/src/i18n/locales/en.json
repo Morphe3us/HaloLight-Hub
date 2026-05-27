@@ -837,7 +837,16 @@
     "deposit_amount_label": "Deposit Amount",
     "payment_terms_label": "Payment Terms",
     "currency_label": "Currency",
-    "readiness_section": "Contract Readiness"
+    "readiness_section": "Contract Readiness",
+    "event_start_time_label": "Start Time",
+    "event_end_time_label": "End Time",
+    "tax_rate_label": "Tax Rate (%)",
+    "deposit_method_label": "Deposit Method",
+    "signature_section": "Signature",
+    "signature_place_label": "Signature Place",
+    "cancellation_section": "Cancellation Terms",
+    "cancellation_terms_label": "Cancellation Terms",
+    "provider_section": "Provider Details (optional)"
   },
   "invoices": {
     "title": "Invoices",
@@ -1718,6 +1727,12 @@
     "readiness_pricing": "Pricing",
     "readiness_complete": "Complete",
     "readiness_partial": "Partial",
-    "readiness_missing": "Missing"
+    "readiness_missing": "Missing",
+    "placeholder_not_included": "Not included",
+    "placeholder_no_options": "No additional options",
+    "placeholder_no_delivery_fees": "No delivery fees",
+    "placeholder_not_applicable": "Not applicable",
+    "optional_summary": "Some optional information is missing and will be replaced with default text.",
+    "field_currency": "Currency"
   }
 }

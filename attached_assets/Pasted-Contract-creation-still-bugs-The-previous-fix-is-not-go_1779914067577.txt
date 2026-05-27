@@ -1,0 +1,89 @@
+Contract creation still bugs. The previous fix is not good enough.
+
+Please stop adding new architecture and debug the actual contract creation flow end-to-end.
+
+Current issue:
+Even after the validation update, contract creation is still not working correctly / still feels broken.
+
+I need you to reproduce and fix the real bug.
+
+Please do this step by step:
+
+1. Create a test lead with:
+
+* client name
+* company
+* email
+* phone
+* address
+* event type
+* event date
+* event location
+* estimated value
+* currency
+
+2. From that lead, create a quote.
+
+3. From that quote, create a contract.
+
+4. Verify the contract form:
+
+* client info is prefilled
+* company info is prefilled
+* address is prefilled if available
+* event info is prefilled
+* amount is prefilled
+* currency is prefilled
+* contract template is selected in the correct language
+
+5. Verify the validation:
+
+* missing required fields are clearly shown
+* optional fields show “Not provided / Non renseigné”
+* user can continue only when legally required fields are present
+
+6. Verify the generated contract:
+
+* no raw {{variables}} appear
+* not in English if user language is French
+* correct currency
+* provider info visible
+* client info visible
+* event info visible
+* equipment/service section visible
+* price and deposit section visible
+* signature section visible
+
+7. Verify print/export:
+
+* the print version matches the generated contract
+* no English labels remain in French mode
+* no dollar sign unless USD is selected
+
+Important:
+Do not tell me “typecheck passes”.
+I need actual functional verification.
+
+Add temporary console/API logging if needed to identify:
+
+* form state before submit
+* payload sent to create contract
+* template selected
+* variables before replacement
+* variables after replacement
+* missing required fields
+* final contract content saved
+
+If the current template system is too complex, simplify it:
+
+* required fields block creation
+* optional fields use localized placeholders
+* generated contract must be clean and readable
+
+Provide:
+
+1. exact root cause
+2. exact reproduction steps
+3. screenshots or clear verification summary
+4. files changed
+5. confirmation that no {{variables}} remain in generated contracts

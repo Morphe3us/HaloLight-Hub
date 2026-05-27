@@ -837,7 +837,16 @@
     "deposit_amount_label": "Valor do depósito",
     "payment_terms_label": "Condições de pagamento",
     "currency_label": "Moeda",
-    "readiness_section": "Prontidão do contrato"
+    "readiness_section": "Prontidão do contrato",
+    "event_start_time_label": "Hora de início",
+    "event_end_time_label": "Hora de fim",
+    "tax_rate_label": "Taxa IVA (%)",
+    "deposit_method_label": "Método de depósito",
+    "signature_section": "Assinatura",
+    "signature_place_label": "Local de assinatura",
+    "cancellation_section": "Condições de cancelamento",
+    "cancellation_terms_label": "Condições de cancelamento",
+    "provider_section": "Detalhes do fornecedor (opcional)"
   },
   "invoices": {
     "title": "Faturas",
@@ -1718,6 +1727,12 @@
     "readiness_pricing": "Preços",
     "readiness_complete": "Completo",
     "readiness_partial": "Parcial",
-    "readiness_missing": "Em falta"
+    "readiness_missing": "Em falta",
+    "placeholder_not_included": "Não incluído",
+    "placeholder_no_options": "Sem opções adicionais",
+    "placeholder_no_delivery_fees": "Sem taxas de entrega",
+    "placeholder_not_applicable": "Não aplicável",
+    "optional_summary": "Algumas informações opcionais estão em falta e serão substituídas por texto padrão.",
+    "field_currency": "Moeda"
   }
 }
