@@ -4,6 +4,7 @@ import { useParams, useLocation, Link } from "wouter";
 import {
   useGetLesson,
   useGetCourse,
+  useGetCurrentUser,
   useUpdateLessonProgress,
   useSubmitQuiz,
 } from "@workspace/api-client-react";
@@ -29,26 +30,20 @@ function getVideoEmbedUrl(url: string): string {
   if (!url) return "";
   try {
     const u = new URL(url);
-    // YouTube: youtu.be short link
     if (u.hostname === "youtu.be") {
       const videoId = u.pathname.slice(1);
       return videoId ? `https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1` : url;
     }
-    // YouTube: standard watch URL
     if (u.hostname.includes("youtube.com")) {
       const videoId = u.searchParams.get("v") ?? "";
       return videoId ? `https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1` : url;
     }
-    // BunnyStream: watch/player URL → iframe embed URL
-    // e.g. https://video.bunnycdn.com/play/{libraryId}/{videoId}
     if (u.hostname === "video.bunnycdn.com" && u.pathname.startsWith("/play/")) {
-      const parts = u.pathname.split("/").filter(Boolean); // ["play", libraryId, videoId]
+      const parts = u.pathname.split("/").filter(Boolean);
       if (parts.length >= 3) {
         return `https://iframe.mediadelivery.net/embed/${parts[1]}/${parts[2]}?controls=true&autoplay=false&loop=false&muted=false&preload=true&responsive=true`;
       }
     }
-    // BunnyStream embed URL — already correct, append player params if not already present
-    // e.g. https://iframe.mediadelivery.net/embed/{libraryId}/{videoId}
     if (u.hostname === "iframe.mediadelivery.net") {
       if (!u.searchParams.has("controls")) {
         u.searchParams.set("controls", "true");
@@ -73,6 +68,59 @@ const RESOURCE_ICONS: Record<string, React.ComponentType<{ className?: string }>
   video: BookOpen,
 };
 
+/**
+ * Maps all known module title formats to language codes.
+ * Covers native names (server output) and legacy English names (cached responses).
+ */
+const MODULE_TITLE_TO_LANG: Record<string, string> = {
+  "english": "en",
+  "english language": "en",
+  "français": "fr",
+  "french": "fr",
+  "french language": "fr",
+  "deutsch": "de",
+  "german": "de",
+  "german language": "de",
+  "español": "es",
+  "spanish": "es",
+  "spanish language": "es",
+  "italiano": "it",
+  "italian": "it",
+  "italian language": "it",
+  "nederlands": "nl",
+  "dutch": "nl",
+  "dutch language": "nl",
+  "polski": "pl",
+  "polish": "pl",
+  "polish language": "pl",
+  "português": "pt",
+  "portuguese": "pt",
+  "portuguese language": "pt",
+};
+
+function getModuleLang(title: string): string | null {
+  return MODULE_TITLE_TO_LANG[title.toLowerCase().trim()] ?? null;
+}
+
+function filterModulesByLang<T extends { title: string; lessons: unknown[] }>(
+  mods: T[],
+  lang: string,
+  isAdmin: boolean
+): T[] {
+  if (isAdmin) return mods;
+
+  const hasLangMods = mods.some((m) => getModuleLang(m.title) !== null);
+  if (!hasLangMods) return mods;
+
+  const userLangMods = mods.filter((m) => getModuleLang(m.title) === lang);
+  if (userLangMods.length > 0) return userLangMods;
+
+  const enMods = mods.filter((m) => getModuleLang(m.title) === "en");
+  if (enMods.length > 0) return enMods;
+
+  return mods;
+}
+
 export default function AcademyLesson() {
   const { t, i18n } = useTranslation();
   const { courseId, lessonId } = useParams<{ courseId: string; lessonId: string }>();
@@ -81,6 +129,7 @@ export default function AcademyLesson() {
 
   const { data: lesson, isLoading: isLoadingLesson, refetch: refetchLesson } = useGetLesson(lessonId!);
   const { data: course, isLoading: isLoadingCourse } = useGetCourse(courseId!);
+  const { data: currentUser } = useGetCurrentUser();
   const { mutate: updateProgress } = useUpdateLessonProgress();
   const { mutate: submitQuiz } = useSubmitQuiz();
 
@@ -112,7 +161,17 @@ export default function AcademyLesson() {
     );
   }
 
-  const allLessons = course.modules.flatMap((m) =>
+  const lang = i18n.language?.split("-")[0] ?? "en";
+  const isAdmin = currentUser?.role === "admin";
+
+  // Apply client-side language filter for prev/next navigation — same logic as AcademyCourse.tsx
+  const visibleModules = filterModulesByLang(
+    course.modules as Array<{ id: string; title: string; lessons: Array<{ id: string; moduleTitle?: string }> }>,
+    lang,
+    isAdmin
+  );
+
+  const allLessons = visibleModules.flatMap((m) =>
     m.lessons.map((l) => ({ ...l, moduleTitle: m.title }))
   );
   const currentIdx = allLessons.findIndex((l) => l.id === lessonId);
@@ -144,7 +203,7 @@ export default function AcademyLesson() {
   };
 
   const handleQuizSubmit = () => {
-    const answers = lesson.quizQuestions.map((q, i) => quizAnswers[q.id] ?? -1);
+    const answers = lesson.quizQuestions.map((q) => quizAnswers[q.id] ?? -1);
     submitQuiz(
       { id: lessonId!, data: { answers } },
       {
@@ -162,19 +221,23 @@ export default function AcademyLesson() {
     );
   };
 
-  const lang = i18n.language?.split("-")[0] ?? "en";
+  // ── Video resolution ───────────────────────────────────────────────────────
+  // Priority: user lang asset → EN asset → no video (never fallback to other languages)
   type VideoAsset = { embedUrl?: string; thumbnailUrl?: string; previewUrl?: string; videoId?: string };
   const videoAssets = (lesson as { videoAssets?: Record<string, VideoAsset> | null }).videoAssets;
-  // Resolution order: user lang → "en" → first available asset (catches single-language imports like fr/es/pt)
-  const firstAvailableAsset = videoAssets ? Object.values(videoAssets)[0] : undefined;
-  const asset = videoAssets?.[lang] ?? videoAssets?.["en"] ?? firstAvailableAsset;
-  const resolvedLang = videoAssets?.[lang] ? lang : videoAssets?.["en"] ? "en" : (videoAssets ? Object.keys(videoAssets)[0] : null);
+  const asset = videoAssets?.[lang] ?? videoAssets?.["en"] ?? undefined;
   const videoUrls = lesson.videoUrls as Record<string, string> | null | undefined;
-  // Resolution chain: videoAssets[lang].embedUrl → videoAssets.en.embedUrl → first available asset → videoUrls[lang] → videoUrls.en → lesson.videoUrl (legacy)
+
+  // Resolution chain: videoAssets[lang] → videoAssets.en → videoUrls[lang] → videoUrls.en → lesson.videoUrl
   const resolvedVideoUrl = asset?.embedUrl ?? videoUrls?.[lang] ?? videoUrls?.["en"] ?? lesson.videoUrl ?? "";
   const embedUrl = getVideoEmbedUrl(resolvedVideoUrl);
-  // Thumbnail chain: videoAssets[lang].thumbnailUrl → videoAssets.en.thumbnailUrl → first available → lesson.thumbnailUrl (legacy)
-  const thumbnailUrl = asset?.thumbnailUrl || videoAssets?.["en"]?.thumbnailUrl || firstAvailableAsset?.thumbnailUrl || (lesson as { thumbnailUrl?: string | null }).thumbnailUrl || null;
+
+  // Thumbnail: lang-specific → EN fallback only (no random language fallback)
+  const thumbnailUrl =
+    videoAssets?.[lang]?.thumbnailUrl ||
+    videoAssets?.["en"]?.thumbnailUrl ||
+    (lesson as { thumbnailUrl?: string | null }).thumbnailUrl ||
+    null;
 
   return (
     <div className="space-y-6" data-testid="page-academy-lesson">
@@ -221,13 +284,13 @@ export default function AcademyLesson() {
           <img src={thumbnailUrl} alt={lesson.title} className="w-full h-full object-cover opacity-60" />
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-white">
             <Video className="w-12 h-12 opacity-60" />
-            <p className="text-sm">{t("academy_lesson.no_video", { defaultValue: "No video available for this lesson." })}</p>
+            <p className="text-sm">{t("academy_lesson.no_video", { defaultValue: "Video not available in this language yet." })}</p>
           </div>
         </div>
       ) : (
         <div className="relative bg-muted rounded-2xl overflow-hidden shadow-sm aspect-video flex flex-col items-center justify-center gap-3 text-muted-foreground">
           <Video className="w-12 h-12 opacity-30" />
-          <p className="text-sm">{t("academy_lesson.no_video", { defaultValue: "No video available for this lesson." })}</p>
+          <p className="text-sm">{t("academy_lesson.no_video", { defaultValue: "Video not available in this language yet." })}</p>
         </div>
       )}
 
@@ -296,7 +359,6 @@ export default function AcademyLesson() {
                   );
                 })}
 
-                {/* Quiz Result */}
                 {quizResult && (
                   <div className={cn(
                     "rounded-xl p-4 flex items-center gap-3",
