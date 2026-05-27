@@ -238,8 +238,8 @@ export function Sidebar() {
             <SidebarContent onClose={() => setMobileOpen(false)} />
           </SheetContent>
         </Sheet>
-        <img src="/logo-hub-light-orig.png" alt="HaloLight Hub" className="w-20 h-auto object-contain dark:hidden flex-1 min-w-0" style={{ mixBlendMode: "multiply" }} />
-        <img src="/logo-hub-dark-orig.png" alt="HaloLight Hub" className="w-20 h-auto object-contain hidden dark:flex flex-1 min-w-0" style={{ mixBlendMode: "screen" }} />
+        <img src="/logo-hub-light-orig.png" alt="HaloLight Hub" className="w-[90px] h-auto object-contain dark:hidden" style={{ mixBlendMode: "multiply" }} />
+        <img src="/logo-hub-dark-orig.png" alt="HaloLight Hub" className="w-[90px] h-auto object-contain hidden dark:block" style={{ mixBlendMode: "screen" }} />
         <div className="flex items-center gap-1 shrink-0">
           <Button
             variant="ghost"

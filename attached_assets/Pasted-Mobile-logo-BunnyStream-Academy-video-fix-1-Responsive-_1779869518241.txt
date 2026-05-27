@@ -1,0 +1,83 @@
+Mobile logo + BunnyStream Academy video fix.
+
+1. Responsive logo issue
+
+On mobile/responsive layout, the HaloLight Hub logo in the top/header area is still much too large.
+
+Please reduce the responsive/mobile logo size.
+
+Requirements:
+
+* Mobile header logo should be compact and not dominate the screen.
+* Target mobile width: around 90–110px max.
+* Desktop sidebar logo can stay larger.
+* Do not stretch or crop the logo.
+* Verify light and dark mode.
+* Verify iPhone-sized screens around 375px and 430px.
+
+2. BunnyStream video save issue in Admin Academy
+
+We use BunnyStream for video hosting.
+
+Currently, when adding a video URL in Admin Academy / Lesson editor, the video URL does not save correctly or does not appear after saving.
+
+Please debug and fix:
+
+* Lesson video URL field
+* Save lesson API payload
+* Backend lesson update endpoint
+* Database lesson videoUrl column
+* Re-fetch after save
+* Client Academy lesson video display
+
+Expected behavior:
+
+* Admin can paste a BunnyStream embed/video URL.
+* Click Save.
+* URL is stored in the database.
+* Reopening the lesson shows the saved URL.
+* Client lesson page displays the video correctly.
+
+3. Multi-language video URLs
+
+Important: each country/language can have a different video.
+
+Example:
+
+* FR lesson → BunnyStream FR video URL
+* EN lesson → BunnyStream EN video URL
+* DE lesson → BunnyStream DE video URL
+* NL lesson → BunnyStream NL video URL
+
+Please update the Academy lesson structure/UI if needed so each lesson can store a different video URL per language.
+
+Preferred structure:
+videoUrls:
+{
+fr: "...",
+en: "...",
+de: "...",
+nl: "...",
+es: "...",
+it: "...",
+pt: "...",
+pl: "..."
+}
+
+Requirements:
+
+* Admin Lesson editor should allow setting video URL per language.
+* If a language-specific video URL exists, use it.
+* If missing, fallback to default videoUrl.
+* Do not break existing lessons that only have one videoUrl.
+* Support BunnyStream embed URLs.
+* Run database/schema update if needed.
+* Run OpenAPI/codegen if needed.
+* Run typecheck.
+
+Provide:
+
+* root cause of BunnyStream save issue
+* files changed
+* how multilingual video URLs are stored
+* verification results

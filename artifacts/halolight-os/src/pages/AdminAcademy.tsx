@@ -53,7 +53,7 @@ type AdminModule = {
 
 type AdminLesson = {
   id: string; moduleId: string; title: Record<string, string>; description?: Record<string, string> | null;
-  videoUrl: string; durationSeconds: number; order: number; isPublished: boolean; notes?: string | null;
+  videoUrl: string; videoUrls?: Record<string, string> | null; durationSeconds: number; order: number; isPublished: boolean; notes?: string | null;
 };
 
 function mlObj(langs: string[], val: string): Record<string, string> {
@@ -255,9 +255,9 @@ function CourseFormModal({
 // ─── Lesson Form Modal ─────────────────────────────────────────────────────────
 
 function LessonFormModal({
-  open, onClose, moduleId, lesson,
+  open, onClose, moduleId, courseId, lesson,
 }: {
-  open: boolean; onClose: () => void; moduleId: string; lesson?: AdminLesson | null;
+  open: boolean; onClose: () => void; moduleId: string; courseId: string; lesson?: AdminLesson | null;
 }) {
   const { t } = useTranslation();
   const { toast } = useToast();
@@ -268,13 +268,18 @@ function LessonFormModal({
     titleEn: lesson?.title?.en ?? "",
     titlesByLang: { ...(lesson?.title ?? {}) } as Record<string, string>,
     videoUrl: lesson?.videoUrl ?? "",
+    videoUrlsByLang: { ...(lesson?.videoUrls ?? {}) } as Record<string, string>,
     durationSeconds: String(lesson?.durationSeconds ?? 0),
     isPublished: lesson?.isPublished ?? false,
     notes: lesson?.notes ?? "",
     activeLang: "en",
+    activeVideoLang: "en",
   });
 
-  const invalidate = () => qc.invalidateQueries({ queryKey: ["/api/admin/academy/courses"] });
+  const invalidate = () => {
+    qc.invalidateQueries({ queryKey: ["/api/admin/academy/courses"] });
+    qc.invalidateQueries({ queryKey: [`/api/admin/academy/courses/${courseId}`] });
+  };
 
   const { mutate: create, isPending: creating } = useCreateAdminLesson({
     mutation: {
@@ -294,10 +299,13 @@ function LessonFormModal({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const cleanVideoUrls = { en: form.videoUrl, ...form.videoUrlsByLang };
+    const hasAnyVideoUrl = Object.values(cleanVideoUrls).some(v => !!v);
     const payload = {
       moduleId,
       title: { en: form.titleEn, ...form.titlesByLang },
       videoUrl: form.videoUrl || undefined,
+      videoUrls: hasAnyVideoUrl ? cleanVideoUrls : undefined,
       durationSeconds: parseInt(form.durationSeconds, 10) || 0,
       isPublished: form.isPublished,
       notes: form.notes || null,
@@ -336,12 +344,36 @@ function LessonFormModal({
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="col-span-2 space-y-1.5">
-              <Label>{t("admin_academy.label_video_url")}</Label>
-              <Input value={form.videoUrl} onChange={e => setForm(f => ({ ...f, videoUrl: e.target.value }))}
-                placeholder="https://vimeo.com/…" />
+          {/* Video URLs per language */}
+          <div className="space-y-2">
+            <Label>{t("admin_academy.label_video_url")} ({t("admin_academy.per_language", { defaultValue: "per language" })})</Label>
+            <div className="flex gap-1 flex-wrap">
+              {LANGS.map(l => (
+                <button key={l} type="button"
+                  onClick={() => setForm(f => ({ ...f, activeVideoLang: l }))}
+                  className={`px-2.5 py-1 rounded text-xs font-medium transition-colors ${form.activeVideoLang === l ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}>
+                  {LANG_LABELS[l]}
+                  {(form.activeVideoLang !== l) && (form.videoUrlsByLang[l] || (l === "en" && form.videoUrl)) && (
+                    <span className="ml-1 w-1.5 h-1.5 rounded-full bg-success inline-block align-middle" />
+                  )}
+                </button>
+              ))}
             </div>
+            <Input
+              value={form.activeVideoLang === "en" ? form.videoUrl : (form.videoUrlsByLang[form.activeVideoLang] ?? "")}
+              onChange={e => {
+                if (form.activeVideoLang === "en") {
+                  setForm(f => ({ ...f, videoUrl: e.target.value }));
+                } else {
+                  setForm(f => ({ ...f, videoUrlsByLang: { ...f.videoUrlsByLang, [f.activeVideoLang]: e.target.value } }));
+                }
+              }}
+              placeholder={`BunnyStream / YouTube URL for ${LANG_LABELS[form.activeVideoLang]}`}
+            />
+            <p className="text-xs text-muted-foreground">{t("admin_academy.video_url_hint", { defaultValue: "EN is used as the default fallback when a language-specific URL is not set." })}</p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label>{t("admin_academy.label_duration_sec")}</Label>
               <Input type="number" min="0" value={form.durationSeconds}
@@ -454,6 +486,7 @@ function CourseDetailView({
         open={lessonModal.open}
         onClose={() => setLessonModal({ open: false, moduleId: "" })}
         moduleId={lessonModal.moduleId}
+        courseId={courseId}
         lesson={lessonModal.lesson}
       />
 

@@ -304,11 +304,14 @@ export interface QuizQuestion {
   correctOption: number;
 }
 
+export type LessonDetailVideoUrls = {[key: string]: string} | null;
+
 export interface LessonDetail {
   id: string;
   moduleId: string;
   title: string;
   videoUrl: string;
+  videoUrls?: LessonDetailVideoUrls;
   durationSeconds: number;
   order: number;
   resources: LessonResource[];
@@ -1783,12 +1786,15 @@ export type AdminLessonTitle = {[key: string]: string};
 
 export type AdminLessonDescription = {[key: string]: string} | null;
 
+export type AdminLessonVideoUrls = {[key: string]: string} | null;
+
 export interface AdminLesson {
   id: string;
   moduleId: string;
   title: AdminLessonTitle;
   description?: AdminLessonDescription;
   videoUrl: string;
+  videoUrls?: AdminLessonVideoUrls;
   durationSeconds: number;
   order: number;
   isPublished: boolean;
@@ -1896,11 +1902,14 @@ export type CreateLessonInputTitle = {[key: string]: string};
 
 export type CreateLessonInputDescription = {[key: string]: string} | null;
 
+export type CreateLessonInputVideoUrls = {[key: string]: string} | null;
+
 export interface CreateLessonInput {
   moduleId: string;
   title: CreateLessonInputTitle;
   description?: CreateLessonInputDescription;
   videoUrl?: string | null;
+  videoUrls?: CreateLessonInputVideoUrls;
   durationSeconds?: number;
   isPublished?: boolean;
   notes?: string | null;
@@ -1910,10 +1919,13 @@ export type UpdateLessonInputTitle = {[key: string]: string};
 
 export type UpdateLessonInputDescription = {[key: string]: string} | null;
 
+export type UpdateLessonInputVideoUrls = {[key: string]: string} | null;
+
 export interface UpdateLessonInput {
   title?: UpdateLessonInputTitle;
   description?: UpdateLessonInputDescription;
   videoUrl?: string | null;
+  videoUrls?: UpdateLessonInputVideoUrls;
   durationSeconds?: number;
   isPublished?: boolean;
   notes?: string | null;

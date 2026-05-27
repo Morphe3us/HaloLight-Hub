@@ -21,20 +21,23 @@ import {
   Download,
   BookOpen,
   AlertCircle,
+  Video,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-function getYouTubeEmbedUrl(url: string): string {
+function getVideoEmbedUrl(url: string): string {
+  if (!url) return "";
   try {
     const u = new URL(url);
-    let videoId = "";
     if (u.hostname === "youtu.be") {
-      videoId = u.pathname.slice(1);
-    } else {
-      videoId = u.searchParams.get("v") ?? "";
+      const videoId = u.pathname.slice(1);
+      return videoId ? `https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1` : url;
     }
-    if (!videoId) return url;
-    return `https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1`;
+    if (u.hostname.includes("youtube.com")) {
+      const videoId = u.searchParams.get("v") ?? "";
+      return videoId ? `https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1` : url;
+    }
+    return url;
   } catch {
     return url;
   }
@@ -48,7 +51,7 @@ const RESOURCE_ICONS: Record<string, React.ComponentType<{ className?: string }>
 };
 
 export default function AcademyLesson() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { courseId, lessonId } = useParams<{ courseId: string; lessonId: string }>();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
@@ -86,7 +89,6 @@ export default function AcademyLesson() {
     );
   }
 
-  // Build flat lesson list for prev/next navigation
   const allLessons = course.modules.flatMap((m) =>
     m.lessons.map((l) => ({ ...l, moduleTitle: m.title }))
   );
@@ -137,7 +139,10 @@ export default function AcademyLesson() {
     );
   };
 
-  const embedUrl = getYouTubeEmbedUrl(lesson.videoUrl);
+  const lang = i18n.language?.split("-")[0] ?? "en";
+  const videoUrls = lesson.videoUrls as Record<string, string> | null | undefined;
+  const resolvedVideoUrl = videoUrls?.[lang] ?? videoUrls?.["en"] ?? lesson.videoUrl ?? "";
+  const embedUrl = getVideoEmbedUrl(resolvedVideoUrl);
 
   return (
     <div className="space-y-6" data-testid="page-academy-lesson">
@@ -164,15 +169,22 @@ export default function AcademyLesson() {
       </div>
 
       {/* Video Player */}
-      <div className="relative bg-black rounded-2xl overflow-hidden shadow-lg aspect-video">
-        <iframe
-          src={embedUrl}
-          title={lesson.title}
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowFullScreen
-          className="w-full h-full"
-        />
-      </div>
+      {embedUrl ? (
+        <div className="relative bg-black rounded-2xl overflow-hidden shadow-lg aspect-video">
+          <iframe
+            src={embedUrl}
+            title={lesson.title}
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+            allowFullScreen
+            className="w-full h-full"
+          />
+        </div>
+      ) : (
+        <div className="relative bg-muted rounded-2xl overflow-hidden shadow-sm aspect-video flex flex-col items-center justify-center gap-3 text-muted-foreground">
+          <Video className="w-12 h-12 opacity-30" />
+          <p className="text-sm">{t("academy_lesson.no_video", { defaultValue: "No video available for this lesson." })}</p>
+        </div>
+      )}
 
       {/* Mark Complete */}
       {!isCompleted && lesson.quizQuestions.length === 0 && (

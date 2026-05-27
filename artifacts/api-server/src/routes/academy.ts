@@ -210,6 +210,7 @@ router.get("/academy/lessons/:id", requireAuth, async (req: Request, res: Respon
     moduleId: lesson.moduleId,
     title: resolveLocale(lang, lesson.title),
     videoUrl: lesson.videoUrl,
+    videoUrls: lesson.videoUrls ?? null,
     durationSeconds: lesson.durationSeconds,
     order: lesson.order,
     resources: resources.map((r) => ({

@@ -3334,6 +3334,11 @@ components:
           type: string
         videoUrl:
           type: string
+        videoUrls:
+          type: object
+          additionalProperties:
+            type: string
+          nullable: true
         durationSeconds:
           type: integer
         order:
@@ -5378,6 +5383,7 @@ components:
         title: { type: object, additionalProperties: { type: string } }
         description: { type: object, additionalProperties: { type: string }, nullable: true }
         videoUrl: { type: string }
+        videoUrls: { type: object, additionalProperties: { type: string }, nullable: true }
         durationSeconds: { type: integer }
         order: { type: integer }
         isPublished: { type: boolean }
@@ -5391,6 +5397,7 @@ components:
         title: { type: object, additionalProperties: { type: string } }
         description: { type: object, additionalProperties: { type: string }, nullable: true }
         videoUrl: { type: string, nullable: true }
+        videoUrls: { type: object, additionalProperties: { type: string }, nullable: true }
         durationSeconds: { type: integer }
         isPublished: { type: boolean }
         notes: { type: string, nullable: true }
@@ -5401,6 +5408,7 @@ components:
         title: { type: object, additionalProperties: { type: string } }
         description: { type: object, additionalProperties: { type: string }, nullable: true }
         videoUrl: { type: string, nullable: true }
+        videoUrls: { type: object, additionalProperties: { type: string }, nullable: true }
         durationSeconds: { type: integer }
         isPublished: { type: boolean }
         notes: { type: string, nullable: true }

@@ -26,6 +26,7 @@ async function buildAdminCourse(course: typeof courses.$inferSelect) {
       lessonDuration: lessons.durationSeconds,
       lessonPublished: lessons.isPublished,
       lessonVideoUrl: lessons.videoUrl,
+      lessonVideoUrls: lessons.videoUrls,
       lessonDescription: lessons.description,
       lessonNotes: lessons.notes,
     })
@@ -36,7 +37,7 @@ async function buildAdminCourse(course: typeof courses.$inferSelect) {
 
   const moduleMap = new Map<string, {
     id: string; courseId: string; title: unknown; order: number;
-    lessons: Array<{ id: string; moduleId: string; title: unknown; description: unknown; videoUrl: string; durationSeconds: number; order: number; isPublished: boolean; notes: string | null }>;
+    lessons: Array<{ id: string; moduleId: string; title: unknown; description: unknown; videoUrl: string; videoUrls: Record<string, string> | null; durationSeconds: number; order: number; isPublished: boolean; notes: string | null }>;
   }>();
 
   for (const row of modulesWithLessons) {
@@ -56,6 +57,7 @@ async function buildAdminCourse(course: typeof courses.$inferSelect) {
         title: row.lessonTitle,
         description: row.lessonDescription,
         videoUrl: row.lessonVideoUrl ?? "",
+        videoUrls: (row.lessonVideoUrls as Record<string, string> | null) ?? null,
         durationSeconds: row.lessonDuration ?? 0,
         order: row.lessonOrder ?? 0,
         isPublished: row.lessonPublished ?? true,
@@ -253,6 +255,7 @@ router.post("/admin/academy/courses/:id/duplicate", requireAuth, async (req: Req
         title: lesson.title,
         description: lesson.description,
         videoUrl: lesson.videoUrl,
+        videoUrls: lesson.videoUrls,
         durationSeconds: lesson.durationSeconds,
         order: lesson.order,
         isPublished: false,
@@ -313,9 +316,9 @@ router.post("/admin/academy/lessons", requireAuth, async (req: Request, res: Res
   const user = await getOrCreateUser(req);
   if (!requireAdmin(user, res)) return;
 
-  const { moduleId, title, description, videoUrl, durationSeconds, isPublished, notes } = req.body as {
+  const { moduleId, title, description, videoUrl, videoUrls, durationSeconds, isPublished, notes } = req.body as {
     moduleId?: string; title?: Record<string, string>; description?: Record<string, string>;
-    videoUrl?: string; durationSeconds?: number; isPublished?: boolean; notes?: string;
+    videoUrl?: string; videoUrls?: Record<string, string>; durationSeconds?: number; isPublished?: boolean; notes?: string;
   };
   if (!moduleId || !title) { res.status(400).json({ error: "moduleId and title are required" }); return; }
 
@@ -325,6 +328,7 @@ router.post("/admin/academy/lessons", requireAuth, async (req: Request, res: Res
     title,
     description: description ?? null,
     videoUrl: videoUrl ?? "",
+    videoUrls: videoUrls ?? null,
     durationSeconds: durationSeconds ?? 0,
     order: (maxRow?.max ?? 0) + 1,
     isPublished: isPublished ?? false,
@@ -333,7 +337,7 @@ router.post("/admin/academy/lessons", requireAuth, async (req: Request, res: Res
 
   res.status(201).json({
     id: lesson!.id, moduleId: lesson!.moduleId, title: lesson!.title, description: lesson!.description,
-    videoUrl: lesson!.videoUrl, durationSeconds: lesson!.durationSeconds, order: lesson!.order,
+    videoUrl: lesson!.videoUrl, videoUrls: lesson!.videoUrls ?? null, durationSeconds: lesson!.durationSeconds, order: lesson!.order,
     isPublished: lesson!.isPublished, notes: lesson!.notes,
   });
 });
@@ -343,15 +347,16 @@ router.put("/admin/academy/lessons/:id", requireAuth, async (req: Request, res: 
   const user = await getOrCreateUser(req);
   if (!requireAdmin(user, res)) return;
 
-  const { title, description, videoUrl, durationSeconds, isPublished, notes, order } = req.body as {
+  const { title, description, videoUrl, videoUrls, durationSeconds, isPublished, notes, order } = req.body as {
     title?: Record<string, string>; description?: Record<string, string>;
-    videoUrl?: string; durationSeconds?: number; isPublished?: boolean; notes?: string; order?: number;
+    videoUrl?: string; videoUrls?: Record<string, string>; durationSeconds?: number; isPublished?: boolean; notes?: string; order?: number;
   };
 
   const updates: Partial<typeof lessons.$inferInsert> = {};
   if (title !== undefined) updates.title = title;
   if (description !== undefined) updates.description = description;
   if (videoUrl !== undefined) updates.videoUrl = videoUrl;
+  if (videoUrls !== undefined) updates.videoUrls = videoUrls;
   if (durationSeconds !== undefined) updates.durationSeconds = durationSeconds;
   if (isPublished !== undefined) updates.isPublished = isPublished;
   if (notes !== undefined) updates.notes = notes;
@@ -362,7 +367,7 @@ router.put("/admin/academy/lessons/:id", requireAuth, async (req: Request, res: 
 
   res.json({
     id: updated.id, moduleId: updated.moduleId, title: updated.title, description: updated.description,
-    videoUrl: updated.videoUrl, durationSeconds: updated.durationSeconds, order: updated.order,
+    videoUrl: updated.videoUrl, videoUrls: updated.videoUrls ?? null, durationSeconds: updated.durationSeconds, order: updated.order,
     isPublished: updated.isPublished, notes: updated.notes,
   });
 });
