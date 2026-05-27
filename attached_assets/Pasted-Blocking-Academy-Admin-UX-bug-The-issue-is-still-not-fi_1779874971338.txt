@@ -1,0 +1,101 @@
+Blocking Academy Admin UX bug.
+
+The issue is still not fixed.
+
+Screenshots show the problem clearly:
+
+1. In Admin → Academy → New Course / Edit Course:
+   I only see:
+
+* Title
+* Description
+* Category
+* Level
+* Instructor
+* Duration
+* Thumbnail URL
+
+There is NO visible way to create or edit:
+
+* Modules
+* Lessons
+* BunnyStream Embed URL
+* Lesson thumbnail
+* Lesson video assets
+
+2. Client Academy shows:
+
+* Course exists
+* 0 lessons
+* 0m duration
+* No modules
+* No lessons
+* No playable video
+
+This means the real problem is not only BunnyStream. The admin flow to create a complete course structure is broken or not discoverable.
+
+Fix the Academy Admin UX now.
+
+Expected admin workflow:
+
+Admin → Academy
+
+1. Create Course
+2. Save Course
+3. Open / Manage Course
+4. Add Module
+5. Add Lesson inside Module
+6. In Lesson form, clearly show:
+
+   * Lesson title
+   * Lesson description
+   * BunnyStream Embed URL
+   * Thumbnail URL
+   * Preview Animation URL optional
+   * Video ID optional
+   * Duration
+   * Published toggle
+7. Save Lesson
+8. Course should update lesson count and duration
+9. Client Academy should show module + lesson + video
+
+Requirements:
+
+* Do not hide lesson creation in unclear menus.
+* Add clear visible buttons:
+
+  * Add Module
+  * Add Lesson
+  * Edit Lesson
+* Course form should remain course metadata only.
+* Video URL fields belong in Lesson form, not Course form.
+* If a course has no modules/lessons, show admin guidance:
+  “Add a module, then add lessons with BunnyStream videos.”
+* Make sure lessons are returned to the client Academy API.
+* Make sure published lessons are visible to clients.
+* Make sure draft lessons are hidden from clients.
+* Make sure language does not filter out existing lessons incorrectly.
+* Fix the 0 lessons / 0m issue.
+
+Verification required:
+
+Create a fresh test course:
+
+* Course title: Test Academy Course
+* Add Module: Module 1
+* Add Lesson: Lesson 1
+* Paste BunnyStream Embed URL
+* Paste Thumbnail URL
+* Publish course
+* Publish lesson
+
+Then verify client side:
+
+* Course card shows thumbnail
+* Course card shows 1 lesson
+* Course detail shows Module 1
+* Course detail shows Lesson 1
+* Opening lesson displays BunnyStream iframe
+* Video plays
+
+Provide exact root cause and what was changed.

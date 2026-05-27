@@ -178,15 +178,14 @@ export default function AcademyCourse() {
                   <div className="divide-y divide-gray-50">
                     {mod.lessons.map((lesson, idx) => {
                       const isCompleted = !!lesson.completedAt;
+                      type VA = { thumbnailUrl?: string };
+                      const va = (lesson as { videoAssets?: Record<string, VA> | null }).videoAssets;
+                      const thumb = va?.[lang]?.thumbnailUrl ?? va?.["en"]?.thumbnailUrl ?? (lesson as { thumbnailUrl?: string | null }).thumbnailUrl ?? null;
                       return (
                         <Link key={lesson.id} href={`/academy/${course.id}/${lesson.id}`}>
                           <div className="flex items-center gap-4 px-5 py-3.5 hover:bg-muted transition-colors cursor-pointer group">
-                            {/* Thumbnail or icon */}
-                            {(() => {
-                              type VA = { thumbnailUrl?: string };
-                              const va = (lesson as { videoAssets?: Record<string, VA> | null }).videoAssets;
-                              const thumb = va?.[lang]?.thumbnailUrl ?? va?.["en"]?.thumbnailUrl ?? (lesson as { thumbnailUrl?: string | null }).thumbnailUrl ?? null;
-                              return thumb ? (
+                            {/* Thumbnail or play icon */}
+                            {thumb ? (
                               <div className="h-10 w-16 rounded-md overflow-hidden flex-shrink-0 bg-muted relative">
                                 <img
                                   src={thumb}
@@ -200,13 +199,7 @@ export default function AcademyCourse() {
                                   </div>
                                 )}
                               </div>
-                              ) : null;
-                            })()}
-                            {(() => {
-                              type VA = { thumbnailUrl?: string };
-                              const va = (lesson as { videoAssets?: Record<string, VA> | null }).videoAssets;
-                              const thumb = va?.[lang]?.thumbnailUrl ?? va?.["en"]?.thumbnailUrl ?? (lesson as { thumbnailUrl?: string | null }).thumbnailUrl ?? null;
-                              return !thumb ? (
+                            ) : (
                               <div className={cn(
                                 "h-8 w-8 rounded-full flex items-center justify-center flex-shrink-0 transition-colors",
                                 isCompleted ? "bg-success/15" : "bg-muted group-hover:bg-primary/10"
@@ -216,8 +209,7 @@ export default function AcademyCourse() {
                                   : <PlayCircle className={cn("w-4 h-4", "text-muted-foreground group-hover:text-primary")} />
                                 }
                               </div>
-                              ) : null;
-                            })()}
+                            )}
                             <div className="flex-1 min-w-0">
                               <p className={cn(
                                 "text-sm font-medium truncate",

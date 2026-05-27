@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import {
   useListAdminCourses, useCreateAdminCourse, useUpdateAdminCourse,
@@ -83,9 +83,9 @@ const EMPTY_COURSE = {
 };
 
 function CourseFormModal({
-  open, onClose, course,
+  open, onClose, course, onCreated,
 }: {
-  open: boolean; onClose: () => void; course?: AdminCourse | null;
+  open: boolean; onClose: () => void; course?: AdminCourse | null; onCreated?: (id: string) => void;
 }) {
   const { t } = useTranslation();
   const { toast } = useToast();
@@ -118,7 +118,13 @@ function CourseFormModal({
 
   const { mutate: create, isPending: creating } = useCreateAdminCourse({
     mutation: {
-      onSuccess: () => { toast({ title: t("admin_academy.toast_course_created") }); invalidate(); onClose(); },
+      onSuccess: (data) => {
+        toast({ title: t("admin_academy.toast_course_created") });
+        invalidate();
+        onClose();
+        const id = (data as AdminCourse).id;
+        if (id) onCreated?.(id);
+      },
       onError: () => toast({ title: t("admin_academy.toast_course_create_fail"), variant: "destructive" }),
     },
   });
@@ -526,6 +532,13 @@ function CourseDetailView({
   const { data: courseData, isLoading } = useGetAdminCourseDetail(courseId);
   const course = courseData as AdminCourse | undefined;
 
+  // Auto-expand all modules when course data loads
+  useEffect(() => {
+    if (course?.modules?.length) {
+      setExpandedModules(new Set(course.modules.map(m => m.id)));
+    }
+  }, [course?.modules?.length]);
+
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ["/api/admin/academy/courses"] });
     qc.invalidateQueries({ queryKey: [`/api/admin/academy/courses/${courseId}`] });
@@ -648,9 +661,13 @@ function CourseDetailView({
       )}
 
       {(course.modules ?? []).length === 0 ? (
-        <div className="text-center py-12 text-muted-foreground">
-          <BookOpen className="w-8 h-8 mx-auto mb-2 opacity-30" />
-          <p>{t("admin_academy.no_modules")}</p>
+        <div className="text-center py-12 text-muted-foreground border-2 border-dashed border-border rounded-xl">
+          <BookOpen className="w-8 h-8 mx-auto mb-3 opacity-30" />
+          <p className="font-semibold text-foreground">{t("admin_academy.no_modules")}</p>
+          <p className="text-sm mt-1 max-w-xs mx-auto">Click <strong>Add Module</strong> above, then add lessons. Each lesson holds a BunnyStream Embed URL and Thumbnail URL.</p>
+          <Button size="sm" className="gap-1.5 mt-4" onClick={() => setAddingModule(true)}>
+            <Plus className="w-4 h-4" /> {t("admin_academy.add_module")}
+          </Button>
         </div>
       ) : (
         (course.modules ?? []).map((mod) => {
@@ -783,6 +800,7 @@ export default function AdminAcademy() {
         open={courseModal.open}
         onClose={() => setCourseModal({ open: false })}
         course={courseModal.course}
+        onCreated={(id) => setSelectedCourseId(id)}
       />
 
       <AlertDialog open={!!deleteId} onOpenChange={o => { if (!o) setDeleteId(null); }}>
@@ -888,7 +906,7 @@ export default function AdminAcademy() {
                     </p>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
-                    <Button variant="outline" size="sm" className="gap-1.5 hidden sm:flex"
+                    <Button variant="outline" size="sm" className="gap-1.5"
                       onClick={() => setSelectedCourseId(course.id)}>
                       <BookOpen className="w-3.5 h-3.5" /> {t("admin_academy.manage")}
                     </Button>
