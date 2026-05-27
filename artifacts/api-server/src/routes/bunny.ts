@@ -8,20 +8,17 @@ const router: IRouter = Router();
 
 const BUNNY_API = "https://video.bunnycdn.com";
 
-const LANG_MAP: Record<string, string> = {
-  english: "en",
-  french: "fr",
-  german: "de",
-  dutch: "nl",
-  spanish: "es",
-  italian: "it",
-  portuguese: "pt",
-  polish: "pl",
-  anglais: "en",
-  français: "fr",
-  allemand: "de",
-  espagnol: "es",
-  néerlandais: "nl",
+// Fixed collection ID → language mapping. Collection ID is the single source of truth.
+// Never infer language from collection names or video metadata.
+const COLLECTION_ID_TO_LANG: Record<string, string> = {
+  "a8f1d88d-d78b-40a3-8110-3b573a1603e2": "de",
+  "3e3b7105-0fd0-4f48-a223-9b0842e4e3e5": "es",
+  "dba3c601-c795-43a6-9ee7-f48365a0e4de": "pt",
+  "c415e75f-4c65-4314-bec2-fa968e1397ff": "pl",
+  "50ecaca6-0542-4c91-af26-d3006fa02b08": "it",
+  "630999cb-1df6-43f2-8cff-dc49950be601": "en",
+  "b7b1ee25-e810-4784-bf85-3a476114ad1a": "nl",
+  "476e5f64-87b2-4dee-8a80-5ef6cc544378": "fr",
 };
 
 function requireAdmin(user: { role: string } | null | undefined, res: Response): boolean {
@@ -47,11 +44,6 @@ async function bunnyGet(path: string, apiKey: string): Promise<unknown> {
     throw new Error(`BunnyStream ${res.status}: ${text || res.statusText}`);
   }
   return res.json();
-}
-
-function detectLang(collectionName: string): string {
-  const lower = collectionName.toLowerCase().trim();
-  return LANG_MAP[lower] ?? lower.slice(0, 2);
 }
 
 function buildEmbedUrl(libraryId: string, videoId: string): string {
@@ -123,12 +115,14 @@ router.get("/admin/bunny/collections", requireAuth, async (req: Request, res: Re
     const rawItems = (data["items"] as unknown[]) ?? [];
     const items = rawItems.map((c: unknown) => {
       const col = c as Record<string, unknown>;
-      const name = String(col["name"] ?? "");
+      const guid = String(col["guid"] ?? "");
+      const lang = COLLECTION_ID_TO_LANG[guid] ?? null;
       return {
-        guid: String(col["guid"] ?? ""),
-        name,
+        guid,
+        name: String(col["name"] ?? ""),
         videoCount: Number(col["videoCount"] ?? 0),
-        lang: detectLang(name),
+        lang,
+        langKnown: lang !== null,
       };
     });
 
@@ -231,7 +225,7 @@ router.post("/admin/bunny/import", requireAuth, async (req: Request, res: Respon
 
   type ImportItem = {
     videoId: string;
-    lang: string;
+    collectionId: string; // required — used to enforce lang via COLLECTION_ID_TO_LANG
     embedUrl: string;
     thumbnailUrl: string;
     previewUrl?: string;
@@ -253,10 +247,17 @@ router.post("/admin/bunny/import", requireAuth, async (req: Request, res: Respon
 
   for (const item of items) {
     try {
-      const { videoId, lang, embedUrl, thumbnailUrl, previewUrl, durationSeconds, videoTitle } = item;
+      const { videoId, collectionId, embedUrl, thumbnailUrl, previewUrl, durationSeconds, videoTitle } = item;
 
-      if (!videoId || !lang || !embedUrl) {
+      if (!videoId || !collectionId || !embedUrl) {
         errors.push(`Missing required fields for video ${videoId ?? "unknown"}`);
+        continue;
+      }
+
+      // Enforce lang strictly from fixed collection ID map — never trust client-sent lang
+      const lang = COLLECTION_ID_TO_LANG[collectionId];
+      if (!lang) {
+        errors.push(`Video "${videoTitle}": collection ID "${collectionId}" is not in the fixed language mapping. Import blocked.`);
         continue;
       }
 

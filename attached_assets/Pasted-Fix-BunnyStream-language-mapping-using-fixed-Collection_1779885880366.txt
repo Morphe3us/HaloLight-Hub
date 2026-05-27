@@ -1,0 +1,122 @@
+Fix BunnyStream language mapping using fixed Collection IDs.
+
+The current BunnyStream language mapping must stop relying on collection names, video titles, filenames, metadata, fuzzy detection, or admin guessing.
+
+Use BunnyStream Collection ID as the single source of truth for language assignment.
+
+Fixed collection mapping:
+
+German / DE:
+a8f1d88d-d78b-40a3-8110-3b573a1603e2
+
+Spanish / ES:
+3e3b7105-0fd0-4f48-a223-9b0842e4e3e5
+
+Portuguese / PT:
+dba3c601-c795-43a6-9ee7-f48365a0e4de
+
+Polish / PL:
+c415e75f-4c65-4314-bec2-fa968e1397ff
+
+Italian / IT:
+50ecaca6-0542-4c91-af26-d3006fa02b08
+
+English / EN:
+630999cb-1df6-43f2-8cff-dc49950be601
+
+Dutch / NL:
+b7b1ee25-e810-4784-bf85-3a476114ad1a
+
+French / FR:
+476e5f64-87b2-4dee-8a80-5ef6cc544378
+
+Requirements:
+
+1. Create a fixed mapping object in the backend:
+
+collectionIdToLanguage = {
+"a8f1d88d-d78b-40a3-8110-3b573a1603e2": "de",
+"3e3b7105-0fd0-4f48-a223-9b0842e4e3e5": "es",
+"dba3c601-c795-43a6-9ee7-f48365a0e4de": "pt",
+"c415e75f-4c65-4314-bec2-fa968e1397ff": "pl",
+"50ecaca6-0542-4c91-af26-d3006fa02b08": "it",
+"630999cb-1df6-43f2-8cff-dc49950be601": "en",
+"b7b1ee25-e810-4784-bf85-3a476114ad1a": "nl",
+"476e5f64-87b2-4dee-8a80-5ef6cc544378": "fr"
+}
+
+2. Remove fuzzy language detection from collection names.
+
+3. Remove per-video language selection.
+
+4. Remove manual language dropdown if the collection ID is known.
+
+5. Import rules:
+
+* German collection ID only writes to videoAssets.de
+* Spanish collection ID only writes to videoAssets.es
+* Portuguese collection ID only writes to videoAssets.pt
+* Polish collection ID only writes to videoAssets.pl
+* Italian collection ID only writes to videoAssets.it
+* English collection ID only writes to videoAssets.en
+* Dutch collection ID only writes to videoAssets.nl
+* French collection ID only writes to videoAssets.fr
+
+6. Never write into another language key.
+
+7. Never overwrite other language assets.
+
+8. If collection ID is unknown:
+
+* show warning
+* block import
+* ask admin to configure mapping
+* do not guess
+
+9. Importer UI:
+
+Show:
+
+Collection Name | Collection ID | Detected Language
+
+The detected language should be locked and read-only when collection ID is recognized.
+
+Example:
+French | 476e5f64-87b2-4dee-8a80-5ef6cc544378 | FR
+
+10. Confirmation before import:
+
+Show exact message:
+
+“You are about to import X videos from Bunny collection French into videoAssets.fr only.”
+
+11. Result after import:
+
+Show:
+
+* collection ID
+* language used
+* number of videos imported
+* number of lessons created
+* number of lessons updated
+* exact videoAssets key written
+
+12. Verification:
+
+Test one video from each collection:
+
+* French → only videoAssets.fr
+* English → only videoAssets.en
+* German → only videoAssets.de
+* Dutch → only videoAssets.nl
+* Spanish → only videoAssets.es
+* Italian → only videoAssets.it
+* Portuguese → only videoAssets.pt
+* Polish → only videoAssets.pl
+
+Confirm no other language keys are modified.
+
+Important:
+This is blocking beta launch.
+The platform must respect our Bunny collection structure exactly.
+No guessing, no fuzzy matching, no per-video language choice.

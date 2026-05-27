@@ -22,7 +22,17 @@ const LANG_LABELS: Record<string, string> = {
   es: "Español", it: "Italiano", pt: "Português", pl: "Polski",
 };
 
-const LANG_OPTIONS = Object.entries(LANG_LABELS).map(([code, label]) => ({ code, label }));
+// Fixed collection ID → language mapping. Single source of truth — mirrors the backend exactly.
+const COLLECTION_ID_TO_LANG: Record<string, string> = {
+  "a8f1d88d-d78b-40a3-8110-3b573a1603e2": "de",
+  "3e3b7105-0fd0-4f48-a223-9b0842e4e3e5": "es",
+  "dba3c601-c795-43a6-9ee7-f48365a0e4de": "pt",
+  "c415e75f-4c65-4314-bec2-fa968e1397ff": "pl",
+  "50ecaca6-0542-4c91-af26-d3006fa02b08": "it",
+  "630999cb-1df6-43f2-8cff-dc49950be601": "en",
+  "b7b1ee25-e810-4784-bf85-3a476114ad1a": "nl",
+  "476e5f64-87b2-4dee-8a80-5ef6cc544378": "fr",
+};
 
 type BunnyStatus = {
   connected: boolean; error?: string;
@@ -31,7 +41,7 @@ type BunnyStatus = {
 };
 
 type BunnyCollection = {
-  guid: string; name: string; videoCount: number; lang: string;
+  guid: string; name: string; videoCount: number; lang: string | null; langKnown: boolean;
 };
 
 type BunnyVideo = {
@@ -61,6 +71,7 @@ type ImportResult = {
   updated: number;
   errors: string[];
   collectionName?: string;
+  collectionId?: string;
   langCode?: string;
 };
 
@@ -199,8 +210,6 @@ export default function AdminBunnyImporter({ onBack }: { onBack: () => void }) {
   const qc = useQueryClient();
 
   const [selectedCollection, setSelectedCollection] = useState<BunnyCollection | null>(null);
-  // Explicit language mapping: collection guid → chosen lang code (admin-selected, not auto-detected)
-  const [collectionLangMap, setCollectionLangMap] = useState<Record<string, string>>({});
   const [importRows, setImportRows] = useState<ImportRow[]>([]);
   const [previewVideo, setPreviewVideo] = useState<BunnyVideo | null>(null);
   const [courses, setCourses] = useState<AdminCourse[]>([]);
@@ -221,22 +230,6 @@ export default function AdminBunnyImporter({ onBack }: { onBack: () => void }) {
     enabled: !!status?.connected,
   });
   const collections = collectionsData?.items ?? [];
-
-  // When collections load, pre-populate lang map with auto-detected values as a starting suggestion only
-  // Admin must explicitly confirm/change before importing
-  useEffect(() => {
-    const items = collectionsData?.items;
-    if (!items?.length) return;
-    setCollectionLangMap(prev => {
-      const next = { ...prev };
-      for (const col of items) {
-        if (!next[col.guid]) {
-          next[col.guid] = col.lang; // suggestion only — admin sees it and can change
-        }
-      }
-      return next;
-    });
-  }, [collectionsData]);
 
   // Videos for selected collection — fetches ALL pages server-side
   const { data: videosData, isLoading: videosLoading } = useQuery<{ items: BunnyVideo[]; total: number; totalReported: number; pagesLoaded: number }>({
@@ -284,14 +277,14 @@ export default function AdminBunnyImporter({ onBack }: { onBack: () => void }) {
 
   const selectedRows = importRows.filter(r => r.selected);
 
-  // The authoritative language for this collection — must be explicitly set
-  const selectedLang = selectedCollection ? (collectionLangMap[selectedCollection.guid] ?? "") : "";
+  // The authoritative language — derived strictly from fixed collection ID map, never user-editable
+  const selectedLang = selectedCollection ? (COLLECTION_ID_TO_LANG[selectedCollection.guid] ?? "") : "";
   const langLabel = selectedLang ? (LANG_LABELS[selectedLang] ?? selectedLang.toUpperCase()) : "";
 
   const handleImportClick = () => {
     if (!selectedRows.length) return;
     if (!selectedLang) {
-      toast({ title: "Select a language for this collection before importing", variant: "destructive" });
+      toast({ title: "This collection's ID is not in the fixed language mapping. Import blocked.", variant: "destructive" });
       return;
     }
     setShowConfirm(true);
@@ -302,7 +295,7 @@ export default function AdminBunnyImporter({ onBack }: { onBack: () => void }) {
     try {
       const items = selectedRows.map(r => ({
         videoId: r.video.guid,
-        lang: selectedLang, // single authoritative lang — never per-row
+        collectionId: r.video.collectionId, // backend enforces lang via COLLECTION_ID_TO_LANG
         embedUrl: r.video.embedUrl,
         thumbnailUrl: r.video.thumbnailUrl,
         previewUrl: r.video.previewUrl || undefined,
@@ -321,6 +314,7 @@ export default function AdminBunnyImporter({ onBack }: { onBack: () => void }) {
       setImportResult({
         ...result,
         collectionName: selectedCollection?.name,
+        collectionId: selectedCollection?.guid,
         langCode: selectedLang,
       });
       setShowConfirm(false);
@@ -404,7 +398,7 @@ export default function AdminBunnyImporter({ onBack }: { onBack: () => void }) {
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <Globe className="w-4 h-4" /> Step 1 — Set Language for Each Collection
+                <Globe className="w-4 h-4" /> Step 1 — Select a Collection
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-0">
@@ -415,52 +409,50 @@ export default function AdminBunnyImporter({ onBack }: { onBack: () => void }) {
               ) : (
                 <div className="space-y-2">
                   <p className="text-xs text-muted-foreground pb-1">
-                    Confirm the exact HaloLight language for each collection. Videos import into <strong>only</strong> the selected language key.
+                    Languages are locked by collection ID. No guessing, no manual selection.
                   </p>
                   <div className="rounded-lg border border-border overflow-hidden">
                     <table className="w-full text-sm">
                       <thead>
                         <tr className="bg-muted/40 border-b border-border">
                           <th className="text-left px-3 py-2 text-xs font-semibold text-muted-foreground">Collection Name</th>
+                          <th className="text-left px-3 py-2 text-xs font-semibold text-muted-foreground">Collection ID</th>
                           <th className="text-left px-3 py-2 text-xs font-semibold text-muted-foreground">Videos</th>
-                          <th className="text-left px-3 py-2 text-xs font-semibold text-muted-foreground w-48">HaloLight Language</th>
+                          <th className="text-left px-3 py-2 text-xs font-semibold text-muted-foreground">Detected Language</th>
                           <th className="px-3 py-2 w-24"></th>
                         </tr>
                       </thead>
                       <tbody>
                         {collections.map((col, i) => {
-                          const chosenLang = collectionLangMap[col.guid] ?? "";
+                          const fixedLang = COLLECTION_ID_TO_LANG[col.guid];
+                          const langKnown = !!fixedLang;
                           const isSelected = selectedCollection?.guid === col.guid;
                           return (
                             <tr key={col.guid} className={`border-b border-border last:border-0 transition-colors ${isSelected ? "bg-primary/4" : i % 2 === 0 ? "bg-background" : "bg-muted/10"}`}>
-                              <td className="px-3 py-2">
-                                <span className="font-medium text-foreground">{col.name}</span>
-                                <span className="ml-2 font-mono text-xs text-muted-foreground">{col.guid.slice(0, 8)}…</span>
-                              </td>
+                              <td className="px-3 py-2 font-medium text-foreground">{col.name}</td>
+                              <td className="px-3 py-2 font-mono text-xs text-muted-foreground">{col.guid}</td>
                               <td className="px-3 py-2 text-muted-foreground text-xs">{col.videoCount}</td>
                               <td className="px-3 py-2">
-                                <Select
-                                  value={chosenLang}
-                                  onValueChange={v => setCollectionLangMap(prev => ({ ...prev, [col.guid]: v }))}
-                                >
-                                  <SelectTrigger className="h-8 text-xs w-44">
-                                    <SelectValue placeholder="Select language…" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {LANG_OPTIONS.map(({ code, label }) => (
-                                      <SelectItem key={code} value={code}>
-                                        {label} ({code})
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
+                                {langKnown ? (
+                                  <div className="flex items-center gap-1.5">
+                                    <CheckCircle2 className="w-3.5 h-3.5 text-success shrink-0" />
+                                    <span className="text-xs font-semibold text-success">
+                                      {LANG_LABELS[fixedLang]} ({fixedLang.toUpperCase()})
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <div className="flex items-center gap-1.5">
+                                    <AlertTriangle className="w-3.5 h-3.5 text-destructive shrink-0" />
+                                    <span className="text-xs text-destructive font-medium">Unknown — import blocked</span>
+                                  </div>
+                                )}
                               </td>
                               <td className="px-3 py-2">
                                 <Button
                                   variant={isSelected ? "default" : "outline"}
                                   size="sm"
                                   className="h-7 text-xs w-full"
-                                  disabled={!chosenLang}
+                                  disabled={!langKnown}
                                   onClick={() => setSelectedCollection(col)}
                                 >
                                   {isSelected ? "Selected" : "Browse"}
@@ -472,9 +464,9 @@ export default function AdminBunnyImporter({ onBack }: { onBack: () => void }) {
                       </tbody>
                     </table>
                   </div>
-                  {collections.some(c => !collectionLangMap[c.guid]) && (
+                  {collections.some(c => !COLLECTION_ID_TO_LANG[c.guid]) && (
                     <p className="text-xs text-warning flex items-center gap-1.5 pt-1">
-                      <AlertTriangle className="w-3.5 h-3.5" /> Some collections have no language set — you must select a language before importing from them.
+                      <AlertTriangle className="w-3.5 h-3.5" /> One or more collections have unknown IDs — they are blocked from import. Contact support to add them to the fixed mapping.
                     </p>
                   )}
                 </div>
@@ -658,14 +650,20 @@ export default function AdminBunnyImporter({ onBack }: { onBack: () => void }) {
                   )}
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-foreground mb-2">Import complete</p>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs mb-3">
                       <div>
                         <p className="text-muted-foreground">Collection</p>
                         <p className="font-medium text-foreground">{importResult.collectionName ?? "—"}</p>
                       </div>
+                      <div className="sm:col-span-2">
+                        <p className="text-muted-foreground">Collection ID</p>
+                        <p className="font-mono text-xs text-foreground break-all">{importResult.collectionId ?? "—"}</p>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-3 gap-3 text-xs">
                       <div>
                         <p className="text-muted-foreground">Language key written</p>
-                        <p className="font-mono font-medium text-foreground">videoAssets.{importResult.langCode}</p>
+                        <p className="font-mono font-semibold text-foreground">videoAssets.{importResult.langCode}</p>
                       </div>
                       <div>
                         <p className="text-muted-foreground">Lessons updated</p>
