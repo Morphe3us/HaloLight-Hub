@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { ArrowLeft, Clock, BookOpen, CheckCircle2, PlayCircle, Lock } from "lucide-react";
+import { ArrowLeft, Clock, BookOpen, CheckCircle2, PlayCircle, Video } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 function formatDuration(seconds: number): string {
@@ -15,6 +15,8 @@ function formatDuration(seconds: number): string {
   if (h > 0) return `${h}h ${m}m`;
   return `${m}m`;
 }
+
+const THUMB_FALLBACK = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='450' viewBox='0 0 800 450'%3E%3Crect width='800' height='450' fill='%23DDB398' opacity='0.25'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='48' fill='%23DDB398'%3E▶%3C/text%3E%3C/svg%3E";
 
 const LEVEL_COLORS: Record<string, string> = {
   beginner: "bg-success/15 text-success border-success/30",
@@ -83,9 +85,10 @@ export default function AcademyCourse() {
       <div className="relative rounded-2xl overflow-hidden shadow-sm border border-border">
         <div className="absolute inset-0">
           <img
-            src={course.thumbnailUrl}
+            src={course.thumbnailUrl || THUMB_FALLBACK}
             alt={course.title}
             className="w-full h-full object-cover"
+            onError={(e) => { (e.target as HTMLImageElement).src = THUMB_FALLBACK; }}
           />
           <div className="absolute inset-0 bg-gradient-to-r from-foreground/90 via-foreground/70 to-transparent" />
         </div>
@@ -145,6 +148,14 @@ export default function AcademyCourse() {
       {/* Curriculum */}
       <div>
         <h2 className="text-xl font-semibold text-foreground mb-4">{t("academy.course_overview")}</h2>
+
+        {course.modules.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 gap-3 text-muted-foreground bg-card rounded-2xl border border-border">
+            <Video className="w-10 h-10 opacity-30" />
+            <p className="text-sm font-medium">{t("academy.no_content", { defaultValue: "No lessons available yet." })}</p>
+            <p className="text-xs opacity-60">{t("academy.no_content_hint", { defaultValue: "Content will appear here once lessons are added to this course." })}</p>
+          </div>
+        ) : (
         <Accordion type="multiple" defaultValue={course.modules.map((m) => m.id)} className="space-y-3">
           {course.modules.map((mod) => {
             const modCompleted = mod.lessons.filter((l) => l.completedAt).length;
@@ -218,6 +229,7 @@ export default function AcademyCourse() {
             );
           })}
         </Accordion>
+        )}
       </div>
     </div>
   );

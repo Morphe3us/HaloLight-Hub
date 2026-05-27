@@ -21,6 +21,8 @@ const LEVEL_COLORS: Record<string, string> = {
   advanced: "bg-muted text-foreground",
 };
 
+const THUMB_FALLBACK = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='450' viewBox='0 0 800 450'%3E%3Crect width='800' height='450' fill='%23DDB398' opacity='0.25'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='48' fill='%23DDB398'%3E▶%3C/text%3E%3C/svg%3E";
+
 export default function Academy() {
   const { t } = useTranslation();
   const { data: coursesData, isLoading: isLoadingCourses } = useListCourses();
@@ -120,9 +122,10 @@ export default function Academy() {
                   <Card className="group border border-border shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden h-full">
                     <div className="relative aspect-video overflow-hidden">
                       <img
-                        src={course.thumbnailUrl}
+                        src={course.thumbnailUrl || THUMB_FALLBACK}
                         alt={course.title}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        onError={(e) => { (e.target as HTMLImageElement).src = THUMB_FALLBACK; }}
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                       {isComplete && (

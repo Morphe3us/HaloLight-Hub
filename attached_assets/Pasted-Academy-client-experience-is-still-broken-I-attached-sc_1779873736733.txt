@@ -1,0 +1,93 @@
+Academy client experience is still broken.
+
+I attached screenshots showing the current behavior.
+
+Please stop focusing only on BunnyStream/player rendering and trace the complete Academy data flow from database → API → client UI.
+
+Observed behavior:
+
+* Course card appears in Academy.
+* Thumbnail is broken/missing (image icon visible).
+* Course detail page loads.
+* Course header displays.
+* Course shows:
+
+  * 0 lessons
+  * 0m duration
+* "Course Overview" section is completely empty.
+* No modules displayed.
+* No lessons displayed.
+* No video displayed.
+
+This suggests the issue may be upstream from the video player itself.
+
+Please investigate:
+
+1. Database
+
+* Does the course actually contain modules?
+* Does each module contain lessons?
+* Are lessons published?
+* Are lessons linked correctly to modules and course?
+
+2. API responses
+
+* Verify course detail endpoint response.
+* Verify modules are returned.
+* Verify lessons are returned.
+* Verify lesson counts and duration calculations.
+* Verify multilingual filtering is not removing all lessons.
+
+3. Client rendering
+
+* Verify modules render correctly.
+* Verify lessons render correctly.
+* Verify lesson list is not filtered out accidentally.
+* Verify language selection is not hiding content.
+
+4. Thumbnails
+
+* Determine why thumbnail image is broken.
+* Verify thumbnail URL exists in database.
+* Verify correct field is used by Academy cards and course header.
+* Add proper fallback image if thumbnail is missing.
+
+5. Video flow
+   Only after lessons are confirmed visible:
+
+* Verify lesson videoUrl exists.
+* Verify BunnyStream URL is returned by API.
+* Verify player renders.
+* Verify iframe loads successfully.
+
+Expected result:
+
+Course page should display:
+
+Module 1
+
+* Lesson 1
+* Lesson 2
+* Lesson 3
+
+Module 2
+
+* Lesson 4
+* Lesson 5
+
+Lesson selected
+↓
+Video player visible
+↓
+Video playable
+
+Please provide:
+
+* Root cause
+* API payload before/after fix
+* Database records checked
+* Files modified
+* Verification screenshots
+* Explanation for why the course currently shows 0 lessons and 0 duration despite existing Academy content
+
+Run typecheck after completion.
