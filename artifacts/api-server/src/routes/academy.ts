@@ -146,6 +146,7 @@ router.get("/academy/courses/:id", requireAuth, async (req: Request, res: Respon
             order: l.order,
             isPublished: l.isPublished,
             thumbnailUrl: l.thumbnailUrl ?? null,
+            videoAssets: l.videoAssets ?? null,
             completedAt: p?.completedAt?.toISOString() ?? null,
             watchPercent: p?.watchPercent ?? null,
           };
@@ -213,6 +214,7 @@ router.get("/academy/lessons/:id", requireAuth, async (req: Request, res: Respon
     videoUrl: lesson.videoUrl,
     videoUrls: lesson.videoUrls ?? null,
     thumbnailUrl: lesson.thumbnailUrl ?? null,
+    videoAssets: lesson.videoAssets ?? null,
     durationSeconds: lesson.durationSeconds,
     order: lesson.order,
     resources: resources.map((r) => ({

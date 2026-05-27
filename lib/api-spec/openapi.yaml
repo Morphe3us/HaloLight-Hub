@@ -3257,6 +3257,11 @@ components:
         thumbnailUrl:
           type: string
           nullable: true
+        videoAssets:
+          type: object
+          additionalProperties:
+            $ref: "#/components/schemas/VideoAsset"
+          nullable: true
         completedAt:
           type: ["string", "null"]
           format: date-time
@@ -3325,6 +3330,14 @@ components:
         correctOption:
           type: integer
 
+    VideoAsset:
+      type: object
+      properties:
+        embedUrl: { type: string, nullable: true }
+        thumbnailUrl: { type: string, nullable: true }
+        previewUrl: { type: string, nullable: true }
+        videoId: { type: string, nullable: true }
+
     LessonDetail:
       type: object
       required: [id, moduleId, title, videoUrl, durationSeconds, order, resources, quizQuestions, completedAt, watchPercent]
@@ -3344,6 +3357,11 @@ components:
           nullable: true
         thumbnailUrl:
           type: string
+          nullable: true
+        videoAssets:
+          type: object
+          additionalProperties:
+            $ref: "#/components/schemas/VideoAsset"
           nullable: true
         durationSeconds:
           type: integer
@@ -5391,6 +5409,11 @@ components:
         videoUrl: { type: string }
         videoUrls: { type: object, additionalProperties: { type: string }, nullable: true }
         thumbnailUrl: { type: string, nullable: true }
+        videoAssets:
+          type: object
+          additionalProperties:
+            $ref: "#/components/schemas/VideoAsset"
+          nullable: true
         durationSeconds: { type: integer }
         order: { type: integer }
         isPublished: { type: boolean }
@@ -5406,6 +5429,11 @@ components:
         videoUrl: { type: string, nullable: true }
         videoUrls: { type: object, additionalProperties: { type: string }, nullable: true }
         thumbnailUrl: { type: string, nullable: true }
+        videoAssets:
+          type: object
+          additionalProperties:
+            $ref: "#/components/schemas/VideoAsset"
+          nullable: true
         durationSeconds: { type: integer }
         isPublished: { type: boolean }
         notes: { type: string, nullable: true }
@@ -5418,6 +5446,11 @@ components:
         videoUrl: { type: string, nullable: true }
         videoUrls: { type: object, additionalProperties: { type: string }, nullable: true }
         thumbnailUrl: { type: string, nullable: true }
+        videoAssets:
+          type: object
+          additionalProperties:
+            $ref: "#/components/schemas/VideoAsset"
+          nullable: true
         durationSeconds: { type: integer }
         isPublished: { type: boolean }
         notes: { type: string, nullable: true }

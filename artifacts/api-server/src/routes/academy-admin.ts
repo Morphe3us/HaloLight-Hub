@@ -28,6 +28,7 @@ async function buildAdminCourse(course: typeof courses.$inferSelect) {
       lessonVideoUrl: lessons.videoUrl,
       lessonVideoUrls: lessons.videoUrls,
       lessonThumbnailUrl: lessons.thumbnailUrl,
+      lessonVideoAssets: lessons.videoAssets,
       lessonDescription: lessons.description,
       lessonNotes: lessons.notes,
     })
@@ -36,9 +37,10 @@ async function buildAdminCourse(course: typeof courses.$inferSelect) {
     .where(eq(courseModules.courseId, course.id))
     .orderBy(courseModules.order, lessons.order);
 
+  type VideoAssetMap = Record<string, { embedUrl?: string; thumbnailUrl?: string; previewUrl?: string; videoId?: string }>;
   const moduleMap = new Map<string, {
     id: string; courseId: string; title: unknown; order: number;
-    lessons: Array<{ id: string; moduleId: string; title: unknown; description: unknown; videoUrl: string; videoUrls: Record<string, string> | null; thumbnailUrl: string | null; durationSeconds: number; order: number; isPublished: boolean; notes: string | null }>;
+    lessons: Array<{ id: string; moduleId: string; title: unknown; description: unknown; videoUrl: string; videoUrls: Record<string, string> | null; thumbnailUrl: string | null; videoAssets: VideoAssetMap | null; durationSeconds: number; order: number; isPublished: boolean; notes: string | null }>;
   }>();
 
   for (const row of modulesWithLessons) {
@@ -60,6 +62,7 @@ async function buildAdminCourse(course: typeof courses.$inferSelect) {
         videoUrl: row.lessonVideoUrl ?? "",
         videoUrls: (row.lessonVideoUrls as Record<string, string> | null) ?? null,
         thumbnailUrl: (row.lessonThumbnailUrl as string | null) ?? null,
+        videoAssets: (row.lessonVideoAssets as VideoAssetMap | null) ?? null,
         durationSeconds: row.lessonDuration ?? 0,
         order: row.lessonOrder ?? 0,
         isPublished: row.lessonPublished ?? true,
@@ -259,6 +262,7 @@ router.post("/admin/academy/courses/:id/duplicate", requireAuth, async (req: Req
         videoUrl: lesson.videoUrl,
         videoUrls: lesson.videoUrls,
         thumbnailUrl: lesson.thumbnailUrl,
+        videoAssets: lesson.videoAssets,
         durationSeconds: lesson.durationSeconds,
         order: lesson.order,
         isPublished: false,
@@ -319,9 +323,9 @@ router.post("/admin/academy/lessons", requireAuth, async (req: Request, res: Res
   const user = await getOrCreateUser(req);
   if (!requireAdmin(user, res)) return;
 
-  const { moduleId, title, description, videoUrl, videoUrls, thumbnailUrl, durationSeconds, isPublished, notes } = req.body as {
+  const { moduleId, title, description, videoUrl, videoUrls, thumbnailUrl, videoAssets, durationSeconds, isPublished, notes } = req.body as {
     moduleId?: string; title?: Record<string, string>; description?: Record<string, string>;
-    videoUrl?: string; videoUrls?: Record<string, string>; thumbnailUrl?: string; durationSeconds?: number; isPublished?: boolean; notes?: string;
+    videoUrl?: string; videoUrls?: Record<string, string>; thumbnailUrl?: string; videoAssets?: Record<string, { embedUrl?: string; thumbnailUrl?: string; previewUrl?: string; videoId?: string }>; durationSeconds?: number; isPublished?: boolean; notes?: string;
   };
   if (!moduleId || !title) { res.status(400).json({ error: "moduleId and title are required" }); return; }
 
@@ -333,6 +337,7 @@ router.post("/admin/academy/lessons", requireAuth, async (req: Request, res: Res
     videoUrl: videoUrl ?? "",
     videoUrls: videoUrls ?? null,
     thumbnailUrl: thumbnailUrl ?? null,
+    videoAssets: videoAssets ?? null,
     durationSeconds: durationSeconds ?? 0,
     order: (maxRow?.max ?? 0) + 1,
     isPublished: isPublished ?? false,
@@ -342,6 +347,7 @@ router.post("/admin/academy/lessons", requireAuth, async (req: Request, res: Res
   res.status(201).json({
     id: lesson!.id, moduleId: lesson!.moduleId, title: lesson!.title, description: lesson!.description,
     videoUrl: lesson!.videoUrl, videoUrls: lesson!.videoUrls ?? null, thumbnailUrl: lesson!.thumbnailUrl ?? null,
+    videoAssets: lesson!.videoAssets ?? null,
     durationSeconds: lesson!.durationSeconds, order: lesson!.order,
     isPublished: lesson!.isPublished, notes: lesson!.notes,
   });
@@ -352,9 +358,9 @@ router.put("/admin/academy/lessons/:id", requireAuth, async (req: Request, res: 
   const user = await getOrCreateUser(req);
   if (!requireAdmin(user, res)) return;
 
-  const { title, description, videoUrl, videoUrls, thumbnailUrl, durationSeconds, isPublished, notes, order } = req.body as {
+  const { title, description, videoUrl, videoUrls, thumbnailUrl, videoAssets, durationSeconds, isPublished, notes, order } = req.body as {
     title?: Record<string, string>; description?: Record<string, string>;
-    videoUrl?: string; videoUrls?: Record<string, string>; thumbnailUrl?: string | null; durationSeconds?: number; isPublished?: boolean; notes?: string; order?: number;
+    videoUrl?: string; videoUrls?: Record<string, string>; thumbnailUrl?: string | null; videoAssets?: Record<string, { embedUrl?: string; thumbnailUrl?: string; previewUrl?: string; videoId?: string }> | null; durationSeconds?: number; isPublished?: boolean; notes?: string; order?: number;
   };
 
   const updates: Partial<typeof lessons.$inferInsert> = {};
@@ -363,6 +369,7 @@ router.put("/admin/academy/lessons/:id", requireAuth, async (req: Request, res: 
   if (videoUrl !== undefined) updates.videoUrl = videoUrl;
   if (videoUrls !== undefined) updates.videoUrls = videoUrls;
   if (thumbnailUrl !== undefined) updates.thumbnailUrl = thumbnailUrl ?? null;
+  if (videoAssets !== undefined) updates.videoAssets = videoAssets ?? null;
   if (durationSeconds !== undefined) updates.durationSeconds = durationSeconds;
   if (isPublished !== undefined) updates.isPublished = isPublished;
   if (notes !== undefined) updates.notes = notes;
@@ -374,6 +381,7 @@ router.put("/admin/academy/lessons/:id", requireAuth, async (req: Request, res: 
   res.json({
     id: updated.id, moduleId: updated.moduleId, title: updated.title, description: updated.description,
     videoUrl: updated.videoUrl, videoUrls: updated.videoUrls ?? null, thumbnailUrl: updated.thumbnailUrl ?? null,
+    videoAssets: updated.videoAssets ?? null,
     durationSeconds: updated.durationSeconds, order: updated.order,
     isPublished: updated.isPublished, notes: updated.notes,
   });

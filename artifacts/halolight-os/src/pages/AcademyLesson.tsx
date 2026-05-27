@@ -152,10 +152,15 @@ export default function AcademyLesson() {
   };
 
   const lang = i18n.language?.split("-")[0] ?? "en";
+  type VideoAsset = { embedUrl?: string; thumbnailUrl?: string; previewUrl?: string; videoId?: string };
+  const videoAssets = (lesson as { videoAssets?: Record<string, VideoAsset> | null }).videoAssets;
+  const asset = videoAssets?.[lang] ?? videoAssets?.["en"];
   const videoUrls = lesson.videoUrls as Record<string, string> | null | undefined;
-  const resolvedVideoUrl = videoUrls?.[lang] ?? videoUrls?.["en"] ?? lesson.videoUrl ?? "";
+  // Resolution chain: videoAssets[lang].embedUrl → videoAssets.en.embedUrl → videoUrls[lang] → videoUrls.en → lesson.videoUrl (legacy)
+  const resolvedVideoUrl = asset?.embedUrl ?? videoUrls?.[lang] ?? videoUrls?.["en"] ?? lesson.videoUrl ?? "";
   const embedUrl = getVideoEmbedUrl(resolvedVideoUrl);
-  const thumbnailUrl = (lesson as { thumbnailUrl?: string | null }).thumbnailUrl ?? null;
+  // Thumbnail chain: videoAssets[lang].thumbnailUrl → videoAssets.en.thumbnailUrl → lesson.thumbnailUrl (legacy)
+  const thumbnailUrl = asset?.thumbnailUrl ?? videoAssets?.["en"]?.thumbnailUrl ?? (lesson as { thumbnailUrl?: string | null }).thumbnailUrl ?? null;
 
   return (
     <div className="space-y-6" data-testid="page-academy-lesson">

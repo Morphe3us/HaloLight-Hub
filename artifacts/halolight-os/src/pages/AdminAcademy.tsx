@@ -51,9 +51,12 @@ type AdminModule = {
   id: string; courseId: string; title: Record<string, string>; order: number; lessons: AdminLesson[];
 };
 
+type VideoAsset = { embedUrl?: string; thumbnailUrl?: string; previewUrl?: string; videoId?: string };
+
 type AdminLesson = {
   id: string; moduleId: string; title: Record<string, string>; description?: Record<string, string> | null;
   videoUrl: string; videoUrls?: Record<string, string> | null; thumbnailUrl?: string | null;
+  videoAssets?: Record<string, VideoAsset> | null;
   durationSeconds: number; order: number; isPublished: boolean; notes?: string | null;
 };
 
@@ -265,12 +268,25 @@ function LessonFormModal({
   const qc = useQueryClient();
   const isEdit = !!lesson;
 
+  // Migrate legacy fields into videoAssets structure on first open
+  const initVideoAssets = (): Record<string, { embedUrl: string; thumbnailUrl: string; previewUrl: string; videoId: string }> => {
+    const base = (lesson?.videoAssets ?? {}) as Record<string, VideoAsset>;
+    return (LANGS as readonly string[]).reduce<Record<string, { embedUrl: string; thumbnailUrl: string; previewUrl: string; videoId: string }>>((acc, l) => {
+      const existing = base[l] ?? {};
+      acc[l] = {
+        embedUrl: existing.embedUrl ?? (l === "en" ? (lesson?.videoUrl ?? "") : (lesson?.videoUrls?.[l] ?? "")),
+        thumbnailUrl: existing.thumbnailUrl ?? (l === "en" ? (lesson?.thumbnailUrl ?? "") : ""),
+        previewUrl: existing.previewUrl ?? "",
+        videoId: existing.videoId ?? "",
+      };
+      return acc;
+    }, {});
+  };
+
   const [form, setForm] = useState({
     titleEn: lesson?.title?.en ?? "",
     titlesByLang: { ...(lesson?.title ?? {}) } as Record<string, string>,
-    videoUrl: lesson?.videoUrl ?? "",
-    videoUrlsByLang: { ...(lesson?.videoUrls ?? {}) } as Record<string, string>,
-    thumbnailUrl: lesson?.thumbnailUrl ?? "",
+    videoAssets: initVideoAssets(),
     durationSeconds: String(lesson?.durationSeconds ?? 0),
     isPublished: lesson?.isPublished ?? false,
     notes: lesson?.notes ?? "",
@@ -299,16 +315,36 @@ function LessonFormModal({
 
   const isPending = creating || updating;
 
+  const setVideoAssetField = (lang: string, field: keyof VideoAsset, value: string) => {
+    setForm(f => ({
+      ...f,
+      videoAssets: {
+        ...f.videoAssets,
+        [lang]: { ...f.videoAssets[lang], [field]: value },
+      },
+    }));
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const cleanVideoUrls = { en: form.videoUrl, ...form.videoUrlsByLang };
-    const hasAnyVideoUrl = Object.values(cleanVideoUrls).some(v => !!v);
+    const enAsset = form.videoAssets["en"];
+    // Only send language entries that have at least one field filled
+    const cleanAssets = Object.fromEntries(
+      Object.entries(form.videoAssets)
+        .filter(([, a]) => a.embedUrl || a.thumbnailUrl || a.previewUrl || a.videoId)
+        .map(([l, a]) => [l, {
+          ...(a.embedUrl ? { embedUrl: a.embedUrl } : {}),
+          ...(a.thumbnailUrl ? { thumbnailUrl: a.thumbnailUrl } : {}),
+          ...(a.previewUrl ? { previewUrl: a.previewUrl } : {}),
+          ...(a.videoId ? { videoId: a.videoId } : {}),
+        }])
+    );
     const payload = {
       moduleId,
       title: { en: form.titleEn, ...form.titlesByLang },
-      videoUrl: form.videoUrl || undefined,
-      videoUrls: hasAnyVideoUrl ? cleanVideoUrls : undefined,
-      thumbnailUrl: form.thumbnailUrl || null,
+      videoUrl: enAsset?.embedUrl || undefined,
+      thumbnailUrl: enAsset?.thumbnailUrl || null,
+      videoAssets: Object.keys(cleanAssets).length > 0 ? cleanAssets : undefined,
       durationSeconds: parseInt(form.durationSeconds, 10) || 0,
       isPublished: form.isPublished,
       notes: form.notes || null,
@@ -347,49 +383,92 @@ function LessonFormModal({
             />
           </div>
 
-          {/* Video URLs per language */}
-          <div className="space-y-2">
-            <Label>{t("admin_academy.label_video_url")} ({t("admin_academy.per_language", { defaultValue: "per language" })})</Label>
-            <div className="flex gap-1 flex-wrap">
-              {LANGS.map(l => (
-                <button key={l} type="button"
-                  onClick={() => setForm(f => ({ ...f, activeVideoLang: l }))}
-                  className={`px-2.5 py-1 rounded text-xs font-medium transition-colors ${form.activeVideoLang === l ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}>
-                  {LANG_LABELS[l]}
-                  {(form.activeVideoLang !== l) && (form.videoUrlsByLang[l] || (l === "en" && form.videoUrl)) && (
-                    <span className="ml-1 w-1.5 h-1.5 rounded-full bg-success inline-block align-middle" />
-                  )}
-                </button>
-              ))}
+          {/* BunnyStream video assets per language */}
+          <div className="space-y-2 rounded-xl border border-border bg-muted/30 p-3">
+            <div className="flex items-center justify-between">
+              <Label className="text-sm font-semibold">{t("admin_academy.label_video_assets", { defaultValue: "BunnyStream Video Assets" })}</Label>
+              <span className="text-xs text-muted-foreground">{t("admin_academy.per_language", { defaultValue: "per language" })}</span>
             </div>
-            <Input
-              value={form.activeVideoLang === "en" ? form.videoUrl : (form.videoUrlsByLang[form.activeVideoLang] ?? "")}
-              onChange={e => {
-                if (form.activeVideoLang === "en") {
-                  setForm(f => ({ ...f, videoUrl: e.target.value }));
-                } else {
-                  setForm(f => ({ ...f, videoUrlsByLang: { ...f.videoUrlsByLang, [f.activeVideoLang]: e.target.value } }));
-                }
-              }}
-              placeholder={`BunnyStream / YouTube URL for ${LANG_LABELS[form.activeVideoLang]}`}
-            />
-            <p className="text-xs text-muted-foreground">{t("admin_academy.video_url_hint", { defaultValue: "EN is used as the default fallback when a language-specific URL is not set." })}</p>
-          </div>
 
-          {/* Thumbnail URL */}
-          <div className="space-y-1.5">
-            <Label>{t("admin_academy.label_thumbnail_url", { defaultValue: "Thumbnail URL" })}</Label>
-            <Input
-              value={form.thumbnailUrl}
-              onChange={e => setForm(f => ({ ...f, thumbnailUrl: e.target.value }))}
-              placeholder="https://your-cdn.b-cdn.net/VIDEO_ID/thumbnail.jpg"
-            />
-            {form.thumbnailUrl && (
-              <div className="mt-1 rounded-lg overflow-hidden h-24 w-40 bg-muted border border-border">
-                <img src={form.thumbnailUrl} alt="Thumbnail preview" className="w-full h-full object-cover" onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+            {/* Language selector */}
+            <div className="flex gap-1 flex-wrap">
+              {LANGS.map(l => {
+                const a = form.videoAssets[l];
+                const hasData = !!(a?.embedUrl || a?.thumbnailUrl);
+                return (
+                  <button key={l} type="button"
+                    onClick={() => setForm(f => ({ ...f, activeVideoLang: l }))}
+                    className={`px-2.5 py-1 rounded text-xs font-medium transition-colors ${form.activeVideoLang === l ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}>
+                    {LANG_LABELS[l]}
+                    {form.activeVideoLang !== l && hasData && (
+                      <span className="ml-1 w-1.5 h-1.5 rounded-full bg-success inline-block align-middle" />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Embed URL */}
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground">
+                {t("admin_academy.label_embed_url", { defaultValue: "Embed URL" })} <span className="text-foreground font-medium">({LANG_LABELS[form.activeVideoLang]})</span>
+              </Label>
+              <Input
+                value={form.videoAssets[form.activeVideoLang]?.embedUrl ?? ""}
+                onChange={e => setVideoAssetField(form.activeVideoLang, "embedUrl", e.target.value)}
+                placeholder="https://iframe.mediadelivery.net/embed/{libId}/{videoId}"
+              />
+            </div>
+
+            {/* Thumbnail URL */}
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground">
+                {t("admin_academy.label_thumbnail_url", { defaultValue: "Thumbnail URL" })} <span className="text-foreground font-medium">({LANG_LABELS[form.activeVideoLang]})</span>
+              </Label>
+              <Input
+                value={form.videoAssets[form.activeVideoLang]?.thumbnailUrl ?? ""}
+                onChange={e => setVideoAssetField(form.activeVideoLang, "thumbnailUrl", e.target.value)}
+                placeholder="https://vz-xxxxx.b-cdn.net/{videoId}/thumbnail.jpg"
+              />
+              {form.videoAssets[form.activeVideoLang]?.thumbnailUrl && (
+                <div className="mt-1 rounded-md overflow-hidden h-16 w-28 bg-muted border border-border">
+                  <img
+                    src={form.videoAssets[form.activeVideoLang].thumbnailUrl}
+                    alt="preview"
+                    className="w-full h-full object-cover"
+                    onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Optional fields */}
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">
+                  {t("admin_academy.label_preview_url", { defaultValue: "Preview Animation URL" })} <span className="opacity-50">(opt)</span>
+                </Label>
+                <Input
+                  value={form.videoAssets[form.activeVideoLang]?.previewUrl ?? ""}
+                  onChange={e => setVideoAssetField(form.activeVideoLang, "previewUrl", e.target.value)}
+                  placeholder="https://...preview.webp"
+                />
               </div>
-            )}
-            <p className="text-xs text-muted-foreground">{t("admin_academy.thumbnail_hint", { defaultValue: "BunnyStream: https://your-pullzone.b-cdn.net/VIDEO_ID/thumbnail.jpg — paste or leave blank." })}</p>
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">
+                  {t("admin_academy.label_video_id", { defaultValue: "Video ID" })} <span className="opacity-50">(opt)</span>
+                </Label>
+                <Input
+                  value={form.videoAssets[form.activeVideoLang]?.videoId ?? ""}
+                  onChange={e => setVideoAssetField(form.activeVideoLang, "videoId", e.target.value)}
+                  placeholder="16556027-e82f-..."
+                />
+              </div>
+            </div>
+
+            <p className="text-xs text-muted-foreground pt-0.5">
+              {t("admin_academy.video_assets_hint", { defaultValue: "Use BunnyStream Embed URL for the player. EN is the fallback for all languages." })}
+            </p>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
