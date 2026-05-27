@@ -130,7 +130,8 @@ export default function Contracts() {
             <p className="font-medium text-muted-foreground">{t("contracts.no_contracts")}</p>
           </div>
         ) : (
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto">
+          <table className="w-full text-sm min-w-[500px]">
             <thead className="bg-muted/40 border-b">
               <tr>
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">{t("contracts.col_contract_num")}</th>
@@ -169,6 +170,7 @@ export default function Contracts() {
               })}
             </tbody>
           </table>
+          </div>
         )}
       </div>
 

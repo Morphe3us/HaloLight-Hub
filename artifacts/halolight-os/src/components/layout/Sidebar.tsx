@@ -6,11 +6,12 @@ import {
   ChevronRight, LogOut, Menu, GraduationCap, Calendar, TrendingUp,
   FileText, FileSignature, ReceiptText, ChevronDown, LifeBuoy, BookOpen,
   Sparkles, Users, Hash, BarChart3, UserCheck, DollarSign, Monitor, Package, Zap,
-  LibraryBig, Search, Languages, FolderUp, Brain, HardDrive,
+  LibraryBig, Search, Languages, FolderUp, Brain, HardDrive, Sun, Moon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useClerk } from "@clerk/react";
 import { useState } from "react";
+import { useTheme } from "@/components/theme-provider";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
@@ -114,6 +115,9 @@ export function Sidebar() {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const isAdmin = user?.role === "admin";
+  const { data: unreadMobile } = useGetUnreadNotificationCount();
+  const { theme, setTheme } = useTheme();
+  const isDark = theme === "dark";
 
   const navItems: NavItem[] = [
     { title: t("nav.dashboard"), href: "/dashboard", icon: LayoutDashboard },
@@ -223,10 +227,10 @@ export function Sidebar() {
       </div>
 
       {/* Mobile header */}
-      <div className="md:hidden flex items-center p-4 border-b border-border bg-background">
+      <div className="md:hidden flex items-center px-3 py-3 border-b border-border bg-background gap-2">
         <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
           <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" className="mr-3" data-testid="button-mobile-menu">
+            <Button variant="ghost" size="icon" className="shrink-0" data-testid="button-mobile-menu">
               <Menu className="h-5 w-5" />
             </Button>
           </SheetTrigger>
@@ -234,8 +238,29 @@ export function Sidebar() {
             <SidebarContent onClose={() => setMobileOpen(false)} />
           </SheetContent>
         </Sheet>
-        <img src="/logo-hub-light-orig.png" alt="HaloLight Hub" className="w-20 h-auto object-contain dark:hidden" style={{ mixBlendMode: "multiply" }} />
-        <img src="/logo-hub-dark-orig.png" alt="HaloLight Hub" className="w-20 h-auto object-contain hidden dark:block" style={{ mixBlendMode: "screen" }} />
+        <img src="/logo-hub-light-orig.png" alt="HaloLight Hub" className="w-20 h-auto object-contain dark:hidden flex-1 min-w-0" style={{ mixBlendMode: "multiply" }} />
+        <img src="/logo-hub-dark-orig.png" alt="HaloLight Hub" className="w-20 h-auto object-contain hidden dark:flex flex-1 min-w-0" style={{ mixBlendMode: "screen" }} />
+        <div className="flex items-center gap-1 shrink-0">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-9 w-9 text-muted-foreground hover:text-foreground"
+            onClick={() => setTheme(isDark ? "light" : "dark")}
+            aria-label="Toggle theme"
+          >
+            {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          </Button>
+          <Link href="/notifications">
+            <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-foreground relative">
+              <Bell className="h-4 w-4" />
+              {!!unreadMobile?.count && unreadMobile.count > 0 && (
+                <span className="absolute top-1 right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-destructive text-[9px] font-bold text-destructive-foreground">
+                  {unreadMobile.count > 9 ? "9+" : unreadMobile.count}
+                </span>
+              )}
+            </Button>
+          </Link>
+        </div>
       </div>
     </>
   );

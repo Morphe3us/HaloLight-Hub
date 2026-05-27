@@ -20,8 +20,9 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 import i18n, { LANG_STORAGE_KEY } from "@/i18n";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Sun, Moon, Monitor } from "lucide-react";
 import { CURRENCIES, CURRENCY_LABELS } from "@/lib/currency";
+import { useTheme } from "@/components/theme-provider";
 
 const profileSchema = z.object({
   firstName: z.string().min(1, "Required"),
@@ -50,6 +51,7 @@ type ProfileFormValues = z.infer<typeof profileSchema>;
 export default function Settings() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
+  const { theme, setTheme } = useTheme();
   const { data: user, isLoading: isLoadingUser } = useGetCurrentUser();
   const { data: prefs, isLoading: isLoadingPrefs } = useGetNotificationPreferences();
   const updateUser = useUpdateCurrentUser();
@@ -311,12 +313,46 @@ export default function Settings() {
           </CardContent>
         </Card>
 
-        <div className="flex justify-end">
-          <Button type="submit" disabled={updateUser.isPending} data-testid="button-save-profile">
+        <div className="flex flex-col sm:flex-row justify-end gap-2">
+          <Button type="submit" disabled={updateUser.isPending} className="w-full sm:w-auto" data-testid="button-save-profile">
             {updateUser.isPending ? t("settings.saving") : t("settings.save")}
           </Button>
         </div>
       </form>
+
+      {/* Appearance */}
+      <Card className="shadow-sm">
+        <CardHeader>
+          <CardTitle>{t("settings.appearance", { defaultValue: "Appearance" })}</CardTitle>
+          <CardDescription>{t("settings.appearance_desc", { defaultValue: "Choose how HaloLight OS looks on your device." })}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {[
+              { value: "light", label: t("settings.theme_light", { defaultValue: "Light" }), icon: Sun },
+              { value: "dark",  label: t("settings.theme_dark",  { defaultValue: "Dark" }),  icon: Moon },
+              { value: "system",label: t("settings.theme_system",{ defaultValue: "System" }), icon: Monitor },
+            ].map(({ value, label, icon: Icon }) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setTheme(value as "light" | "dark" | "system")}
+                className={`flex items-center gap-3 rounded-xl border-2 p-4 text-sm font-medium transition-all ${
+                  theme === value
+                    ? "border-primary bg-primary/5 text-foreground"
+                    : "border-border text-muted-foreground hover:border-primary/40 hover:text-foreground"
+                }`}
+              >
+                <Icon className={`w-5 h-5 ${theme === value ? "text-primary" : ""}`} />
+                <span>{label}</span>
+                {theme === value && (
+                  <span className="ml-auto w-2 h-2 rounded-full bg-primary" />
+                )}
+              </button>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Notification Preferences */}
       <Card className="shadow-sm">

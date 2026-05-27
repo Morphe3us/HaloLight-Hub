@@ -156,7 +156,8 @@ export default function Invoices() {
             <p className="font-medium text-muted-foreground">{t("invoices.no_invoices")}</p>
           </div>
         ) : (
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto">
+          <table className="w-full text-sm min-w-[520px]">
             <thead className="bg-muted/40 border-b">
               <tr>
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">{t("invoices.col_invoice_num")}</th>
@@ -209,6 +210,7 @@ export default function Invoices() {
               })}
             </tbody>
           </table>
+          </div>
         )}
       </div>
 
@@ -226,11 +228,11 @@ export default function Invoices() {
               <div className="flex items-center justify-between mb-2"><Label>{t("invoices.line_items_section")}</Label><Button type="button" variant="outline" size="sm" onClick={addItem} className="gap-1"><Plus className="w-3 h-3" /> {t("invoices.add_item")}</Button></div>
               <div className="space-y-2">
                 {items.map((item, i) => (
-                  <div key={i} className="grid grid-cols-12 gap-2 items-start">
-                    <div className="col-span-6"><Input placeholder={t("invoices.description_col")} value={item.description} onChange={(e) => updateItem(i, "description", e.target.value)} /></div>
-                    <div className="col-span-2"><Input placeholder={t("invoices.qty_col")} type="number" value={item.quantity} onChange={(e) => updateItem(i, "quantity", e.target.value)} /></div>
-                    <div className="col-span-3"><Input placeholder={t("invoices.unit_price_col")} type="number" value={item.unitPrice} onChange={(e) => updateItem(i, "unitPrice", e.target.value)} /></div>
-                    <div className="col-span-1 pt-1"><button onClick={() => removeItem(i)} className="text-muted-foreground hover:text-destructive"><X className="w-4 h-4" /></button></div>
+                  <div key={i} className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-start">
+                    <div className="sm:col-span-6"><Input placeholder={t("invoices.description_col")} value={item.description} onChange={(e) => updateItem(i, "description", e.target.value)} /></div>
+                    <div className="sm:col-span-2"><Input placeholder={t("invoices.qty_col")} type="number" value={item.quantity} onChange={(e) => updateItem(i, "quantity", e.target.value)} /></div>
+                    <div className="sm:col-span-3"><Input placeholder={t("invoices.unit_price_col")} type="number" value={item.unitPrice} onChange={(e) => updateItem(i, "unitPrice", e.target.value)} /></div>
+                    <div className="sm:col-span-1 flex items-center sm:pt-1"><button onClick={() => removeItem(i)} className="text-muted-foreground hover:text-destructive"><X className="w-4 h-4" /></button></div>
                   </div>
                 ))}
               </div>

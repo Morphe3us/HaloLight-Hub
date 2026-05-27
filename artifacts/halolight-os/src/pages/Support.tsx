@@ -78,12 +78,12 @@ export default function Support() {
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-foreground">{t("support.center_title")}</h1>
           <p className="text-sm text-muted-foreground mt-0.5">{t("support.center_subtitle")}</p>
         </div>
-        <Button onClick={() => setShowCreate(true)} className="gap-2">
+        <Button onClick={() => setShowCreate(true)} className="gap-2 shrink-0 self-start sm:self-auto">
           <Plus className="w-4 h-4" />
           {t("support.new_ticket")}
         </Button>

@@ -251,12 +251,12 @@ export default function Equipment() {
       <RegisterModal open={registerOpen} onClose={() => setRegisterOpen(false)} />
 
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-foreground">{t("equipment.my_equipment")}</h1>
           <p className="text-sm text-muted-foreground mt-0.5">{t("equipment.track_subtitle")}</p>
         </div>
-        <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setRegisterOpen(true)}>
+        <Button variant="outline" size="sm" className="gap-1.5 shrink-0 self-start sm:self-auto" onClick={() => setRegisterOpen(true)}>
           <Plus className="w-4 h-4" />
           {t("equipment.register_equipment", { defaultValue: "Register Equipment" })}
         </Button>

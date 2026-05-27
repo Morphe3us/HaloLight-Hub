@@ -208,7 +208,8 @@ export default function Leads() {
               <p className="text-sm text-muted-foreground/60 mt-1">{t("leads.no_leads_desc")}</p>
             </div>
           ) : (
-            <table className="w-full text-sm">
+            <div className="overflow-x-auto">
+            <table className="w-full text-sm min-w-[480px]">
               <thead className="bg-muted/40 border-b">
                 <tr>
                   <th className="text-left px-4 py-3 font-medium text-muted-foreground">{t("leads.col_company")}</th>
@@ -244,6 +245,7 @@ export default function Leads() {
                 ))}
               </tbody>
             </table>
+            </div>
           )}
         </div>
       )}

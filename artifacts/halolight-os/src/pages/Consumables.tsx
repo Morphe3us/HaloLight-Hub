@@ -567,15 +567,16 @@ export default function Consumables() {
       />
 
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-foreground">{t("consumables.title")}</h1>
           <p className="text-sm text-muted-foreground mt-0.5">{t("consumables.subtitle_short")}</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
           <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setShowOrders(!showOrders)}>
             <ShoppingCart className="w-4 h-4" />
-            {t("consumables.purchase_history")}
+            <span className="hidden sm:inline">{t("consumables.purchase_history")}</span>
+            <span className="sm:hidden">{t("consumables.orders", { defaultValue: "Orders" })}</span>
             {showOrders ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
           </Button>
           {stock.length > 0 && (

@@ -647,7 +647,7 @@ export default function AIAssistant() {
   ];
 
   return (
-    <div className="relative flex h-[calc(100vh-4rem)] overflow-hidden" data-testid="page-ai-assistant">
+    <div className="relative flex h-[calc(100dvh-3.5rem)] md:h-[calc(100dvh-4rem)] overflow-hidden" data-testid="page-ai-assistant">
 
       {/* ── Mobile backdrop ────────────────────────────────────────────────── */}
       {sidebarOpen && (
