@@ -41,7 +41,8 @@
     "backup": "Copia de seguridad",
     "users": "Usuarios",
     "resources": "Recursos",
-    "contract_templates": "Plantillas de contrato"
+    "contract_templates": "Plantillas de contrato",
+    "exports": "Exportaciones"
   },
   "dashboard": {
     "title": "Panel",
@@ -562,7 +563,11 @@
     "photobooths": "Number of photobooths",
     "business_goal": "Business goal",
     "profile_complete_title": "Profile incomplete",
-    "profile_complete_desc": "Please complete your required profile fields (first name, last name, company, phone)."
+    "profile_complete_desc": "Please complete your required profile fields (first name, last name, company, phone).",
+    "export_data": "Exportar mis datos",
+    "export_data_desc": "Descarga todos tus datos personales en JSON (RGPD Artículo 20 — Derecho a la portabilidad).",
+    "export_data_btn": "Descargar datos personales",
+    "export_data_downloading": "Preparando exportación…"
   },
   "common": {
     "loading": "Cargando...",

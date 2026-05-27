@@ -41,7 +41,8 @@
     "backup": "Kopia zapasowa",
     "users": "Użytkownicy",
     "resources": "Zasoby",
-    "contract_templates": "Szablony umów"
+    "contract_templates": "Szablony umów",
+    "exports": "Eksporty"
   },
   "dashboard": {
     "title": "Panel",
@@ -562,7 +563,11 @@
     "photobooths": "Number of photobooths",
     "business_goal": "Business goal",
     "profile_complete_title": "Profile incomplete",
-    "profile_complete_desc": "Please complete your required profile fields (first name, last name, company, phone)."
+    "profile_complete_desc": "Please complete your required profile fields (first name, last name, company, phone).",
+    "export_data": "Eksportuj moje dane",
+    "export_data_desc": "Pobierz wszystkie swoje dane osobowe w formacie JSON (RODO Art. 20 — Prawo do przenoszenia danych).",
+    "export_data_btn": "Pobierz dane osobowe",
+    "export_data_downloading": "Przygotowywanie eksportu…"
   },
   "common": {
     "loading": "Ładowanie...",

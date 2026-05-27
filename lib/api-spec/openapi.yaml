@@ -3108,6 +3108,87 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/BackupExport"
+
+  /exports/workspace-zip:
+    get:
+      tags: [exports]
+      summary: Download full workspace export as ZIP (admin only)
+      operationId: downloadWorkspaceZip
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: sep
+          schema: { type: string, enum: [comma, semicolon] }
+      responses:
+        "200":
+          description: ZIP archive (binary stream)
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+
+  /exports/personal:
+    get:
+      tags: [exports]
+      summary: Download personal data export as JSON (GDPR portability)
+      operationId: downloadPersonalExport
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: JSON personal data file (binary stream)
+        "401": { description: Unauthorized }
+
+  /exports/csv/{entity}:
+    get:
+      tags: [exports]
+      summary: Download a single entity CSV (admin only)
+      operationId: downloadEntityCsv
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: entity
+          required: true
+          schema:
+            type: string
+            enum: [leads, quotes, contracts, invoices, events, support-tickets, equipment, consumables, clients]
+        - in: query
+          name: sep
+          schema: { type: string, enum: [comma, semicolon] }
+      responses:
+        "200":
+          description: CSV file (binary stream)
+        "400": { description: Unknown entity }
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+
+  /exports/history:
+    get:
+      tags: [exports]
+      summary: List export audit log (admin only)
+      operationId: getExportHistory
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: limit
+          schema: { type: integer, maximum: 500 }
+      responses:
+        "200":
+          description: Export audit log
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items, total]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/ExportLog" }
+                  total: { type: integer }
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+
 components:
   schemas:
     HealthStatus:
@@ -6184,3 +6265,17 @@ components:
           items: { type: string }
         automationExample: { type: string }
         generatedAt: { type: string }
+
+    ExportLog:
+      type: object
+      required: [id, userId, exportType, format, scope, createdAt]
+      properties:
+        id: { type: string }
+        userId: { type: string }
+        userEmail: { type: string, nullable: true }
+        exportType: { type: string }
+        format: { type: string }
+        scope: { type: string }
+        fileCount: { type: integer, nullable: true }
+        recordCounts: { type: object, nullable: true, additionalProperties: { type: integer } }
+        createdAt: { type: string, format: date-time }

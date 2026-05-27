@@ -39,6 +39,7 @@
     "uploads": "Uploads",
     "ai_knowledge": "AI Knowledge",
     "backup": "Backup",
+    "exports": "Exports",
     "users": "Users",
     "resources": "Resources",
     "contract_templates": "Contract Templates"
@@ -562,7 +563,11 @@
     "photobooths": "Number of photobooths",
     "business_goal": "Business goal",
     "profile_complete_title": "Profile incomplete",
-    "profile_complete_desc": "Please complete your required profile fields (first name, last name, company, phone)."
+    "profile_complete_desc": "Please complete your required profile fields (first name, last name, company, phone).",
+    "export_data": "Export My Data",
+    "export_data_desc": "Download all your personal data as a JSON file (GDPR Article 20 — Right to Data Portability).",
+    "export_data_btn": "Download Personal Data",
+    "export_data_downloading": "Preparing export…"
   },
   "common": {
     "loading": "Loading...",

@@ -20,9 +20,11 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 import i18n, { LANG_STORAGE_KEY } from "@/i18n";
-import { AlertCircle, Sun, Moon, Monitor } from "lucide-react";
+import { AlertCircle, Sun, Moon, Monitor, Download, RefreshCw } from "lucide-react";
 import { CURRENCIES, CURRENCY_LABELS } from "@/lib/currency";
 import { useTheme } from "@/components/theme-provider";
+import { useState } from "react";
+import { getAuthToken } from "@workspace/api-client-react";
 
 const profileSchema = z.object({
   firstName: z.string().min(1, "Required"),
@@ -47,6 +49,58 @@ const profileSchema = z.object({
 });
 
 type ProfileFormValues = z.infer<typeof profileSchema>;
+
+function PersonalExportCard() {
+  const { t } = useTranslation();
+  const [loading, setLoading] = useState(false);
+
+  async function handleExport() {
+    setLoading(true);
+    try {
+      const token = await getAuthToken();
+      const res = await fetch("/api/exports/personal", {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!res.ok) throw new Error(`Export failed (${res.status})`);
+      const blob = await res.blob();
+      const date = new Date().toISOString().slice(0, 10);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `halolight-personal-data-${date}.json`;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 1000);
+      toast({ title: t("settings.export_data", { defaultValue: "Export My Data" }), description: `halolight-personal-data-${date}.json` });
+    } catch (err) {
+      toast({ title: "Export failed", description: (err as Error).message, variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <Card className="shadow-sm">
+      <CardHeader>
+        <CardTitle>{t("settings.export_data", { defaultValue: "Export My Data" })}</CardTitle>
+        <CardDescription>
+          {t("settings.export_data_desc", {
+            defaultValue:
+              "Download all your personal data as a JSON file (GDPR Article 20 — Right to Data Portability).",
+          })}
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Button onClick={handleExport} disabled={loading} variant="outline" className="gap-2">
+          {loading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+          {loading
+            ? t("settings.export_data_downloading", { defaultValue: "Preparing export…" })
+            : t("settings.export_data_btn", { defaultValue: "Download Personal Data" })}
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function Settings() {
   const { t } = useTranslation();
@@ -355,6 +409,9 @@ export default function Settings() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Personal Data Export (GDPR) */}
+      <PersonalExportCard />
 
       {/* Notification Preferences */}
       <Card className="shadow-sm">

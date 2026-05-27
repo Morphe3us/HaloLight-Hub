@@ -2611,6 +2611,20 @@ export interface BackupExport {
   generatedAt: string;
 }
 
+export type ExportLogRecordCounts = {[key: string]: number} | null;
+
+export interface ExportLog {
+  id: string;
+  userId: string;
+  userEmail?: string | null;
+  exportType: string;
+  format: string;
+  scope: string;
+  fileCount?: number | null;
+  recordCounts?: ExportLogRecordCounts;
+  createdAt: string;
+}
+
 export type ListUsersParams = {
 role?: string;
 limit?: number;
@@ -2904,5 +2918,41 @@ ruleId?: string;
 status?: string;
 limit?: number;
 offset?: number;
+};
+
+export type DownloadWorkspaceZipParams = {
+sep?: DownloadWorkspaceZipSep;
+};
+
+export type DownloadWorkspaceZipSep = typeof DownloadWorkspaceZipSep[keyof typeof DownloadWorkspaceZipSep];
+
+
+export const DownloadWorkspaceZipSep = {
+  comma: 'comma',
+  semicolon: 'semicolon',
+} as const;
+
+export type DownloadEntityCsvParams = {
+sep?: DownloadEntityCsvSep;
+};
+
+export type DownloadEntityCsvSep = typeof DownloadEntityCsvSep[keyof typeof DownloadEntityCsvSep];
+
+
+export const DownloadEntityCsvSep = {
+  comma: 'comma',
+  semicolon: 'semicolon',
+} as const;
+
+export type GetExportHistoryParams = {
+/**
+ * @maximum 500
+ */
+limit?: number;
+};
+
+export type GetExportHistory200 = {
+  items: ExportLog[];
+  total: number;
 };
 

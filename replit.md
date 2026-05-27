@@ -111,7 +111,25 @@ An all-in-one SaaS customer portal for HaloLight — a professional photobooth a
 - **Clerk auth pages**: Rebranded with new colors (primary dark, accent terracotta, Plus Jakarta Sans font, warm card styling, logo-dark.png)
 - **Zero hardcoded colors remaining**: All pages and components use CSS design tokens
 
-### Planned Phases (10)
+### Phase 11 — Export System (complete)
+- **DB schema**: `export_logs` table — logs every export (userId, userEmail, exportType, format, scope, fileCount, recordCounts, createdAt)
+- **API routes** (`artifacts/api-server/src/routes/exports.ts`):
+  - `GET /exports/workspace-zip` — admin only; ZIP of 9 CSVs + `metadata.json`
+  - `GET /exports/csv/:entity` — admin only; single entity CSV (leads, quotes, contracts, invoices, events, support-tickets, equipment, consumables, clients)
+  - `GET /exports/personal` — any user; GDPR JSON dump of all personal data
+  - `GET /exports/history` — admin only; export audit log (up to 500 entries)
+- **CSV encoding**: UTF-8 BOM prefix (`\uFEFF`), RFC 4180 escaping (commas/quotes/newlines), `?sep=semicolon` option for EU Excel compatibility
+- **File naming**: `halolight-{entity}-{YYYY-MM-DD}.csv`, `halolight-workspace-export-{YYYY-MM-DD}.zip`, `halolight-personal-data-{YYYY-MM-DD}.json`
+- **ZIP generation**: archiver v8 (`ZipArchive` class), streamed directly to response
+- **Permissions**: admin → full workspace; client → own data only (`userId` filter on all queries); no API keys or secrets ever exposed
+- **OpenAPI spec**: 4 endpoints + `ExportLog` schema added; codegen updated
+- **Frontend**:
+  - `/admin/exports` — `AdminExports.tsx` with workspace ZIP button, 9 individual CSV download cards, CSV separator selector (comma/semicolon), and live export audit log table
+  - Settings page — `PersonalExportCard` with GDPR download button
+  - Sidebar: "Exports" nav item added to admin section
+- **i18n**: `nav.exports` + 4 `settings.export_data.*` keys added to all 8 locale files
+
+### Planned Phases (10+)
 See architecture document for full 30-module scope.
 
 ## User preferences

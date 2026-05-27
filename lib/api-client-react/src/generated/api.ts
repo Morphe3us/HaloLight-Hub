@@ -93,6 +93,8 @@ import type {
   CreateServiceRecordInput,
   CreateUploadInput,
   DashboardSummary,
+  DownloadEntityCsvParams,
+  DownloadWorkspaceZipParams,
   EnsureTranslationRecords200,
   Equipment,
   EquipmentDetail,
@@ -102,6 +104,8 @@ import type {
   EventList,
   EventUpdate,
   GetCourseParams,
+  GetExportHistory200,
+  GetExportHistoryParams,
   GetLeadPipeline200,
   GetLessonParams,
   GetNextLessonParams,
@@ -11965,4 +11969,338 @@ export const useCreateBackupExport = <TError = ErrorType<unknown>,
       > => {
       return useMutation(getCreateBackupExportMutationOptions(options));
     }
+
+export const getDownloadWorkspaceZipUrl = (params?: DownloadWorkspaceZipParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/exports/workspace-zip?${stringifiedParams}` : `/api/exports/workspace-zip`
+}
+
+/**
+ * @summary Download full workspace export as ZIP (admin only)
+ */
+export const downloadWorkspaceZip = async (params?: DownloadWorkspaceZipParams, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getDownloadWorkspaceZipUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getDownloadWorkspaceZipQueryKey = (params?: DownloadWorkspaceZipParams,) => {
+    return [
+    `/api/exports/workspace-zip`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getDownloadWorkspaceZipQueryOptions = <TData = Awaited<ReturnType<typeof downloadWorkspaceZip>>, TError = ErrorType<void>>(params?: DownloadWorkspaceZipParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof downloadWorkspaceZip>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getDownloadWorkspaceZipQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof downloadWorkspaceZip>>> = ({ signal }) => downloadWorkspaceZip(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof downloadWorkspaceZip>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type DownloadWorkspaceZipQueryResult = NonNullable<Awaited<ReturnType<typeof downloadWorkspaceZip>>>
+export type DownloadWorkspaceZipQueryError = ErrorType<void>
+
+
+/**
+ * @summary Download full workspace export as ZIP (admin only)
+ */
+
+export function useDownloadWorkspaceZip<TData = Awaited<ReturnType<typeof downloadWorkspaceZip>>, TError = ErrorType<void>>(
+ params?: DownloadWorkspaceZipParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof downloadWorkspaceZip>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getDownloadWorkspaceZipQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getDownloadPersonalExportUrl = () => {
+
+
+
+
+  return `/api/exports/personal`
+}
+
+/**
+ * @summary Download personal data export as JSON (GDPR portability)
+ */
+export const downloadPersonalExport = async ( options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getDownloadPersonalExportUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getDownloadPersonalExportQueryKey = () => {
+    return [
+    `/api/exports/personal`
+    ] as const;
+    }
+
+
+export const getDownloadPersonalExportQueryOptions = <TData = Awaited<ReturnType<typeof downloadPersonalExport>>, TError = ErrorType<void>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof downloadPersonalExport>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getDownloadPersonalExportQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof downloadPersonalExport>>> = ({ signal }) => downloadPersonalExport({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof downloadPersonalExport>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type DownloadPersonalExportQueryResult = NonNullable<Awaited<ReturnType<typeof downloadPersonalExport>>>
+export type DownloadPersonalExportQueryError = ErrorType<void>
+
+
+/**
+ * @summary Download personal data export as JSON (GDPR portability)
+ */
+
+export function useDownloadPersonalExport<TData = Awaited<ReturnType<typeof downloadPersonalExport>>, TError = ErrorType<void>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof downloadPersonalExport>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getDownloadPersonalExportQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getDownloadEntityCsvUrl = (entity: 'leads' | 'quotes' | 'contracts' | 'invoices' | 'events' | 'support-tickets' | 'equipment' | 'consumables' | 'clients',
+    params?: DownloadEntityCsvParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/exports/csv/${entity}?${stringifiedParams}` : `/api/exports/csv/${entity}`
+}
+
+/**
+ * @summary Download a single entity CSV (admin only)
+ */
+export const downloadEntityCsv = async (entity: 'leads' | 'quotes' | 'contracts' | 'invoices' | 'events' | 'support-tickets' | 'equipment' | 'consumables' | 'clients',
+    params?: DownloadEntityCsvParams, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getDownloadEntityCsvUrl(entity,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getDownloadEntityCsvQueryKey = (entity: 'leads' | 'quotes' | 'contracts' | 'invoices' | 'events' | 'support-tickets' | 'equipment' | 'consumables' | 'clients',
+    params?: DownloadEntityCsvParams,) => {
+    return [
+    `/api/exports/csv/${entity}`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getDownloadEntityCsvQueryOptions = <TData = Awaited<ReturnType<typeof downloadEntityCsv>>, TError = ErrorType<void>>(entity: 'leads' | 'quotes' | 'contracts' | 'invoices' | 'events' | 'support-tickets' | 'equipment' | 'consumables' | 'clients',
+    params?: DownloadEntityCsvParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof downloadEntityCsv>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getDownloadEntityCsvQueryKey(entity,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof downloadEntityCsv>>> = ({ signal }) => downloadEntityCsv(entity,params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(entity), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof downloadEntityCsv>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type DownloadEntityCsvQueryResult = NonNullable<Awaited<ReturnType<typeof downloadEntityCsv>>>
+export type DownloadEntityCsvQueryError = ErrorType<void>
+
+
+/**
+ * @summary Download a single entity CSV (admin only)
+ */
+
+export function useDownloadEntityCsv<TData = Awaited<ReturnType<typeof downloadEntityCsv>>, TError = ErrorType<void>>(
+ entity: 'leads' | 'quotes' | 'contracts' | 'invoices' | 'events' | 'support-tickets' | 'equipment' | 'consumables' | 'clients',
+    params?: DownloadEntityCsvParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof downloadEntityCsv>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getDownloadEntityCsvQueryOptions(entity,params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetExportHistoryUrl = (params?: GetExportHistoryParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/exports/history?${stringifiedParams}` : `/api/exports/history`
+}
+
+/**
+ * @summary List export audit log (admin only)
+ */
+export const getExportHistory = async (params?: GetExportHistoryParams, options?: RequestInit): Promise<GetExportHistory200> => {
+
+  return customFetch<GetExportHistory200>(getGetExportHistoryUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetExportHistoryQueryKey = (params?: GetExportHistoryParams,) => {
+    return [
+    `/api/exports/history`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetExportHistoryQueryOptions = <TData = Awaited<ReturnType<typeof getExportHistory>>, TError = ErrorType<void>>(params?: GetExportHistoryParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getExportHistory>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetExportHistoryQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getExportHistory>>> = ({ signal }) => getExportHistory(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getExportHistory>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetExportHistoryQueryResult = NonNullable<Awaited<ReturnType<typeof getExportHistory>>>
+export type GetExportHistoryQueryError = ErrorType<void>
+
+
+/**
+ * @summary List export audit log (admin only)
+ */
+
+export function useGetExportHistory<TData = Awaited<ReturnType<typeof getExportHistory>>, TError = ErrorType<void>>(
+ params?: GetExportHistoryParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getExportHistory>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetExportHistoryQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
 

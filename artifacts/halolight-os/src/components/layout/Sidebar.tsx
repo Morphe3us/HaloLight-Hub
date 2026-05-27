@@ -6,7 +6,7 @@ import {
   ChevronRight, LogOut, Menu, GraduationCap, Calendar, TrendingUp,
   FileText, FileSignature, ReceiptText, ChevronDown, LifeBuoy, BookOpen,
   Sparkles, Users, Hash, BarChart3, UserCheck, DollarSign, Monitor, Package, Zap,
-  LibraryBig, Search, Languages, FolderUp, Brain, HardDrive, Sun, Moon,
+  LibraryBig, Search, Languages, FolderUp, Brain, HardDrive, Sun, Moon, DownloadCloud,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useClerk } from "@clerk/react";
@@ -178,6 +178,7 @@ export function Sidebar() {
             { title: t("nav.uploads"), href: "/admin/uploads", icon: FolderUp },
             { title: t("nav.ai_knowledge"), href: "/admin/ai-knowledge", icon: Brain },
             { title: t("nav.backup"), href: "/admin/backup", icon: HardDrive },
+            { title: t("nav.exports"), href: "/admin/exports", icon: DownloadCloud },
             { title: t("nav.contract_templates"), href: "/admin/contract-templates", icon: FileSignature },
             { title: t("nav.users"), href: "/admin", icon: Users },
           ],

@@ -41,7 +41,8 @@
     "backup": "Sicherung",
     "users": "Benutzer",
     "resources": "Ressourcen",
-    "contract_templates": "Vertragsvorlagen"
+    "contract_templates": "Vertragsvorlagen",
+    "exports": "Exporte"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -562,7 +563,11 @@
     "photobooths": "Number of photobooths",
     "business_goal": "Business goal",
     "profile_complete_title": "Profile incomplete",
-    "profile_complete_desc": "Please complete your required profile fields (first name, last name, company, phone)."
+    "profile_complete_desc": "Please complete your required profile fields (first name, last name, company, phone).",
+    "export_data": "Meine Daten exportieren",
+    "export_data_desc": "Lade alle deine persönlichen Daten als JSON herunter (DSGVO Art. 20 — Datenübertragbarkeit).",
+    "export_data_btn": "Persönliche Daten herunterladen",
+    "export_data_downloading": "Export wird vorbereitet…"
   },
   "common": {
     "loading": "Laden...",

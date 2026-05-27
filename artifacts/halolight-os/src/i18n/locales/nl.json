@@ -41,7 +41,8 @@
     "backup": "Back-up",
     "users": "Gebruikers",
     "resources": "Bronnen",
-    "contract_templates": "Contractsjablonen"
+    "contract_templates": "Contractsjablonen",
+    "exports": "Exports"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -562,7 +563,11 @@
     "photobooths": "Number of photobooths",
     "business_goal": "Business goal",
     "profile_complete_title": "Profile incomplete",
-    "profile_complete_desc": "Please complete your required profile fields (first name, last name, company, phone)."
+    "profile_complete_desc": "Please complete your required profile fields (first name, last name, company, phone).",
+    "export_data": "Mijn data exporteren",
+    "export_data_desc": "Download al je persoonlijke gegevens als JSON (AVG Artikel 20 — Recht op gegevensoverdraagbaarheid).",
+    "export_data_btn": "Persoonlijke data downloaden",
+    "export_data_downloading": "Export voorbereiden…"
   },
   "common": {
     "loading": "Laden...",

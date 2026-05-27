@@ -4180,3 +4180,50 @@ export const CreateBackupExportResponse = zod.object({
 })
 
 
+/**
+ * @summary Download full workspace export as ZIP (admin only)
+ */
+export const DownloadWorkspaceZipQueryParams = zod.object({
+  "sep": zod.enum(['comma', 'semicolon']).optional()
+})
+
+
+/**
+ * @summary Download a single entity CSV (admin only)
+ */
+export const DownloadEntityCsvParams = zod.object({
+  "entity": zod.enum(['leads', 'quotes', 'contracts', 'invoices', 'events', 'support-tickets', 'equipment', 'consumables', 'clients'])
+})
+
+export const DownloadEntityCsvQueryParams = zod.object({
+  "sep": zod.enum(['comma', 'semicolon']).optional()
+})
+
+
+/**
+ * @summary List export audit log (admin only)
+ */
+export const getExportHistoryQueryLimitMax = 500;
+
+
+
+export const GetExportHistoryQueryParams = zod.object({
+  "limit": zod.coerce.number().max(getExportHistoryQueryLimitMax).optional()
+})
+
+export const GetExportHistoryResponse = zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.string(),
+  "userId": zod.string(),
+  "userEmail": zod.string().nullish(),
+  "exportType": zod.string(),
+  "format": zod.string(),
+  "scope": zod.string(),
+  "fileCount": zod.number().nullish(),
+  "recordCounts": zod.record(zod.string(), zod.number()).nullish(),
+  "createdAt": zod.coerce.date()
+})),
+  "total": zod.number()
+})
+
+
