@@ -102,6 +102,7 @@ import type {
   EventList,
   EventUpdate,
   GetCourseParams,
+  GetLeadPipeline200,
   GetLessonParams,
   GetNextLessonParams,
   HealthStatus,
@@ -2958,6 +2959,83 @@ export const useDeleteLead = <TError = ErrorType<unknown>,
       > => {
       return useMutation(getDeleteLeadMutationOptions(options));
     }
+
+export const getGetLeadPipelineUrl = (id: string,) => {
+
+
+
+
+  return `/api/leads/${id}/pipeline`
+}
+
+/**
+ * @summary Get full pipeline summary for a lead (quotes, contracts, invoices)
+ */
+export const getLeadPipeline = async (id: string, options?: RequestInit): Promise<GetLeadPipeline200> => {
+
+  return customFetch<GetLeadPipeline200>(getGetLeadPipelineUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetLeadPipelineQueryKey = (id: string,) => {
+    return [
+    `/api/leads/${id}/pipeline`
+    ] as const;
+    }
+
+
+export const getGetLeadPipelineQueryOptions = <TData = Awaited<ReturnType<typeof getLeadPipeline>>, TError = ErrorType<void>>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getLeadPipeline>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetLeadPipelineQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getLeadPipeline>>> = ({ signal }) => getLeadPipeline(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getLeadPipeline>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetLeadPipelineQueryResult = NonNullable<Awaited<ReturnType<typeof getLeadPipeline>>>
+export type GetLeadPipelineQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get full pipeline summary for a lead (quotes, contracts, invoices)
+ */
+
+export function useGetLeadPipeline<TData = Awaited<ReturnType<typeof getLeadPipeline>>, TError = ErrorType<void>>(
+ id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getLeadPipeline>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetLeadPipelineQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
 
 export const getCreateLeadActivityUrl = (id: string,) => {
 

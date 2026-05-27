@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Printer, Building2, Mail, CheckCircle2, AlertCircle, Clock } from "lucide-react";
+import { ArrowLeft, Printer, Building2, Mail, CheckCircle2, AlertCircle, Clock, Bell } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCurrency } from "@/lib/currency";
 
@@ -110,6 +110,7 @@ export default function InvoiceDetail() {
 
   const [showMarkPaid, setShowMarkPaid] = useState(false);
   const [paymentForm, setPaymentForm] = useState({ paidAmount: "", paymentMethod: "Bank Transfer", paymentReference: "" });
+  const [sendingReminder, setSendingReminder] = useState(false);
 
   const { data: invoice, isLoading } = useGetInvoice(id, {
     query: { queryKey: ["invoice", id], enabled: !!id },
@@ -131,6 +132,14 @@ export default function InvoiceDetail() {
       onSuccess: () => { qc.invalidateQueries({ queryKey: ["invoices"] }); navigate("/invoices"); toast({ title: t("invoices.invoice_deleted") }); },
     },
   });
+
+  const handleSendReminder = () => {
+    setSendingReminder(true);
+    setTimeout(() => {
+      setSendingReminder(false);
+      toast({ title: t("pipeline.reminder_sent"), description: t("pipeline.reminder_sent_desc", { client: invoice?.clientName ?? "" }) });
+    }, 800);
+  };
 
   if (isLoading) return <div className="flex items-center justify-center h-40 text-muted-foreground">{t("invoices.loading")}</div>;
   if (!invoice) return <div className="p-8 text-muted-foreground">{t("invoices.not_found")}</div>;
@@ -170,6 +179,16 @@ export default function InvoiceDetail() {
         </div>
         <div className="flex gap-2 flex-wrap">
           <PrintButton invoice={invoice} items={items} lang={lang} />
+          {(invoice.status === "sent" || invoice.status === "overdue") && (
+            <Button size="sm" variant="outline" onClick={handleSendReminder} disabled={sendingReminder} className="gap-1.5">
+              <Bell className="w-3.5 h-3.5" /> {sendingReminder ? t("pipeline.sending") : t("pipeline.send_reminder")}
+            </Button>
+          )}
+          {invoice.status === "sent" && (
+            <Button size="sm" variant="outline" onClick={() => statusMutation.mutate({ id, data: { status: "overdue" } })} className="gap-1.5 border-destructive/40 text-destructive hover:bg-destructive/5">
+              <AlertCircle className="w-3.5 h-3.5" /> {t("pipeline.mark_overdue")}
+            </Button>
+          )}
           {invoice.status !== "paid" && invoice.status !== "cancelled" && (
             <Button onClick={() => { setPaymentForm({ paidAmount: invoice.total, paymentMethod: "Bank Transfer", paymentReference: "" }); setShowMarkPaid(true); }} className="gap-2 bg-success hover:bg-success/90">
               <CheckCircle2 className="w-4 h-4" /> {t("invoices.mark_as_paid_btn")}

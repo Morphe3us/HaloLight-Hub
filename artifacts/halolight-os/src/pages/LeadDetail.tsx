@@ -1,10 +1,14 @@
 import { useState } from "react";
-import { useRoute, Link } from "wouter";
+import { useRoute, Link, useLocation } from "wouter";
 import { useTranslation } from "react-i18next";
 import {
   useGetLead,
   useUpdateLead,
   useCreateLeadActivity,
+  useGetLeadPipeline,
+  useCreateQuote,
+  useCreateContract,
+  useCreateInvoice,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -15,49 +19,69 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Building2, Phone, Mail, CalendarDays, MessageSquare, PhoneCall, AtSign, Users, FileText, Send, ReceiptText, Edit2 } from "lucide-react";
+import {
+  ArrowLeft, Building2, Phone, Mail, CalendarDays, MessageSquare,
+  PhoneCall, AtSign, Users, FileText, Send, ReceiptText, Edit2,
+  FilePlus, FileSignature, ChevronRight, Trophy, XCircle,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCurrency } from "@/lib/currency";
 
-const PIPELINE_STAGES = [
-  { key: "new", color: "bg-slate-100 text-slate-700 border-slate-200" },
-  { key: "contacted", color: "bg-info/10 text-info border-info/30" },
-  { key: "qualified", color: "bg-info/8 text-info border-info/20" },
-  { key: "proposal", color: "bg-warning/8 text-warning border-warning/20" },
-  { key: "negotiation", color: "bg-warning/8 text-warning border-warning/20" },
-  { key: "won", color: "bg-success/8 text-success border-success/20" },
-  { key: "lost", color: "bg-destructive/10 text-destructive border-destructive/30" },
-] as const;
+const LEAD_STAGE_COLORS: Record<string, string> = {
+  new: "bg-slate-100 text-slate-700 border-slate-200",
+  contacted: "bg-info/10 text-info border-info/30",
+  qualified: "bg-info/8 text-info border-info/20",
+  proposal: "bg-warning/8 text-warning border-warning/20",
+  negotiation: "bg-warning/8 text-warning border-warning/20",
+  won: "bg-success/8 text-success border-success/20",
+  lost: "bg-destructive/10 text-destructive border-destructive/30",
+};
+
+const PIPELINE_STAGE_COLORS: Record<string, string> = {
+  lead: "bg-slate-100 text-slate-600 border-slate-200",
+  qualified: "bg-info/10 text-info border-info/30",
+  quote_created: "bg-info/8 text-info border-info/20",
+  quote_sent: "bg-warning/10 text-warning border-warning/30",
+  quote_accepted: "bg-warning/8 text-warning border-warning/20",
+  contract_created: "bg-success/8 text-success border-success/20",
+  contract_signed: "bg-success/10 text-success border-success/30",
+  invoice_created: "bg-success/12 text-success border-success/40",
+  won: "bg-success/15 text-success border-success/50",
+  lost: "bg-destructive/10 text-destructive border-destructive/30",
+};
 
 const ACTIVITY_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
-  note: MessageSquare,
-  call: PhoneCall,
-  email: AtSign,
-  meeting: Users,
-  status_change: FileText,
-  quote_sent: FileText,
-  contract_sent: FileText,
-  invoice_sent: ReceiptText,
+  note: MessageSquare, call: PhoneCall, email: AtSign, meeting: Users,
+  status_change: FileText, quote_sent: FileText, contract_sent: FileText, invoice_sent: ReceiptText,
 };
 
 const ACTIVITY_COLORS: Record<string, string> = {
-  note: "bg-slate-100 text-slate-600",
-  call: "bg-info/15 text-info",
-  email: "bg-info/15 text-info",
-  meeting: "bg-warning/15 text-warning",
-  status_change: "bg-muted text-muted-foreground",
-  quote_sent: "bg-success/15 text-success",
-  contract_sent: "bg-info/15 text-info",
-  invoice_sent: "bg-warning/15 text-warning",
+  note: "bg-slate-100 text-slate-600", call: "bg-info/15 text-info", email: "bg-info/15 text-info",
+  meeting: "bg-warning/15 text-warning", status_change: "bg-muted text-muted-foreground",
+  quote_sent: "bg-success/15 text-success", contract_sent: "bg-info/15 text-info", invoice_sent: "bg-warning/15 text-warning",
 };
 
+const LEAD_STATUSES = ["new", "contacted", "qualified", "proposal", "negotiation", "won", "lost"];
 const ACTIVITY_TYPES = ["note", "call", "email", "meeting", "status_change", "quote_sent", "contract_sent", "invoice_sent"];
+
+const QUOTE_STATUS_COLORS: Record<string, string> = {
+  draft: "bg-slate-100 text-slate-700", sent: "bg-info/10 text-info",
+  accepted: "bg-success/10 text-success", declined: "bg-destructive/10 text-destructive", expired: "bg-warning/10 text-warning",
+};
+const CONTRACT_STATUS_COLORS: Record<string, string> = {
+  draft: "bg-slate-100 text-slate-700", sent: "bg-info/10 text-info",
+  signed: "bg-success/10 text-success", active: "bg-success/10 text-success",
+  expired: "bg-warning/10 text-warning", cancelled: "bg-destructive/10 text-destructive",
+};
+const INVOICE_STATUS_COLORS: Record<string, string> = {
+  draft: "bg-slate-100 text-slate-700", sent: "bg-info/10 text-info",
+  paid: "bg-success/10 text-success", overdue: "bg-destructive/10 text-destructive", cancelled: "bg-muted text-muted-foreground",
+};
 
 function formatDate(d: string | null | undefined) {
   if (!d) return "—";
   return new Date(d).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
 }
-
 function formatDateTime(d: string | null | undefined) {
   if (!d) return "—";
   return new Date(d).toLocaleString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
@@ -66,6 +90,7 @@ function formatDateTime(d: string | null | undefined) {
 export default function LeadDetail() {
   const [, params] = useRoute("/crm/leads/:id");
   const id = params?.id ?? "";
+  const [, navigate] = useLocation();
   const { t } = useTranslation();
   const { toast } = useToast();
   const qc = useQueryClient();
@@ -73,11 +98,23 @@ export default function LeadDetail() {
 
   const [editing, setEditing] = useState(false);
   const [showActivity, setShowActivity] = useState(false);
+  const [showCreateQuote, setShowCreateQuote] = useState(false);
+  const [showCreateContract, setShowCreateContract] = useState(false);
+  const [showCreateInvoice, setShowCreateInvoice] = useState(false);
+
   const [editForm, setEditForm] = useState<Record<string, string>>({});
   const [activityForm, setActivityForm] = useState({ type: "note", title: "", description: "" });
 
+  const [quoteForm, setQuoteForm] = useState({ title: "", clientName: "", clientEmail: "", clientPhone: "", clientCompany: "", eventType: "", description: "", unitPrice: "", quantity: "1" });
+  const [contractForm, setContractForm] = useState({ title: "", clientName: "", clientEmail: "", clientPhone: "", clientCompany: "", eventType: "", value: "" });
+  const [invoiceForm, setInvoiceForm] = useState({ title: "", clientName: "", clientEmail: "", clientPhone: "", clientCompany: "", eventType: "", description: "", unitPrice: "", quantity: "1" });
+
   const { data: lead, isLoading } = useGetLead(id, {
     query: { queryKey: ["lead", id], enabled: !!id },
+  });
+
+  const { data: pipeline } = useGetLeadPipeline(id, {
+    query: { queryKey: ["lead-pipeline", id], enabled: !!id },
   });
 
   const updateMutation = useUpdateLead({
@@ -85,6 +122,7 @@ export default function LeadDetail() {
       onSuccess: () => {
         qc.invalidateQueries({ queryKey: ["lead", id] });
         qc.invalidateQueries({ queryKey: ["leads"] });
+        qc.invalidateQueries({ queryKey: ["lead-pipeline", id] });
         setEditing(false);
         toast({ title: t("leads.lead_updated") });
       },
@@ -101,6 +139,155 @@ export default function LeadDetail() {
       },
     },
   });
+
+  const createQuoteMutation = useCreateQuote({
+    mutation: {
+      onSuccess: (data) => {
+        qc.invalidateQueries({ queryKey: ["lead-pipeline", id] });
+        qc.invalidateQueries({ queryKey: ["quotes"] });
+        setShowCreateQuote(false);
+        toast({ title: t("pipeline.quote_created") });
+        navigate(`/quotes/${data.id}`);
+      },
+    },
+  });
+
+  const createContractMutation = useCreateContract({
+    mutation: {
+      onSuccess: (data) => {
+        qc.invalidateQueries({ queryKey: ["lead-pipeline", id] });
+        qc.invalidateQueries({ queryKey: ["contracts"] });
+        setShowCreateContract(false);
+        toast({ title: t("pipeline.contract_created") });
+        navigate(`/contracts/${data.id}`);
+      },
+    },
+  });
+
+  const createInvoiceMutation = useCreateInvoice({
+    mutation: {
+      onSuccess: (data) => {
+        qc.invalidateQueries({ queryKey: ["lead-pipeline", id] });
+        qc.invalidateQueries({ queryKey: ["invoices"] });
+        setShowCreateInvoice(false);
+        toast({ title: t("pipeline.invoice_created") });
+        navigate(`/invoices/${data.id}`);
+      },
+    },
+  });
+
+  const openCreateQuote = () => {
+    if (!lead) return;
+    setQuoteForm({
+      title: `Quote for ${lead.companyName}`,
+      clientName: lead.contactName,
+      clientEmail: lead.email ?? "",
+      clientPhone: lead.phone ?? "",
+      clientCompany: lead.companyName,
+      eventType: lead.eventType ?? "",
+      description: lead.eventType ? `${lead.eventType} photobooth package` : "Photobooth package",
+      unitPrice: lead.value,
+      quantity: "1",
+    });
+    setShowCreateQuote(true);
+  };
+
+  const openCreateContract = () => {
+    if (!lead) return;
+    setContractForm({
+      title: `Contract — ${lead.companyName}`,
+      clientName: lead.contactName,
+      clientEmail: lead.email ?? "",
+      clientPhone: lead.phone ?? "",
+      clientCompany: lead.companyName,
+      eventType: lead.eventType ?? "",
+      value: lead.value,
+    });
+    setShowCreateContract(true);
+  };
+
+  const openCreateInvoice = () => {
+    if (!lead) return;
+    setInvoiceForm({
+      title: `Invoice — ${lead.companyName}`,
+      clientName: lead.contactName,
+      clientEmail: lead.email ?? "",
+      clientPhone: lead.phone ?? "",
+      clientCompany: lead.companyName,
+      eventType: lead.eventType ?? "",
+      description: lead.eventType ? `${lead.eventType} photobooth package` : "Photobooth package",
+      unitPrice: lead.value,
+      quantity: "1",
+    });
+    setShowCreateInvoice(true);
+  };
+
+  const submitCreateQuote = () => {
+    if (!quoteForm.title || !quoteForm.clientName) return;
+    const qty = quoteForm.quantity || "1";
+    const price = quoteForm.unitPrice || "0";
+    const total = String(Number(qty) * Number(price));
+    createQuoteMutation.mutate({
+      data: {
+        leadId: id,
+        title: quoteForm.title,
+        clientName: quoteForm.clientName,
+        clientEmail: quoteForm.clientEmail || undefined,
+        clientPhone: quoteForm.clientPhone || undefined,
+        clientCompany: quoteForm.clientCompany || undefined,
+        eventType: quoteForm.eventType || undefined,
+        items: [{ description: quoteForm.description || "Service", quantity: qty, unitPrice: price, order: 1 }],
+      },
+    });
+  };
+
+  const submitCreateContract = () => {
+    if (!contractForm.title || !contractForm.clientName) return;
+    createContractMutation.mutate({
+      data: {
+        leadId: id,
+        title: contractForm.title,
+        clientName: contractForm.clientName,
+        clientEmail: contractForm.clientEmail || undefined,
+        clientPhone: contractForm.clientPhone || undefined,
+        clientCompany: contractForm.clientCompany || undefined,
+        eventType: contractForm.eventType || undefined,
+        value: contractForm.value || undefined,
+      },
+    });
+  };
+
+  const submitCreateInvoice = () => {
+    if (!invoiceForm.title || !invoiceForm.clientName) return;
+    const qty = invoiceForm.quantity || "1";
+    const price = invoiceForm.unitPrice || "0";
+    const total = String(Number(qty) * Number(price));
+    createInvoiceMutation.mutate({
+      data: {
+        leadId: id,
+        title: invoiceForm.title,
+        clientName: invoiceForm.clientName,
+        clientEmail: invoiceForm.clientEmail || undefined,
+        clientPhone: invoiceForm.clientPhone || undefined,
+        clientCompany: invoiceForm.clientCompany || undefined,
+        eventType: invoiceForm.eventType || undefined,
+        items: [{ description: invoiceForm.description || "Service", quantity: qty, unitPrice: price, order: 1 }],
+      },
+    });
+  };
+
+  const markStatus = (status: string) => {
+    if (!lead) return;
+    updateMutation.mutate({
+      id,
+      data: {
+        companyName: lead.companyName,
+        contactName: lead.contactName,
+        status: status as any,
+        value: lead.value,
+      },
+    });
+  };
 
   const startEdit = () => {
     if (!lead) return;
@@ -145,16 +332,21 @@ export default function LeadDetail() {
     });
   };
 
-  const getStage = (status: string) => PIPELINE_STAGES.find((s) => s.key === status);
-
   if (isLoading) return <div className="flex items-center justify-center h-40 text-muted-foreground">{t("common.loading")}</div>;
   if (!lead) return <div className="text-muted-foreground p-8">{t("leads.lead_not_found")}</div>;
 
-  const stage = getStage(lead.status);
+  const pipelineStageKey = (lead as any).pipelineStage as string | undefined;
+  const pipelineColor = pipelineStageKey ? PIPELINE_STAGE_COLORS[pipelineStageKey] : undefined;
+  const statusColor = LEAD_STAGE_COLORS[lead.status];
+
+  const quotes = pipeline?.quotes ?? [];
+  const contracts = pipeline?.contracts ?? [];
+  const invoices = pipeline?.invoices ?? [];
+  const hasLinked = quotes.length > 0 || contracts.length > 0 || invoices.length > 0;
 
   return (
     <div className="space-y-6 max-w-5xl">
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex items-start justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-3">
           <Link href="/crm/leads">
             <Button variant="ghost" size="icon" className="shrink-0"><ArrowLeft className="w-4 h-4" /></Button>
@@ -162,14 +354,45 @@ export default function LeadDetail() {
           <div>
             <div className="flex items-center gap-2.5 flex-wrap">
               <h1 className="text-2xl font-bold">{lead.companyName}</h1>
-              {stage && <Badge variant="outline" className={cn("text-xs", stage.color)}>{t(`leads.stage_${lead.status}`)}</Badge>}
+              {statusColor && (
+                <Badge variant="outline" className={cn("text-xs", statusColor)}>{t(`leads.stage_${lead.status}`)}</Badge>
+              )}
+              {pipelineColor && pipelineStageKey && (
+                <Badge variant="outline" className={cn("text-xs", pipelineColor)}>
+                  {t(`pipeline.stage_${pipelineStageKey}`, { defaultValue: pipelineStageKey.replace(/_/g, " ") })}
+                </Badge>
+              )}
             </div>
             <p className="text-muted-foreground text-sm mt-0.5">{lead.contactName}</p>
           </div>
         </div>
-        <div className="flex gap-2 shrink-0">
-          <Button variant="outline" onClick={() => setShowActivity(true)} className="gap-2"><Send className="w-4 h-4" /> {t("leads.log_activity")}</Button>
-          <Button onClick={startEdit} className="gap-2"><Edit2 className="w-4 h-4" /> {t("common.edit")}</Button>
+
+        <div className="flex gap-2 flex-wrap shrink-0">
+          <Button variant="outline" size="sm" onClick={openCreateQuote} className="gap-1.5">
+            <FilePlus className="w-3.5 h-3.5" /> {t("pipeline.create_quote")}
+          </Button>
+          <Button variant="outline" size="sm" onClick={openCreateContract} className="gap-1.5">
+            <FileSignature className="w-3.5 h-3.5" /> {t("pipeline.create_contract")}
+          </Button>
+          <Button variant="outline" size="sm" onClick={openCreateInvoice} className="gap-1.5">
+            <ReceiptText className="w-3.5 h-3.5" /> {t("pipeline.create_invoice")}
+          </Button>
+          {lead.status !== "won" && lead.status !== "lost" && (
+            <Button variant="outline" size="sm" onClick={() => markStatus("qualified")} className="gap-1.5 border-info/40 text-info hover:bg-info/5">
+              <Trophy className="w-3.5 h-3.5" /> {t("pipeline.mark_qualified")}
+            </Button>
+          )}
+          {lead.status !== "lost" && (
+            <Button variant="outline" size="sm" onClick={() => markStatus("lost")} className="gap-1.5 border-destructive/40 text-destructive hover:bg-destructive/5">
+              <XCircle className="w-3.5 h-3.5" /> {t("pipeline.mark_lost")}
+            </Button>
+          )}
+          <Button variant="outline" size="sm" onClick={() => setShowActivity(true)} className="gap-1.5">
+            <Send className="w-3.5 h-3.5" /> {t("leads.log_activity")}
+          </Button>
+          <Button size="sm" onClick={startEdit} className="gap-1.5">
+            <Edit2 className="w-3.5 h-3.5" /> {t("common.edit")}
+          </Button>
         </div>
       </div>
 
@@ -182,18 +405,24 @@ export default function LeadDetail() {
                 <Building2 className="w-4 h-4 text-muted-foreground shrink-0" />
                 <span className="font-medium">{lead.companyName}</span>
               </div>
-              {lead.email && <div className="flex items-center gap-2.5 text-sm">
-                <Mail className="w-4 h-4 text-muted-foreground shrink-0" />
-                <a href={`mailto:${lead.email}`} className="hover:text-primary">{lead.email}</a>
-              </div>}
-              {lead.phone && <div className="flex items-center gap-2.5 text-sm">
-                <Phone className="w-4 h-4 text-muted-foreground shrink-0" />
-                <a href={`tel:${lead.phone}`} className="hover:text-primary">{lead.phone}</a>
-              </div>}
-              {lead.expectedEventDate && <div className="flex items-center gap-2.5 text-sm">
-                <CalendarDays className="w-4 h-4 text-muted-foreground shrink-0" />
-                <span>{formatDate(lead.expectedEventDate)}</span>
-              </div>}
+              {lead.email && (
+                <div className="flex items-center gap-2.5 text-sm">
+                  <Mail className="w-4 h-4 text-muted-foreground shrink-0" />
+                  <a href={`mailto:${lead.email}`} className="hover:text-primary">{lead.email}</a>
+                </div>
+              )}
+              {lead.phone && (
+                <div className="flex items-center gap-2.5 text-sm">
+                  <Phone className="w-4 h-4 text-muted-foreground shrink-0" />
+                  <a href={`tel:${lead.phone}`} className="hover:text-primary">{lead.phone}</a>
+                </div>
+              )}
+              {lead.expectedEventDate && (
+                <div className="flex items-center gap-2.5 text-sm">
+                  <CalendarDays className="w-4 h-4 text-muted-foreground shrink-0" />
+                  <span>{formatDate(lead.expectedEventDate)}</span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -215,7 +444,85 @@ export default function LeadDetail() {
           )}
         </div>
 
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-2 space-y-4">
+          {hasLinked && (
+            <div className="rounded-xl border bg-card p-5 space-y-4">
+              <h3 className="font-semibold text-sm">{t("pipeline.linked_records")}</h3>
+
+              {quotes.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{t("pipeline.quotes")} ({quotes.length})</p>
+                  {quotes.map((q: any) => (
+                    <Link key={q.id} href={`/quotes/${q.id}`}>
+                      <div className="flex items-center justify-between p-3 rounded-lg border bg-background hover:bg-muted/30 transition-colors cursor-pointer">
+                        <div className="flex items-center gap-2.5">
+                          <FilePlus className="w-4 h-4 text-muted-foreground" />
+                          <div>
+                            <p className="text-sm font-medium">{q.quoteNumber} — {q.title}</p>
+                            <p className="text-xs text-muted-foreground">{formatDate(q.createdAt)}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className={cn("text-xs", QUOTE_STATUS_COLORS[q.status] ?? "")}>{q.status}</Badge>
+                          <span className="text-sm font-semibold">{formatCurrency(q.total)}</span>
+                          <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+
+              {contracts.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{t("pipeline.contracts")} ({contracts.length})</p>
+                  {contracts.map((c: any) => (
+                    <Link key={c.id} href={`/contracts/${c.id}`}>
+                      <div className="flex items-center justify-between p-3 rounded-lg border bg-background hover:bg-muted/30 transition-colors cursor-pointer">
+                        <div className="flex items-center gap-2.5">
+                          <FileSignature className="w-4 h-4 text-muted-foreground" />
+                          <div>
+                            <p className="text-sm font-medium">{c.contractNumber} — {c.title}</p>
+                            <p className="text-xs text-muted-foreground">{formatDate(c.createdAt)}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className={cn("text-xs", CONTRACT_STATUS_COLORS[c.status] ?? "")}>{c.status}</Badge>
+                          <span className="text-sm font-semibold">{formatCurrency(c.value)}</span>
+                          <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+
+              {invoices.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{t("pipeline.invoices")} ({invoices.length})</p>
+                  {invoices.map((inv: any) => (
+                    <Link key={inv.id} href={`/invoices/${inv.id}`}>
+                      <div className="flex items-center justify-between p-3 rounded-lg border bg-background hover:bg-muted/30 transition-colors cursor-pointer">
+                        <div className="flex items-center gap-2.5">
+                          <ReceiptText className="w-4 h-4 text-muted-foreground" />
+                          <div>
+                            <p className="text-sm font-medium">{inv.invoiceNumber} — {inv.title}</p>
+                            <p className="text-xs text-muted-foreground">{formatDate(inv.createdAt)}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className={cn("text-xs", INVOICE_STATUS_COLORS[inv.status] ?? "")}>{inv.status}</Badge>
+                          <span className="text-sm font-semibold">{formatCurrency(inv.total)}</span>
+                          <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="rounded-xl border bg-card p-5">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold">{t("leads.activity_timeline")}</h3>
@@ -266,7 +573,7 @@ export default function LeadDetail() {
             <div className="space-y-1.5"><Label>{t("leads.status_label")}</Label>
               <Select value={editForm.status ?? "new"} onValueChange={(v) => setEditForm({ ...editForm, status: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>{PIPELINE_STAGES.map((s) => <SelectItem key={s.key} value={s.key}>{t(`leads.stage_${s.key}`)}</SelectItem>)}</SelectContent>
+                <SelectContent>{LEAD_STATUSES.map((s) => <SelectItem key={s} value={s}>{t(`leads.stage_${s}`)}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div className="space-y-1.5"><Label>{t("leads.value_label")}</Label><Input type="number" value={editForm.value ?? ""} onChange={(e) => setEditForm({ ...editForm, value: e.target.value })} /></div>
@@ -287,11 +594,7 @@ export default function LeadDetail() {
             <div className="space-y-1.5"><Label>{t("leads.activity_type_label")}</Label>
               <Select value={activityForm.type} onValueChange={(v) => setActivityForm({ ...activityForm, type: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {ACTIVITY_TYPES.map((type) => (
-                    <SelectItem key={type} value={type}>{t(`leads.activity_type_${type}`)}</SelectItem>
-                  ))}
-                </SelectContent>
+                <SelectContent>{ACTIVITY_TYPES.map((type) => <SelectItem key={type} value={type}>{t(`leads.activity_type_${type}`)}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div className="space-y-1.5"><Label>{t("leads.activity_title_label")} *</Label><Input value={activityForm.title} onChange={(e) => setActivityForm({ ...activityForm, title: e.target.value })} placeholder={t("leads.what_happened")} /></div>
@@ -300,6 +603,70 @@ export default function LeadDetail() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowActivity(false)}>{t("common.cancel")}</Button>
             <Button onClick={addActivity} disabled={activityMutation.isPending || !activityForm.title}>{activityMutation.isPending ? t("leads.saving") : t("leads.add_activity_btn")}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showCreateQuote} onOpenChange={setShowCreateQuote}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader><DialogTitle>{t("pipeline.create_quote_for", { company: lead.companyName })}</DialogTitle></DialogHeader>
+          <div className="grid grid-cols-2 gap-4 py-2">
+            <div className="col-span-2 space-y-1.5"><Label>{t("quotes.title_label")} *</Label><Input value={quoteForm.title} onChange={(e) => setQuoteForm({ ...quoteForm, title: e.target.value })} /></div>
+            <div className="space-y-1.5"><Label>{t("quotes.client_name_label")} *</Label><Input value={quoteForm.clientName} onChange={(e) => setQuoteForm({ ...quoteForm, clientName: e.target.value })} /></div>
+            <div className="space-y-1.5"><Label>{t("quotes.client_email_label")}</Label><Input value={quoteForm.clientEmail} onChange={(e) => setQuoteForm({ ...quoteForm, clientEmail: e.target.value })} /></div>
+            <div className="space-y-1.5"><Label>{t("leads.phone_label")}</Label><Input value={quoteForm.clientPhone} onChange={(e) => setQuoteForm({ ...quoteForm, clientPhone: e.target.value })} /></div>
+            <div className="space-y-1.5"><Label>{t("leads.event_type_label")}</Label><Input value={quoteForm.eventType} onChange={(e) => setQuoteForm({ ...quoteForm, eventType: e.target.value })} /></div>
+            <div className="col-span-2 space-y-1.5"><Label>{t("pipeline.item_description")}</Label><Input value={quoteForm.description} onChange={(e) => setQuoteForm({ ...quoteForm, description: e.target.value })} /></div>
+            <div className="space-y-1.5"><Label>{t("pipeline.unit_price")}</Label><Input type="number" value={quoteForm.unitPrice} onChange={(e) => setQuoteForm({ ...quoteForm, unitPrice: e.target.value })} /></div>
+            <div className="space-y-1.5"><Label>{t("pipeline.quantity")}</Label><Input type="number" value={quoteForm.quantity} onChange={(e) => setQuoteForm({ ...quoteForm, quantity: e.target.value })} /></div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCreateQuote(false)}>{t("common.cancel")}</Button>
+            <Button onClick={submitCreateQuote} disabled={createQuoteMutation.isPending || !quoteForm.title || !quoteForm.clientName}>
+              {createQuoteMutation.isPending ? t("leads.saving") : t("pipeline.create_quote")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showCreateContract} onOpenChange={setShowCreateContract}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader><DialogTitle>{t("pipeline.create_contract_for", { company: lead.companyName })}</DialogTitle></DialogHeader>
+          <div className="grid grid-cols-2 gap-4 py-2">
+            <div className="col-span-2 space-y-1.5"><Label>{t("contracts.title_label")} *</Label><Input value={contractForm.title} onChange={(e) => setContractForm({ ...contractForm, title: e.target.value })} /></div>
+            <div className="space-y-1.5"><Label>{t("contracts.client_name_label")} *</Label><Input value={contractForm.clientName} onChange={(e) => setContractForm({ ...contractForm, clientName: e.target.value })} /></div>
+            <div className="space-y-1.5"><Label>{t("contracts.client_email_label")}</Label><Input value={contractForm.clientEmail} onChange={(e) => setContractForm({ ...contractForm, clientEmail: e.target.value })} /></div>
+            <div className="space-y-1.5"><Label>{t("leads.phone_label")}</Label><Input value={contractForm.clientPhone} onChange={(e) => setContractForm({ ...contractForm, clientPhone: e.target.value })} /></div>
+            <div className="space-y-1.5"><Label>{t("leads.event_type_label")}</Label><Input value={contractForm.eventType} onChange={(e) => setContractForm({ ...contractForm, eventType: e.target.value })} /></div>
+            <div className="col-span-2 space-y-1.5"><Label>{t("contracts.value_dollar_label")}</Label><Input type="number" value={contractForm.value} onChange={(e) => setContractForm({ ...contractForm, value: e.target.value })} /></div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCreateContract(false)}>{t("common.cancel")}</Button>
+            <Button onClick={submitCreateContract} disabled={createContractMutation.isPending || !contractForm.title || !contractForm.clientName}>
+              {createContractMutation.isPending ? t("leads.saving") : t("pipeline.create_contract")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showCreateInvoice} onOpenChange={setShowCreateInvoice}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader><DialogTitle>{t("pipeline.create_invoice_for", { company: lead.companyName })}</DialogTitle></DialogHeader>
+          <div className="grid grid-cols-2 gap-4 py-2">
+            <div className="col-span-2 space-y-1.5"><Label>{t("invoices.title_label")} *</Label><Input value={invoiceForm.title} onChange={(e) => setInvoiceForm({ ...invoiceForm, title: e.target.value })} /></div>
+            <div className="space-y-1.5"><Label>{t("invoices.client_name_label")} *</Label><Input value={invoiceForm.clientName} onChange={(e) => setInvoiceForm({ ...invoiceForm, clientName: e.target.value })} /></div>
+            <div className="space-y-1.5"><Label>{t("invoices.client_email_label")}</Label><Input value={invoiceForm.clientEmail} onChange={(e) => setInvoiceForm({ ...invoiceForm, clientEmail: e.target.value })} /></div>
+            <div className="space-y-1.5"><Label>{t("leads.phone_label")}</Label><Input value={invoiceForm.clientPhone} onChange={(e) => setInvoiceForm({ ...invoiceForm, clientPhone: e.target.value })} /></div>
+            <div className="space-y-1.5"><Label>{t("leads.event_type_label")}</Label><Input value={invoiceForm.eventType} onChange={(e) => setInvoiceForm({ ...invoiceForm, eventType: e.target.value })} /></div>
+            <div className="col-span-2 space-y-1.5"><Label>{t("pipeline.item_description")}</Label><Input value={invoiceForm.description} onChange={(e) => setInvoiceForm({ ...invoiceForm, description: e.target.value })} /></div>
+            <div className="space-y-1.5"><Label>{t("pipeline.unit_price")}</Label><Input type="number" value={invoiceForm.unitPrice} onChange={(e) => setInvoiceForm({ ...invoiceForm, unitPrice: e.target.value })} /></div>
+            <div className="space-y-1.5"><Label>{t("pipeline.quantity")}</Label><Input type="number" value={invoiceForm.quantity} onChange={(e) => setInvoiceForm({ ...invoiceForm, quantity: e.target.value })} /></div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCreateInvoice(false)}>{t("common.cancel")}</Button>
+            <Button onClick={submitCreateInvoice} disabled={createInvoiceMutation.isPending || !invoiceForm.title || !invoiceForm.clientName}>
+              {createInvoiceMutation.isPending ? t("leads.saving") : t("pipeline.create_invoice")}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

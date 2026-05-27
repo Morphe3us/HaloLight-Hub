@@ -744,6 +744,47 @@ paths:
         "204":
           description: Deleted
 
+  /leads/{id}/pipeline:
+    get:
+      operationId: getLeadPipeline
+      tags: [leads]
+      summary: Get full pipeline summary for a lead (quotes, contracts, invoices)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Pipeline summary
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [lead, quotes, contracts, invoices, activities]
+                properties:
+                  lead:
+                    $ref: "#/components/schemas/Lead"
+                  quotes:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Quote"
+                  contracts:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Contract"
+                  invoices:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Invoice"
+                  activities:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Activity"
+        "404":
+          description: Not found
+
   /leads/{id}/activities:
     post:
       operationId: createLeadActivity
@@ -3753,6 +3794,8 @@ components:
         expectedEventDate:
           type: ["string", "null"]
           format: date-time
+        pipelineStage:
+          type: string
         createdAt:
           type: string
           format: date-time
@@ -3791,6 +3834,18 @@ components:
               type: array
               items:
                 $ref: "#/components/schemas/Activity"
+            quotes:
+              type: array
+              items:
+                $ref: "#/components/schemas/Quote"
+            contracts:
+              type: array
+              items:
+                $ref: "#/components/schemas/Contract"
+            invoices:
+              type: array
+              items:
+                $ref: "#/components/schemas/Invoice"
 
     LeadList:
       type: object
@@ -3898,6 +3953,21 @@ components:
           type: ["string", "null"]
         clientPhone:
           type: ["string", "null"]
+        clientCompany:
+          type: ["string", "null"]
+        clientAddress:
+          type: ["string", "null"]
+        eventType:
+          type: ["string", "null"]
+        eventDate:
+          type: ["string", "null"]
+          format: date-time
+        eventLocation:
+          type: ["string", "null"]
+        currency:
+          type: ["string", "null"]
+        language:
+          type: ["string", "null"]
         status:
           type: string
           enum: [draft, sent, accepted, declined, expired]
@@ -3964,6 +4034,21 @@ components:
         clientEmail:
           type: string
         clientPhone:
+          type: string
+        clientCompany:
+          type: string
+        clientAddress:
+          type: string
+        eventType:
+          type: string
+        eventDate:
+          type: string
+          format: date-time
+        eventLocation:
+          type: string
+        currency:
+          type: string
+        language:
           type: string
         taxRate:
           type: string
@@ -4033,6 +4118,21 @@ components:
           type: string
         clientEmail:
           type: ["string", "null"]
+        clientPhone:
+          type: ["string", "null"]
+        clientCompany:
+          type: ["string", "null"]
+        clientAddress:
+          type: ["string", "null"]
+        eventType:
+          type: ["string", "null"]
+        eventDate:
+          type: ["string", "null"]
+          format: date-time
+        currency:
+          type: ["string", "null"]
+        language:
+          type: ["string", "null"]
         status:
           type: string
           enum: [draft, sent, signed, active, expired, cancelled]
@@ -4074,7 +4174,7 @@ components:
 
     ContractInput:
       type: object
-      required: [title, clientName, content]
+      required: [title, clientName]
       properties:
         leadId:
           type: string
@@ -4087,6 +4187,21 @@ components:
         clientName:
           type: string
         clientEmail:
+          type: string
+        clientPhone:
+          type: string
+        clientCompany:
+          type: string
+        clientAddress:
+          type: string
+        eventType:
+          type: string
+        eventDate:
+          type: string
+          format: date-time
+        currency:
+          type: string
+        language:
           type: string
         content:
           type: string
@@ -4155,6 +4270,19 @@ components:
         clientName:
           type: string
         clientEmail:
+          type: ["string", "null"]
+        clientPhone:
+          type: ["string", "null"]
+        clientCompany:
+          type: ["string", "null"]
+        eventType:
+          type: ["string", "null"]
+        eventDate:
+          type: ["string", "null"]
+          format: date-time
+        currency:
+          type: ["string", "null"]
+        language:
           type: ["string", "null"]
         status:
           type: string
@@ -4230,6 +4358,19 @@ components:
         clientName:
           type: string
         clientEmail:
+          type: string
+        clientPhone:
+          type: string
+        clientCompany:
+          type: string
+        eventType:
+          type: string
+        eventDate:
+          type: string
+          format: date-time
+        currency:
+          type: string
+        language:
           type: string
         taxRate:
           type: string

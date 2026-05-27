@@ -1,6 +1,6 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import { eq, and, desc, sql } from "drizzle-orm";
-import { db, contracts, contractTemplates } from "@workspace/db";
+import { db, contracts, contractTemplates, leads, quotes } from "@workspace/db";
 import { requireAuth } from "../middlewares/requireAuth";
 import { getOrCreateUser } from "../lib/userSync";
 import { DEFAULT_CONTRACT_TEMPLATES } from "../lib/defaultContractTemplates";
@@ -11,6 +11,12 @@ function generateContractNumber(): string {
   const year = new Date().getFullYear();
   const rand = Math.floor(Math.random() * 9000) + 1000;
   return `CON-${year}-${rand}`;
+}
+
+async function updateLeadPipelineStage(leadId: string | null | undefined, stage: string, userId: string) {
+  if (!leadId) return;
+  await db.update(leads).set({ pipelineStage: stage, updatedAt: new Date() })
+    .where(and(eq(leads.id, leadId), eq(leads.userId, userId)));
 }
 
 // GET /contracts
@@ -31,23 +37,91 @@ router.get("/contracts", requireAuth, async (req: Request, res: Response): Promi
 router.post("/contracts", requireAuth, async (req: Request, res: Response): Promise<void> => {
   const user = await getOrCreateUser(req);
   if (!user) { res.status(401).json({ error: "Unauthorized" }); return; }
-  const { leadId, quoteId, templateId, title, clientName, clientEmail, content, value, startDate, endDate, notes } = req.body as {
+
+  const {
+    leadId, quoteId, templateId, title, clientName, clientEmail, clientPhone, clientCompany, clientAddress,
+    content, value, startDate, endDate, notes, eventType, eventDate, currency, language,
+  } = req.body as {
     leadId?: string; quoteId?: string; templateId?: string; title: string; clientName: string;
-    clientEmail?: string; content?: string; value?: string; startDate?: string; endDate?: string; notes?: string;
+    clientEmail?: string; clientPhone?: string; clientCompany?: string; clientAddress?: string;
+    content?: string; value?: string; startDate?: string; endDate?: string; notes?: string;
+    eventType?: string; eventDate?: string; currency?: string; language?: string;
   };
   if (!title || !clientName) { res.status(400).json({ error: "title and clientName required" }); return; }
+
+  // Auto-fill from quote if provided
+  let resolvedClientName = clientName;
+  let resolvedClientEmail = clientEmail;
+  let resolvedClientPhone = clientPhone;
+  let resolvedClientCompany = clientCompany;
+  let resolvedClientAddress = clientAddress;
+  let resolvedEventType = eventType;
+  let resolvedEventDate = eventDate;
+  let resolvedValue = value;
+  let resolvedLeadId = leadId;
+  let resolvedCurrency = currency;
+  let resolvedLanguage = language;
+
+  if (quoteId) {
+    const [quote] = await db.select().from(quotes).where(and(eq(quotes.id, quoteId), eq(quotes.userId, user.id)));
+    if (quote) {
+      resolvedClientName = clientName || quote.clientName;
+      resolvedClientEmail = clientEmail ?? quote.clientEmail ?? undefined;
+      resolvedClientPhone = clientPhone ?? quote.clientPhone ?? undefined;
+      resolvedClientCompany = clientCompany ?? quote.clientCompany ?? undefined;
+      resolvedClientAddress = clientAddress ?? quote.clientAddress ?? undefined;
+      resolvedEventType = eventType ?? quote.eventType ?? undefined;
+      resolvedEventDate = eventDate ?? (quote.eventDate ? quote.eventDate.toISOString() : undefined);
+      resolvedValue = value ?? quote.total;
+      resolvedLeadId = leadId ?? quote.leadId ?? undefined;
+      resolvedCurrency = currency ?? quote.currency ?? undefined;
+      resolvedLanguage = language ?? quote.language ?? undefined;
+    }
+  } else if (leadId) {
+    const [lead] = await db.select().from(leads).where(and(eq(leads.id, leadId), eq(leads.userId, user.id)));
+    if (lead) {
+      resolvedClientName = clientName || lead.contactName;
+      resolvedClientEmail = clientEmail ?? lead.email ?? undefined;
+      resolvedClientPhone = clientPhone ?? lead.phone ?? undefined;
+      resolvedClientCompany = clientCompany ?? lead.companyName;
+      resolvedClientAddress = clientAddress ?? lead.address ?? undefined;
+      resolvedEventType = eventType ?? lead.eventType ?? undefined;
+      resolvedEventDate = eventDate ?? (lead.expectedEventDate ? lead.expectedEventDate.toISOString() : undefined);
+      resolvedValue = value ?? lead.value;
+    }
+  }
+
   let finalContent = content ?? "";
   if (templateId && !content) {
     const [tpl] = await db.select().from(contractTemplates).where(eq(contractTemplates.id, templateId));
     if (tpl) finalContent = tpl.content;
   }
+
   const [contract] = await db.insert(contracts).values({
-    userId: user.id, leadId: leadId ?? null, quoteId: quoteId ?? null,
-    contractNumber: generateContractNumber(), title, clientName,
-    clientEmail: clientEmail ?? null, content: finalContent, value: value ?? "0",
-    startDate: startDate ? new Date(startDate) : null, endDate: endDate ? new Date(endDate) : null,
+    userId: user.id,
+    leadId: resolvedLeadId ?? null,
+    quoteId: quoteId ?? null,
+    contractNumber: generateContractNumber(),
+    title,
+    clientName: resolvedClientName,
+    clientEmail: resolvedClientEmail ?? null,
+    clientPhone: resolvedClientPhone ?? null,
+    clientCompany: resolvedClientCompany ?? null,
+    clientAddress: resolvedClientAddress ?? null,
+    eventType: resolvedEventType ?? null,
+    eventDate: resolvedEventDate ? new Date(resolvedEventDate) : null,
+    currency: resolvedCurrency ?? null,
+    language: resolvedLanguage ?? null,
+    content: finalContent,
+    value: resolvedValue ?? "0",
+    startDate: startDate ? new Date(startDate) : null,
+    endDate: endDate ? new Date(endDate) : null,
     notes: notes ?? null,
   }).returning();
+
+  // Update lead pipeline stage
+  if (resolvedLeadId) await updateLeadPipelineStage(resolvedLeadId, "contract_created", user.id);
+
   res.status(201).json(contract);
 });
 
@@ -67,19 +141,36 @@ router.put("/contracts/:id", requireAuth, async (req: Request, res: Response): P
   const id = String(req.params.id);
   const [existing] = await db.select().from(contracts).where(and(eq(contracts.id, id), eq(contracts.userId, user.id)));
   if (!existing) { res.status(404).json({ error: "Not found" }); return; }
-  const { leadId, quoteId, title, clientName, clientEmail, content, value, startDate, endDate, notes } = req.body as {
+
+  const {
+    leadId, quoteId, title, clientName, clientEmail, clientPhone, clientCompany, clientAddress,
+    content, value, startDate, endDate, notes, eventType, eventDate, currency, language,
+  } = req.body as {
     leadId?: string | null; quoteId?: string | null; title?: string; clientName?: string;
-    clientEmail?: string | null; content?: string; value?: string; startDate?: string; endDate?: string; notes?: string | null;
+    clientEmail?: string | null; clientPhone?: string | null; clientCompany?: string | null; clientAddress?: string | null;
+    content?: string; value?: string; startDate?: string; endDate?: string; notes?: string | null;
+    eventType?: string | null; eventDate?: string | null; currency?: string | null; language?: string | null;
   };
+
   const [updated] = await db.update(contracts).set({
     leadId: leadId !== undefined ? (leadId ?? null) : existing.leadId,
     quoteId: quoteId !== undefined ? (quoteId ?? null) : existing.quoteId,
-    title: title ?? existing.title, clientName: clientName ?? existing.clientName,
+    title: title ?? existing.title,
+    clientName: clientName ?? existing.clientName,
     clientEmail: clientEmail !== undefined ? clientEmail : existing.clientEmail,
-    content: content ?? existing.content, value: value ?? existing.value,
+    clientPhone: clientPhone !== undefined ? clientPhone : existing.clientPhone,
+    clientCompany: clientCompany !== undefined ? clientCompany : existing.clientCompany,
+    clientAddress: clientAddress !== undefined ? clientAddress : existing.clientAddress,
+    eventType: eventType !== undefined ? eventType : existing.eventType,
+    eventDate: eventDate !== undefined ? (eventDate ? new Date(eventDate) : null) : existing.eventDate,
+    currency: currency !== undefined ? currency : existing.currency,
+    language: language !== undefined ? language : existing.language,
+    content: content ?? existing.content,
+    value: value ?? existing.value,
     startDate: startDate ? new Date(startDate) : existing.startDate,
     endDate: endDate ? new Date(endDate) : existing.endDate,
-    notes: notes !== undefined ? notes : existing.notes, updatedAt: new Date(),
+    notes: notes !== undefined ? notes : existing.notes,
+    updatedAt: new Date(),
   }).where(eq(contracts.id, id)).returning();
   res.json(updated);
 });
@@ -108,6 +199,13 @@ router.patch("/contracts/:id/status", requireAuth, async (req: Request, res: Res
   if (status === "sent") extra.sentAt = new Date();
   if (status === "signed") extra.signedAt = new Date();
   const [updated] = await db.update(contracts).set({ status, ...extra, updatedAt: new Date() }).where(eq(contracts.id, id)).returning();
+
+  // Update lead pipeline stage
+  if (existing.leadId) {
+    if (status === "signed") await updateLeadPipelineStage(existing.leadId, "contract_signed", user.id);
+    else if (status === "cancelled") await updateLeadPipelineStage(existing.leadId, "lost", user.id);
+  }
+
   res.json(updated);
 });
 

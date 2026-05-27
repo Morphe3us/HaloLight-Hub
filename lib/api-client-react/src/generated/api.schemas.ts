@@ -484,6 +484,7 @@ export interface Lead {
   eventType?: string | null;
   /** @nullable */
   expectedEventDate?: string | null;
+  pipelineStage?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -513,8 +514,184 @@ export interface Activity {
   createdAt: string;
 }
 
+export type QuoteStatus = typeof QuoteStatus[keyof typeof QuoteStatus];
+
+
+export const QuoteStatus = {
+  draft: 'draft',
+  sent: 'sent',
+  accepted: 'accepted',
+  declined: 'declined',
+  expired: 'expired',
+} as const;
+
+export interface Quote {
+  id: string;
+  userId: string;
+  /** @nullable */
+  leadId?: string | null;
+  quoteNumber: string;
+  title: string;
+  clientName: string;
+  /** @nullable */
+  clientEmail?: string | null;
+  /** @nullable */
+  clientPhone?: string | null;
+  /** @nullable */
+  clientCompany?: string | null;
+  /** @nullable */
+  clientAddress?: string | null;
+  /** @nullable */
+  eventType?: string | null;
+  /** @nullable */
+  eventDate?: string | null;
+  /** @nullable */
+  eventLocation?: string | null;
+  /** @nullable */
+  currency?: string | null;
+  /** @nullable */
+  language?: string | null;
+  status: QuoteStatus;
+  subtotal: string;
+  taxRate: string;
+  taxAmount: string;
+  total: string;
+  /** @nullable */
+  notes?: string | null;
+  /** @nullable */
+  terms?: string | null;
+  /** @nullable */
+  validUntil?: string | null;
+  /** @nullable */
+  sentAt?: string | null;
+  /** @nullable */
+  acceptedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type ContractStatus = typeof ContractStatus[keyof typeof ContractStatus];
+
+
+export const ContractStatus = {
+  draft: 'draft',
+  sent: 'sent',
+  signed: 'signed',
+  active: 'active',
+  expired: 'expired',
+  cancelled: 'cancelled',
+} as const;
+
+export interface Contract {
+  id: string;
+  userId: string;
+  /** @nullable */
+  leadId?: string | null;
+  /** @nullable */
+  quoteId?: string | null;
+  contractNumber: string;
+  title: string;
+  clientName: string;
+  /** @nullable */
+  clientEmail?: string | null;
+  /** @nullable */
+  clientPhone?: string | null;
+  /** @nullable */
+  clientCompany?: string | null;
+  /** @nullable */
+  clientAddress?: string | null;
+  /** @nullable */
+  eventType?: string | null;
+  /** @nullable */
+  eventDate?: string | null;
+  /** @nullable */
+  currency?: string | null;
+  /** @nullable */
+  language?: string | null;
+  status: ContractStatus;
+  content: string;
+  value: string;
+  /** @nullable */
+  startDate?: string | null;
+  /** @nullable */
+  endDate?: string | null;
+  /** @nullable */
+  signedAt?: string | null;
+  /** @nullable */
+  sentAt?: string | null;
+  /** @nullable */
+  notes?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type InvoiceStatus = typeof InvoiceStatus[keyof typeof InvoiceStatus];
+
+
+export const InvoiceStatus = {
+  draft: 'draft',
+  sent: 'sent',
+  paid: 'paid',
+  overdue: 'overdue',
+  cancelled: 'cancelled',
+} as const;
+
+export interface Invoice {
+  id: string;
+  userId: string;
+  /** @nullable */
+  leadId?: string | null;
+  /** @nullable */
+  quoteId?: string | null;
+  /** @nullable */
+  contractId?: string | null;
+  invoiceNumber: string;
+  title: string;
+  clientName: string;
+  /** @nullable */
+  clientEmail?: string | null;
+  /** @nullable */
+  clientPhone?: string | null;
+  /** @nullable */
+  clientCompany?: string | null;
+  /** @nullable */
+  eventType?: string | null;
+  /** @nullable */
+  eventDate?: string | null;
+  /** @nullable */
+  currency?: string | null;
+  /** @nullable */
+  language?: string | null;
+  status: InvoiceStatus;
+  subtotal: string;
+  taxRate: string;
+  taxAmount: string;
+  total: string;
+  /** @nullable */
+  notes?: string | null;
+  /** @nullable */
+  terms?: string | null;
+  /** @nullable */
+  dueDate?: string | null;
+  /** @nullable */
+  sentAt?: string | null;
+  /** @nullable */
+  paidAt?: string | null;
+  /** @nullable */
+  paidAmount?: string | null;
+  /** @nullable */
+  paymentMethod?: string | null;
+  /** @nullable */
+  paymentReference?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export type LeadDetail = Lead & {
   activities: Activity[];
+  quotes?: Quote[];
+  contracts?: Contract[];
+  invoices?: Invoice[];
 };
 
 export interface LeadList {
@@ -599,48 +776,6 @@ export interface QuoteItemInput {
   order?: number;
 }
 
-export type QuoteStatus = typeof QuoteStatus[keyof typeof QuoteStatus];
-
-
-export const QuoteStatus = {
-  draft: 'draft',
-  sent: 'sent',
-  accepted: 'accepted',
-  declined: 'declined',
-  expired: 'expired',
-} as const;
-
-export interface Quote {
-  id: string;
-  userId: string;
-  /** @nullable */
-  leadId?: string | null;
-  quoteNumber: string;
-  title: string;
-  clientName: string;
-  /** @nullable */
-  clientEmail?: string | null;
-  /** @nullable */
-  clientPhone?: string | null;
-  status: QuoteStatus;
-  subtotal: string;
-  taxRate: string;
-  taxAmount: string;
-  total: string;
-  /** @nullable */
-  notes?: string | null;
-  /** @nullable */
-  terms?: string | null;
-  /** @nullable */
-  validUntil?: string | null;
-  /** @nullable */
-  sentAt?: string | null;
-  /** @nullable */
-  acceptedAt?: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-
 export type QuoteDetail = Quote & {
   items: QuoteItem[];
 };
@@ -656,6 +791,13 @@ export interface QuoteInput {
   clientName: string;
   clientEmail?: string;
   clientPhone?: string;
+  clientCompany?: string;
+  clientAddress?: string;
+  eventType?: string;
+  eventDate?: string;
+  eventLocation?: string;
+  currency?: string;
+  language?: string;
   taxRate?: string;
   notes?: string;
   terms?: string;
@@ -682,47 +824,6 @@ export interface ContractTemplate {
   updatedAt: string;
 }
 
-export type ContractStatus = typeof ContractStatus[keyof typeof ContractStatus];
-
-
-export const ContractStatus = {
-  draft: 'draft',
-  sent: 'sent',
-  signed: 'signed',
-  active: 'active',
-  expired: 'expired',
-  cancelled: 'cancelled',
-} as const;
-
-export interface Contract {
-  id: string;
-  userId: string;
-  /** @nullable */
-  leadId?: string | null;
-  /** @nullable */
-  quoteId?: string | null;
-  contractNumber: string;
-  title: string;
-  clientName: string;
-  /** @nullable */
-  clientEmail?: string | null;
-  status: ContractStatus;
-  content: string;
-  value: string;
-  /** @nullable */
-  startDate?: string | null;
-  /** @nullable */
-  endDate?: string | null;
-  /** @nullable */
-  signedAt?: string | null;
-  /** @nullable */
-  sentAt?: string | null;
-  /** @nullable */
-  notes?: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-
 export interface ContractList {
   items: Contract[];
   total: number;
@@ -735,7 +836,14 @@ export interface ContractInput {
   title: string;
   clientName: string;
   clientEmail?: string;
-  content: string;
+  clientPhone?: string;
+  clientCompany?: string;
+  clientAddress?: string;
+  eventType?: string;
+  eventDate?: string;
+  currency?: string;
+  language?: string;
+  content?: string;
   value?: string;
   startDate?: string;
   endDate?: string;
@@ -759,56 +867,6 @@ export interface InvoiceItemInput {
   order?: number;
 }
 
-export type InvoiceStatus = typeof InvoiceStatus[keyof typeof InvoiceStatus];
-
-
-export const InvoiceStatus = {
-  draft: 'draft',
-  sent: 'sent',
-  paid: 'paid',
-  overdue: 'overdue',
-  cancelled: 'cancelled',
-} as const;
-
-export interface Invoice {
-  id: string;
-  userId: string;
-  /** @nullable */
-  leadId?: string | null;
-  /** @nullable */
-  quoteId?: string | null;
-  /** @nullable */
-  contractId?: string | null;
-  invoiceNumber: string;
-  title: string;
-  clientName: string;
-  /** @nullable */
-  clientEmail?: string | null;
-  status: InvoiceStatus;
-  subtotal: string;
-  taxRate: string;
-  taxAmount: string;
-  total: string;
-  /** @nullable */
-  notes?: string | null;
-  /** @nullable */
-  terms?: string | null;
-  /** @nullable */
-  dueDate?: string | null;
-  /** @nullable */
-  sentAt?: string | null;
-  /** @nullable */
-  paidAt?: string | null;
-  /** @nullable */
-  paidAmount?: string | null;
-  /** @nullable */
-  paymentMethod?: string | null;
-  /** @nullable */
-  paymentReference?: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-
 export type InvoiceDetail = Invoice & {
   items: InvoiceItem[];
 };
@@ -825,6 +883,12 @@ export interface InvoiceInput {
   title: string;
   clientName: string;
   clientEmail?: string;
+  clientPhone?: string;
+  clientCompany?: string;
+  eventType?: string;
+  eventDate?: string;
+  currency?: string;
+  language?: string;
   taxRate?: string;
   notes?: string;
   terms?: string;
@@ -2602,6 +2666,14 @@ export const ListLeadsStatus = {
   won: 'won',
   lost: 'lost',
 } as const;
+
+export type GetLeadPipeline200 = {
+  lead: Lead;
+  quotes: Quote[];
+  contracts: Contract[];
+  invoices: Invoice[];
+  activities: Activity[];
+};
 
 export type ListQuotesParams = {
 status?: ListQuotesStatus;

@@ -1,0 +1,291 @@
+Sales CRM pipeline integration.
+
+The Sales module must work as one connected CRM workflow.
+
+Current issue:
+Leads, clients, quotes, contracts and invoices feel too disconnected.
+The user should not have to recreate the same client/customer information multiple times.
+
+Goal:
+Create a unified sales pipeline where one client/opportunity can move through:
+
+Lead
+→ Qualified prospect
+→ Quote sent
+→ Quote accepted
+→ Contract generated
+→ Contract signed
+→ Invoice generated
+→ Paid
+→ Completed / Won
+
+==================================================
+
+1. SINGLE CUSTOMER RECORD
+   ==================================================
+
+There should be one customer/client profile used across:
+
+* Leads
+* Quotes
+* Contracts
+* Invoices
+* Events
+* Client 360
+
+Do not require the user to recreate:
+
+* name
+* email
+* phone
+* company
+* address
+* event details
+
+If a lead already exists, quote/contract/invoice creation should pre-fill from that lead.
+
+If a quote exists, contract should pre-fill from the quote.
+
+If a contract exists, invoice should pre-fill from the contract.
+
+==================================================
+2. SALES PIPELINE LOGIC
+=======================
+
+Add automatic pipeline stage updates.
+
+Examples:
+
+When a lead is created:
+stage = new_lead
+
+When lead is edited/qualified:
+stage = qualified
+
+When a quote is created for that lead:
+stage = quote_created
+
+When quote is sent:
+stage = quote_sent
+
+When quote is accepted:
+stage = quote_accepted
+
+When a contract is created:
+stage = contract_created
+
+When contract is signed:
+stage = contract_signed
+
+When invoice is created:
+stage = invoice_created
+
+When invoice is paid:
+stage = paid / won
+
+When quote is rejected or contract cancelled:
+stage = lost / cancelled
+
+==================================================
+3. RELATIONSHIPS BETWEEN RECORDS
+================================
+
+Make sure these records are linked properly:
+
+Lead
+
+* can have many quotes
+* can have one or many contracts
+* can have invoices
+* can become a client
+
+Quote
+
+* must link to lead/client when created from a lead
+* must be convertible into contract
+* must be convertible into invoice
+
+Contract
+
+* must link to lead/client/quote
+* must be generated from accepted quote when possible
+* must keep quote pricing, package, event info and client info
+
+Invoice
+
+* must link to lead/client/quote/contract
+* must inherit amount, currency, client info, event info and company info
+
+Client 360
+
+* should show the full sales history:
+
+  * leads
+  * quotes
+  * contracts
+  * invoices
+  * revenue
+  * events
+
+==================================================
+4. UX REQUIREMENTS
+==================
+
+Add clear actions:
+
+From Lead:
+
+* Create Quote
+* Create Contract
+* Create Invoice
+* Mark Qualified
+* Mark Lost
+
+From Quote:
+
+* Accept Quote
+* Reject Quote
+* Create Contract
+* Create Invoice
+
+From Contract:
+
+* Mark Signed
+* Create Invoice
+* Cancel Contract
+
+From Invoice:
+
+* Mark Paid
+* Mark Overdue
+* Send Reminder
+
+Important:
+These actions should update the pipeline automatically.
+
+==================================================
+5. PREFILLING
+=============
+
+When creating a quote from a lead, prefill:
+
+* client name
+* company name
+* email
+* phone
+* address
+* event type
+* event date
+* event location
+* estimated value
+* currency
+
+When creating a contract from a quote, prefill:
+
+* client details
+* event details
+* package/service
+* equipment
+* pricing
+* deposit
+* currency
+* contract template language
+
+When creating an invoice from a contract, prefill:
+
+* client details
+* invoice amount
+* currency
+* payment terms
+* event details
+
+==================================================
+6. DUPLICATE PREVENTION
+=======================
+
+Avoid duplicate customer records.
+
+If a new lead/quote/contract/invoice uses the same email as an existing client/lead:
+
+* suggest linking to existing record
+* do not silently create duplicates
+
+==================================================
+7. SALES DASHBOARD
+==================
+
+Update Sales dashboard to show pipeline stages:
+
+* New leads
+* Qualified
+* Quotes sent
+* Quotes accepted
+* Contracts signed
+* Invoices paid
+* Lost/cancelled
+* Revenue won
+
+Add filters by:
+
+* pipeline stage
+* date
+* currency
+* event type
+* assigned user if applicable
+
+==================================================
+8. DATABASE / API
+=================
+
+If needed, update schema to support:
+
+* clientId
+* leadId
+* quoteId
+* contractId
+* invoiceId
+* pipelineStage
+* status history
+* timestamps:
+
+  * quoteSentAt
+  * quoteAcceptedAt
+  * contractSignedAt
+  * invoicePaidAt
+
+Keep existing data compatible.
+
+Do not break existing records.
+
+==================================================
+9. VERIFICATION
+===============
+
+Test full workflow:
+
+1. Create Lead
+2. Create Quote from Lead
+3. Accept Quote
+4. Generate Contract from Quote
+5. Mark Contract Signed
+6. Generate Invoice from Contract
+7. Mark Invoice Paid
+
+Expected result:
+
+* No duplicate client entry
+* Client info reused everywhere
+* Pipeline updates automatically
+* Client 360 shows full history
+* Sales dashboard updates
+* Quote, contract and invoice all use same currency/language/client data
+
+Run:
+
+* DB migration if needed
+* OpenAPI/codegen if needed
+* typecheck
+* route verification
+
+Do not redesign the whole Sales module.
+Focus on connecting Leads, Quotes, Contracts, Invoices and Client 360 into one coherent CRM pipeline.

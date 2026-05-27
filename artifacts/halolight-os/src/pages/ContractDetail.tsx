@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useRoute, Link, useLocation } from "wouter";
 import { useTranslation } from "react-i18next";
-import { useGetContract, useUpdateContractStatus, useDeleteContract, useUpdateContract, useGetCurrentUser } from "@workspace/api-client-react";
+import { useGetContract, useUpdateContractStatus, useDeleteContract, useUpdateContract, useGetCurrentUser, useCreateInvoice } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Printer, Building2, Mail, Edit2, FileSignature } from "lucide-react";
+import { ArrowLeft, Printer, Building2, Mail, Edit2, FileSignature, ReceiptText } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCurrency } from "@/lib/currency";
 
@@ -81,6 +81,8 @@ export default function ContractDetail() {
 
   const [editing, setEditing] = useState(false);
   const [editForm, setEditForm] = useState<Record<string, string>>({});
+  const [showCreateInvoice, setShowCreateInvoice] = useState(false);
+  const [invoiceForm, setInvoiceForm] = useState({ title: "", clientName: "", clientEmail: "", clientPhone: "", description: "", unitPrice: "", quantity: "1" });
 
   const { data: contract, isLoading } = useGetContract(id, {
     query: { queryKey: ["contract", id], enabled: !!id },
@@ -103,6 +105,52 @@ export default function ContractDetail() {
       onSuccess: () => { qc.invalidateQueries({ queryKey: ["contracts"] }); navigate("/contracts"); toast({ title: t("contracts.contract_deleted") }); },
     },
   });
+
+  const createInvoiceMutation = useCreateInvoice({
+    mutation: {
+      onSuccess: (data) => {
+        qc.invalidateQueries({ queryKey: ["invoices"] });
+        setShowCreateInvoice(false);
+        toast({ title: t("pipeline.invoice_created") });
+        navigate(`/invoices/${data.id}`);
+      },
+    },
+  });
+
+  const openCreateInvoice = () => {
+    if (!contract) return;
+    setInvoiceForm({
+      title: `Invoice — ${contract.title}`,
+      clientName: contract.clientName,
+      clientEmail: contract.clientEmail ?? "",
+      clientPhone: (contract as any).clientPhone ?? "",
+      description: contract.title,
+      unitPrice: contract.value,
+      quantity: "1",
+    });
+    setShowCreateInvoice(true);
+  };
+
+  const submitCreateInvoice = () => {
+    if (!contract || !invoiceForm.title || !invoiceForm.clientName) return;
+    const qty = invoiceForm.quantity || "1";
+    const price = invoiceForm.unitPrice || "0";
+    const total = String(Number(qty) * Number(price));
+    createInvoiceMutation.mutate({
+      data: {
+        contractId: id,
+        quoteId: (contract as any).quoteId ?? undefined,
+        leadId: (contract as any).leadId ?? undefined,
+        title: invoiceForm.title,
+        clientName: invoiceForm.clientName,
+        clientEmail: invoiceForm.clientEmail || undefined,
+        clientPhone: invoiceForm.clientPhone || undefined,
+        clientCompany: (contract as any).clientCompany ?? undefined,
+        eventType: (contract as any).eventType ?? undefined,
+        items: [{ description: invoiceForm.description || "Service", quantity: qty, unitPrice: price, order: 1 }],
+      },
+    });
+  };
 
   const startEdit = () => {
     if (!contract) return;
@@ -144,6 +192,9 @@ export default function ContractDetail() {
         </div>
         <div className="flex gap-2 flex-wrap">
           <PrintButton contractNumber={contract.contractNumber} title={contract.title} clientName={contract.clientName} content={contract.content} value={contract.value} lang={lang} />
+          <Button variant="outline" size="sm" onClick={openCreateInvoice} className="gap-1.5">
+            <ReceiptText className="w-3.5 h-3.5" /> {t("pipeline.create_invoice")}
+          </Button>
           <Button variant="outline" onClick={startEdit} className="gap-2"><Edit2 className="w-4 h-4" /> {t("common.edit")}</Button>
           <Select value={contract.status} onValueChange={(s) => statusMutation.mutate({ id, data: { status: s as any } })}>
             <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
@@ -205,6 +256,27 @@ export default function ContractDetail() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditing(false)}>{t("common.cancel")}</Button>
             <Button onClick={saveEdit} disabled={updateMutation.isPending}>{updateMutation.isPending ? t("contracts.saving") : t("contracts.save_changes")}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showCreateInvoice} onOpenChange={setShowCreateInvoice}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader><DialogTitle>{t("pipeline.create_invoice_from_contract")}</DialogTitle></DialogHeader>
+          <div className="grid grid-cols-2 gap-4 py-2">
+            <div className="col-span-2 space-y-1.5"><Label>{t("invoices.title_label")} *</Label><Input value={invoiceForm.title} onChange={(e) => setInvoiceForm({ ...invoiceForm, title: e.target.value })} /></div>
+            <div className="space-y-1.5"><Label>{t("invoices.client_name_label")} *</Label><Input value={invoiceForm.clientName} onChange={(e) => setInvoiceForm({ ...invoiceForm, clientName: e.target.value })} /></div>
+            <div className="space-y-1.5"><Label>{t("invoices.client_email_label")}</Label><Input value={invoiceForm.clientEmail} onChange={(e) => setInvoiceForm({ ...invoiceForm, clientEmail: e.target.value })} /></div>
+            <div className="space-y-1.5"><Label>{t("leads.phone_label")}</Label><Input value={invoiceForm.clientPhone} onChange={(e) => setInvoiceForm({ ...invoiceForm, clientPhone: e.target.value })} /></div>
+            <div className="col-span-2 space-y-1.5"><Label>{t("pipeline.item_description")}</Label><Input value={invoiceForm.description} onChange={(e) => setInvoiceForm({ ...invoiceForm, description: e.target.value })} /></div>
+            <div className="space-y-1.5"><Label>{t("pipeline.unit_price")}</Label><Input type="number" value={invoiceForm.unitPrice} onChange={(e) => setInvoiceForm({ ...invoiceForm, unitPrice: e.target.value })} /></div>
+            <div className="space-y-1.5"><Label>{t("pipeline.quantity")}</Label><Input type="number" value={invoiceForm.quantity} onChange={(e) => setInvoiceForm({ ...invoiceForm, quantity: e.target.value })} /></div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCreateInvoice(false)}>{t("common.cancel")}</Button>
+            <Button onClick={submitCreateInvoice} disabled={createInvoiceMutation.isPending || !invoiceForm.title || !invoiceForm.clientName}>
+              {createInvoiceMutation.isPending ? t("leads.saving") : t("pipeline.create_invoice")}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

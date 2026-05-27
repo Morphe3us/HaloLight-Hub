@@ -1,14 +1,17 @@
-import { useRoute, Link } from "wouter";
+import { useState } from "react";
+import { useRoute, Link, useLocation } from "wouter";
 import { useTranslation } from "react-i18next";
-import { useGetQuote, useUpdateQuoteStatus, useDeleteQuote, useGetCurrentUser } from "@workspace/api-client-react";
+import { useGetQuote, useUpdateQuoteStatus, useDeleteQuote, useGetCurrentUser, useCreateContract, useCreateInvoice } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Printer, Building2, Mail, Phone } from "lucide-react";
+import { ArrowLeft, Printer, Building2, Mail, Phone, CheckCircle2, XCircle, FileSignature, ReceiptText } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useLocation } from "wouter";
 import { useCurrency } from "@/lib/currency";
 
 const STATUS_COLORS: Record<string, string> = {
@@ -116,6 +119,11 @@ export default function QuoteDetail() {
   const qc = useQueryClient();
   const { format: formatCurrency } = useCurrency();
 
+  const [showCreateContract, setShowCreateContract] = useState(false);
+  const [showCreateInvoice, setShowCreateInvoice] = useState(false);
+  const [contractForm, setContractForm] = useState({ title: "", clientName: "", clientEmail: "", clientPhone: "", value: "" });
+  const [invoiceForm, setInvoiceForm] = useState({ title: "", clientName: "", clientEmail: "", clientPhone: "", description: "", unitPrice: "", quantity: "1" });
+
   const { data: quote, isLoading } = useGetQuote(id, {
     query: { queryKey: ["quote", id], enabled: !!id },
   });
@@ -131,6 +139,92 @@ export default function QuoteDetail() {
       onSuccess: () => { qc.invalidateQueries({ queryKey: ["quotes"] }); navigate("/quotes"); toast({ title: t("quotes.quote_deleted") }); },
     },
   });
+
+  const createContractMutation = useCreateContract({
+    mutation: {
+      onSuccess: (data) => {
+        qc.invalidateQueries({ queryKey: ["contracts"] });
+        setShowCreateContract(false);
+        toast({ title: t("pipeline.contract_created") });
+        navigate(`/contracts/${data.id}`);
+      },
+    },
+  });
+
+  const createInvoiceMutation = useCreateInvoice({
+    mutation: {
+      onSuccess: (data) => {
+        qc.invalidateQueries({ queryKey: ["invoices"] });
+        setShowCreateInvoice(false);
+        toast({ title: t("pipeline.invoice_created") });
+        navigate(`/invoices/${data.id}`);
+      },
+    },
+  });
+
+  const openCreateContract = () => {
+    if (!quote) return;
+    setContractForm({
+      title: `Contract — ${quote.title}`,
+      clientName: quote.clientName,
+      clientEmail: quote.clientEmail ?? "",
+      clientPhone: quote.clientPhone ?? "",
+      value: quote.total,
+    });
+    setShowCreateContract(true);
+  };
+
+  const openCreateInvoice = () => {
+    if (!quote) return;
+    const firstItem = quote.items?.[0];
+    setInvoiceForm({
+      title: `Invoice — ${quote.title}`,
+      clientName: quote.clientName,
+      clientEmail: quote.clientEmail ?? "",
+      clientPhone: quote.clientPhone ?? "",
+      description: firstItem?.description ?? quote.title,
+      unitPrice: quote.total,
+      quantity: "1",
+    });
+    setShowCreateInvoice(true);
+  };
+
+  const submitCreateContract = () => {
+    if (!quote || !contractForm.title || !contractForm.clientName) return;
+    createContractMutation.mutate({
+      data: {
+        quoteId: id,
+        leadId: (quote as any).leadId ?? undefined,
+        title: contractForm.title,
+        clientName: contractForm.clientName,
+        clientEmail: contractForm.clientEmail || undefined,
+        clientPhone: contractForm.clientPhone || undefined,
+        value: contractForm.value || undefined,
+        clientCompany: (quote as any).clientCompany ?? undefined,
+        eventType: (quote as any).eventType ?? undefined,
+      },
+    });
+  };
+
+  const submitCreateInvoice = () => {
+    if (!quote || !invoiceForm.title || !invoiceForm.clientName) return;
+    const qty = invoiceForm.quantity || "1";
+    const price = invoiceForm.unitPrice || "0";
+    const total = String(Number(qty) * Number(price));
+    createInvoiceMutation.mutate({
+      data: {
+        quoteId: id,
+        leadId: (quote as any).leadId ?? undefined,
+        title: invoiceForm.title,
+        clientName: invoiceForm.clientName,
+        clientEmail: invoiceForm.clientEmail || undefined,
+        clientPhone: invoiceForm.clientPhone || undefined,
+        clientCompany: (quote as any).clientCompany ?? undefined,
+        eventType: (quote as any).eventType ?? undefined,
+        items: [{ description: invoiceForm.description || "Service", quantity: qty, unitPrice: price, order: 1 }],
+      },
+    });
+  };
 
   if (isLoading) return <div className="flex items-center justify-center h-40 text-muted-foreground">{t("quotes.loading")}</div>;
   if (!quote) return <div className="p-8 text-muted-foreground">{t("quotes.not_found")}</div>;
@@ -168,6 +262,22 @@ export default function QuoteDetail() {
               lang={lang}
             />
           )}
+          {(quote.status === "draft" || quote.status === "sent") && (
+            <Button size="sm" variant="outline" onClick={() => statusMutation.mutate({ id, data: { status: "accepted" } })} className="gap-1.5 border-success/40 text-success hover:bg-success/5">
+              <CheckCircle2 className="w-3.5 h-3.5" /> {t("pipeline.accept_quote")}
+            </Button>
+          )}
+          {(quote.status === "draft" || quote.status === "sent") && (
+            <Button size="sm" variant="outline" onClick={() => statusMutation.mutate({ id, data: { status: "declined" } })} className="gap-1.5 border-destructive/40 text-destructive hover:bg-destructive/5">
+              <XCircle className="w-3.5 h-3.5" /> {t("pipeline.reject_quote")}
+            </Button>
+          )}
+          <Button size="sm" variant="outline" onClick={openCreateContract} className="gap-1.5">
+            <FileSignature className="w-3.5 h-3.5" /> {t("pipeline.create_contract")}
+          </Button>
+          <Button size="sm" variant="outline" onClick={openCreateInvoice} className="gap-1.5">
+            <ReceiptText className="w-3.5 h-3.5" /> {t("pipeline.create_invoice")}
+          </Button>
           <Select value={quote.status} onValueChange={(s) => statusMutation.mutate({ id, data: { status: s as any } })}>
             <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
             <SelectContent>
@@ -254,6 +364,46 @@ export default function QuoteDetail() {
           )}
         </div>
       )}
+
+      <Dialog open={showCreateContract} onOpenChange={setShowCreateContract}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader><DialogTitle>{t("pipeline.create_contract_from_quote")}</DialogTitle></DialogHeader>
+          <div className="grid grid-cols-2 gap-4 py-2">
+            <div className="col-span-2 space-y-1.5"><Label>{t("contracts.title_label")} *</Label><Input value={contractForm.title} onChange={(e) => setContractForm({ ...contractForm, title: e.target.value })} /></div>
+            <div className="space-y-1.5"><Label>{t("contracts.client_name_label")} *</Label><Input value={contractForm.clientName} onChange={(e) => setContractForm({ ...contractForm, clientName: e.target.value })} /></div>
+            <div className="space-y-1.5"><Label>{t("contracts.client_email_label")}</Label><Input value={contractForm.clientEmail} onChange={(e) => setContractForm({ ...contractForm, clientEmail: e.target.value })} /></div>
+            <div className="space-y-1.5"><Label>{t("leads.phone_label")}</Label><Input value={contractForm.clientPhone} onChange={(e) => setContractForm({ ...contractForm, clientPhone: e.target.value })} /></div>
+            <div className="space-y-1.5"><Label>{t("contracts.value_dollar_label")}</Label><Input type="number" value={contractForm.value} onChange={(e) => setContractForm({ ...contractForm, value: e.target.value })} /></div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCreateContract(false)}>{t("common.cancel")}</Button>
+            <Button onClick={submitCreateContract} disabled={createContractMutation.isPending || !contractForm.title || !contractForm.clientName}>
+              {createContractMutation.isPending ? t("leads.saving") : t("pipeline.create_contract")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showCreateInvoice} onOpenChange={setShowCreateInvoice}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader><DialogTitle>{t("pipeline.create_invoice_from_quote")}</DialogTitle></DialogHeader>
+          <div className="grid grid-cols-2 gap-4 py-2">
+            <div className="col-span-2 space-y-1.5"><Label>{t("invoices.title_label")} *</Label><Input value={invoiceForm.title} onChange={(e) => setInvoiceForm({ ...invoiceForm, title: e.target.value })} /></div>
+            <div className="space-y-1.5"><Label>{t("invoices.client_name_label")} *</Label><Input value={invoiceForm.clientName} onChange={(e) => setInvoiceForm({ ...invoiceForm, clientName: e.target.value })} /></div>
+            <div className="space-y-1.5"><Label>{t("invoices.client_email_label")}</Label><Input value={invoiceForm.clientEmail} onChange={(e) => setInvoiceForm({ ...invoiceForm, clientEmail: e.target.value })} /></div>
+            <div className="space-y-1.5"><Label>{t("leads.phone_label")}</Label><Input value={invoiceForm.clientPhone} onChange={(e) => setInvoiceForm({ ...invoiceForm, clientPhone: e.target.value })} /></div>
+            <div className="col-span-2 space-y-1.5"><Label>{t("pipeline.item_description")}</Label><Input value={invoiceForm.description} onChange={(e) => setInvoiceForm({ ...invoiceForm, description: e.target.value })} /></div>
+            <div className="space-y-1.5"><Label>{t("pipeline.unit_price")}</Label><Input type="number" value={invoiceForm.unitPrice} onChange={(e) => setInvoiceForm({ ...invoiceForm, unitPrice: e.target.value })} /></div>
+            <div className="space-y-1.5"><Label>{t("pipeline.quantity")}</Label><Input type="number" value={invoiceForm.quantity} onChange={(e) => setInvoiceForm({ ...invoiceForm, quantity: e.target.value })} /></div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCreateInvoice(false)}>{t("common.cancel")}</Button>
+            <Button onClick={submitCreateInvoice} disabled={createInvoiceMutation.isPending || !invoiceForm.title || !invoiceForm.clientName}>
+              {createInvoiceMutation.isPending ? t("leads.saving") : t("pipeline.create_invoice")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

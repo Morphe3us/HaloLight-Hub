@@ -49,6 +49,7 @@ export const leads = pgTable("leads", {
   eventType: text("event_type"),
   expectedEventDate: timestamp("expected_event_date"),
   assignedTo: text("assigned_to"),
+  pipelineStage: text("pipeline_stage").notNull().default("lead"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

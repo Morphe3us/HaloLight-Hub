@@ -1,6 +1,6 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import { eq, and, desc, sql } from "drizzle-orm";
-import { db, quotes, quoteItems } from "@workspace/db";
+import { db, quotes, quoteItems, leads } from "@workspace/db";
 import { requireAuth } from "../middlewares/requireAuth";
 import { getOrCreateUser } from "../lib/userSync";
 
@@ -17,6 +17,12 @@ function calcTotals(items: Array<{ quantity: string; unitPrice: string }>, taxRa
   const taxAmount = subtotal * (parseFloat(taxRate || "0") / 100);
   const total = subtotal + taxAmount;
   return { subtotal: subtotal.toFixed(2), taxAmount: taxAmount.toFixed(2), total: total.toFixed(2) };
+}
+
+async function updateLeadPipelineStage(leadId: string | null | undefined, stage: string, userId: string) {
+  if (!leadId) return;
+  await db.update(leads).set({ pipelineStage: stage, updatedAt: new Date() })
+    .where(and(eq(leads.id, leadId), eq(leads.userId, userId)));
 }
 
 // GET /quotes
@@ -43,12 +49,40 @@ router.post("/quotes", requireAuth, async (req: Request, res: Response): Promise
   const user = await getOrCreateUser(req);
   if (!user) { res.status(401).json({ error: "Unauthorized" }); return; }
 
-  const { leadId, title, clientName, clientEmail, clientPhone, taxRate = "0", notes, terms, validUntil, items = [] } = req.body as {
+  const {
+    leadId, title, clientName, clientEmail, clientPhone, clientCompany, clientAddress,
+    eventType, eventDate, eventLocation, currency, language,
+    taxRate = "0", notes, terms, validUntil, items = [],
+  } = req.body as {
     leadId?: string; title: string; clientName: string; clientEmail?: string; clientPhone?: string;
+    clientCompany?: string; clientAddress?: string; eventType?: string; eventDate?: string;
+    eventLocation?: string; currency?: string; language?: string;
     taxRate?: string; notes?: string; terms?: string; validUntil?: string;
     items?: Array<{ description: string; quantity: string; unitPrice: string; order?: number }>;
   };
   if (!title || !clientName) { res.status(400).json({ error: "title and clientName required" }); return; }
+
+  // Auto-fill from lead if provided
+  let resolvedClientName = clientName;
+  let resolvedClientEmail = clientEmail;
+  let resolvedClientPhone = clientPhone;
+  let resolvedClientCompany = clientCompany;
+  let resolvedClientAddress = clientAddress;
+  let resolvedEventType = eventType;
+  let resolvedEventDate = eventDate;
+
+  if (leadId) {
+    const [lead] = await db.select().from(leads).where(and(eq(leads.id, leadId), eq(leads.userId, user.id)));
+    if (lead) {
+      resolvedClientName = clientName || lead.contactName;
+      resolvedClientEmail = clientEmail ?? lead.email ?? undefined;
+      resolvedClientPhone = clientPhone ?? lead.phone ?? undefined;
+      resolvedClientCompany = clientCompany ?? lead.companyName;
+      resolvedClientAddress = clientAddress ?? lead.address ?? undefined;
+      resolvedEventType = eventType ?? lead.eventType ?? undefined;
+      resolvedEventDate = eventDate ?? (lead.expectedEventDate ? lead.expectedEventDate.toISOString() : undefined);
+    }
+  }
 
   const totals = calcTotals(items ?? [], taxRate);
 
@@ -57,15 +91,25 @@ router.post("/quotes", requireAuth, async (req: Request, res: Response): Promise
     leadId: leadId ?? null,
     quoteNumber: generateQuoteNumber(),
     title,
-    clientName,
-    clientEmail: clientEmail ?? null,
-    clientPhone: clientPhone ?? null,
+    clientName: resolvedClientName,
+    clientEmail: resolvedClientEmail ?? null,
+    clientPhone: resolvedClientPhone ?? null,
+    clientCompany: resolvedClientCompany ?? null,
+    clientAddress: resolvedClientAddress ?? null,
+    eventType: resolvedEventType ?? null,
+    eventDate: resolvedEventDate ? new Date(resolvedEventDate) : null,
+    eventLocation: eventLocation ?? null,
+    currency: currency ?? null,
+    language: language ?? null,
     taxRate,
     ...totals,
     notes: notes ?? null,
     terms: terms ?? null,
     validUntil: validUntil ? new Date(validUntil) : null,
   }).returning();
+
+  // Update lead pipeline stage
+  if (leadId) await updateLeadPipelineStage(leadId, "quote_created", user.id);
 
   const itemRows = (items ?? []).length > 0 ? await db.insert(quoteItems).values(
     (items ?? []).map((item, i) => ({
@@ -103,9 +147,16 @@ router.put("/quotes/:id", requireAuth, async (req: Request, res: Response): Prom
   const [existing] = await db.select().from(quotes).where(and(eq(quotes.id, id), eq(quotes.userId, user.id)));
   if (!existing) { res.status(404).json({ error: "Not found" }); return; }
 
-  const { leadId, title, clientName, clientEmail, clientPhone, taxRate, notes, terms, validUntil, items } = req.body as {
+  const {
+    leadId, title, clientName, clientEmail, clientPhone, clientCompany, clientAddress,
+    eventType, eventDate, eventLocation, currency, language,
+    taxRate, notes, terms, validUntil, items,
+  } = req.body as {
     leadId?: string | null; title?: string; clientName?: string; clientEmail?: string | null;
-    clientPhone?: string | null; taxRate?: string; notes?: string | null; terms?: string | null;
+    clientPhone?: string | null; clientCompany?: string | null; clientAddress?: string | null;
+    eventType?: string | null; eventDate?: string | null; eventLocation?: string | null;
+    currency?: string | null; language?: string | null;
+    taxRate?: string; notes?: string | null; terms?: string | null;
     validUntil?: string; items?: Array<{ description: string; quantity: string; unitPrice: string; order?: number }>;
   };
 
@@ -119,6 +170,13 @@ router.put("/quotes/:id", requireAuth, async (req: Request, res: Response): Prom
     clientName: clientName ?? existing.clientName,
     clientEmail: clientEmail !== undefined ? clientEmail : existing.clientEmail,
     clientPhone: clientPhone !== undefined ? clientPhone : existing.clientPhone,
+    clientCompany: clientCompany !== undefined ? clientCompany : existing.clientCompany,
+    clientAddress: clientAddress !== undefined ? clientAddress : existing.clientAddress,
+    eventType: eventType !== undefined ? eventType : existing.eventType,
+    eventDate: eventDate !== undefined ? (eventDate ? new Date(eventDate) : null) : existing.eventDate,
+    eventLocation: eventLocation !== undefined ? eventLocation : existing.eventLocation,
+    currency: currency !== undefined ? currency : existing.currency,
+    language: language !== undefined ? language : existing.language,
     taxRate: newTaxRate,
     ...totals,
     notes: notes !== undefined ? notes : existing.notes,
@@ -177,6 +235,14 @@ router.patch("/quotes/:id/status", requireAuth, async (req: Request, res: Respon
   if (status === "accepted") extra.acceptedAt = new Date();
 
   const [updated] = await db.update(quotes).set({ status, ...extra, updatedAt: new Date() }).where(eq(quotes.id, id)).returning();
+
+  // Update lead pipeline stage
+  if (existing.leadId) {
+    if (status === "sent") await updateLeadPipelineStage(existing.leadId, "quote_sent", user.id);
+    else if (status === "accepted") await updateLeadPipelineStage(existing.leadId, "quote_accepted", user.id);
+    else if (status === "declined") await updateLeadPipelineStage(existing.leadId, "lost", user.id);
+  }
+
   const items = await db.select().from(quoteItems).where(eq(quoteItems.quoteId, id)).orderBy(quoteItems.order);
   res.json({ ...updated, items });
 });
