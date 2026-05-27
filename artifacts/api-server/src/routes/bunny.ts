@@ -98,6 +98,61 @@ router.get("/admin/bunny/status", requireAuth, async (req: Request, res: Respons
   }
 });
 
+// GET /admin/bunny/diagnose?videoId=xxx
+// Temporary diagnostic endpoint: returns library security settings + per-video status.
+router.get("/admin/bunny/diagnose", requireAuth, async (req: Request, res: Response): Promise<void> => {
+  const user = await getOrCreateUser(req);
+  if (!requireAdmin(user, res)) return;
+
+  const cfg = getConfig();
+  if (!cfg) { res.status(400).json({ error: "BunnyStream not configured" }); return; }
+
+  try {
+    const lib = await bunnyGet(`/library/${cfg.libraryId}`, cfg.apiKey) as Record<string, unknown>;
+
+    const libraryInfo = {
+      name: lib["Name"],
+      libraryId: cfg.libraryId,
+      tokenAuthenticationEnabled: lib["TokenAuthenticationEnabled"] ?? false,
+      blockNoneReferrer: lib["BlockNoneReferrer"] ?? false,
+      allowedReferrers: (lib["AllowedReferrers"] as string[] | null) ?? [],
+      pullZoneHostname: lib["PullZoneHostname"] ?? "",
+      enabledResolutions: lib["EnabledResolutions"] ?? "",
+      allowDirectPlay: lib["AllowDirectPlay"] ?? false,
+    };
+
+    let videoInfo: Record<string, unknown> | null = null;
+    const videoId = req.query["videoId"] as string | undefined;
+    if (videoId) {
+      try {
+        const video = await bunnyGet(`/library/${cfg.libraryId}/videos/${videoId}`, cfg.apiKey) as Record<string, unknown>;
+        videoInfo = {
+          videoId: video["guid"],
+          title: video["title"],
+          status: video["status"],
+          statusLabel: statusLabel(Number(video["status"])),
+          encodeProgress: video["encodeProgress"],
+          length: video["length"],
+          width: video["width"],
+          height: video["height"],
+          framerate: video["framerate"],
+          storageSize: video["storageSize"],
+          collectionId: video["collectionId"],
+          embedUrl: buildEmbedUrl(cfg.libraryId, String(video["guid"] ?? "")),
+        };
+      } catch (err) {
+        videoInfo = { error: err instanceof Error ? err.message : String(err) };
+      }
+    }
+
+    res.json({ libraryInfo, videoInfo });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    req.log.warn({ err }, "BunnyStream diagnose failed");
+    res.status(500).json({ error: msg });
+  }
+});
+
 // GET /admin/bunny/collections
 router.get("/admin/bunny/collections", requireAuth, async (req: Request, res: Response): Promise<void> => {
   const user = await getOrCreateUser(req);

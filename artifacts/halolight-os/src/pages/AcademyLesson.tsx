@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useParams, useLocation, Link } from "wouter";
 import {
@@ -22,6 +22,9 @@ import {
   BookOpen,
   AlertCircle,
   Video,
+  ExternalLink,
+  Copy,
+  FlaskConical,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -72,6 +75,218 @@ const RESOURCE_ICONS: Record<string, React.ComponentType<{ className?: string }>
   download: Download,
   video: BookOpen,
 };
+
+// ─── HARDCODED TEST ───────────────────────────────────────────────────────────
+// Known video ID from the DB (Spanish "CIERRE" lesson). If this also fails to
+// play, the issue is BunnyStream-side (domain restriction / token auth / CDN).
+const BUNNY_HARDCODED_TEST = "https://iframe.mediadelivery.net/embed/670736/de960d25-7de9-41c0-9b02-bb3a90809d7f?controls=true&autoplay=false&loop=false&muted=false&preload=true&responsive=true";
+
+interface DiagnoseResult {
+  libraryInfo: {
+    name: unknown;
+    libraryId: string;
+    tokenAuthenticationEnabled: boolean;
+    blockNoneReferrer: boolean;
+    allowedReferrers: string[];
+    pullZoneHostname: string;
+    enabledResolutions: string;
+    allowDirectPlay: boolean;
+  };
+  videoInfo: Record<string, unknown> | null;
+}
+
+function BunnyVideoDebug({
+  embedUrl,
+  videoId,
+  rawEmbedUrl,
+  videoAssetsKeys,
+  lang,
+  resolvedLang,
+  lessonId,
+}: {
+  embedUrl: string;
+  videoId: string | undefined;
+  rawEmbedUrl: string;
+  videoAssetsKeys: string;
+  lang: string;
+  resolvedLang: string | null;
+  lessonId: string;
+}) {
+  const [copied, setCopied] = useState(false);
+  const [diag, setDiag] = useState<DiagnoseResult | null>(null);
+  const [diagLoading, setDiagLoading] = useState(false);
+  const [diagError, setDiagError] = useState<string | null>(null);
+  const [showHardcoded, setShowHardcoded] = useState(false);
+
+  // Log iframe src every time it changes
+  useEffect(() => {
+    console.group("[BunnyDebug] iframe src for lesson", lessonId);
+    console.log("rawEmbedUrl (from DB):", rawEmbedUrl);
+    console.log("embedUrl (final iframe src):", embedUrl);
+    console.log("videoId:", videoId);
+    console.log("lang:", lang, "→ resolvedLang:", resolvedLang);
+    console.log("videoAssets keys:", videoAssetsKeys);
+    console.groupEnd();
+  }, [embedUrl, rawEmbedUrl, videoId, lang, resolvedLang, videoAssetsKeys, lessonId]);
+
+  const fetchDiag = async () => {
+    if (diagLoading) return;
+    setDiagLoading(true);
+    setDiagError(null);
+    try {
+      const qs = videoId ? `?videoId=${encodeURIComponent(videoId)}` : "";
+      const res = await fetch(`/api/admin/bunny/diagnose${qs}`, { credentials: "include" });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data: DiagnoseResult = await res.json();
+      setDiag(data);
+      console.log("[BunnyDebug] diagnose result:", data);
+    } catch (e) {
+      setDiagError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setDiagLoading(false);
+    }
+  };
+
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(embedUrl).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
+  return (
+    <details className="rounded-lg border border-amber-400/50 bg-amber-50/60 dark:bg-amber-900/10 text-xs font-mono" open>
+      <summary className="px-3 py-2 cursor-pointer text-amber-700 dark:text-amber-400 font-semibold select-none flex items-center gap-2">
+        <FlaskConical className="w-3.5 h-3.5 inline" />
+        BunnyStream Video Debugger
+      </summary>
+
+      <div className="px-3 pb-3 pt-1 space-y-3">
+
+        {/* Action buttons */}
+        <div className="flex flex-wrap gap-2 pt-1">
+          <button
+            onClick={() => window.open(embedUrl, "_blank")}
+            className="inline-flex items-center gap-1.5 rounded px-2.5 py-1 bg-blue-600 text-white text-xs font-sans font-medium hover:bg-blue-700"
+          >
+            <ExternalLink className="w-3 h-3" /> Open video directly (new tab)
+          </button>
+          <button
+            onClick={copyToClipboard}
+            className="inline-flex items-center gap-1.5 rounded px-2.5 py-1 bg-slate-600 text-white text-xs font-sans font-medium hover:bg-slate-700"
+          >
+            <Copy className="w-3 h-3" /> {copied ? "Copied!" : "Copy iframe src"}
+          </button>
+          <button
+            onClick={fetchDiag}
+            disabled={diagLoading}
+            className="inline-flex items-center gap-1.5 rounded px-2.5 py-1 bg-purple-600 text-white text-xs font-sans font-medium hover:bg-purple-700 disabled:opacity-60"
+          >
+            <FlaskConical className="w-3 h-3" /> {diagLoading ? "Loading…" : "Check BunnyStream status"}
+          </button>
+          <button
+            onClick={() => setShowHardcoded((v) => !v)}
+            className="inline-flex items-center gap-1.5 rounded px-2.5 py-1 bg-emerald-600 text-white text-xs font-sans font-medium hover:bg-emerald-700"
+          >
+            <Video className="w-3 h-3" /> {showHardcoded ? "Hide" : "Show"} hardcoded test player
+          </button>
+        </div>
+
+        {/* Embed URL */}
+        <div className="space-y-1">
+          <p className="text-amber-700 dark:text-amber-400 font-semibold font-sans">Resolved iframe src:</p>
+          <p className="break-all text-foreground bg-white/60 dark:bg-black/20 rounded px-2 py-1 border border-amber-200 select-all">{embedUrl || "(empty)"}</p>
+          <p className="text-amber-700 dark:text-amber-400 font-semibold font-sans mt-2">Raw URL from DB:</p>
+          <p className="break-all text-foreground bg-white/60 dark:bg-black/20 rounded px-2 py-1 border border-amber-200 select-all">{rawEmbedUrl || "(empty)"}</p>
+        </div>
+
+        {/* Key facts */}
+        <div className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-muted-foreground">
+          <p><span className="text-foreground font-semibold">lessonId:</span> {lessonId}</p>
+          <p><span className="text-foreground font-semibold">videoId:</span> {videoId ?? "(none)"}</p>
+          <p><span className="text-foreground font-semibold">lang:</span> {lang}</p>
+          <p><span className="text-foreground font-semibold">resolvedLang:</span> {resolvedLang ?? "none"}</p>
+          <p><span className="text-foreground font-semibold">videoAssets keys:</span> {videoAssetsKeys || "(none)"}</p>
+        </div>
+
+        {/* BunnyStream diagnose results */}
+        {diagError && (
+          <p className="text-destructive font-sans">Diagnose error: {diagError} — are you logged in as admin?</p>
+        )}
+        {diag && (
+          <div className="space-y-2">
+            <p className="text-foreground font-semibold font-sans">Library: {String(diag.libraryInfo.name)} ({diag.libraryInfo.libraryId})</p>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-muted-foreground">
+              <p>
+                <span className={`font-semibold ${diag.libraryInfo.tokenAuthenticationEnabled ? "text-destructive" : "text-success"}`}>
+                  tokenAuth: {String(diag.libraryInfo.tokenAuthenticationEnabled)}
+                </span>
+              </p>
+              <p>
+                <span className={`font-semibold ${diag.libraryInfo.blockNoneReferrer ? "text-warning" : "text-success"}`}>
+                  blockNoneReferrer: {String(diag.libraryInfo.blockNoneReferrer)}
+                </span>
+              </p>
+              <p><span className="text-foreground font-semibold">allowDirectPlay:</span> {String(diag.libraryInfo.allowDirectPlay)}</p>
+              <p><span className="text-foreground font-semibold">pullZone:</span> {diag.libraryInfo.pullZoneHostname || "(none)"}</p>
+            </div>
+            {diag.libraryInfo.allowedReferrers.length > 0 ? (
+              <div>
+                <p className="text-warning font-semibold font-sans">⚠ Allowed referrers (domain whitelist active!):</p>
+                <ul className="list-disc list-inside text-muted-foreground">
+                  {diag.libraryInfo.allowedReferrers.map((r) => <li key={r}>{r}</li>)}
+                </ul>
+                <p className="text-warning font-sans mt-1">→ Add your Replit preview domain and *.replit.app to this list in BunnyStream.</p>
+              </div>
+            ) : (
+              <p className="text-success font-sans">✓ No referrer whitelist — any domain can embed.</p>
+            )}
+            {diag.videoInfo && (
+              <div className="mt-2 border-t border-amber-200 pt-2 space-y-0.5 text-muted-foreground">
+                <p className="text-foreground font-semibold font-sans">Video status:</p>
+                <p>
+                  <span className={`font-semibold ${diag.videoInfo["statusLabel"] === "ready" ? "text-success" : "text-warning"}`}>
+                    {String(diag.videoInfo["statusLabel"])} (code {String(diag.videoInfo["status"])})
+                  </span>
+                  {diag.videoInfo["statusLabel"] !== "ready" && (
+                    <span className="text-destructive font-sans"> — VIDEO NOT READY, encode progress: {String(diag.videoInfo["encodeProgress"] ?? "?")}%</span>
+                  )}
+                </p>
+                <p><span className="text-foreground">title:</span> {String(diag.videoInfo["title"] ?? "—")}</p>
+                <p><span className="text-foreground">resolution:</span> {String(diag.videoInfo["width"] ?? "?")}×{String(diag.videoInfo["height"] ?? "?")}</p>
+                <p><span className="text-foreground">length:</span> {String(diag.videoInfo["length"] ?? "?")}s</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Hardcoded test player */}
+        {showHardcoded && (
+          <div className="space-y-1">
+            <p className="text-foreground font-semibold font-sans">
+              Hardcoded test player (video ID: de960d25-7de9-41c0-9b02-bb3a90809d7f):
+            </p>
+            <p className="text-muted-foreground font-sans text-[10px]">
+              If this plays but the main player above does not → the imported embed URL is wrong.<br />
+              If this also fails → the issue is BunnyStream domain/token configuration.
+            </p>
+            <div className="aspect-video rounded overflow-hidden bg-black">
+              <iframe
+                src={BUNNY_HARDCODED_TEST}
+                title="BunnyStream hardcoded test"
+                allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture; fullscreen"
+                allowFullScreen
+                referrerPolicy="origin"
+                className="w-full h-full"
+                style={{ border: "none" }}
+              />
+            </div>
+          </div>
+        )}
+      </div>
+    </details>
+  );
+}
 
 export default function AcademyLesson() {
   const { t, i18n } = useTranslation();
@@ -211,6 +426,7 @@ export default function AcademyLesson() {
             title={lesson.title}
             allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture; fullscreen"
             allowFullScreen
+            referrerPolicy="origin"
             className="w-full h-full"
             style={{ border: "none" }}
           />
@@ -230,22 +446,16 @@ export default function AcademyLesson() {
         </div>
       )}
 
-      {/* Debug panel — rendering chain */}
-      {process.env.NODE_ENV === "development" && (
-        <details className="rounded-lg border border-border bg-muted/20 text-xs font-mono">
-          <summary className="px-3 py-2 cursor-pointer text-muted-foreground select-none">Debug: video rendering chain</summary>
-          <div className="px-3 pb-3 pt-1 space-y-1 text-muted-foreground">
-            <p><span className="text-foreground font-semibold">Course ID:</span> {(lesson as { moduleId?: string }).moduleId ?? "—"}</p>
-            <p><span className="text-foreground font-semibold">Lesson ID:</span> {lesson.id}</p>
-            <p><span className="text-foreground font-semibold">Selected language:</span> {lang}</p>
-            <p><span className="text-foreground font-semibold">Resolved asset lang:</span> {resolvedLang ?? "none"}</p>
-            <p><span className="text-foreground font-semibold">videoAssets keys:</span> {videoAssets ? Object.keys(videoAssets).join(", ") : "null"}</p>
-            <p><span className="text-foreground font-semibold">Resolved embed URL:</span> {resolvedVideoUrl || "(empty)"}</p>
-            <p><span className="text-foreground font-semibold">Final iframe src:</span> {embedUrl || "(empty — no video)"}</p>
-            <p><span className="text-foreground font-semibold">Thumbnail URL:</span> {thumbnailUrl || "(none)"}</p>
-          </div>
-        </details>
-      )}
+      {/* BunnyStream diagnostic panel — always visible until playback is confirmed working */}
+      <BunnyVideoDebug
+        embedUrl={embedUrl}
+        videoId={asset?.videoId}
+        rawEmbedUrl={resolvedVideoUrl}
+        videoAssetsKeys={videoAssets ? Object.keys(videoAssets).join(", ") : "none"}
+        lang={lang}
+        resolvedLang={resolvedLang}
+        lessonId={lesson.id}
+      />
 
       {/* Mark Complete */}
       {!isCompleted && lesson.quizQuestions.length === 0 && (
