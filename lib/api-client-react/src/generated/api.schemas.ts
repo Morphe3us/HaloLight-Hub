@@ -2444,6 +2444,74 @@ export interface UpdateAIKnowledgeDocInput {
   status?: UpdateAIKnowledgeDocInputStatus;
 }
 
+export interface BunnyStatus {
+  connected: boolean;
+  error?: string;
+  libraryId?: string;
+  libraryName?: string;
+  pullZoneHostname?: string;
+  videoCount?: number;
+}
+
+export interface BunnyCollection {
+  guid: string;
+  name: string;
+  videoCount: number;
+  lang: string;
+}
+
+export interface BunnyCollectionList {
+  items: BunnyCollection[];
+  total: number;
+}
+
+export interface BunnyVideo {
+  guid: string;
+  title: string;
+  collectionId: string;
+  durationSeconds: number;
+  status: number;
+  statusLabel: string;
+  isReady: boolean;
+  embedUrl: string;
+  thumbnailUrl: string;
+  previewUrl: string;
+  width?: number;
+  height?: number;
+}
+
+export interface BunnyVideoList {
+  items: BunnyVideo[];
+  total: number;
+  collectionId: string;
+}
+
+export interface BunnyImportItem {
+  videoId: string;
+  lang: string;
+  embedUrl: string;
+  thumbnailUrl: string;
+  previewUrl?: string;
+  durationSeconds: number;
+  videoTitle: string;
+  courseId?: string;
+  moduleId?: string;
+  lessonId?: string;
+  newModuleName?: string;
+  newLessonName?: string;
+}
+
+export interface BunnyImportInput {
+  items: BunnyImportItem[];
+}
+
+export interface BunnyImportResult {
+  imported: number;
+  created: number;
+  updated: number;
+  errors: string[];
+}
+
 export interface BackupTableStat {
   name: string;
   rowCount: number;

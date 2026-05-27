@@ -53,6 +53,71 @@ paths:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
 
+  # ─── BunnyStream ──────────────────────────────────────────────────────────
+  /admin/bunny/status:
+    get:
+      operationId: getBunnyStatus
+      tags: [academy]
+      summary: Check BunnyStream connection status
+      responses:
+        "200":
+          description: Connection status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BunnyStatus"
+
+  /admin/bunny/collections:
+    get:
+      operationId: listBunnyCollections
+      tags: [academy]
+      summary: List BunnyStream collections
+      responses:
+        "200":
+          description: Collections list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BunnyCollectionList"
+
+  /admin/bunny/collections/{collectionId}/videos:
+    get:
+      operationId: listBunnyVideos
+      tags: [academy]
+      summary: List videos in a BunnyStream collection
+      parameters:
+        - name: collectionId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Videos list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BunnyVideoList"
+
+  /admin/bunny/import:
+    post:
+      operationId: importBunnyVideos
+      tags: [academy]
+      summary: Import BunnyStream videos into lessons
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BunnyImportInput"
+      responses:
+        "200":
+          description: Import result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BunnyImportResult"
+
   # ─── Users ────────────────────────────────────────────────────────────────
   /users/me:
     get:
@@ -5734,6 +5799,98 @@ components:
         tags: { type: array, items: { type: string } }
         aiActive: { type: boolean }
         status: { type: string, enum: [draft, indexed, needs_review, archived] }
+
+    BunnyStatus:
+      type: object
+      required: [connected]
+      properties:
+        connected: { type: boolean }
+        error: { type: string }
+        libraryId: { type: string }
+        libraryName: { type: string }
+        pullZoneHostname: { type: string }
+        videoCount: { type: integer }
+
+    BunnyCollection:
+      type: object
+      required: [guid, name, videoCount, lang]
+      properties:
+        guid: { type: string }
+        name: { type: string }
+        videoCount: { type: integer }
+        lang: { type: string }
+
+    BunnyCollectionList:
+      type: object
+      required: [items, total]
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/BunnyCollection" }
+        total: { type: integer }
+
+    BunnyVideo:
+      type: object
+      required: [guid, title, collectionId, durationSeconds, status, statusLabel, isReady, embedUrl, thumbnailUrl, previewUrl]
+      properties:
+        guid: { type: string }
+        title: { type: string }
+        collectionId: { type: string }
+        durationSeconds: { type: integer }
+        status: { type: integer }
+        statusLabel: { type: string }
+        isReady: { type: boolean }
+        embedUrl: { type: string }
+        thumbnailUrl: { type: string }
+        previewUrl: { type: string }
+        width: { type: integer }
+        height: { type: integer }
+
+    BunnyVideoList:
+      type: object
+      required: [items, total, collectionId]
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/BunnyVideo" }
+        total: { type: integer }
+        collectionId: { type: string }
+
+    BunnyImportItem:
+      type: object
+      required: [videoId, lang, embedUrl, thumbnailUrl, durationSeconds, videoTitle]
+      properties:
+        videoId: { type: string }
+        lang: { type: string }
+        embedUrl: { type: string }
+        thumbnailUrl: { type: string }
+        previewUrl: { type: string }
+        durationSeconds: { type: integer }
+        videoTitle: { type: string }
+        courseId: { type: string }
+        moduleId: { type: string }
+        lessonId: { type: string }
+        newModuleName: { type: string }
+        newLessonName: { type: string }
+
+    BunnyImportInput:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/BunnyImportItem" }
+
+    BunnyImportResult:
+      type: object
+      required: [imported, created, updated, errors]
+      properties:
+        imported: { type: integer }
+        created: { type: integer }
+        updated: { type: integer }
+        errors:
+          type: array
+          items: { type: string }
 
     BackupTableStat:
       type: object

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import AdminBunnyImporter from "./AdminBunnyImporter";
 import { useTranslation } from "react-i18next";
 import {
   useListAdminCourses, useCreateAdminCourse, useUpdateAdminCourse,
@@ -31,7 +32,7 @@ import { useToast } from "@/hooks/use-toast";
 import {
   Plus, Pencil, Trash2, Copy, ChevronDown,
   ChevronRight, GraduationCap, BookOpen, Loader2,
-  MoreHorizontal, ArrowLeft, Star,
+  MoreHorizontal, ArrowLeft, Star, Video,
 } from "lucide-react";
 
 const LANGS = ["en", "fr", "de", "nl", "es", "it", "pt", "pl"] as const;
@@ -766,6 +767,7 @@ export default function AdminAcademy() {
   const [courseModal, setCourseModal] = useState<{ open: boolean; course?: AdminCourse | null }>({ open: false });
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
+  const [showBunny, setShowBunny] = useState(false);
 
   const { data, isLoading } = useListAdminCourses({ q: search || undefined, status: statusFilter === "all" ? undefined : statusFilter });
   const courses = ((data as { items?: AdminCourse[] })?.items ?? []) as AdminCourse[];
@@ -783,6 +785,10 @@ export default function AdminAcademy() {
       onSuccess: () => { toast({ title: t("admin_academy.toast_course_dup") }); invalidate(); },
     },
   });
+
+  if (showBunny) {
+    return <AdminBunnyImporter onBack={() => setShowBunny(false)} />;
+  }
 
   if (selectedCourseId) {
     return <CourseDetailView courseId={selectedCourseId} onBack={() => setSelectedCourseId(null)} />;
@@ -824,9 +830,14 @@ export default function AdminAcademy() {
           <h1 className="text-2xl font-bold text-foreground">{t("admin_academy.title")}</h1>
           <p className="text-sm text-muted-foreground mt-0.5">{t("admin_academy.subtitle")}</p>
         </div>
-        <Button className="gap-1.5" onClick={() => setCourseModal({ open: true })}>
-          <Plus className="w-4 h-4" /> {t("admin_academy.new_course")}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" className="gap-1.5" onClick={() => setShowBunny(true)}>
+            <Video className="w-4 h-4" /> BunnyStream Importer
+          </Button>
+          <Button className="gap-1.5" onClick={() => setCourseModal({ open: true })}>
+            <Plus className="w-4 h-4" /> {t("admin_academy.new_course")}
+          </Button>
+        </div>
       </div>
 
       <div className="flex gap-3 items-center flex-wrap">

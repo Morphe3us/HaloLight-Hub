@@ -56,6 +56,11 @@ import type {
   AutomationStats,
   BackupExport,
   BackupStatus,
+  BunnyCollectionList,
+  BunnyImportInput,
+  BunnyImportResult,
+  BunnyStatus,
+  BunnyVideoList,
   Client360,
   CommunityChannel,
   CommunityChannelList,
@@ -272,6 +277,308 @@ export function useHealthCheck<TData = Awaited<ReturnType<typeof healthCheck>>, 
 
 
 
+
+export const getGetBunnyStatusUrl = () => {
+
+
+
+
+  return `/api/admin/bunny/status`
+}
+
+/**
+ * @summary Check BunnyStream connection status
+ */
+export const getBunnyStatus = async ( options?: RequestInit): Promise<BunnyStatus> => {
+
+  return customFetch<BunnyStatus>(getGetBunnyStatusUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetBunnyStatusQueryKey = () => {
+    return [
+    `/api/admin/bunny/status`
+    ] as const;
+    }
+
+
+export const getGetBunnyStatusQueryOptions = <TData = Awaited<ReturnType<typeof getBunnyStatus>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getBunnyStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetBunnyStatusQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getBunnyStatus>>> = ({ signal }) => getBunnyStatus({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getBunnyStatus>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetBunnyStatusQueryResult = NonNullable<Awaited<ReturnType<typeof getBunnyStatus>>>
+export type GetBunnyStatusQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Check BunnyStream connection status
+ */
+
+export function useGetBunnyStatus<TData = Awaited<ReturnType<typeof getBunnyStatus>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getBunnyStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetBunnyStatusQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getListBunnyCollectionsUrl = () => {
+
+
+
+
+  return `/api/admin/bunny/collections`
+}
+
+/**
+ * @summary List BunnyStream collections
+ */
+export const listBunnyCollections = async ( options?: RequestInit): Promise<BunnyCollectionList> => {
+
+  return customFetch<BunnyCollectionList>(getListBunnyCollectionsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListBunnyCollectionsQueryKey = () => {
+    return [
+    `/api/admin/bunny/collections`
+    ] as const;
+    }
+
+
+export const getListBunnyCollectionsQueryOptions = <TData = Awaited<ReturnType<typeof listBunnyCollections>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listBunnyCollections>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListBunnyCollectionsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listBunnyCollections>>> = ({ signal }) => listBunnyCollections({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listBunnyCollections>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListBunnyCollectionsQueryResult = NonNullable<Awaited<ReturnType<typeof listBunnyCollections>>>
+export type ListBunnyCollectionsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List BunnyStream collections
+ */
+
+export function useListBunnyCollections<TData = Awaited<ReturnType<typeof listBunnyCollections>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listBunnyCollections>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListBunnyCollectionsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getListBunnyVideosUrl = (collectionId: string,) => {
+
+
+
+
+  return `/api/admin/bunny/collections/${collectionId}/videos`
+}
+
+/**
+ * @summary List videos in a BunnyStream collection
+ */
+export const listBunnyVideos = async (collectionId: string, options?: RequestInit): Promise<BunnyVideoList> => {
+
+  return customFetch<BunnyVideoList>(getListBunnyVideosUrl(collectionId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListBunnyVideosQueryKey = (collectionId: string,) => {
+    return [
+    `/api/admin/bunny/collections/${collectionId}/videos`
+    ] as const;
+    }
+
+
+export const getListBunnyVideosQueryOptions = <TData = Awaited<ReturnType<typeof listBunnyVideos>>, TError = ErrorType<unknown>>(collectionId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listBunnyVideos>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListBunnyVideosQueryKey(collectionId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listBunnyVideos>>> = ({ signal }) => listBunnyVideos(collectionId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(collectionId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listBunnyVideos>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListBunnyVideosQueryResult = NonNullable<Awaited<ReturnType<typeof listBunnyVideos>>>
+export type ListBunnyVideosQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List videos in a BunnyStream collection
+ */
+
+export function useListBunnyVideos<TData = Awaited<ReturnType<typeof listBunnyVideos>>, TError = ErrorType<unknown>>(
+ collectionId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listBunnyVideos>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListBunnyVideosQueryOptions(collectionId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getImportBunnyVideosUrl = () => {
+
+
+
+
+  return `/api/admin/bunny/import`
+}
+
+/**
+ * @summary Import BunnyStream videos into lessons
+ */
+export const importBunnyVideos = async (bunnyImportInput: BunnyImportInput, options?: RequestInit): Promise<BunnyImportResult> => {
+
+  return customFetch<BunnyImportResult>(getImportBunnyVideosUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      bunnyImportInput,)
+  }
+);}
+
+
+
+
+export const getImportBunnyVideosMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof importBunnyVideos>>, TError,{data: BodyType<BunnyImportInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof importBunnyVideos>>, TError,{data: BodyType<BunnyImportInput>}, TContext> => {
+
+const mutationKey = ['importBunnyVideos'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof importBunnyVideos>>, {data: BodyType<BunnyImportInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  importBunnyVideos(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ImportBunnyVideosMutationResult = NonNullable<Awaited<ReturnType<typeof importBunnyVideos>>>
+    export type ImportBunnyVideosMutationBody = BodyType<BunnyImportInput>
+    export type ImportBunnyVideosMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Import BunnyStream videos into lessons
+ */
+export const useImportBunnyVideos = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof importBunnyVideos>>, TError,{data: BodyType<BunnyImportInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof importBunnyVideos>>,
+        TError,
+        {data: BodyType<BunnyImportInput>},
+        TContext
+      > => {
+      return useMutation(getImportBunnyVideosMutationOptions(options));
+    }
 
 export const getGetCurrentUserUrl = () => {
 

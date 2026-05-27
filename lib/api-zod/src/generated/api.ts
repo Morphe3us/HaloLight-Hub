@@ -17,6 +17,88 @@ export const HealthCheckResponse = zod.object({
 
 
 /**
+ * @summary Check BunnyStream connection status
+ */
+export const GetBunnyStatusResponse = zod.object({
+  "connected": zod.boolean(),
+  "error": zod.string().optional(),
+  "libraryId": zod.string().optional(),
+  "libraryName": zod.string().optional(),
+  "pullZoneHostname": zod.string().optional(),
+  "videoCount": zod.number().optional()
+})
+
+
+/**
+ * @summary List BunnyStream collections
+ */
+export const ListBunnyCollectionsResponse = zod.object({
+  "items": zod.array(zod.object({
+  "guid": zod.string(),
+  "name": zod.string(),
+  "videoCount": zod.number(),
+  "lang": zod.string()
+})),
+  "total": zod.number()
+})
+
+
+/**
+ * @summary List videos in a BunnyStream collection
+ */
+export const ListBunnyVideosParams = zod.object({
+  "collectionId": zod.coerce.string()
+})
+
+export const ListBunnyVideosResponse = zod.object({
+  "items": zod.array(zod.object({
+  "guid": zod.string(),
+  "title": zod.string(),
+  "collectionId": zod.string(),
+  "durationSeconds": zod.number(),
+  "status": zod.number(),
+  "statusLabel": zod.string(),
+  "isReady": zod.boolean(),
+  "embedUrl": zod.string(),
+  "thumbnailUrl": zod.string(),
+  "previewUrl": zod.string(),
+  "width": zod.number().optional(),
+  "height": zod.number().optional()
+})),
+  "total": zod.number(),
+  "collectionId": zod.string()
+})
+
+
+/**
+ * @summary Import BunnyStream videos into lessons
+ */
+export const ImportBunnyVideosBody = zod.object({
+  "items": zod.array(zod.object({
+  "videoId": zod.string(),
+  "lang": zod.string(),
+  "embedUrl": zod.string(),
+  "thumbnailUrl": zod.string(),
+  "previewUrl": zod.string().optional(),
+  "durationSeconds": zod.number(),
+  "videoTitle": zod.string(),
+  "courseId": zod.string().optional(),
+  "moduleId": zod.string().optional(),
+  "lessonId": zod.string().optional(),
+  "newModuleName": zod.string().optional(),
+  "newLessonName": zod.string().optional()
+}))
+})
+
+export const ImportBunnyVideosResponse = zod.object({
+  "imported": zod.number(),
+  "created": zod.number(),
+  "updated": zod.number(),
+  "errors": zod.array(zod.string())
+})
+
+
+/**
  * @summary Get current authenticated user
  */
 export const getCurrentUserResponseCurrencyDefault = `EUR`;
