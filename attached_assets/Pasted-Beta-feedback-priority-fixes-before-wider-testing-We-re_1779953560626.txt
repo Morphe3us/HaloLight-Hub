@@ -1,0 +1,261 @@
+Beta feedback — priority fixes before wider testing.
+
+We received a first beta tester report. Overall navigation is good, but several important issues remain.
+
+Please fix the following issues without redesigning the app.
+
+==================================================
+1. Past events shown as upcoming
+==================================================
+
+Current issue:
+Past events still appear as “upcoming”.
+
+Expected:
+- Events with a date/time in the past should not be labeled as upcoming.
+- Past events should be shown as “past” or moved to a past events section.
+- Upcoming events should only include future events.
+- Cancelled events should remain separate from past/upcoming.
+
+Check:
+- Event list
+- Dashboard upcoming events widget
+- Event status logic
+- Date comparison with timezone
+
+Verification:
+- Create an event yesterday → must not appear as upcoming
+- Create an event tomorrow → must appear as upcoming
+- Cancelled event → must appear as cancelled, not past/upcoming
+
+==================================================
+2. Quote buttons still in English
+==================================================
+
+Current issue:
+In French mode, some quote buttons are still in English:
+- “Accept Quote”
+- “Reject Quote”
+- “Create Contract”
+- “Create Invoice”
+
+Expected:
+All buttons must use i18n.
+
+French:
+- Accept Quote → Accepter le devis
+- Reject Quote → Refuser le devis
+- Create Contract → Créer un contrat
+- Create Invoice → Créer une facture
+
+Apply to all supported languages:
+- FR
+- EN
+- ES
+- DE
+- IT
+- PT
+- PL
+- NL
+
+==================================================
+3. Invoice reminder button is misleading
+==================================================
+
+Current issue:
+Clicking “Send Reminder” shows that a reminder was sent even when no client email or phone number is provided.
+
+Expected:
+Before sending a reminder, check if there is at least one valid contact method:
+- client email
+- client phone
+
+If neither exists:
+Show:
+French: “Impossible d’envoyer un rappel : aucun e-mail ou numéro de téléphone client n’est renseigné.”
+English: “Cannot send reminder: no client email or phone number is provided.”
+
+Do not show success unless a reminder can actually be sent.
+
+If the reminder is only mocked and not really sent, the message should say:
+“Reminder action simulated” or implement the real email/SMS flow later.
+
+==================================================
+4. “Overdue” still in English in French invoices
+==================================================
+
+Current issue:
+Invoice status “Overdue” appears in English in French mode.
+
+Expected:
+Status labels must be translated everywhere.
+
+French:
+- overdue → En retard
+- paid → Payée
+- sent → Envoyée
+- draft → Brouillon
+- cancelled → Annulée
+
+Apply to all invoice badges, filters, detail views, dashboards and exported/print views.
+
+==================================================
+5. Contract core document still in English
+==================================================
+
+Current issue:
+Even after template localization work, the core contract content is still in English in some cases.
+
+Expected:
+If user language is FR:
+- the generated contract body must be French
+- no English legal clauses
+- no English section labels
+- no English fallback text
+
+If user language is ES/DE/IT/PT/PL/NL:
+- contract body must use that language’s default template
+
+Please debug:
+- selected template language
+- template loading
+- template fallback
+- contract creation payload
+- saved contract content
+- print/export contract content
+
+Important:
+Do not only translate UI labels.
+The actual generated contract body must be localized.
+
+Verification:
+- FR + EUR → full French contract body
+- EN + USD → full English contract body
+- ES + EUR → full Spanish contract body
+- DE + EUR → full German contract body
+
+==================================================
+6. Mobile toast/notification still blocks navigation
+==================================================
+
+Current issue:
+On mobile, validation/success notifications still get in the way.
+
+Expected:
+- Toasts should not block main navigation buttons.
+- Mobile toast duration should be shorter.
+- Toasts should be dismissible.
+- Position should avoid bottom navigation / important action buttons.
+
+Suggested:
+- Mobile duration: 1500–2500ms
+- Desktop duration: 3000–5000ms
+- Add close button or swipe dismiss
+
+==================================================
+7. Add clearer back button/navigation
+==================================================
+
+Beta tester mentioned a back button would help.
+
+Expected:
+Add or improve back navigation on detail pages:
+- Quote detail
+- Contract detail
+- Invoice detail
+- Lead detail
+- Event detail if applicable
+
+Use localized label:
+FR: Retour
+EN: Back
+
+Do not overdo it — just make navigation clearer.
+
+==================================================
+8. Contract PDF export
+==================================================
+
+Current issue:
+Contract can only be exported via browser print window.
+
+Expected:
+Add a clearer PDF export action.
+
+Options:
+- If real PDF generation already exists, add “Export PDF”.
+- If not implemented yet, add a proper button that triggers print-to-PDF but label it clearly:
+  FR: Exporter en PDF
+  EN: Export PDF
+
+Longer term:
+Generate real downloadable PDF server-side or client-side.
+
+For beta:
+At minimum, the user should clearly see how to export the contract as PDF.
+
+==================================================
+9. Lead list export not visible/available
+==================================================
+
+Current issue:
+Tester says there is no possibility to export the leads list.
+
+Expected:
+Make lead export clearly accessible from the Leads page.
+
+Add buttons:
+- Export CSV
+- Export JSON
+
+This should use the export system already built if available.
+
+Requirements:
+- Export respects current filters/search if possible
+- UTF-8 CSV
+- Excel-compatible
+- localized dates
+- selected currency format
+
+==================================================
+10. Final i18n audit on Sales module
+==================================================
+
+Run a full i18n audit on:
+- Leads
+- Quotes
+- Contracts
+- Invoices
+- Sales dashboard
+- Detail pages
+- Action buttons
+- Empty states
+- Status badges
+- Filters
+- Toast messages
+- Print/export labels
+
+No English should appear in French mode except brand/product names.
+
+==================================================
+Verification required
+==================================================
+
+Please test as a French user:
+
+1. Past event from yesterday → not upcoming
+2. Quote detail → no English buttons
+3. Invoice overdue → “En retard”
+4. Send reminder without email/phone → blocked with clear warning
+5. Contract generated in French → no English body text
+6. Mobile toast → does not block navigation
+7. Lead page → export button visible and working
+8. Contract detail → PDF export button visible
+
+Run typecheck.
+
+Provide:
+- root cause per issue
+- files changed
+- screenshots or verification summary
+- any remaining known limitations

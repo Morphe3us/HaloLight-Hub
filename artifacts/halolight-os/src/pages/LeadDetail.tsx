@@ -349,7 +349,7 @@ export default function LeadDetail() {
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-3">
           <Link href="/crm/leads">
-            <Button variant="ghost" size="icon" className="shrink-0"><ArrowLeft className="w-4 h-4" /></Button>
+            <Button variant="ghost" size="sm" className="gap-1.5 shrink-0"><ArrowLeft className="w-4 h-4" />{t("common.back")}</Button>
           </Link>
           <div>
             <div className="flex items-center gap-2.5 flex-wrap">

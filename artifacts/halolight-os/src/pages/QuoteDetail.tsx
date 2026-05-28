@@ -235,7 +235,7 @@ export default function QuoteDetail() {
     <div className="space-y-6 max-w-4xl">
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-3">
-          <Link href="/quotes"><Button variant="ghost" size="icon"><ArrowLeft className="w-4 h-4" /></Button></Link>
+          <Link href="/quotes"><Button variant="ghost" size="sm" className="gap-1.5"><ArrowLeft className="w-4 h-4" />{t("common.back")}</Button></Link>
           <div>
             <div className="flex items-center gap-2.5 flex-wrap">
               <span className="font-mono text-lg font-bold">{quote.quoteNumber}</span>

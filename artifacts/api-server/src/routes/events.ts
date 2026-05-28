@@ -1,5 +1,5 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { eq, and, desc, count } from "drizzle-orm";
+import { eq, and, desc, count, gte, lt } from "drizzle-orm";
 import { db, events } from "@workspace/db";
 import { requireAuth } from "../middlewares/requireAuth";
 import { getOrCreateUser } from "../lib/userSync";
@@ -15,6 +15,7 @@ router.get("/events", requireAuth, async (req: Request, res: Response): Promise<
   const offset = Number(req.query.offset ?? 0);
   const status = req.query.status as string | undefined;
 
+  const now = new Date();
   let query = db
     .select()
     .from(events)
@@ -22,7 +23,9 @@ router.get("/events", requireAuth, async (req: Request, res: Response): Promise<
       status
         ? and(
             eq(events.userId, user.id),
-            eq(events.status, status as "upcoming" | "active" | "completed" | "cancelled")
+            eq(events.status, status as "upcoming" | "active" | "completed" | "cancelled"),
+            // Upcoming filter only returns future events
+            status === "upcoming" ? gte(events.eventDate, now) : undefined
           )
         : eq(events.userId, user.id)
     )
@@ -145,6 +148,12 @@ router.delete("/events/:id", requireAuth, async (req: Request, res: Response): P
 });
 
 function formatEvent(e: typeof events.$inferSelect) {
+  const now = new Date();
+  // Auto-classify: if stored as "upcoming" but the event date has passed, show as "completed"
+  let status = e.status;
+  if (status === "upcoming" && e.eventDate < now) {
+    status = "completed";
+  }
   return {
     id: e.id,
     userId: e.userId,
@@ -153,7 +162,7 @@ function formatEvent(e: typeof events.$inferSelect) {
     eventDate: e.eventDate.toISOString(),
     location: e.location ?? null,
     type: e.type ?? null,
-    status: e.status,
+    status,
     notes: e.notes ?? null,
     createdAt: e.createdAt.toISOString(),
   };

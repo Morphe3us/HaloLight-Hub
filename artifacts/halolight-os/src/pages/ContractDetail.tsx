@@ -66,7 +66,7 @@ function PrintButton({ contractNumber, title, clientName, content, value, lang }
     const w = window.open("", "_blank");
     if (w) { w.document.write(html); w.document.close(); w.focus(); w.print(); }
   };
-  return <Button variant="outline" onClick={handlePrint} className="gap-2"><Printer className="w-4 h-4" /> {t("quotes.print_btn")}</Button>;
+  return <Button variant="outline" onClick={handlePrint} className="gap-2"><Printer className="w-4 h-4" /> {t("contracts.export_pdf_btn")}</Button>;
 }
 
 export default function ContractDetail() {
@@ -181,7 +181,7 @@ export default function ContractDetail() {
     <div className="space-y-6 max-w-4xl">
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-3">
-          <Link href="/contracts"><Button variant="ghost" size="icon"><ArrowLeft className="w-4 h-4" /></Button></Link>
+          <Link href="/contracts"><Button variant="ghost" size="sm" className="gap-1.5"><ArrowLeft className="w-4 h-4" />{t("common.back")}</Button></Link>
           <div>
             <div className="flex items-center gap-2.5 flex-wrap">
               <span className="font-mono text-lg font-bold">{contract.contractNumber}</span>

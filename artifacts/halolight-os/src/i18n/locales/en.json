@@ -692,7 +692,9 @@
     "value_label2": "Value",
     "source_social_media": "Social Media",
     "source_cold_outreach": "Cold Outreach",
-    "source_inbound_call": "Inbound Call"
+    "source_inbound_call": "Inbound Call",
+    "export_csv": "Export CSV",
+    "export_json": "Export JSON"
   },
   "quotes": {
     "title": "Quotes",
@@ -848,7 +850,8 @@
     "cancellation_terms_label": "Cancellation Terms",
     "provider_section": "Provider Details (optional)",
     "tab_form": "Form",
-    "tab_preview": "Preview"
+    "tab_preview": "Preview",
+    "export_pdf_btn": "Export PDF"
   },
   "invoices": {
     "title": "Invoices",
@@ -926,7 +929,8 @@
     "print_invoice_date": "Invoice Date",
     "print_from": "From",
     "print_paid": "PAID",
-    "paid_on": "on"
+    "paid_on": "on",
+    "overdue_days": "Overdue {{days}}d"
   },
   "admin_analytics": {
     "title": "Analytics Dashboard",
@@ -1655,15 +1659,17 @@
     "mark_overdue": "Mark Overdue",
     "send_reminder": "Send Reminder",
     "reminder_sent": "Reminder Sent",
-    "reminder_sent_desc": "Payment reminder sent to {{client}}",
+    "reminder_sent_desc": "Payment reminder simulated for {{client}}",
+    "reminder_simulated": "Reminder simulated",
+    "reminder_no_contact": "Cannot send reminder: no client email or phone number is provided.",
     "sending": "Sending...",
     "linked_records": "Linked Records",
     "quotes": "Quotes",
     "contracts": "Contracts",
     "invoices": "Invoices",
-    "quote_created": "Quote created successfully",
-    "contract_created": "Contract created successfully",
-    "invoice_created": "Invoice created successfully",
+    "quote_created": "Quote created",
+    "contract_created": "Contract created",
+    "invoice_created": "Invoice created",
     "create_quote_for": "Create Quote for {{company}}",
     "create_contract_for": "Create Contract for {{company}}",
     "create_invoice_for": "Create Invoice for {{company}}",

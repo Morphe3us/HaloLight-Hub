@@ -69,7 +69,7 @@ function PrintButton({ invoice, items, lang }: { invoice: any; items: any[]; lan
       @media print{body{margin:20px}}
     </style></head><body>
     <div class="header">
-      <div><div class="brand">HaloLight Hub</div><h1 style="margin-top:12px">${t("invoices.print_invoice").toUpperCase()}</h1><div style="color:#666;font-size:16px;margin-top:4px">${invoice.invoiceNumber}</div><span class="badge">${invoice.status.toUpperCase()}</span></div>
+      <div><div class="brand">HaloLight Hub</div><h1 style="margin-top:12px">${t("invoices.print_invoice").toUpperCase()}</h1><div style="color:#666;font-size:16px;margin-top:4px">${invoice.invoiceNumber}</div><span class="badge">${t("invoices.status_" + invoice.status).toUpperCase()}</span></div>
       <div style="text-align:right;font-size:12px;color:#666">
         <div style="font-size:11px;color:#999">${t("invoices.print_invoice_date").toUpperCase()}</div><div>${today}</div>
         ${dueDateStr ? `<div style="margin-top:8px;font-size:11px;color:#999">${t("invoices.due_date_label").toUpperCase()}</div><div>${dueDateStr}</div>` : ""}
@@ -134,10 +134,15 @@ export default function InvoiceDetail() {
   });
 
   const handleSendReminder = () => {
+    const hasContact = invoice?.clientEmail || (invoice as any)?.clientPhone;
+    if (!hasContact) {
+      toast({ title: t("pipeline.reminder_no_contact"), variant: "destructive" });
+      return;
+    }
     setSendingReminder(true);
     setTimeout(() => {
       setSendingReminder(false);
-      toast({ title: t("pipeline.reminder_sent"), description: t("pipeline.reminder_sent_desc", { client: invoice?.clientName ?? "" }) });
+      toast({ title: t("pipeline.reminder_simulated"), description: t("pipeline.reminder_sent_desc", { client: invoice?.clientName ?? "" }) });
     }, 800);
   };
 
@@ -164,7 +169,7 @@ export default function InvoiceDetail() {
     <div className="space-y-6 max-w-4xl">
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-3">
-          <Link href="/invoices"><Button variant="ghost" size="icon"><ArrowLeft className="w-4 h-4" /></Button></Link>
+          <Link href="/invoices"><Button variant="ghost" size="sm" className="gap-1.5"><ArrowLeft className="w-4 h-4" />{t("common.back")}</Button></Link>
           <div>
             <div className="flex items-center gap-2.5 flex-wrap">
               <span className="font-mono text-lg font-bold">{invoice.invoiceNumber}</span>

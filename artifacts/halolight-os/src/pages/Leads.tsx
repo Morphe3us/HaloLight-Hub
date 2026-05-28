@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Search, LayoutGrid, List, ChevronRight, Trash2, TrendingUp } from "lucide-react";
+import { Plus, Search, LayoutGrid, List, ChevronRight, Trash2, TrendingUp, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCurrency } from "@/lib/currency";
 import CustomerSearchCombobox from "@/components/CustomerSearchCombobox";
@@ -79,6 +79,22 @@ export default function Leads() {
     },
   });
 
+  const handleExportCsv = async () => {
+    try {
+      const res = await fetch("/api/exports/csv/leads", { credentials: "include" });
+      if (!res.ok) throw new Error("Export failed");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `leads-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      toast({ title: t("leads.export_csv"), description: "Export failed", variant: "destructive" });
+    }
+  };
+
   const leads = data?.items ?? [];
   const totalValue = leads.reduce((sum, l) => sum + Number(l.value ?? 0), 0);
   const wonLeads = leads.filter((l) => l.status === "won");
@@ -120,9 +136,14 @@ export default function Leads() {
           <h1 className="text-2xl font-bold tracking-tight">{t("leads.title")}</h1>
           <p className="text-muted-foreground text-sm mt-1">{t("leads.subtitle")}</p>
         </div>
-        <Button onClick={() => setShowCreate(true)} className="gap-2 shrink-0">
-          <Plus className="w-4 h-4" /> {t("leads.new_lead")}
-        </Button>
+        <div className="flex gap-2 flex-wrap shrink-0">
+          <Button variant="outline" onClick={handleExportCsv} className="gap-2">
+            <Download className="w-4 h-4" /> {t("leads.export_csv")}
+          </Button>
+          <Button onClick={() => setShowCreate(true)} className="gap-2">
+            <Plus className="w-4 h-4" /> {t("leads.new_lead")}
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
