@@ -1,0 +1,467 @@
+Full QA / Beta Readiness Audit before AI Knowledge Base phase.
+
+Before we move to the AI Knowledge Base / chatbot brain integration, please run a complete end-to-end QA audit of the entire HaloLight Hub application.
+
+Goal:
+Confirm the platform is stable enough for beta users and identify any blocking bugs before adding more AI features.
+
+Do not add new features in this phase unless required to fix a bug.
+
+==================================================
+
+1. GLOBAL APP HEALTH CHECK
+   ==================================================
+
+Verify:
+
+* app loads correctly
+* no console errors
+* no broken routes
+* no blank pages
+* no unauthenticated access to protected pages
+* no client access to admin pages
+* no admin-only data leaking to clients
+* mobile and desktop layouts usable
+
+Run:
+
+* frontend typecheck
+* backend typecheck
+* OpenAPI/codegen check
+* route verification
+* database schema check
+
+Also fix the remaining pre-existing bunny.ts TypeScript errors if they still exist.
+The API package should typecheck fully clean before beta.
+
+==================================================
+2. AUTH / ROLES / USERS
+=======================
+
+Test as:
+
+* Admin
+* Client/member
+* Coach if available
+* Sales rep if available
+
+Verify:
+
+* login works
+* logout works
+* correct sidebar per role
+* admin routes blocked for non-admins
+* client view does not show admin tools
+* user profile settings save correctly
+* language preference persists
+* currency preference persists
+* dark/light/system mode persists
+* logo upload persists
+* provider signature persists
+
+==================================================
+3. LANGUAGE / I18N QA
+=====================
+
+Test all 8 languages:
+
+* FR
+* EN
+* ES
+* DE
+* IT
+* PT
+* PL
+* NL
+
+Verify:
+
+* header language switch works
+* settings language switch works
+* app updates immediately after switching language
+* dashboard text updates
+* academy text updates
+* sales text updates
+* quotes/contracts/invoices text updates
+* events text updates
+* support text updates
+* community text updates
+* AI assistant UI text updates
+* no hardcoded English in French mode
+* no mixed-language labels in generated documents
+
+Language-sensitive queries should refetch or invalidate properly when language changes.
+
+==================================================
+4. CURRENCY QA
+==============
+
+Test:
+
+* EUR
+* USD
+* PLN
+* GBP if supported
+* SEK if supported
+* JPY/CNY if supported
+
+Verify:
+
+* amounts display in selected currency
+* no hardcoded dollar signs
+* quotes use selected currency
+* contracts use selected currency
+* invoices use selected currency
+* dashboard revenue uses selected currency
+* exports preserve currency
+* print/PDF documents use correct currency
+
+Important:
+Do not convert values yet.
+Only format using selected currency.
+
+==================================================
+5. ACADEMY QA
+=============
+
+Verify:
+
+* BunnyStream Importer works
+* Collection ID language mapping is correct
+* French collection only imports French videos
+* Spanish only Spanish, etc.
+* pagination loads all Bunny videos
+* no cross-language leakage
+* course cards show only current user language
+* course detail shows only current user language module
+* lesson count is language-specific
+* progress is language-specific
+* Continue Learning is language-specific
+* videos play
+* thumbnails display
+* Introduction appears first
+* numbered lessons are sorted correctly
+* Conclusion appears last
+* admin academy still shows all languages
+* client academy never shows all language modules
+
+Test at least:
+
+* FR
+* EN
+* ES
+* DE
+* IT
+* PT
+* PL
+* NL
+
+==================================================
+6. SALES CRM PIPELINE QA
+========================
+
+Test full workflow:
+
+Lead
+→ Quote
+→ Quote accepted
+→ Contract generated
+→ Contract signed
+→ Invoice generated
+→ Invoice paid
+→ Lead marked won
+
+Verify:
+
+* customer autocomplete works
+* no duplicate client/customer created
+* leadId / quoteId / contractId / invoiceId are linked
+* Client 360 shows all related records
+* pipeline stage updates automatically
+* sales dashboard updates correctly
+* quote status can be changed
+* contract status can be changed
+* invoice status can be changed
+* quote accepted updates pipeline
+* contract signed updates pipeline
+* invoice paid updates pipeline
+
+==================================================
+7. QUOTES QA
+============
+
+Verify:
+
+* create quote from scratch
+* create quote from lead
+* customer autocomplete works
+* line items calculate correctly
+* subtotal/tax/discount/total correct
+* quote status update works
+* quote accepted/rejected works
+* quote print/export works
+* quote document uses language/currency/logo correctly
+* no hardcoded English
+* no broken status buttons
+* status editable from list if implemented
+
+==================================================
+8. CONTRACTS QA
+===============
+
+Verify:
+
+* create contract from scratch
+* create contract from lead
+* create contract from quote
+* customer autocomplete works
+* required field validation works
+* optional fields do not create raw placeholders
+* no {{variables}} remain
+* no undefined/null appears
+* contract number appears in header and body
+* equipment selector displays names/model/serial
+* selected equipment appears in contract
+* manual equipment notes still work
+* pricing calculation correct
+* discount hidden if zero
+* options line coherent with options price
+* provider logo appears if uploaded
+* no logo appears if none uploaded
+* provider signature appears if saved
+* placeholder email never appears
+* document header language correct
+* print/export looks professional enough for client-facing use
+
+Also verify:
+Contract signed → Event created/linked automatically.
+
+==================================================
+9. INVOICES QA
+==============
+
+Verify:
+
+* create invoice from scratch
+* create invoice from contract
+* customer autocomplete works
+* invoice amount/currency correct
+* invoice due date works
+* mark paid works
+* mark overdue works
+* reminder behavior is honest if no real email sending exists
+* invoice print/export works
+* invoice document uses language/currency/logo correctly
+
+==================================================
+10. CONTRACT → EVENT AUTOMATION QA
+==================================
+
+Test:
+
+1. Create contract with future event date.
+2. Mark contract signed.
+3. Verify event is created automatically.
+4. Verify event appears in Dashboard upcoming events.
+5. Verify event appears in Events page.
+6. Verify event is linked to contract.
+7. Update contract status to cancelled.
+8. Verify linked event is cancelled or visually marked accordingly.
+9. Re-sign/update same contract.
+10. Verify no duplicate event is created.
+
+Event should include:
+
+* title
+* client name
+* event type
+* date
+* start/end time
+* location
+* contract value
+* currency
+* linked contractId
+* linked quoteId/leadId if available
+* equipmentIds if available
+
+==================================================
+11. EVENTS QA
+=============
+
+Verify:
+
+* create event manually
+* edit event
+* cancel event
+* mark event completed if implemented
+* add comments/notes if implemented
+* upcoming events sorted nearest first
+* past events do not remain upcoming
+* dashboard upcoming events matches Events page
+* cancelled events appear in cancelled category
+* past events UI is clear
+
+==================================================
+12. EQUIPMENT / HARDWARE QA
+===========================
+
+Verify:
+
+* register equipment
+* edit equipment
+* view equipment
+* status changes
+* warranty/service fields
+* linked contract equipment works
+* selected equipment can be used in contracts
+* equipment data does not show undefined
+* equipment visuals display correctly if available
+
+==================================================
+13. CONSUMABLES QA
+==================
+
+Verify:
+
+* add consumable
+* restock consumable
+* stock quantity updates
+* low stock / critical alerts
+* purchase/restock history
+* reorder notifications
+* dashboard widgets
+* no calculation bugs
+
+==================================================
+14. SUPPORT / KNOWLEDGE BASE / COMMUNITY QA
+===========================================
+
+Verify:
+
+* create ticket
+* ticket categories translated correctly
+* “bug report” wording fixed
+* status updates
+* knowledge base translated
+* community translated
+* community layout bug fixed
+* mobile community view usable
+* no hardcoded English in French mode
+
+==================================================
+15. AI ASSISTANT UI QA
+======================
+
+Before adding AI Knowledge Base, only check the existing UI:
+
+* responsive desktop
+* responsive mobile
+* input not hidden
+* messages display correctly
+* escalation/create ticket works if implemented
+* AI responds in the user/message language
+* no broken layout in dark mode
+* no broken layout in mobile
+
+Do not start the AI Knowledge Base import yet.
+
+==================================================
+16. EXPORT / DATA OWNERSHIP QA
+==============================
+
+Verify:
+
+* export leads CSV
+* export quotes CSV/JSON
+* export contracts CSV/JSON
+* export invoices CSV/JSON
+* export Client 360 JSON
+* export full workspace ZIP
+* export personal data JSON
+* CSV opens in Excel/Google Sheets
+* accents display correctly
+* export history logs action
+* non-admin cannot export other users’ data
+* no secrets/API keys exposed
+
+==================================================
+17. RESPONSIVE / MOBILE QA
+==========================
+
+Test at:
+
+* 375px
+* 390px
+* 430px
+* tablet width
+* desktop
+
+Verify:
+
+* sidebar/mobile nav works
+* topbar works
+* language dropdown works
+* modals scroll correctly
+* buttons are visible
+* no horizontal overflow
+* tables scroll horizontally
+* AI assistant usable
+* Sales forms usable
+* contract creation modal usable
+* toast messages do not block navigation
+
+==================================================
+18. DARK / LIGHT MODE QA
+========================
+
+Verify:
+
+* light mode readable
+* dark mode readable
+* system mode follows OS
+* logo adapts correctly
+* cards readable
+* tables readable
+* modals readable
+* documents are print-friendly regardless of app theme
+
+==================================================
+19. FINAL BUG REPORT
+====================
+
+After testing, provide a structured QA report:
+
+For each issue found:
+
+* severity: blocker / high / medium / low
+* page/module
+* steps to reproduce
+* expected behavior
+* actual behavior
+* proposed fix
+* whether fixed or pending
+
+Also provide:
+
+* list of modules tested
+* languages tested
+* currencies tested
+* roles tested
+* browser/device sizes tested
+* typecheck result
+* API route verification result
+* final beta readiness verdict
+
+==================================================
+20. IMPORTANT RULES
+===================
+
+* Do not start AI Knowledge Base integration yet.
+* Do not add large new features.
+* Fix only beta-blocking bugs found during QA.
+* Keep admin views powerful and client views simple.
+* Preserve current working BunnyStream/Academy functionality.
+* Preserve current Sales CRM pipeline functionality.
+* Preserve contract/event automation.
+* Run typecheck after fixes.
+* Provide complete verification summary.

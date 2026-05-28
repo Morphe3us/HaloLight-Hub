@@ -1,5 +1,5 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { eq, and, desc, count, gte } from "drizzle-orm";
+import { eq, and, asc, desc, count, gte } from "drizzle-orm";
 import { db, events } from "@workspace/db";
 import { requireAuth } from "../middlewares/requireAuth";
 import { getOrCreateUser } from "../lib/userSync";
@@ -29,7 +29,7 @@ router.get("/events", requireAuth, async (req: Request, res: Response): Promise<
           )
         : eq(events.userId, user.id)
     )
-    .orderBy(desc(events.eventDate))
+    .orderBy(status === "upcoming" ? asc(events.eventDate) : desc(events.eventDate))
     .limit(limit)
     .offset(offset);
 

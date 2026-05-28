@@ -197,7 +197,7 @@ router.get("/admin/bunny/collections/:collectionId/videos", requireAuth, async (
   const cfg = getConfig();
   if (!cfg) { res.status(400).json({ error: "BunnyStream not configured" }); return; }
 
-  const { collectionId } = req.params;
+  const collectionId = req.params.collectionId as string;
   const ITEMS_PER_PAGE = 100; // BunnyStream max per page
 
   // Reject unknown collection IDs before hitting Bunny API

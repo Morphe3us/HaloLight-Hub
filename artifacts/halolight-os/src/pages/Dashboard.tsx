@@ -229,7 +229,7 @@ export default function Dashboard() {
                 <div className="flex items-start gap-4">
                   <div className="h-16 w-16 rounded-xl overflow-hidden flex-shrink-0 shadow-sm">
                     <img
-                      src={summary.nextLesson.courseThumbnailUrl}
+                      src={summary.nextLesson.courseThumbnailUrl || undefined}
                       alt={summary.nextLesson.courseTitle}
                       className="w-full h-full object-cover"
                     />
