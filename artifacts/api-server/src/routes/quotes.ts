@@ -25,6 +25,26 @@ async function updateLeadPipelineStage(leadId: string | null | undefined, stage:
     .where(and(eq(leads.id, leadId), eq(leads.userId, userId)));
 }
 
+type ServiceFields = {
+  eventStartTime?: string;
+  eventEndTime?: string;
+  packageName?: string;
+  rentalDuration?: string;
+  includedPrints?: string;
+  digitalGallery?: boolean;
+  customTemplate?: boolean;
+  deliveryIncluded?: boolean;
+  setupIncluded?: boolean;
+  operatorIncluded?: boolean;
+  equipmentIds?: string[];
+  equipmentDescription?: string;
+  optionsList?: string;
+  rentalPrice?: string;
+  optionsPrice?: string;
+  deliveryFees?: string;
+  discountAmount?: string;
+};
+
 // GET /quotes
 router.get("/quotes", requireAuth, async (req: Request, res: Response): Promise<void> => {
   const user = await getOrCreateUser(req);
@@ -52,17 +72,26 @@ router.post("/quotes", requireAuth, async (req: Request, res: Response): Promise
   const {
     leadId, title, clientName, clientEmail, clientPhone, clientCompany, clientAddress,
     eventType, eventDate, eventLocation, currency, language,
+    eventStartTime, eventEndTime, packageName, rentalDuration, includedPrints,
+    digitalGallery, customTemplate, deliveryIncluded, setupIncluded, operatorIncluded,
+    equipmentIds, equipmentDescription, optionsList,
+    rentalPrice, optionsPrice, deliveryFees, discountAmount,
     taxRate = "0", notes, terms, validUntil, items = [],
   } = req.body as {
     leadId?: string; title: string; clientName: string; clientEmail?: string; clientPhone?: string;
     clientCompany?: string; clientAddress?: string; eventType?: string; eventDate?: string;
     eventLocation?: string; currency?: string; language?: string;
+    eventStartTime?: string; eventEndTime?: string;
+    packageName?: string; rentalDuration?: string; includedPrints?: string;
+    digitalGallery?: boolean; customTemplate?: boolean; deliveryIncluded?: boolean;
+    setupIncluded?: boolean; operatorIncluded?: boolean;
+    equipmentIds?: string[]; equipmentDescription?: string; optionsList?: string;
+    rentalPrice?: string; optionsPrice?: string; deliveryFees?: string; discountAmount?: string;
     taxRate?: string; notes?: string; terms?: string; validUntil?: string;
     items?: Array<{ description: string; quantity: string; unitPrice: string; order?: number }>;
   };
-  if (!title || !clientName) { res.status(400).json({ error: "title and clientName required" }); return; }
+  if (!clientName) { res.status(400).json({ error: "clientName required" }); return; }
 
-  // Auto-fill from lead if provided
   let resolvedClientName = clientName;
   let resolvedClientEmail = clientEmail;
   let resolvedClientPhone = clientPhone;
@@ -84,13 +113,17 @@ router.post("/quotes", requireAuth, async (req: Request, res: Response): Promise
     }
   }
 
+  const autoTitle = (title ?? "").trim() ||
+    [resolvedClientName.trim(), resolvedEventType?.trim() || resolvedEventDate || null].filter(Boolean).join(" — ") ||
+    "Quote";
+
   const totals = calcTotals(items ?? [], taxRate);
 
   const [quote] = await db.insert(quotes).values({
     userId: user.id,
     leadId: leadId ?? null,
     quoteNumber: generateQuoteNumber(),
-    title,
+    title: autoTitle,
     clientName: resolvedClientName,
     clientEmail: resolvedClientEmail ?? null,
     clientPhone: resolvedClientPhone ?? null,
@@ -99,6 +132,23 @@ router.post("/quotes", requireAuth, async (req: Request, res: Response): Promise
     eventType: resolvedEventType ?? null,
     eventDate: resolvedEventDate ? new Date(resolvedEventDate) : null,
     eventLocation: eventLocation ?? null,
+    eventStartTime: eventStartTime ?? null,
+    eventEndTime: eventEndTime ?? null,
+    packageName: packageName ?? null,
+    rentalDuration: rentalDuration ?? null,
+    includedPrints: includedPrints ?? null,
+    digitalGallery: digitalGallery ?? false,
+    customTemplate: customTemplate ?? false,
+    deliveryIncluded: deliveryIncluded ?? false,
+    setupIncluded: setupIncluded ?? false,
+    operatorIncluded: operatorIncluded ?? false,
+    equipmentIds: equipmentIds ?? null,
+    equipmentDescription: equipmentDescription ?? null,
+    optionsList: optionsList ?? null,
+    rentalPrice: rentalPrice ?? null,
+    optionsPrice: optionsPrice ?? null,
+    deliveryFees: deliveryFees ?? null,
+    discountAmount: discountAmount ?? null,
     currency: currency ?? null,
     language: language ?? null,
     taxRate,
@@ -108,7 +158,6 @@ router.post("/quotes", requireAuth, async (req: Request, res: Response): Promise
     validUntil: validUntil ? new Date(validUntil) : null,
   }).returning();
 
-  // Update lead pipeline stage
   if (leadId) await updateLeadPipelineStage(leadId, "quote_created", user.id);
 
   const itemRows = (items ?? []).length > 0 ? await db.insert(quoteItems).values(
@@ -150,15 +199,25 @@ router.put("/quotes/:id", requireAuth, async (req: Request, res: Response): Prom
   const {
     leadId, title, clientName, clientEmail, clientPhone, clientCompany, clientAddress,
     eventType, eventDate, eventLocation, currency, language,
+    eventStartTime, eventEndTime, packageName, rentalDuration, includedPrints,
+    digitalGallery, customTemplate, deliveryIncluded, setupIncluded, operatorIncluded,
+    equipmentIds, equipmentDescription, optionsList,
+    rentalPrice, optionsPrice, deliveryFees, discountAmount,
     taxRate, notes, terms, validUntil, items,
   } = req.body as {
     leadId?: string | null; title?: string; clientName?: string; clientEmail?: string | null;
     clientPhone?: string | null; clientCompany?: string | null; clientAddress?: string | null;
     eventType?: string | null; eventDate?: string | null; eventLocation?: string | null;
     currency?: string | null; language?: string | null;
+    eventStartTime?: string | null; eventEndTime?: string | null;
+    packageName?: string | null; rentalDuration?: string | null; includedPrints?: string | null;
+    digitalGallery?: boolean; customTemplate?: boolean; deliveryIncluded?: boolean;
+    setupIncluded?: boolean; operatorIncluded?: boolean;
+    equipmentIds?: string[] | null; equipmentDescription?: string | null; optionsList?: string | null;
+    rentalPrice?: string | null; optionsPrice?: string | null; deliveryFees?: string | null; discountAmount?: string | null;
     taxRate?: string; notes?: string | null; terms?: string | null;
     validUntil?: string; items?: Array<{ description: string; quantity: string; unitPrice: string; order?: number }>;
-  };
+  } & ServiceFields;
 
   const newTaxRate = taxRate ?? existing.taxRate;
   const newItems = items ?? [];
@@ -175,6 +234,23 @@ router.put("/quotes/:id", requireAuth, async (req: Request, res: Response): Prom
     eventType: eventType !== undefined ? eventType : existing.eventType,
     eventDate: eventDate !== undefined ? (eventDate ? new Date(eventDate) : null) : existing.eventDate,
     eventLocation: eventLocation !== undefined ? eventLocation : existing.eventLocation,
+    eventStartTime: eventStartTime !== undefined ? eventStartTime : existing.eventStartTime,
+    eventEndTime: eventEndTime !== undefined ? eventEndTime : existing.eventEndTime,
+    packageName: packageName !== undefined ? packageName : existing.packageName,
+    rentalDuration: rentalDuration !== undefined ? rentalDuration : existing.rentalDuration,
+    includedPrints: includedPrints !== undefined ? includedPrints : existing.includedPrints,
+    digitalGallery: digitalGallery !== undefined ? digitalGallery : existing.digitalGallery,
+    customTemplate: customTemplate !== undefined ? customTemplate : existing.customTemplate,
+    deliveryIncluded: deliveryIncluded !== undefined ? deliveryIncluded : existing.deliveryIncluded,
+    setupIncluded: setupIncluded !== undefined ? setupIncluded : existing.setupIncluded,
+    operatorIncluded: operatorIncluded !== undefined ? operatorIncluded : existing.operatorIncluded,
+    equipmentIds: equipmentIds !== undefined ? equipmentIds : existing.equipmentIds,
+    equipmentDescription: equipmentDescription !== undefined ? equipmentDescription : existing.equipmentDescription,
+    optionsList: optionsList !== undefined ? optionsList : existing.optionsList,
+    rentalPrice: rentalPrice !== undefined ? rentalPrice : existing.rentalPrice,
+    optionsPrice: optionsPrice !== undefined ? optionsPrice : existing.optionsPrice,
+    deliveryFees: deliveryFees !== undefined ? deliveryFees : existing.deliveryFees,
+    discountAmount: discountAmount !== undefined ? discountAmount : existing.discountAmount,
     currency: currency !== undefined ? currency : existing.currency,
     language: language !== undefined ? language : existing.language,
     taxRate: newTaxRate,
@@ -236,7 +312,6 @@ router.patch("/quotes/:id/status", requireAuth, async (req: Request, res: Respon
 
   const [updated] = await db.update(quotes).set({ status, ...extra, updatedAt: new Date() }).where(eq(quotes.id, id)).returning();
 
-  // Update lead pipeline stage
   if (existing.leadId) {
     if (status === "sent") await updateLeadPipelineStage(existing.leadId, "quote_sent", user.id);
     else if (status === "accepted") await updateLeadPipelineStage(existing.leadId, "quote_accepted", user.id);

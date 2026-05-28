@@ -3817,15 +3817,45 @@ components:
           enum: [upcoming, active, completed, cancelled]
         notes:
           type: ["string", "null"]
-        contractId:
-          type: ["string", "null"]
         leadId:
           type: ["string", "null"]
         quoteId:
           type: ["string", "null"]
+        contractId:
+          type: ["string", "null"]
+        invoiceId:
+          type: ["string", "null"]
+        clientName:
+          type: ["string", "null"]
+        clientEmail:
+          type: ["string", "null"]
+        clientPhone:
+          type: ["string", "null"]
+        clientCompany:
+          type: ["string", "null"]
+        eventStartTime:
+          type: ["string", "null"]
+        eventEndTime:
+          type: ["string", "null"]
+        packageName:
+          type: ["string", "null"]
+        rentalDuration:
+          type: ["string", "null"]
+        includedPrints:
+          type: ["string", "null"]
+        equipmentIds:
+          type: ["array", "null"]
+          items:
+            type: string
+        equipmentDescription:
+          type: ["string", "null"]
+        optionsList:
+          type: ["string", "null"]
         revenue:
           type: ["string", "null"]
         currency:
+          type: ["string", "null"]
+        paymentStatus:
           type: ["string", "null"]
         createdAt:
           type: string
@@ -3859,6 +3889,38 @@ components:
           type: string
         notes:
           type: string
+        clientName:
+          type: string
+        clientEmail:
+          type: string
+        clientPhone:
+          type: string
+        clientCompany:
+          type: string
+        eventStartTime:
+          type: string
+        eventEndTime:
+          type: string
+        packageName:
+          type: string
+        rentalDuration:
+          type: string
+        includedPrints:
+          type: string
+        equipmentIds:
+          type: array
+          items:
+            type: string
+        equipmentDescription:
+          type: string
+        optionsList:
+          type: string
+        revenue:
+          type: string
+        currency:
+          type: string
+        paymentStatus:
+          type: string
 
     EventUpdate:
       type: object
@@ -3879,9 +3941,39 @@ components:
           enum: [upcoming, active, completed, cancelled]
         notes:
           type: string
+        clientName:
+          type: string
+        clientEmail:
+          type: string
+        clientPhone:
+          type: string
+        clientCompany:
+          type: string
+        eventStartTime:
+          type: string
+        eventEndTime:
+          type: string
+        packageName:
+          type: string
+        rentalDuration:
+          type: string
+        includedPrints:
+          type: string
+        equipmentIds:
+          type: array
+          items:
+            type: string
+        equipmentDescription:
+          type: string
+        optionsList:
+          type: string
         revenue:
           type: string
         currency:
+          type: string
+        paymentStatus:
+          type: string
+        invoiceId:
           type: string
 
     # ─── Leads / CRM ─────────────────────────────────────────────────────────
@@ -4088,6 +4180,42 @@ components:
           format: date-time
         eventLocation:
           type: ["string", "null"]
+        eventStartTime:
+          type: ["string", "null"]
+        eventEndTime:
+          type: ["string", "null"]
+        packageName:
+          type: ["string", "null"]
+        rentalDuration:
+          type: ["string", "null"]
+        includedPrints:
+          type: ["string", "null"]
+        digitalGallery:
+          type: boolean
+        customTemplate:
+          type: boolean
+        deliveryIncluded:
+          type: boolean
+        setupIncluded:
+          type: boolean
+        operatorIncluded:
+          type: boolean
+        equipmentIds:
+          type: ["array", "null"]
+          items:
+            type: string
+        equipmentDescription:
+          type: ["string", "null"]
+        optionsList:
+          type: ["string", "null"]
+        rentalPrice:
+          type: ["string", "null"]
+        optionsPrice:
+          type: ["string", "null"]
+        deliveryFees:
+          type: ["string", "null"]
+        discountAmount:
+          type: ["string", "null"]
         currency:
           type: ["string", "null"]
         language:
@@ -4169,6 +4297,42 @@ components:
           type: string
           format: date-time
         eventLocation:
+          type: string
+        eventStartTime:
+          type: string
+        eventEndTime:
+          type: string
+        packageName:
+          type: string
+        rentalDuration:
+          type: string
+        includedPrints:
+          type: string
+        digitalGallery:
+          type: boolean
+        customTemplate:
+          type: boolean
+        deliveryIncluded:
+          type: boolean
+        setupIncluded:
+          type: boolean
+        operatorIncluded:
+          type: boolean
+        equipmentIds:
+          type: array
+          items:
+            type: string
+        equipmentDescription:
+          type: string
+        optionsList:
+          type: string
+        rentalPrice:
+          type: string
+        optionsPrice:
+          type: string
+        deliveryFees:
+          type: string
+        discountAmount:
           type: string
         currency:
           type: string
@@ -4399,11 +4563,51 @@ components:
           type: ["string", "null"]
         clientCompany:
           type: ["string", "null"]
+        clientAddress:
+          type: ["string", "null"]
         eventType:
           type: ["string", "null"]
         eventDate:
           type: ["string", "null"]
           format: date-time
+        eventLocation:
+          type: ["string", "null"]
+        eventStartTime:
+          type: ["string", "null"]
+        eventEndTime:
+          type: ["string", "null"]
+        packageName:
+          type: ["string", "null"]
+        rentalDuration:
+          type: ["string", "null"]
+        includedPrints:
+          type: ["string", "null"]
+        digitalGallery:
+          type: boolean
+        customTemplate:
+          type: boolean
+        deliveryIncluded:
+          type: boolean
+        setupIncluded:
+          type: boolean
+        operatorIncluded:
+          type: boolean
+        equipmentIds:
+          type: ["array", "null"]
+          items:
+            type: string
+        equipmentDescription:
+          type: ["string", "null"]
+        optionsList:
+          type: ["string", "null"]
+        rentalPrice:
+          type: ["string", "null"]
+        optionsPrice:
+          type: ["string", "null"]
+        deliveryFees:
+          type: ["string", "null"]
+        discountAmount:
+          type: ["string", "null"]
         currency:
           type: ["string", "null"]
         language:
@@ -4487,11 +4691,51 @@ components:
           type: string
         clientCompany:
           type: string
+        clientAddress:
+          type: string
         eventType:
           type: string
         eventDate:
           type: string
           format: date-time
+        eventLocation:
+          type: string
+        eventStartTime:
+          type: string
+        eventEndTime:
+          type: string
+        packageName:
+          type: string
+        rentalDuration:
+          type: string
+        includedPrints:
+          type: string
+        digitalGallery:
+          type: boolean
+        customTemplate:
+          type: boolean
+        deliveryIncluded:
+          type: boolean
+        setupIncluded:
+          type: boolean
+        operatorIncluded:
+          type: boolean
+        equipmentIds:
+          type: array
+          items:
+            type: string
+        equipmentDescription:
+          type: string
+        optionsList:
+          type: string
+        rentalPrice:
+          type: string
+        optionsPrice:
+          type: string
+        deliveryFees:
+          type: string
+        discountAmount:
+          type: string
         currency:
           type: string
         language:

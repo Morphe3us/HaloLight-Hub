@@ -1,0 +1,338 @@
+Additional critical workflow requirement — Quotes / Invoices / Events / Consumables must reuse the full rental details.
+
+The button issue is fixed, but we still need the full operational workflow.
+
+The Sales workflow must not only create documents. It must prepare the real upcoming service operationally.
+
+Current issue:
+Quotes and invoices do not include enough rental details. They can show only a title/event name instead of the full service content.
+
+Expected:
+Quotes, contracts and invoices must all reuse the same complete rental/service information.
+
+==================================================
+
+1. QUOTES MUST INCLUDE FULL RENTAL DETAILS
+   ==================================================
+
+Quotes should include the full service/package content, not only the event title.
+
+A quote should show:
+
+Client:
+
+* name
+* company
+* email
+* phone
+* address if available
+
+Event:
+
+* event type
+* event date
+* start time
+* end time
+* event location
+
+Service:
+
+* package name
+* rental duration
+* included prints
+* digital gallery included yes/no
+* custom template included yes/no
+* delivery included yes/no
+* setup included yes/no
+* on-site operator included yes/no
+* options/add-ons
+* equipment/service description
+
+Pricing:
+
+* rental price
+* options price
+* delivery fees
+* discount
+* tax/VAT
+* total
+* currency
+
+Expected:
+When creating a quote from a lead or client, these fields should be fillable and saved.
+When converting quote → contract, all these fields should transfer.
+When converting quote → invoice, all these fields should transfer.
+
+==================================================
+2. INVOICES MUST INCLUDE FULL RENTAL DETAILS
+============================================
+
+Invoices should not only show a generic event title.
+
+Invoices must include:
+
+* event type
+* event date
+* event location
+* package/service name
+* rental duration
+* included prints
+* options/add-ons
+* selected equipment if available
+* delivery/setup/operator info
+* pricing breakdown
+* total/currency
+* linked quote/contract/client
+
+If invoice is created from contract:
+
+* copy all contract service fields.
+
+If invoice is created from quote:
+
+* copy all quote service fields.
+
+If invoice is created manually:
+
+* allow filling these fields.
+
+Print/PDF invoice should be clear enough that the client understands exactly what they are paying for.
+
+==================================================
+3. CONTRACT / QUOTE / INVOICE FIELD CONSISTENCY
+===============================================
+
+The following fields should exist consistently across quote, contract and invoice where relevant:
+
+* clientName
+* clientCompany
+* clientEmail
+* clientPhone
+* clientAddress
+* eventType
+* eventDate
+* eventStartTime
+* eventEndTime
+* eventLocation
+* packageName
+* rentalDuration
+* includedPrints
+* digitalGalleryIncluded
+* customTemplateIncluded
+* deliveryIncluded
+* setupIncluded
+* operatorIncluded
+* equipmentIds
+* equipmentDescription
+* optionsList
+* rentalPrice
+* optionsPrice
+* deliveryFees
+* discountAmount
+* taxRate
+* taxAmount
+* totalAmount
+* currency
+* depositAmount if applicable
+* paymentTerms
+
+Avoid having one document richer than the others.
+
+==================================================
+4. PAID INVOICE → CONFIRMED EVENT
+=================================
+
+When an invoice is marked as paid, the related event must become confirmed/upcoming with all operational details.
+
+Trigger:
+
+* invoice marked paid
+
+Expected:
+If no event exists:
+
+* create event from invoice/contract/quote data.
+
+If an event already exists:
+
+* update/link the existing event.
+
+Event should include:
+
+* client name
+* client email
+* client phone
+* company
+* event type
+* event date
+* start time
+* end time
+* location
+* package/service name
+* rental duration
+* included prints
+* selected equipment
+* options/add-ons
+* contractId
+* quoteId
+* invoiceId
+* leadId if available
+* revenue
+* currency
+* payment status = paid
+
+Dashboard:
+
+* paid invoice event must appear in upcoming events if event date is in the future.
+* event title should be easy to understand:
+  “Jeanne Duflo — Anniversaire — Classic Flash Birthday Photo Booth”
+
+Events page:
+
+* show enough detail so the team knows what to prepare.
+
+==================================================
+5. CONTRACT SIGNED VS INVOICE PAID LOGIC
+========================================
+
+Contract signed:
+
+* can create/link a provisional confirmed event.
+
+Invoice paid:
+
+* should confirm payment status on the event.
+* should update operational readiness.
+
+Do not create duplicates.
+
+Deduplication priority:
+
+1. existing eventId linked to contract/invoice
+2. same contractId
+3. same invoiceId
+4. same client email + event date + location
+
+==================================================
+6. CONSUMABLES FORECASTING
+==========================
+
+Consumables must be connected to upcoming events.
+
+When a quote/contract/invoice/event includes prints:
+
+* includedPrints = 200
+  → reserve/forecast 200 prints worth of consumables.
+
+If includedPrints is “unlimited”:
+
+* treat as 600 prints by default for forecasting.
+
+If includedPrints is empty:
+
+* do not reserve automatically, but show warning:
+  “Print quantity not specified.”
+
+This should affect:
+
+* upcoming event preparation
+* consumables dashboard
+* low stock alerts
+* reorder recommendations
+
+Expected:
+If upcoming paid events require 1,000 prints total and stock is 700 prints:
+
+* show warning:
+  “Upcoming events require 1,000 prints. Current stock covers 700. Estimated shortage: 300 prints.”
+
+==================================================
+7. EVENT PREPARATION VIEW
+=========================
+
+Add or enhance event detail/preparation section.
+
+For each upcoming event, show:
+
+Client:
+
+* name
+* phone
+* email
+
+Event:
+
+* date
+* time
+* location
+
+Service:
+
+* package
+* rental duration
+* included prints
+* options
+* selected equipment
+
+Consumables:
+
+* estimated prints required
+* stock available
+* shortage if any
+* reorder recommendation
+
+Payments:
+
+* quote status
+* contract status
+* invoice status
+* paid/unpaid
+
+This makes the Events module operational, not just calendar-based.
+
+==================================================
+8. VERIFICATION
+===============
+
+Test full workflow:
+
+1. Create lead with client/event info.
+2. Create quote from lead:
+
+* fill package
+* included prints = 200
+* options
+* price
+
+3. Accept quote.
+4. Create contract from quote.
+5. Verify contract copied all service fields.
+6. Create invoice from contract.
+7. Verify invoice copied all service fields.
+8. Mark invoice paid.
+9. Verify upcoming event is created/updated.
+10. Verify event contains:
+
+* client info
+* event info
+* package
+* included prints
+* equipment
+* payment status
+* linked invoice/contract/quote
+
+11. Verify consumables forecast:
+
+* 200 prints required if 200 selected
+* 600 prints required if unlimited selected
+* shortage warning if stock is insufficient
+
+Run:
+
+* DB migration if needed
+* OpenAPI/codegen if needed
+* typecheck
+* route verification
+
+Do not redesign the full app.
+Focus on connecting Quotes, Contracts, Invoices, Events and Consumables into one operational workflow.

@@ -1,4 +1,4 @@
-import { pgTable, text, uuid, timestamp, pgEnum, numeric, integer } from "drizzle-orm/pg-core";
+import { pgTable, text, uuid, timestamp, pgEnum, numeric, integer, boolean, json } from "drizzle-orm/pg-core";
 import { usersTable } from "./users";
 import { leads } from "./crm";
 import { quotes } from "./quotes";
@@ -26,8 +26,27 @@ export const invoices = pgTable("invoices", {
   clientEmail: text("client_email"),
   clientPhone: text("client_phone"),
   clientCompany: text("client_company"),
+  clientAddress: text("client_address"),
   eventType: text("event_type"),
   eventDate: timestamp("event_date"),
+  eventLocation: text("event_location"),
+  eventStartTime: text("event_start_time"),
+  eventEndTime: text("event_end_time"),
+  packageName: text("package_name"),
+  rentalDuration: text("rental_duration"),
+  includedPrints: text("included_prints"),
+  digitalGallery: boolean("digital_gallery").notNull().default(false),
+  customTemplate: boolean("custom_template").notNull().default(false),
+  deliveryIncluded: boolean("delivery_included").notNull().default(false),
+  setupIncluded: boolean("setup_included").notNull().default(false),
+  operatorIncluded: boolean("operator_included").notNull().default(false),
+  equipmentIds: json("equipment_ids").$type<string[]>(),
+  equipmentDescription: text("equipment_description"),
+  optionsList: text("options_list"),
+  rentalPrice: numeric("rental_price", { precision: 12, scale: 2 }),
+  optionsPrice: numeric("options_price", { precision: 12, scale: 2 }),
+  deliveryFees: numeric("delivery_fees", { precision: 12, scale: 2 }),
+  discountAmount: numeric("discount_amount", { precision: 12, scale: 2 }),
   currency: text("currency"),
   language: text("language"),
   status: invoiceStatusEnum("status").notNull().default("draft"),

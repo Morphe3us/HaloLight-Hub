@@ -1,6 +1,6 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { eq, desc, and, lte, sql } from "drizzle-orm";
-import { db, usersTable, consumableCatalog, consumableStock, consumableOrders } from "@workspace/db";
+import { eq, desc, and, lte, sql, gte, asc } from "drizzle-orm";
+import { db, usersTable, consumableCatalog, consumableStock, consumableOrders, events } from "@workspace/db";
 import { requireAuth } from "../middlewares/requireAuth";
 import { getOrCreateUser } from "../lib/userSync";
 
@@ -326,6 +326,73 @@ router.get("/admin/consumables", requireAuth, async (req: Request, res: Response
   }));
 
   res.json(enriched);
+});
+
+// GET /consumables/forecast — upcoming events vs available paper stock
+router.get("/consumables/forecast", requireAuth, async (req: Request, res: Response): Promise<void> => {
+  const user = await getOrCreateUser(req);
+  if (!user) { res.status(401).json({ error: "Unauthorized" }); return; }
+
+  const now = new Date();
+
+  const upcomingEvents = await db.select({
+    id: events.id,
+    title: events.title,
+    eventDate: events.eventDate,
+    includedPrints: events.includedPrints,
+    clientName: events.clientName,
+    location: events.location,
+  })
+    .from(events)
+    .where(
+      and(
+        eq(events.userId, user.id),
+        gte(events.eventDate, now),
+      )
+    )
+    .orderBy(asc(events.eventDate))
+    .limit(20);
+
+  const eventForecasts = upcomingEvents.map((ev) => {
+    const prints = (ev.includedPrints ?? "").toLowerCase();
+    let count = 0;
+    if (prints.includes("unlimited")) {
+      count = 600;
+    } else {
+      const match = prints.match(/\d+/);
+      if (match) count = parseInt(match[0], 10);
+    }
+    return { ...ev, printsCount: count };
+  });
+
+  const totalRequired = eventForecasts.reduce((s, ev) => s + ev.printsCount, 0);
+
+  const paperStock = await db.select({
+    id: consumableStock.id,
+    catalogItemId: consumableStock.catalogItemId,
+    currentQuantity: consumableStock.currentQuantity,
+    name: consumableCatalog.name,
+    category: consumableCatalog.category,
+  })
+    .from(consumableStock)
+    .innerJoin(consumableCatalog, eq(consumableStock.catalogItemId, consumableCatalog.id))
+    .where(
+      and(
+        eq(consumableStock.userId, user.id),
+        sql`lower(${consumableCatalog.category}) LIKE '%paper%'`
+      )
+    );
+
+  const totalAvailable = paperStock.reduce((s, item) => s + item.currentQuantity, 0);
+
+  res.json({
+    eventsCount: upcomingEvents.length,
+    totalRequired,
+    totalAvailable,
+    shortage: Math.max(0, totalRequired - totalAvailable),
+    events: eventForecasts,
+    paperStock,
+  });
 });
 
 export default router;

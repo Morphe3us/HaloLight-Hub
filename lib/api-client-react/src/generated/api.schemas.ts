@@ -402,15 +402,43 @@ export interface Event {
   /** @nullable */
   notes?: string | null;
   /** @nullable */
-  contractId?: string | null;
-  /** @nullable */
   leadId?: string | null;
   /** @nullable */
   quoteId?: string | null;
   /** @nullable */
+  contractId?: string | null;
+  /** @nullable */
+  invoiceId?: string | null;
+  /** @nullable */
+  clientName?: string | null;
+  /** @nullable */
+  clientEmail?: string | null;
+  /** @nullable */
+  clientPhone?: string | null;
+  /** @nullable */
+  clientCompany?: string | null;
+  /** @nullable */
+  eventStartTime?: string | null;
+  /** @nullable */
+  eventEndTime?: string | null;
+  /** @nullable */
+  packageName?: string | null;
+  /** @nullable */
+  rentalDuration?: string | null;
+  /** @nullable */
+  includedPrints?: string | null;
+  /** @nullable */
+  equipmentIds?: string[] | null;
+  /** @nullable */
+  equipmentDescription?: string | null;
+  /** @nullable */
+  optionsList?: string | null;
+  /** @nullable */
   revenue?: string | null;
   /** @nullable */
   currency?: string | null;
+  /** @nullable */
+  paymentStatus?: string | null;
   createdAt: string;
 }
 
@@ -426,6 +454,21 @@ export interface EventInput {
   location?: string;
   type?: string;
   notes?: string;
+  clientName?: string;
+  clientEmail?: string;
+  clientPhone?: string;
+  clientCompany?: string;
+  eventStartTime?: string;
+  eventEndTime?: string;
+  packageName?: string;
+  rentalDuration?: string;
+  includedPrints?: string;
+  equipmentIds?: string[];
+  equipmentDescription?: string;
+  optionsList?: string;
+  revenue?: string;
+  currency?: string;
+  paymentStatus?: string;
 }
 
 export type EventUpdateStatus = typeof EventUpdateStatus[keyof typeof EventUpdateStatus];
@@ -446,8 +489,22 @@ export interface EventUpdate {
   type?: string;
   status?: EventUpdateStatus;
   notes?: string;
+  clientName?: string;
+  clientEmail?: string;
+  clientPhone?: string;
+  clientCompany?: string;
+  eventStartTime?: string;
+  eventEndTime?: string;
+  packageName?: string;
+  rentalDuration?: string;
+  includedPrints?: string;
+  equipmentIds?: string[];
+  equipmentDescription?: string;
+  optionsList?: string;
   revenue?: string;
   currency?: string;
+  paymentStatus?: string;
+  invoiceId?: string;
 }
 
 export type LeadSource = typeof LeadSource[keyof typeof LeadSource];
@@ -560,6 +617,35 @@ export interface Quote {
   /** @nullable */
   eventLocation?: string | null;
   /** @nullable */
+  eventStartTime?: string | null;
+  /** @nullable */
+  eventEndTime?: string | null;
+  /** @nullable */
+  packageName?: string | null;
+  /** @nullable */
+  rentalDuration?: string | null;
+  /** @nullable */
+  includedPrints?: string | null;
+  digitalGallery?: boolean;
+  customTemplate?: boolean;
+  deliveryIncluded?: boolean;
+  setupIncluded?: boolean;
+  operatorIncluded?: boolean;
+  /** @nullable */
+  equipmentIds?: string[] | null;
+  /** @nullable */
+  equipmentDescription?: string | null;
+  /** @nullable */
+  optionsList?: string | null;
+  /** @nullable */
+  rentalPrice?: string | null;
+  /** @nullable */
+  optionsPrice?: string | null;
+  /** @nullable */
+  deliveryFees?: string | null;
+  /** @nullable */
+  discountAmount?: string | null;
+  /** @nullable */
   currency?: string | null;
   /** @nullable */
   language?: string | null;
@@ -667,9 +753,42 @@ export interface Invoice {
   /** @nullable */
   clientCompany?: string | null;
   /** @nullable */
+  clientAddress?: string | null;
+  /** @nullable */
   eventType?: string | null;
   /** @nullable */
   eventDate?: string | null;
+  /** @nullable */
+  eventLocation?: string | null;
+  /** @nullable */
+  eventStartTime?: string | null;
+  /** @nullable */
+  eventEndTime?: string | null;
+  /** @nullable */
+  packageName?: string | null;
+  /** @nullable */
+  rentalDuration?: string | null;
+  /** @nullable */
+  includedPrints?: string | null;
+  digitalGallery?: boolean;
+  customTemplate?: boolean;
+  deliveryIncluded?: boolean;
+  setupIncluded?: boolean;
+  operatorIncluded?: boolean;
+  /** @nullable */
+  equipmentIds?: string[] | null;
+  /** @nullable */
+  equipmentDescription?: string | null;
+  /** @nullable */
+  optionsList?: string | null;
+  /** @nullable */
+  rentalPrice?: string | null;
+  /** @nullable */
+  optionsPrice?: string | null;
+  /** @nullable */
+  deliveryFees?: string | null;
+  /** @nullable */
+  discountAmount?: string | null;
   /** @nullable */
   currency?: string | null;
   /** @nullable */
@@ -808,6 +927,23 @@ export interface QuoteInput {
   eventType?: string;
   eventDate?: string;
   eventLocation?: string;
+  eventStartTime?: string;
+  eventEndTime?: string;
+  packageName?: string;
+  rentalDuration?: string;
+  includedPrints?: string;
+  digitalGallery?: boolean;
+  customTemplate?: boolean;
+  deliveryIncluded?: boolean;
+  setupIncluded?: boolean;
+  operatorIncluded?: boolean;
+  equipmentIds?: string[];
+  equipmentDescription?: string;
+  optionsList?: string;
+  rentalPrice?: string;
+  optionsPrice?: string;
+  deliveryFees?: string;
+  discountAmount?: string;
   currency?: string;
   language?: string;
   taxRate?: string;
@@ -897,8 +1033,27 @@ export interface InvoiceInput {
   clientEmail?: string;
   clientPhone?: string;
   clientCompany?: string;
+  clientAddress?: string;
   eventType?: string;
   eventDate?: string;
+  eventLocation?: string;
+  eventStartTime?: string;
+  eventEndTime?: string;
+  packageName?: string;
+  rentalDuration?: string;
+  includedPrints?: string;
+  digitalGallery?: boolean;
+  customTemplate?: boolean;
+  deliveryIncluded?: boolean;
+  setupIncluded?: boolean;
+  operatorIncluded?: boolean;
+  equipmentIds?: string[];
+  equipmentDescription?: string;
+  optionsList?: string;
+  rentalPrice?: string;
+  optionsPrice?: string;
+  deliveryFees?: string;
+  discountAmount?: string;
   currency?: string;
   language?: string;
   taxRate?: string;
