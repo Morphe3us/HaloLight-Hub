@@ -1001,6 +1001,13 @@ export interface ContractInput {
   discountAmount?: string;
   equipmentIds?: string[];
   equipmentDescription?: string;
+  digitalGallery?: boolean;
+  customTemplate?: boolean;
+  deliveryIncluded?: boolean;
+  setupIncluded?: boolean;
+  operatorIncluded?: boolean;
+  optionsList?: string;
+  invoiceId?: string;
   currency?: string;
   language?: string;
   content?: string;

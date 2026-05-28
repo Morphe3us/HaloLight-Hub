@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useRoute, Link, useLocation } from "wouter";
 import { useTranslation } from "react-i18next";
-import { useGetInvoice, useUpdateInvoiceStatus, useDeleteInvoice, useGetCurrentUser } from "@workspace/api-client-react";
+import { useGetInvoice, useUpdateInvoiceStatus, useDeleteInvoice, useGetCurrentUser, useCreateContract } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Printer, Building2, Mail, CheckCircle2, AlertCircle, Clock, Bell } from "lucide-react";
+import { ArrowLeft, Printer, Building2, Mail, CheckCircle2, AlertCircle, Clock, Bell, FileSignature } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCurrency } from "@/lib/currency";
 
@@ -216,6 +216,8 @@ export default function InvoiceDetail() {
   const [showMarkPaid, setShowMarkPaid] = useState(false);
   const [paymentForm, setPaymentForm] = useState({ paidAmount: "", paymentMethod: "Bank Transfer", paymentReference: "" });
   const [sendingReminder, setSendingReminder] = useState(false);
+  const [showCreateContract, setShowCreateContract] = useState(false);
+  const [contractForm, setContractForm] = useState({ title: "", notes: "", startDate: "", endDate: "" });
 
   const { data: invoice, isLoading } = useGetInvoice(id, {
     query: { queryKey: ["invoice", id], enabled: !!id },
@@ -235,6 +237,17 @@ export default function InvoiceDetail() {
   const deleteMutation = useDeleteInvoice({
     mutation: {
       onSuccess: () => { qc.invalidateQueries({ queryKey: ["invoices"] }); navigate("/invoices"); toast({ title: t("invoices.invoice_deleted") }); },
+    },
+  });
+
+  const createContractMutation = useCreateContract({
+    mutation: {
+      onSuccess: (contract: any) => {
+        qc.invalidateQueries({ queryKey: ["contracts"] });
+        setShowCreateContract(false);
+        toast({ title: t("contracts.contract_created") });
+        navigate(`/contracts/${contract.id}`);
+      },
     },
   });
 
@@ -305,6 +318,17 @@ export default function InvoiceDetail() {
               <CheckCircle2 className="w-4 h-4" /> {t("invoices.mark_as_paid_btn")}
             </Button>
           )}
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-1.5"
+            onClick={() => {
+              setContractForm({ title: invoice.title || `Contract — ${invoice.clientName}`, notes: "", startDate: "", endDate: "" });
+              setShowCreateContract(true);
+            }}
+          >
+            <FileSignature className="w-3.5 h-3.5" /> {t("contracts.create_contract_btn")}
+          </Button>
           <Select value={invoice.status} onValueChange={(s) => { if (s !== "paid") statusMutation.mutate({ id, data: { status: s as any } }); }}>
             <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
             <SelectContent>
@@ -416,6 +440,55 @@ export default function InvoiceDetail() {
           {invoice.terms && <div className="rounded-xl border bg-card p-5"><h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide mb-2">{t("invoices.payment_terms_section")}</h4><p className="text-sm text-muted-foreground whitespace-pre-wrap">{invoice.terms}</p></div>}
         </div>
       )}
+
+      <Dialog open={showCreateContract} onOpenChange={setShowCreateContract}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>{t("contracts.new_contract")}</DialogTitle></DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="rounded-lg bg-info/8 border border-info/20 px-3 py-2 text-xs text-info">
+              {t("invoices.service_auto_filled_contract")}
+            </div>
+            <div className="space-y-1.5">
+              <Label>{t("contracts.title_label")}</Label>
+              <Input value={contractForm.title} onChange={(e) => setContractForm({ ...contractForm, title: e.target.value })} placeholder={t("contracts.title_placeholder")} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>{t("contracts.start_label")}</Label>
+                <Input type="date" value={contractForm.startDate} onChange={(e) => setContractForm({ ...contractForm, startDate: e.target.value })} />
+              </div>
+              <div className="space-y-1.5">
+                <Label>{t("contracts.end_label")}</Label>
+                <Input type="date" value={contractForm.endDate} onChange={(e) => setContractForm({ ...contractForm, endDate: e.target.value })} />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label>{t("contracts.notes_label")}</Label>
+              <Input value={contractForm.notes} onChange={(e) => setContractForm({ ...contractForm, notes: e.target.value })} placeholder="Optional notes…" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCreateContract(false)}>{t("common.cancel")}</Button>
+            <Button
+              disabled={!contractForm.title || createContractMutation.isPending}
+              onClick={() => {
+                createContractMutation.mutate({
+                  data: {
+                    invoiceId: id,
+                    title: contractForm.title,
+                    clientName: invoice.clientName,
+                    notes: contractForm.notes || undefined,
+                    startDate: contractForm.startDate || undefined,
+                    endDate: contractForm.endDate || undefined,
+                  } as any,
+                });
+              }}
+            >
+              {createContractMutation.isPending ? t("contracts.creating") : t("contracts.create_btn")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={showMarkPaid} onOpenChange={setShowMarkPaid}>
         <DialogContent className="max-w-md">

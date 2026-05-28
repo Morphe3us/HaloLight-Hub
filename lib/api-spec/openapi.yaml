@@ -4513,6 +4513,20 @@ components:
             type: string
         equipmentDescription:
           type: string
+        digitalGallery:
+          type: boolean
+        customTemplate:
+          type: boolean
+        deliveryIncluded:
+          type: boolean
+        setupIncluded:
+          type: boolean
+        operatorIncluded:
+          type: boolean
+        optionsList:
+          type: string
+        invoiceId:
+          type: string
         currency:
           type: string
         language:

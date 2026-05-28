@@ -1,0 +1,339 @@
+Critical regression — operational workflow still not fixed.
+
+The previous summary says the workflow is fixed, but real testing shows several blocking issues remain.
+
+Please stop relying on typecheck summaries and reproduce the actual user workflow.
+
+Current issues found in real testing:
+
+1. Quote PDF
+
+* Options appear in English.
+* Quote still has mixed-language content.
+
+2. Contract PDF
+
+* Contract body is missing / empty.
+* A generated contract can show only header/client/value, without the full legal/service body.
+* This happens especially when creating a contract from an invoice or another upstream document.
+
+3. Event creation logic
+
+* The event only appears when the invoice is marked as paid.
+* But a signed contract should already create/link a provisional upcoming event.
+* Invoice paid should only update payment status, not be the only trigger for event creation.
+
+4. Consumables
+
+* Consumables forecast / stock preparation is not actually reflected in the UI.
+* Creating a quote/contract/invoice with included prints does not visibly update consumables planning.
+* If 200 prints are included, the system should forecast 200 prints required.
+* If unlimited prints, forecast 600 prints by default.
+
+5. Contract from invoice
+
+* If I create a contract from an invoice, the contract is empty.
+* This is a major regression.
+* Contract must never be empty regardless of whether it is created from quote, invoice, lead, or manually.
+
+==================================================
+
+1. REPRODUCE EXACT FLOW
+   ==================================================
+
+Please test this exact flow manually:
+
+A. Create quote:
+
+* client name
+* client email
+* event type
+* event date future
+* event location
+* package name
+* rental duration
+* included prints = 200
+* equipment selected
+* rental price
+* options price
+* options description in French
+* delivery fee
+* tax
+
+Export quote PDF.
+
+Expected:
+
+* Quote is fully in selected language.
+* Options are not in English.
+* Quote includes event/service/package/prints/equipment details.
+
+B. Accept quote.
+
+C. Create contract from quote.
+
+Expected:
+
+* Contract copies all quote fields.
+* Contract has full body:
+
+  * provider
+  * client
+  * event
+  * equipment
+  * package/services
+  * pricing
+  * deposit
+  * obligations
+  * cancellation
+  * liability
+  * signatures
+* Contract is not empty.
+
+D. Mark contract signed.
+
+Expected:
+
+* Upcoming event is created/linked immediately.
+* Event appears in dashboard upcoming events.
+* Event appears in Events page.
+* Event prep sheet includes location, package, tirages, matériel.
+
+E. Create invoice from contract.
+
+Expected:
+
+* Invoice copies all service fields.
+* Invoice PDF includes event/service/package/prints/equipment details.
+
+F. Mark invoice paid.
+
+Expected:
+
+* Existing event is updated to paid.
+* No duplicate event is created.
+
+G. Create contract from invoice.
+
+Expected:
+
+* Contract is generated with full body and all invoice service data.
+* Contract is not empty.
+
+==================================================
+2. FIX QUOTE OPTIONS LANGUAGE
+=============================
+
+Current issue:
+Options in the quote appear in English.
+
+Fix:
+
+* Ensure quote options labels use i18n.
+* Ensure quote print/export uses selected user/document language.
+* No hardcoded English in quote PDF.
+* Check:
+
+  * options
+  * delivery
+  * tax
+  * service details
+  * package labels
+  * included/excluded labels
+
+Verification:
+In French mode, the quote PDF should not contain English labels.
+
+==================================================
+3. FIX EMPTY CONTRACT BODY
+==========================
+
+Current issue:
+Contract can be generated empty.
+
+This is not acceptable.
+
+Fix:
+
+* Audit contract creation from all sources:
+
+  * manual
+  * lead
+  * quote
+  * invoice
+* Ensure each source uses the full contract template.
+* Ensure contract.content is created from the complete template, not from a minimal header template.
+* Ensure the professional print template renders contract.content body.
+* Ensure fallback never saves empty contract content.
+
+If contract body generation fails:
+
+* block creation
+* show clear error
+* do not save an empty contract
+
+Verification:
+Every contract source must produce a full contract body:
+
+* manual → full body
+* quote → full body
+* invoice → full body
+* lead → full body
+
+==================================================
+4. FIX CONTRACT FROM INVOICE
+============================
+
+Current issue:
+Creating a contract from an invoice produces an empty contract.
+
+Expected:
+Contract from invoice must inherit:
+
+* client info
+* event info
+* package
+* rental duration
+* included prints
+* options
+* equipment
+* pricing
+* currency
+* payment terms if available
+
+Then generate a complete contract body using the selected language template.
+
+Do not create a contract with only title/value/client.
+
+==================================================
+5. FIX EVENT CREATION TRIGGERS
+==============================
+
+Current issue:
+Event only appears when invoice is marked paid.
+
+Expected:
+
+Contract signed:
+
+* create/link upcoming event immediately.
+* payment status can be unpaid/pending.
+
+Invoice paid:
+
+* update the same event payment status to paid.
+* do not create duplicate event.
+
+Deduplication:
+
+1. existing eventId
+2. contractId
+3. invoiceId
+4. quoteId
+5. client email + event date + location
+
+Dashboard:
+
+* upcoming events must show signed-contract events even if invoice is unpaid.
+
+Events page:
+
+* prep sheet must show:
+
+  * location
+  * package
+  * included prints
+  * selected equipment
+  * payment status
+  * linked documents
+
+==================================================
+6. FIX CONSUMABLES FORECAST UI
+==============================
+
+Current issue:
+Consumables are not visibly updated.
+
+Expected:
+Consumables should reflect upcoming print demand.
+
+Rules:
+
+* includedPrints = 200 → forecast 200 prints
+* includedPrints = unlimited → forecast 600 prints
+* includedPrints empty → warning “Print quantity not specified”
+
+Where to show:
+
+* Consumables page
+* Dashboard if possible
+* Event prep sheet if relevant
+
+Show:
+
+* upcoming prints required
+* available stock
+* shortage
+* reorder recommendation
+* per-event print requirement
+
+Important:
+Do not necessarily subtract stock immediately.
+This is forecast/reservation planning, not physical consumption.
+But it must be visible and useful.
+
+==================================================
+7. VERIFICATION REQUIRED
+========================
+
+Do not respond only with “typecheck passed”.
+
+Please provide actual verification for:
+
+1. Quote PDF in French:
+
+* options not in English
+* full service details visible
+
+2. Contract from quote:
+
+* full body exists
+
+3. Contract from invoice:
+
+* full body exists
+
+4. Contract signed:
+
+* event appears before invoice is paid
+
+5. Invoice paid:
+
+* existing event payment status becomes paid
+* no duplicate event
+
+6. Event prep sheet:
+
+* location visible
+* package visible
+* included prints visible
+* equipment visible
+
+7. Consumables:
+
+* forecast shows required prints
+* shortage appears if stock insufficient
+
+Run:
+
+* frontend typecheck
+* API typecheck
+* route verification
+* create a real test workflow
+
+Provide:
+
+* root cause for each bug
+* files changed
+* before/after behavior
+* exact workflow verification result

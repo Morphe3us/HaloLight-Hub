@@ -1,6 +1,6 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import { eq, and, desc, sql } from "drizzle-orm";
-import { db, contracts, contractTemplates, leads, quotes, events } from "@workspace/db";
+import { db, contracts, contractTemplates, leads, quotes, invoices, events } from "@workspace/db";
 import { requireAuth } from "../middlewares/requireAuth";
 import { getOrCreateUser } from "../lib/userSync";
 import { DEFAULT_CONTRACT_TEMPLATES } from "../lib/defaultContractTemplates";
@@ -17,6 +17,138 @@ async function updateLeadPipelineStage(leadId: string | null | undefined, stage:
   if (!leadId) return;
   await db.update(leads).set({ pipelineStage: stage, updatedAt: new Date() })
     .where(and(eq(leads.id, leadId), eq(leads.userId, userId)));
+}
+
+function fillContractVariables(
+  template: string,
+  data: {
+    contractNumber: string;
+    clientName?: string | null;
+    clientEmail?: string | null;
+    clientPhone?: string | null;
+    clientCompany?: string | null;
+    clientAddress?: string | null;
+    eventType?: string | null;
+    eventDate?: Date | null;
+    eventLocation?: string | null;
+    eventStartTime?: string | null;
+    eventEndTime?: string | null;
+    packageName?: string | null;
+    rentalDuration?: string | null;
+    includedPrints?: string | null;
+    rentalPrice?: string | null;
+    optionsPrice?: string | null;
+    deliveryFees?: string | null;
+    discountAmount?: string | null;
+    equipmentDescription?: string | null;
+    digitalGallery?: boolean | null;
+    customTemplate?: boolean | null;
+    deliveryIncluded?: boolean | null;
+    setupIncluded?: boolean | null;
+    operatorIncluded?: boolean | null;
+    optionsList?: string | null;
+    currency?: string | null;
+    language?: string | null;
+    value?: string | null;
+  }
+): string {
+  const HIDE = "\x00HIDE_LINE\x00";
+  const lang = data.language ?? "en";
+
+  const INCLUDED: Record<string, string> = {
+    en: "Included", fr: "Inclus", es: "Incluido", de: "Inklusive",
+    it: "Incluso", nl: "Inbegrepen", pl: "W zestawie", pt: "Incluído",
+  };
+  const included = (flag: boolean | null | undefined) => flag ? (INCLUDED[lang] ?? "Included") : HIDE;
+
+  const fmt = (v: string | null | undefined) => v?.trim() || HIDE;
+
+  const fmtDate = (d: Date | null | undefined) => {
+    if (!d) return HIDE;
+    return d.toLocaleDateString(lang, { weekday: "long", year: "numeric", month: "long", day: "numeric" });
+  };
+
+  const fmtAmount = (v: string | null | undefined) => {
+    if (!v || Number(v) === 0) return HIDE;
+    return `${Number(v).toLocaleString(lang, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${data.currency ?? "€"}`;
+  };
+
+  const nameParts = (data.clientName ?? "").split(" ");
+  const firstName = fmt(nameParts[0]);
+  const lastName = nameParts.length > 1 ? fmt(nameParts.slice(1).join(" ")) : HIDE;
+
+  const equipList = data.equipmentDescription
+    ? data.equipmentDescription.split(",").map(e => e.trim()).filter(Boolean).join("\n")
+    : HIDE;
+
+  let result = template
+    .replace(/\{\{contract_number\}\}/g, data.contractNumber)
+    .replace(/\{\{client_name\}\}/g, fmt(data.clientName))
+    .replace(/\{\{client_first_name\}\}/g, firstName)
+    .replace(/\{\{client_last_name\}\}/g, lastName)
+    .replace(/\{\{client_email\}\}/g, fmt(data.clientEmail))
+    .replace(/\{\{client_phone\}\}/g, fmt(data.clientPhone))
+    .replace(/\{\{client_company_name\}\}/g, fmt(data.clientCompany))
+    .replace(/\{\{client_address\}\}/g, fmt(data.clientAddress))
+    .replace(/\{\{event_type\}\}/g, fmt(data.eventType))
+    .replace(/\{\{event_date\}\}/g, fmtDate(data.eventDate))
+    .replace(/\{\{event_start_time\}\}/g, fmt(data.eventStartTime))
+    .replace(/\{\{event_end_time\}\}/g, fmt(data.eventEndTime))
+    .replace(/\{\{event_location\}\}/g, fmt(data.eventLocation))
+    .replace(/\{\{package_name\}\}/g, fmt(data.packageName))
+    .replace(/\{\{rental_duration\}\}/g, fmt(data.rentalDuration))
+    .replace(/\{\{included_prints\}\}/g, fmt(data.includedPrints))
+    .replace(/\{\{equipment_list\}\}/g, equipList)
+    .replace(/\{\{digital_gallery\}\}/g, included(data.digitalGallery))
+    .replace(/\{\{custom_template\}\}/g, included(data.customTemplate))
+    .replace(/\{\{delivery_included\}\}/g, included(data.deliveryIncluded))
+    .replace(/\{\{setup_included\}\}/g, included(data.setupIncluded))
+    .replace(/\{\{operator_included\}\}/g, included(data.operatorIncluded))
+    .replace(/\{\{options_list\}\}/g, fmt(data.optionsList))
+    .replace(/\{\{rental_price\}\}/g, fmtAmount(data.rentalPrice))
+    .replace(/\{\{options_price\}\}/g, fmtAmount(data.optionsPrice))
+    .replace(/\{\{delivery_fees\}\}/g, fmtAmount(data.deliveryFees))
+    .replace(/\{\{discount_amount\}\}/g, fmtAmount(data.discountAmount))
+    .replace(/\{\{contract_value\}\}/g, fmtAmount(data.value))
+    .replace(/\{\{currency\}\}/g, "")
+    // Provider fields — user fills in settings
+    .replace(/\{\{rental_company_name\}\}/g, HIDE)
+    .replace(/\{\{rental_company_representative\}\}/g, HIDE)
+    .replace(/\{\{rental_company_address\}\}/g, HIDE)
+    .replace(/\{\{rental_company_email\}\}/g, HIDE)
+    .replace(/\{\{rental_company_phone\}\}/g, HIDE)
+    .replace(/\{\{rental_company_website\}\}/g, HIDE)
+    .replace(/\{\{rental_company_vat\}\}/g, HIDE)
+    // Optional fields not in form
+    .replace(/\{\{setup_time\}\}/g, HIDE)
+    .replace(/\{\{pickup_time\}\}/g, HIDE)
+    .replace(/\{\{deposit_amount\}\}/g, HIDE)
+    .replace(/\{\{deposit_method\}\}/g, HIDE)
+    .replace(/\{\{deposit_conditions\}\}/g, HIDE)
+    .replace(/\{\{deposit_return\}\}/g, HIDE)
+    .replace(/\{\{cancellation_terms\}\}/g, HIDE)
+    .replace(/\{\{payment_terms\}\}/g, HIDE)
+    .replace(/\{\{signature_place\}\}/g, HIDE)
+    .replace(/\{\{provider_signature\}\}/g, HIDE)
+    .replace(/\{\{provider_signer_title\}\}/g, HIDE)
+    // Catch-all for any remaining {{...}} except contract_number (already replaced above)
+    .replace(/\{\{(?!contract_number\}\})[^}]+\}\}/g, HIDE);
+
+  // Filter lines with HIDE marker, then collapse excess blank lines
+  const lines = result.split("\n");
+  const filtered = lines.filter(line => !line.includes("\x00HIDE_LINE\x00"));
+  const collapsed: string[] = [];
+  let blankRun = 0;
+  for (const line of filtered) {
+    if (line.trim() === "") {
+      blankRun++;
+      if (blankRun <= 2) collapsed.push(line);
+    } else {
+      blankRun = 0;
+      collapsed.push(line);
+    }
+  }
+  return collapsed.join("\n");
 }
 
 // GET /contracts
@@ -39,17 +171,27 @@ router.post("/contracts", requireAuth, async (req: Request, res: Response): Prom
   if (!user) { res.status(401).json({ error: "Unauthorized" }); return; }
 
   const {
-    leadId, quoteId, templateId, title, clientName, clientEmail, clientPhone, clientCompany, clientAddress,
+    leadId, quoteId, invoiceId, templateId, title, clientName, clientEmail, clientPhone, clientCompany, clientAddress,
     content, value, startDate, endDate, notes, eventType, eventDate, currency, language,
+    eventLocation, eventStartTime, eventEndTime, packageName, rentalDuration, includedPrints,
+    rentalPrice, optionsPrice, deliveryFees, discountAmount, equipmentDescription,
+    digitalGallery, customTemplate, deliveryIncluded, setupIncluded, operatorIncluded, optionsList,
+    equipmentIds,
   } = req.body as {
-    leadId?: string; quoteId?: string; templateId?: string; title: string; clientName: string;
+    leadId?: string; quoteId?: string; invoiceId?: string; templateId?: string; title: string; clientName: string;
     clientEmail?: string; clientPhone?: string; clientCompany?: string; clientAddress?: string;
     content?: string; value?: string; startDate?: string; endDate?: string; notes?: string;
     eventType?: string; eventDate?: string; currency?: string; language?: string;
+    eventLocation?: string; eventStartTime?: string; eventEndTime?: string;
+    packageName?: string; rentalDuration?: string; includedPrints?: string;
+    rentalPrice?: string; optionsPrice?: string; deliveryFees?: string; discountAmount?: string;
+    equipmentDescription?: string; digitalGallery?: boolean; customTemplate?: boolean;
+    deliveryIncluded?: boolean; setupIncluded?: boolean; operatorIncluded?: boolean; optionsList?: string;
+    equipmentIds?: string[];
   };
   if (!title || !clientName) { res.status(400).json({ error: "title and clientName required" }); return; }
 
-  // Auto-fill from quote if provided
+  // Resolved fields — will be populated from source record (invoice/quote/lead)
   let resolvedClientName = clientName;
   let resolvedClientEmail = clientEmail;
   let resolvedClientPhone = clientPhone;
@@ -57,12 +199,66 @@ router.post("/contracts", requireAuth, async (req: Request, res: Response): Prom
   let resolvedClientAddress = clientAddress;
   let resolvedEventType = eventType;
   let resolvedEventDate = eventDate;
+  let resolvedEventLocation = eventLocation;
+  let resolvedEventStartTime = eventStartTime;
+  let resolvedEventEndTime = eventEndTime;
+  let resolvedPackageName = packageName;
+  let resolvedRentalDuration = rentalDuration;
+  let resolvedIncludedPrints = includedPrints;
+  let resolvedRentalPrice = rentalPrice;
+  let resolvedOptionsPrice = optionsPrice;
+  let resolvedDeliveryFees = deliveryFees;
+  let resolvedDiscountAmount = discountAmount;
+  let resolvedEquipmentDescription = equipmentDescription;
+  let resolvedDigitalGallery = digitalGallery;
+  let resolvedCustomTemplate = customTemplate;
+  let resolvedDeliveryIncluded = deliveryIncluded;
+  let resolvedSetupIncluded = setupIncluded;
+  let resolvedOperatorIncluded = operatorIncluded;
+  let resolvedOptionsList = optionsList;
   let resolvedValue = value;
   let resolvedLeadId = leadId;
+  let resolvedQuoteId = quoteId;
   let resolvedCurrency = currency;
   let resolvedLanguage = language;
+  let resolvedEquipmentIds = equipmentIds;
 
-  if (quoteId) {
+  // Source: Invoice
+  if (invoiceId) {
+    const [inv] = await db.select().from(invoices).where(and(eq(invoices.id, invoiceId), eq(invoices.userId, user.id)));
+    if (inv) {
+      resolvedClientName = clientName || inv.clientName;
+      resolvedClientEmail = clientEmail ?? inv.clientEmail ?? undefined;
+      resolvedClientPhone = clientPhone ?? inv.clientPhone ?? undefined;
+      resolvedClientCompany = clientCompany ?? inv.clientCompany ?? undefined;
+      resolvedClientAddress = clientAddress ?? inv.clientAddress ?? undefined;
+      resolvedEventType = eventType ?? inv.eventType ?? undefined;
+      resolvedEventDate = eventDate ?? (inv.eventDate ? inv.eventDate.toISOString() : undefined);
+      resolvedEventLocation = eventLocation ?? inv.eventLocation ?? undefined;
+      resolvedEventStartTime = eventStartTime ?? inv.eventStartTime ?? undefined;
+      resolvedEventEndTime = eventEndTime ?? inv.eventEndTime ?? undefined;
+      resolvedPackageName = packageName ?? inv.packageName ?? undefined;
+      resolvedRentalDuration = rentalDuration ?? inv.rentalDuration ?? undefined;
+      resolvedIncludedPrints = includedPrints ?? inv.includedPrints ?? undefined;
+      resolvedRentalPrice = rentalPrice ?? inv.rentalPrice ?? undefined;
+      resolvedOptionsPrice = optionsPrice ?? inv.optionsPrice ?? undefined;
+      resolvedDeliveryFees = deliveryFees ?? inv.deliveryFees ?? undefined;
+      resolvedDiscountAmount = discountAmount ?? inv.discountAmount ?? undefined;
+      resolvedEquipmentDescription = equipmentDescription ?? inv.equipmentDescription ?? undefined;
+      resolvedDigitalGallery = digitalGallery ?? inv.digitalGallery ?? undefined;
+      resolvedCustomTemplate = customTemplate ?? inv.customTemplate ?? undefined;
+      resolvedDeliveryIncluded = deliveryIncluded ?? inv.deliveryIncluded ?? undefined;
+      resolvedSetupIncluded = setupIncluded ?? inv.setupIncluded ?? undefined;
+      resolvedOperatorIncluded = operatorIncluded ?? inv.operatorIncluded ?? undefined;
+      resolvedOptionsList = optionsList ?? inv.optionsList ?? undefined;
+      resolvedValue = value ?? inv.total ?? undefined;
+      resolvedLeadId = leadId ?? inv.leadId ?? undefined;
+      resolvedQuoteId = quoteId ?? inv.quoteId ?? undefined;
+      resolvedCurrency = currency ?? inv.currency ?? undefined;
+      resolvedLanguage = language ?? inv.language ?? undefined;
+    }
+  // Source: Quote
+  } else if (quoteId) {
     const [quote] = await db.select().from(quotes).where(and(eq(quotes.id, quoteId), eq(quotes.userId, user.id)));
     if (quote) {
       resolvedClientName = clientName || quote.clientName;
@@ -72,11 +268,29 @@ router.post("/contracts", requireAuth, async (req: Request, res: Response): Prom
       resolvedClientAddress = clientAddress ?? quote.clientAddress ?? undefined;
       resolvedEventType = eventType ?? quote.eventType ?? undefined;
       resolvedEventDate = eventDate ?? (quote.eventDate ? quote.eventDate.toISOString() : undefined);
-      resolvedValue = value ?? quote.total;
+      resolvedEventLocation = eventLocation ?? quote.eventLocation ?? undefined;
+      resolvedEventStartTime = eventStartTime ?? quote.eventStartTime ?? undefined;
+      resolvedEventEndTime = eventEndTime ?? quote.eventEndTime ?? undefined;
+      resolvedPackageName = packageName ?? quote.packageName ?? undefined;
+      resolvedRentalDuration = rentalDuration ?? quote.rentalDuration ?? undefined;
+      resolvedIncludedPrints = includedPrints ?? quote.includedPrints ?? undefined;
+      resolvedRentalPrice = rentalPrice ?? quote.rentalPrice ?? undefined;
+      resolvedOptionsPrice = optionsPrice ?? quote.optionsPrice ?? undefined;
+      resolvedDeliveryFees = deliveryFees ?? quote.deliveryFees ?? undefined;
+      resolvedDiscountAmount = discountAmount ?? quote.discountAmount ?? undefined;
+      resolvedEquipmentDescription = equipmentDescription ?? quote.equipmentDescription ?? undefined;
+      resolvedDigitalGallery = digitalGallery ?? quote.digitalGallery ?? undefined;
+      resolvedCustomTemplate = customTemplate ?? quote.customTemplate ?? undefined;
+      resolvedDeliveryIncluded = deliveryIncluded ?? quote.deliveryIncluded ?? undefined;
+      resolvedSetupIncluded = setupIncluded ?? quote.setupIncluded ?? undefined;
+      resolvedOperatorIncluded = operatorIncluded ?? quote.operatorIncluded ?? undefined;
+      resolvedOptionsList = optionsList ?? quote.optionsList ?? undefined;
+      resolvedValue = value ?? quote.total ?? undefined;
       resolvedLeadId = leadId ?? quote.leadId ?? undefined;
       resolvedCurrency = currency ?? quote.currency ?? undefined;
       resolvedLanguage = language ?? quote.language ?? undefined;
     }
+  // Source: Lead
   } else if (leadId) {
     const [lead] = await db.select().from(leads).where(and(eq(leads.id, leadId), eq(leads.userId, user.id)));
     if (lead) {
@@ -91,25 +305,66 @@ router.post("/contracts", requireAuth, async (req: Request, res: Response): Prom
     }
   }
 
-  const {
-    equipmentIds,
-  } = req.body as { equipmentIds?: string[] };
-
+  // Resolve template content
   let finalContent = content ?? "";
-  if (templateId && !content) {
-    const [tpl] = await db.select().from(contractTemplates).where(eq(contractTemplates.id, templateId));
-    if (tpl) finalContent = tpl.content;
+  if (!finalContent) {
+    if (templateId) {
+      const [tpl] = await db.select().from(contractTemplates).where(eq(contractTemplates.id, templateId));
+      if (tpl) finalContent = tpl.content;
+    }
+    // Auto-select default template by language if still empty
+    if (!finalContent) {
+      const lang = resolvedLanguage ?? "en";
+      const [dbTpl] = await db.select().from(contractTemplates)
+        .where(and(eq(contractTemplates.language, lang), eq(contractTemplates.isDefault, true)));
+      if (dbTpl) {
+        finalContent = dbTpl.content;
+      } else {
+        const bundled = DEFAULT_CONTRACT_TEMPLATES.find(t => t.language === lang) ?? DEFAULT_CONTRACT_TEMPLATES.find(t => t.language === "en");
+        if (bundled) finalContent = bundled.content;
+      }
+    }
   }
 
-  // Generate contract number first so we can embed it in the content
+  // Generate contract number and fill all template variables
   const contractNumber = generateContractNumber();
-  // Replace {{contract_number}} placeholder with the real number
-  const processedContent = finalContent.replace(/\{\{contract_number\}\}/g, contractNumber);
+  const resolvedEventDateObj = resolvedEventDate ? new Date(resolvedEventDate) : null;
+
+  const processedContent = fillContractVariables(finalContent, {
+    contractNumber,
+    clientName: resolvedClientName,
+    clientEmail: resolvedClientEmail,
+    clientPhone: resolvedClientPhone,
+    clientCompany: resolvedClientCompany,
+    clientAddress: resolvedClientAddress,
+    eventType: resolvedEventType,
+    eventDate: resolvedEventDateObj,
+    eventLocation: resolvedEventLocation,
+    eventStartTime: resolvedEventStartTime,
+    eventEndTime: resolvedEventEndTime,
+    packageName: resolvedPackageName,
+    rentalDuration: resolvedRentalDuration,
+    includedPrints: resolvedIncludedPrints,
+    rentalPrice: resolvedRentalPrice,
+    optionsPrice: resolvedOptionsPrice,
+    deliveryFees: resolvedDeliveryFees,
+    discountAmount: resolvedDiscountAmount,
+    equipmentDescription: resolvedEquipmentDescription,
+    digitalGallery: resolvedDigitalGallery,
+    customTemplate: resolvedCustomTemplate,
+    deliveryIncluded: resolvedDeliveryIncluded,
+    setupIncluded: resolvedSetupIncluded,
+    operatorIncluded: resolvedOperatorIncluded,
+    optionsList: resolvedOptionsList,
+    currency: resolvedCurrency,
+    language: resolvedLanguage,
+    value: resolvedValue,
+  });
 
   const [contract] = await db.insert(contracts).values({
     userId: user.id,
     leadId: resolvedLeadId ?? null,
-    quoteId: quoteId ?? null,
+    quoteId: resolvedQuoteId ?? null,
     contractNumber,
     title,
     clientName: resolvedClientName,
@@ -118,7 +373,24 @@ router.post("/contracts", requireAuth, async (req: Request, res: Response): Prom
     clientCompany: resolvedClientCompany ?? null,
     clientAddress: resolvedClientAddress ?? null,
     eventType: resolvedEventType ?? null,
-    eventDate: resolvedEventDate ? new Date(resolvedEventDate) : null,
+    eventDate: resolvedEventDateObj,
+    eventLocation: resolvedEventLocation ?? null,
+    eventStartTime: resolvedEventStartTime ?? null,
+    eventEndTime: resolvedEventEndTime ?? null,
+    packageName: resolvedPackageName ?? null,
+    rentalDuration: resolvedRentalDuration ?? null,
+    includedPrints: resolvedIncludedPrints ?? null,
+    rentalPrice: resolvedRentalPrice ?? null,
+    optionsPrice: resolvedOptionsPrice ?? null,
+    deliveryFees: resolvedDeliveryFees ?? null,
+    discountAmount: resolvedDiscountAmount ?? null,
+    equipmentDescription: resolvedEquipmentDescription ?? null,
+    digitalGallery: resolvedDigitalGallery ?? false,
+    customTemplate: resolvedCustomTemplate ?? false,
+    deliveryIncluded: resolvedDeliveryIncluded ?? false,
+    setupIncluded: resolvedSetupIncluded ?? false,
+    operatorIncluded: resolvedOperatorIncluded ?? false,
+    optionsList: resolvedOptionsList ?? null,
     currency: resolvedCurrency ?? null,
     language: resolvedLanguage ?? null,
     content: processedContent,
@@ -126,7 +398,7 @@ router.post("/contracts", requireAuth, async (req: Request, res: Response): Prom
     startDate: startDate ? new Date(startDate) : null,
     endDate: endDate ? new Date(endDate) : null,
     notes: notes ?? null,
-    equipmentIds: equipmentIds ?? null,
+    equipmentIds: resolvedEquipmentIds ?? null,
   }).returning();
 
   // Update lead pipeline stage
@@ -232,6 +504,16 @@ router.patch("/contracts/:id/status", requireAuth, async (req: Request, res: Res
         currency: existing.currency ?? linked.currency,
         leadId: existing.leadId ?? linked.leadId,
         quoteId: existing.quoteId ?? linked.quoteId,
+        clientName: existing.clientName ?? linked.clientName,
+        clientEmail: existing.clientEmail ?? linked.clientEmail,
+        clientPhone: existing.clientPhone ?? linked.clientPhone,
+        clientCompany: existing.clientCompany ?? linked.clientCompany,
+        location: existing.eventLocation ?? linked.location,
+        packageName: existing.packageName ?? linked.packageName,
+        rentalDuration: existing.rentalDuration ?? linked.rentalDuration,
+        includedPrints: existing.includedPrints ?? linked.includedPrints,
+        equipmentIds: existing.equipmentIds ?? linked.equipmentIds,
+        equipmentDescription: existing.equipmentDescription ?? linked.equipmentDescription,
         updatedAt: new Date(),
       }).where(eq(events.id, linked.id));
     } else {
@@ -246,6 +528,16 @@ router.patch("/contracts/:id/status", requireAuth, async (req: Request, res: Res
         revenue: existing.value,
         currency: existing.currency ?? null,
         status: "upcoming",
+        clientName: existing.clientName ?? null,
+        clientEmail: existing.clientEmail ?? null,
+        clientPhone: existing.clientPhone ?? null,
+        clientCompany: existing.clientCompany ?? null,
+        location: existing.eventLocation ?? null,
+        packageName: existing.packageName ?? null,
+        rentalDuration: existing.rentalDuration ?? null,
+        includedPrints: existing.includedPrints ?? null,
+        equipmentIds: existing.equipmentIds ?? null,
+        equipmentDescription: existing.equipmentDescription ?? null,
       });
     }
   }
