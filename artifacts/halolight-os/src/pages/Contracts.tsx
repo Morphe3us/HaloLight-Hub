@@ -359,9 +359,15 @@ export default function Contracts() {
     const finalContent = getFinalContent();
     // Compute total from the full pricing breakdown to store as the contract's value
     const { total } = computePricing(form);
+    // Auto-generate title if the user left it blank
+    const autoTitle =
+      form.title.trim() ||
+      [form.clientName.trim(), form.eventType.trim() || form.eventDate || null]
+        .filter(Boolean).join(" — ") ||
+      "Contract";
     createMutation.mutate({
       data: {
-        title: form.title,
+        title: autoTitle,
         clientName: form.clientName,
         clientEmail: form.clientEmail || undefined,
         clientPhone: form.clientPhone || undefined,
@@ -397,6 +403,13 @@ export default function Contracts() {
   };
 
   const readiness = computeReadiness(form, provider);
+
+  const liveValidation = useMemo(
+    () => validateContract(form, provider),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [form.clientName, form.clientEmail, form.value, form.currency,
+      provider.companyName, provider.firstName, provider.lastName],
+  );
 
   const f =
     (key: keyof ContractFormData) =>
@@ -948,17 +961,43 @@ export default function Contracts() {
             </TabsContent>
           </Tabs>
 
-          <DialogFooter className="shrink-0 border-t pt-4">
-            <Button variant="outline" onClick={() => setShowCreate(false)}>
-              {t("common.cancel")}
-            </Button>
-            <Button
-              onClick={handleCreate}
-              disabled={createMutation.isPending || !form.title}
-            >
-              {createMutation.isPending ? t("contracts.creating") : t("contracts.create_contract_btn")}
-            </Button>
-          </DialogFooter>
+          <div className="shrink-0 border-t pt-4 space-y-3">
+            {liveValidation.blocking.length > 0 && (
+              <div className="rounded-lg bg-destructive/8 border border-destructive/20 px-3 py-2 space-y-1">
+                <p className="text-xs font-medium text-destructive flex items-center gap-1.5">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                  {t("contract_validation.blocking_intro")}
+                </p>
+                <ul className="space-y-0.5 pl-5">
+                  {liveValidation.blocking.map((f) => (
+                    <li key={f} className="text-xs text-destructive list-disc">
+                      {t(`contract_validation.${f}`)}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {import.meta.env.DEV && (
+              <div className="text-xs bg-muted/40 border border-dashed rounded px-3 py-2 font-mono text-muted-foreground space-y-0.5">
+                <p className="font-semibold text-foreground">DEV</p>
+                <p>canCreate: <span className={liveValidation.blocking.length === 0 ? "text-success" : "text-destructive"}>{String(liveValidation.blocking.length === 0)}</span></p>
+                <p>blocking ({liveValidation.blocking.length}): {liveValidation.blocking.join(", ") || "—"}</p>
+                <p>total: {form.value || "—"} | currency: {form.currency || "—"} | lang: {lang}</p>
+                <p>provider: &quot;{provider.companyName ?? ""}&quot; | client: &quot;{form.clientName || ""}&quot;</p>
+              </div>
+            )}
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowCreate(false)}>
+                {t("common.cancel")}
+              </Button>
+              <Button
+                onClick={handleCreate}
+                disabled={createMutation.isPending || liveValidation.blocking.length > 0}
+              >
+                {createMutation.isPending ? t("contracts.creating") : t("contracts.create_contract_btn")}
+              </Button>
+            </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
 

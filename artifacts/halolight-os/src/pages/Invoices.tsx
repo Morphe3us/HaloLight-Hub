@@ -101,10 +101,14 @@ export default function Invoices() {
   const calcTotal = () => { const sub = calcSubtotal(); return sub + sub * (parseFloat(form.taxRate || "0") / 100); };
 
   const handleCreate = () => {
-    if (!form.title || !form.clientName) return;
+    if (!form.clientName) return;
+    const autoTitle =
+      form.title.trim() ||
+      form.clientName.trim() ||
+      "Invoice";
     createMutation.mutate({
       data: {
-        title: form.title,
+        title: autoTitle,
         clientName: form.clientName,
         clientEmail: form.clientEmail || undefined,
         clientPhone: form.clientPhone || undefined,
@@ -289,7 +293,7 @@ export default function Invoices() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowCreate(false)}>{t("common.cancel")}</Button>
-            <Button onClick={handleCreate} disabled={createMutation.isPending || !form.title || !form.clientName}>{createMutation.isPending ? t("invoices.creating") : t("invoices.create_invoice_btn")}</Button>
+            <Button onClick={handleCreate} disabled={createMutation.isPending || !form.clientName}>{createMutation.isPending ? t("invoices.creating") : t("invoices.create_invoice_btn")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

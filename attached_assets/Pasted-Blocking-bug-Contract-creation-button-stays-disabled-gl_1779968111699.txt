@@ -1,0 +1,289 @@
+Blocking bug — Contract creation button stays disabled + global action button audit.
+
+Current issue:
+In the New Contract modal, even after filling all required fields, the “Create Contract” button does not become active/clickable.
+
+The button stays disabled / not black, so I cannot generate the contract.
+
+This is blocking beta usage.
+
+Please debug the contract creation button first, then audit the same issue across all critical app forms.
+
+Do not work on unrelated features.
+
+==================================================
+
+1. CONTRACT BUTTON BUG
+   ==================================================
+
+Open:
+Sales → Contracts → New Contract
+
+Fill every visible field, including:
+
+* client name
+* client email
+* client phone
+* client address
+* event type
+* event date
+* event start/end time
+* event location
+* package/service name
+* rental duration
+* included prints
+* equipment
+* price
+* currency
+* deposit
+* payment terms
+
+Expected:
+The Create Contract button becomes enabled and clickable.
+
+Actual:
+Button stays disabled.
+
+Likely root cause:
+The validation logic is probably checking hidden/optional fields as required, or checking fields that no longer exist / were renamed.
+
+Check:
+
+* disabled condition on the Create Contract button
+* validateContract()
+* computeReadiness()
+* blockingIssues
+* optionalIssues
+* contractForm state
+* required field list
+* missing field detection
+* unresolved variable scan
+
+Only truly critical fields should block contract creation:
+
+* provider company/name
+* client name
+* client email
+* total amount
+* currency
+
+Everything else should either:
+
+* be optional
+* use localized fallback
+* or show a warning but still allow “Continue with placeholders”
+
+==================================================
+2. UX REQUIREMENT FOR DISABLED BUTTONS
+======================================
+
+No critical button should ever be disabled without explanation.
+
+If a button is disabled, show a clear message directly above or below the button:
+
+“Missing required information”
+
+Then list exactly what is missing in human-readable text.
+
+Example:
+
+* Client email is required
+* Contract amount is required
+
+Do not silently disable buttons.
+
+==================================================
+3. DEVELOPMENT DEBUG
+====================
+
+Temporarily add development-only debug under the contract button showing:
+
+* canCreateContract: true/false
+* blockingIssues count
+* blockingIssues labels
+* missing required fields
+* current total amount
+* selected currency
+* selected template language
+
+This debug must only be visible in development.
+
+==================================================
+4. FIX CONTRACT BUTTON LOGIC
+============================
+
+The Create Contract button should be disabled only when:
+
+* mutation is loading
+* client name is empty
+* client email is empty
+* total amount is missing or <= 0
+* currency is missing
+* provider company/name is missing
+
+Optional fields must NOT disable the button:
+
+* address
+* equipment notes
+* setup time
+* pickup time
+* deposit method
+* cancellation terms
+* options description
+* signature place
+* website
+* VAT/SIRET
+
+==================================================
+5. GLOBAL ACTION BUTTON AUDIT
+=============================
+
+After fixing the contract button, audit all critical creation/action forms for the same issue.
+
+Check:
+
+Sales:
+
+* New Lead
+* New Quote
+* New Contract
+* New Invoice
+* Accept Quote
+* Reject Quote
+* Mark Contract Signed
+* Mark Invoice Paid
+* Mark Invoice Overdue
+* Create Invoice from Contract
+* Create Contract from Quote
+
+Events:
+
+* Create Event
+* Edit Event
+* Cancel Event
+* Mark Completed if implemented
+
+Equipment:
+
+* Register Equipment
+* Edit Equipment
+* Update Status
+
+Consumables:
+
+* Add Supply
+* Restock
+* Create Order / Purchase History if implemented
+
+Support:
+
+* Create Ticket
+* Reply to Ticket
+* Change Ticket Status
+
+Academy Admin:
+
+* Create Course
+* Create Module
+* Create Lesson
+* Import BunnyStream Collection
+* Save Lesson
+* Publish Course/Lesson
+
+Resources / Uploads:
+
+* Upload Resource
+* Save Resource
+* Import Resource if implemented
+
+Settings:
+
+* Save Profile
+* Save Language
+* Save Currency
+* Save Logo
+* Save Provider Signature
+* Save Appearance
+
+Exports:
+
+* Export CSV
+* Export JSON
+* Export Workspace ZIP
+* Export Personal Data
+
+==================================================
+6. GLOBAL BUTTON RULES
+======================
+
+For every critical action button:
+
+* it must become enabled when required fields are valid
+* it must not require hidden fields
+* it must not require optional fields
+* if disabled, it must explain exactly why
+* loading state must be visible
+* errors must show clear toast or inline message
+* success must show confirmation
+* mobile layout must keep the button visible/clickable
+* modal footer must remain accessible
+
+==================================================
+7. VERIFICATION
+===============
+
+Contract tests:
+
+1. Fill only:
+
+* client name
+* client email
+* price
+* currency
+* provider info from settings
+
+Expected:
+Create Contract button is enabled.
+
+2. Leave client email empty.
+
+Expected:
+Button disabled and message says client email missing.
+
+3. Leave optional address empty.
+
+Expected:
+Button still enabled.
+
+4. Leave setup/pickup time empty.
+
+Expected:
+Button still enabled.
+
+5. Create contract successfully.
+
+Expected:
+Contract generated and saved.
+
+Global tests:
+For each critical form listed above:
+
+* create one record successfully
+* leave one required field empty and verify clear missing-field message
+* leave optional fields empty and verify button still works
+* verify button is clickable on mobile
+
+Run:
+
+* typecheck
+* route verification
+* console check
+
+Provide:
+
+* root cause
+* exact disabled condition before/after
+* files changed
+* list of forms audited
+* bugs found/fixed
+* verification result
