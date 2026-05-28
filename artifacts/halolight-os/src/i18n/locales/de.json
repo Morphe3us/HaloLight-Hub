@@ -851,7 +851,15 @@
     "provider_section": "Anbieterdetails (optional)",
     "tab_form": "Formular",
     "tab_preview": "Vorschau",
-    "export_pdf_btn": "PDF exportieren"
+    "export_pdf_btn": "PDF exportieren",
+    "rental_price_label": "Mietpreis",
+    "options_price_label": "Optionspreise",
+    "delivery_fees_label": "Liefergebühren",
+    "discount_label": "Rabatt",
+    "options_list_label": "Optionen / Extras",
+    "deposit_conditions_label": "Kautionsbedingungen",
+    "deposit_return_label": "Rückgabebedingungen der Kaution",
+    "deposit_section": "Kaution / Sicherheit"
   },
   "invoices": {
     "title": "Rechnungen",

@@ -851,7 +851,15 @@
     "provider_section": "Dane dostawcy (opcjonalne)",
     "tab_form": "Formularz",
     "tab_preview": "Podgląd",
-    "export_pdf_btn": "Eksportuj PDF"
+    "export_pdf_btn": "Eksportuj PDF",
+    "rental_price_label": "Cena wynajmu",
+    "options_price_label": "Cena opcji",
+    "delivery_fees_label": "Opłata za dostawę",
+    "discount_label": "Rabat",
+    "options_list_label": "Opcje / Dodatki",
+    "deposit_conditions_label": "Warunki kaucji",
+    "deposit_return_label": "Warunki zwrotu kaucji",
+    "deposit_section": "Kaucja / Depozyt"
   },
   "invoices": {
     "title": "Faktury",

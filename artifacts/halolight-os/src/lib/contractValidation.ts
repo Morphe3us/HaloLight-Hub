@@ -14,11 +14,17 @@ export interface ContractFormData {
   rentalDuration: string;
   includedPrints: string;
   equipmentDescription: string;
+  optionsList: string;
   value: string;
+  optionsPrice: string;
+  deliveryFees: string;
+  discountAmount: string;
   currency: string;
   taxRate: string;
   depositAmount: string;
   depositMethod: string;
+  depositConditions: string;
+  depositReturn: string;
   paymentTerms: string;
   cancellationTerms: string;
   signaturePlace: string;
@@ -127,6 +133,22 @@ export interface PlaceholderSet {
   not_applicable: string;
 }
 
+/**
+ * Compute the pricing breakdown from form values.
+ * All numeric operations happen here so the template map and doCreate use the same numbers.
+ */
+export function computePricing(form: ContractFormData) {
+  const rentalVal = Math.max(0, Number(form.value) || 0);
+  const optionsVal = Math.max(0, Number(form.optionsPrice) || 0);
+  const deliveryVal = Math.max(0, Number(form.deliveryFees) || 0);
+  const discountVal = Math.max(0, Number(form.discountAmount) || 0);
+  const taxR = Math.max(0, Number(form.taxRate) || 0);
+  const subtotal = rentalVal + optionsVal + deliveryVal - discountVal;
+  const taxAmt = subtotal * (taxR / 100);
+  const total = subtotal + taxAmt;
+  return { rentalVal, optionsVal, deliveryVal, discountVal, taxR, subtotal, taxAmt, total };
+}
+
 export function fillAllVariables(
   content: string,
   form: ContractFormData,
@@ -140,17 +162,17 @@ export function fillAllVariables(
   const { first: clientFirst, last: clientLast } = splitName(form.clientName);
 
   const eventDate = form.eventDate
-    ? new Date(form.eventDate).toLocaleDateString(localeTag, { year: "numeric", month: "long", day: "numeric" })
+    ? new Date(form.eventDate + "T12:00:00").toLocaleDateString(localeTag, { year: "numeric", month: "long", day: "numeric" })
     : "";
 
-  const val = form.value && Number(form.value) > 0 ? Number(form.value) : 0;
-  const dep = form.depositAmount && Number(form.depositAmount) > 0 ? Number(form.depositAmount) : 0;
-  const taxR = form.taxRate && Number(form.taxRate) > 0 ? Number(form.taxRate) : 0;
-  const taxAmt = val * (taxR / 100);
   const cur = form.currency || "";
-
-  const fmt = (n: number) => (n > 0 ? n.toFixed(2) : "0.00");
+  const fmt = (n: number) => n.toFixed(2);
   const fmtCur = (n: number) => (n > 0 ? `${cur} ${fmt(n)}`.trim() : placeholders.to_be_specified);
+  const fmtCurZeroOk = (n: number) => `${cur} ${fmt(n)}`.trim();
+
+  const { rentalVal, optionsVal, deliveryVal, discountVal, taxR, subtotal, taxAmt, total } = computePricing(form);
+
+  const dep = Math.max(0, Number(form.depositAmount) || 0);
 
   const replacements: Record<string, string> = {
     // Contract meta
@@ -190,29 +212,33 @@ export function fillAllVariables(
     package_name: form.serviceName || placeholders.to_be_specified,
     rental_duration: form.rentalDuration || placeholders.to_be_specified,
     included_prints: form.includedPrints || placeholders.to_be_specified,
+    options_list: form.optionsList || placeholders.no_options,
     digital_gallery: placeholders.not_included,
     custom_template: placeholders.not_included,
     delivery_included: placeholders.not_included,
     setup_included: placeholders.not_included,
     operator_included: placeholders.not_included,
-    options_list: placeholders.no_options,
 
-    // Pricing
-    rental_price: fmtCur(val),
-    options_price: `0.00`,
-    delivery_fees: placeholders.no_delivery_fees,
-    discount_amount: `0.00`,
-    subtotal: fmtCur(val),
+    // Pricing — each line is now a separate form value
+    rental_price: cur ? fmtCurZeroOk(rentalVal) : fmt(rentalVal),
+    options_price: cur ? fmtCurZeroOk(optionsVal) : fmt(optionsVal),
+    delivery_fees: deliveryVal > 0
+      ? (cur ? fmtCurZeroOk(deliveryVal) : fmt(deliveryVal))
+      : placeholders.no_delivery_fees,
+    discount_amount: cur ? fmtCurZeroOk(discountVal) : fmt(discountVal),
+    subtotal: cur ? fmtCurZeroOk(subtotal) : fmt(subtotal),
     tax_rate: taxR > 0 ? String(taxR) : "0",
-    tax_amount: taxAmt > 0 ? `${cur} ${fmt(taxAmt)}`.trim() : "0.00",
-    total_amount: fmtCur(val),
+    tax_amount: cur ? fmtCurZeroOk(taxAmt) : fmt(taxAmt),
+    total_amount: cur ? fmtCurZeroOk(total) : fmt(total),
     currency: cur,
 
     // Deposit
-    deposit_amount: dep > 0 ? `${cur} ${fmt(dep)}`.trim() : placeholders.no_deposit,
+    deposit_amount: dep > 0
+      ? (cur ? `${cur} ${fmt(dep)}`.trim() : fmt(dep))
+      : placeholders.no_deposit,
     deposit_method: form.depositMethod || placeholders.not_provided,
-    deposit_conditions: placeholders.not_provided,
-    deposit_return: placeholders.not_provided,
+    deposit_conditions: form.depositConditions || placeholders.not_provided,
+    deposit_return: form.depositReturn || placeholders.not_provided,
 
     // Terms & signature
     payment_terms: form.paymentTerms || placeholders.to_be_specified,

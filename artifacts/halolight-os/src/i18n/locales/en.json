@@ -851,7 +851,15 @@
     "provider_section": "Provider Details (optional)",
     "tab_form": "Form",
     "tab_preview": "Preview",
-    "export_pdf_btn": "Export PDF"
+    "export_pdf_btn": "Export PDF",
+    "rental_price_label": "Rental Price",
+    "options_price_label": "Options Price",
+    "delivery_fees_label": "Delivery Fees",
+    "discount_label": "Discount",
+    "options_list_label": "Options / Add-ons",
+    "deposit_conditions_label": "Deposit Conditions",
+    "deposit_return_label": "Deposit Return Conditions",
+    "deposit_section": "Deposit / Security"
   },
   "invoices": {
     "title": "Invoices",

@@ -40,6 +40,7 @@ import {
   type ReadinessSection,
   type PlaceholderSet,
   computeReadiness,
+  computePricing,
   validateContract,
   fillAllVariables,
 } from "@/lib/contractValidation";
@@ -221,11 +222,17 @@ export default function Contracts() {
     rentalDuration: "",
     includedPrints: "",
     equipmentDescription: "",
+    optionsList: "",
     value: "",
+    optionsPrice: "",
+    deliveryFees: "",
+    discountAmount: "",
     currency: currencyCode ?? "EUR",
     taxRate: "0",
     depositAmount: "",
     depositMethod: "",
+    depositConditions: "",
+    depositReturn: "",
     paymentTerms: "",
     cancellationTerms: "",
     signaturePlace: "",
@@ -332,6 +339,8 @@ export default function Contracts() {
 
   const doCreate = () => {
     const finalContent = getFinalContent();
+    // Compute total from the full pricing breakdown to store as the contract's value
+    const { total } = computePricing(form);
     createMutation.mutate({
       data: {
         title: form.title,
@@ -345,7 +354,7 @@ export default function Contracts() {
         currency: form.currency || undefined,
         leadId: form.leadId || undefined,
         quoteId: form.quoteId || undefined,
-        value: form.value || "0",
+        value: total > 0 ? String(total) : (form.value || "0"),
         templateId: form.templateId || undefined,
         content: finalContent,
         notes: form.notes || undefined,
@@ -681,6 +690,14 @@ export default function Contracts() {
                       placeholder="Open-air booth, ring light, props"
                     />
                   </div>
+                  <div className="col-span-2 space-y-1.5">
+                    <Label>{t("contracts.options_list_label")}</Label>
+                    <Input
+                      value={form.optionsList}
+                      onChange={f("optionsList")}
+                      placeholder="Custom template, digital gallery, USB key…"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -689,12 +706,24 @@ export default function Contracts() {
                 <SectionLabel>{t("contracts.financial_section")}</SectionLabel>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
-                    <Label>{t("contracts.value_dollar_label")} *</Label>
-                    <Input type="number" min="0" value={form.value} onChange={f("value")} placeholder="1500" />
+                    <Label>{t("contracts.rental_price_label")} *</Label>
+                    <Input type="number" min="0" value={form.value} onChange={f("value")} placeholder="700" />
                   </div>
                   <div className="space-y-1.5">
                     <Label>{t("contracts.currency_label")} *</Label>
                     <Input value={form.currency} onChange={f("currency")} placeholder="EUR" maxLength={3} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>{t("contracts.options_price_label")}</Label>
+                    <Input type="number" min="0" value={form.optionsPrice} onChange={f("optionsPrice")} placeholder="0" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>{t("contracts.delivery_fees_label")}</Label>
+                    <Input type="number" min="0" value={form.deliveryFees} onChange={f("deliveryFees")} placeholder="0" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>{t("contracts.discount_label")}</Label>
+                    <Input type="number" min="0" value={form.discountAmount} onChange={f("discountAmount")} placeholder="0" />
                   </div>
                   <div className="space-y-1.5">
                     <Label>{t("contracts.tax_rate_label")}</Label>
@@ -708,13 +737,28 @@ export default function Contracts() {
                     />
                   </div>
                   <div className="space-y-1.5">
+                    <Label>{t("contracts.payment_terms_label")}</Label>
+                    <Input
+                      value={form.paymentTerms}
+                      onChange={f("paymentTerms")}
+                      placeholder="50% upfront, 50% on event day"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Deposit */}
+              <div className="space-y-2">
+                <SectionLabel>{t("contracts.deposit_section")}</SectionLabel>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
                     <Label>{t("contracts.deposit_amount_label")}</Label>
                     <Input
                       type="number"
                       min="0"
                       value={form.depositAmount}
                       onChange={f("depositAmount")}
-                      placeholder="300"
+                      placeholder="1500"
                     />
                   </div>
                   <div className="space-y-1.5">
@@ -722,15 +766,23 @@ export default function Contracts() {
                     <Input
                       value={form.depositMethod}
                       onChange={f("depositMethod")}
-                      placeholder="Bank transfer"
+                      placeholder="Bank transfer, cheque…"
                     />
                   </div>
-                  <div className="space-y-1.5">
-                    <Label>{t("contracts.payment_terms_label")}</Label>
+                  <div className="col-span-2 space-y-1.5">
+                    <Label>{t("contracts.deposit_conditions_label")}</Label>
                     <Input
-                      value={form.paymentTerms}
-                      onChange={f("paymentTerms")}
-                      placeholder="50% upfront, 50% on event day"
+                      value={form.depositConditions}
+                      onChange={f("depositConditions")}
+                      placeholder="May be retained in case of damage or loss…"
+                    />
+                  </div>
+                  <div className="col-span-2 space-y-1.5">
+                    <Label>{t("contracts.deposit_return_label")}</Label>
+                    <Input
+                      value={form.depositReturn}
+                      onChange={f("depositReturn")}
+                      placeholder="Returned after equipment inspection…"
                     />
                   </div>
                 </div>

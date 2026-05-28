@@ -851,7 +851,15 @@
     "provider_section": "Aanbiedergegevens (optioneel)",
     "tab_form": "Formulier",
     "tab_preview": "Voorbeeld",
-    "export_pdf_btn": "PDF exporteren"
+    "export_pdf_btn": "PDF exporteren",
+    "rental_price_label": "Huurprijs",
+    "options_price_label": "Optieprijs",
+    "delivery_fees_label": "Leveringskosten",
+    "discount_label": "Korting",
+    "options_list_label": "Opties / Extra's",
+    "deposit_conditions_label": "Voorwaarden waarborgsom",
+    "deposit_return_label": "Teruggavevoorwaarden waarborgsom",
+    "deposit_section": "Waarborgsom"
   },
   "invoices": {
     "title": "Facturen",

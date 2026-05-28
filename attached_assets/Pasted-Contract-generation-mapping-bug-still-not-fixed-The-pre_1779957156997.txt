@@ -1,0 +1,132 @@
+Contract generation mapping bug still not fixed.
+
+The previous batch fixed many Sales polish issues, but it did not address the main bug I reported.
+
+Main issue:
+When I fill information in the New Contract form, the generated contract does not correctly use those values.
+
+This is the bug to fix now. Do not work on unrelated Sales polish items.
+
+Please debug ONLY this flow:
+
+New Contract form
+→ form state
+→ template variable map
+→ generated contract content
+→ API payload
+→ saved contract
+→ contract detail / print view
+
+Required verification:
+
+1. Fill these exact test values manually in the New Contract form:
+
+Client:
+
+* Full name: Jean Dupont
+* Company: Dupont Events
+* Email: [jean@dupont.fr](mailto:jean@dupont.fr)
+* Phone: 0600000000
+* Address: 10 Rue de Rivoli, 75001 Paris
+
+Event:
+
+* Type: Wedding
+* Date: 2026-06-15
+* Start time: 18:00
+* End time: 02:00
+* Location: Château de Chantilly
+
+Service:
+
+* Package name: Premium Weekend
+* Rental duration: 2 days
+* Included prints: 800
+* Equipment description: HaloLight Box, DNP printer, Canon camera, lighting kit
+* Options list: Custom template, digital gallery
+
+Pricing:
+
+* Rental price: 700
+* Options price: 100
+* Delivery fees: 50
+* Discount: 0
+* Tax rate: 20
+* Total amount: 1020
+* Currency: EUR
+
+Deposit:
+
+* Deposit amount: 1500
+* Deposit method: Security deposit cheque
+* Deposit conditions: May be retained in case of damage, loss, theft or missing accessories
+* Deposit return: Returned after equipment inspection
+
+Terms:
+
+* Payment terms: Payment due before event date
+* Cancellation terms: Cancellation less than 7 days before event is non-refundable
+* Signature place: Paris
+
+2. Create the contract.
+
+3. Open the generated contract.
+
+Expected:
+The final contract content must contain these exact values:
+
+* Jean Dupont
+* Dupont Events
+* [jean@dupont.fr](mailto:jean@dupont.fr)
+* 0600000000
+* 10 Rue de Rivoli, 75001 Paris
+* Wedding
+* 2026-06-15
+* 18:00
+* 02:00
+* Château de Chantilly
+* Premium Weekend
+* 2 days
+* 800
+* HaloLight Box, DNP printer, Canon camera, lighting kit
+* Custom template, digital gallery
+* 700
+* 100
+* 50
+* 20
+* 1020
+* EUR or €
+* 1500
+* Security deposit cheque
+* Paris
+
+4. Check:
+
+* no value should be ignored
+* no old/stale value should appear
+* no fallback should replace a value the user actually filled
+* no raw {{variable}} should remain
+* contract detail and print/export must show the same final content
+
+5. Add temporary development-only logs if needed:
+
+* form state before submit
+* variable map
+* generated content
+* payload sent to API
+* saved content returned by API
+
+Likely root cause:
+Some fields are present in the UI but not included in:
+
+* contractForm state
+* variable replacement map
+* createContract payload
+* saved contract content
+* print/detail render
+
+Fix the mapping so every visible field is actually used.
+
+Do not add new features.
+Do not fix unrelated items.
+Focus only on making New Contract form values appear in the generated contract.

@@ -851,7 +851,15 @@
     "provider_section": "Dettagli fornitore (opzionale)",
     "tab_form": "Modulo",
     "tab_preview": "Anteprima",
-    "export_pdf_btn": "Esporta PDF"
+    "export_pdf_btn": "Esporta PDF",
+    "rental_price_label": "Prezzo di noleggio",
+    "options_price_label": "Prezzo delle opzioni",
+    "delivery_fees_label": "Spese di consegna",
+    "discount_label": "Sconto",
+    "options_list_label": "Opzioni / Extra",
+    "deposit_conditions_label": "Condizioni del deposito",
+    "deposit_return_label": "Condizioni di restituzione del deposito",
+    "deposit_section": "Deposito / Garanzia"
   },
   "invoices": {
     "title": "Fatture",

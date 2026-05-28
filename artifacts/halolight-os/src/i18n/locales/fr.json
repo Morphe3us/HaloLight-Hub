@@ -851,7 +851,15 @@
     "provider_section": "Informations prestataire (optionnel)",
     "tab_form": "Formulaire",
     "tab_preview": "Aperçu",
-    "export_pdf_btn": "Exporter en PDF"
+    "export_pdf_btn": "Exporter en PDF",
+    "rental_price_label": "Prix de location",
+    "options_price_label": "Prix des options",
+    "delivery_fees_label": "Frais de livraison",
+    "discount_label": "Remise",
+    "options_list_label": "Options / Suppléments",
+    "deposit_conditions_label": "Conditions de dépôt de garantie",
+    "deposit_return_label": "Conditions de restitution du dépôt",
+    "deposit_section": "Dépôt de garantie"
   },
   "invoices": {
     "title": "Factures",
