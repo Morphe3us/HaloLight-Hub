@@ -29,26 +29,89 @@ function formatDate(d: string | null | undefined, locale = "en") {
   return new Date(d).toLocaleDateString(locale, { year: "numeric", month: "long", day: "numeric" });
 }
 
-function PrintPreview({ quoteNumber, title, clientName, clientEmail, items, subtotal, taxRate, taxAmount, total, notes, terms, validUntil, lang }: {
-  quoteNumber: string; title: string; clientName: string; clientEmail?: string | null;
-  items: Array<{ description: string; quantity: string; unitPrice: string; total: string }>;
-  subtotal: string; taxRate: string; taxAmount: string; total: string;
-  notes?: string | null; terms?: string | null; validUntil?: string | null;
-  lang: string;
-}) {
+function serviceDetailsHtml(quote: any, formatCurrency: (v: any) => string, t: (k: string, opts?: any) => string, lang: string): string {
+  const fields: string[] = [];
+
+  const eventDate = quote.eventDate
+    ? new Date(quote.eventDate).toLocaleDateString(lang, { weekday: "long", year: "numeric", month: "long", day: "numeric" })
+    : null;
+
+  if (quote.eventType || eventDate || quote.eventLocation) {
+    fields.push(`
+      <div class="detail-section">
+        <div class="detail-label">${t("quotes.event_section", { defaultValue: "Event Details" })}</div>
+        <table class="detail-table">
+          ${quote.eventType ? `<tr><td class="dk">${t("quotes.event_type_label", { defaultValue: "Type" })}</td><td>${quote.eventType}</td></tr>` : ""}
+          ${eventDate ? `<tr><td class="dk">${t("quotes.event_date_label", { defaultValue: "Date" })}</td><td>${eventDate}</td></tr>` : ""}
+          ${quote.eventStartTime ? `<tr><td class="dk">${t("quotes.event_start_label", { defaultValue: "Start Time" })}</td><td>${quote.eventStartTime}${quote.eventEndTime ? ` – ${quote.eventEndTime}` : ""}</td></tr>` : ""}
+          ${quote.eventLocation ? `<tr><td class="dk">${t("quotes.location_label", { defaultValue: "Location" })}</td><td>${quote.eventLocation}</td></tr>` : ""}
+        </table>
+      </div>`);
+  }
+
+  const hasPackage = quote.packageName || quote.rentalDuration || quote.includedPrints || quote.equipmentDescription;
+  if (hasPackage) {
+    const options: string[] = [];
+    if (quote.digitalGallery) options.push(t("quotes.option_digital_gallery", { defaultValue: "Digital Gallery" }));
+    if (quote.customTemplate) options.push(t("quotes.option_custom_template", { defaultValue: "Custom Template" }));
+    if (quote.deliveryIncluded) options.push(t("quotes.option_delivery", { defaultValue: "Delivery" }));
+    if (quote.setupIncluded) options.push(t("quotes.option_setup", { defaultValue: "Setup & Pickup" }));
+    if (quote.operatorIncluded) options.push(t("quotes.option_operator", { defaultValue: "Operator" }));
+
+    fields.push(`
+      <div class="detail-section">
+        <div class="detail-label">${t("quotes.package_section", { defaultValue: "Service Package" })}</div>
+        <table class="detail-table">
+          ${quote.packageName ? `<tr><td class="dk">${t("quotes.package_name_label", { defaultValue: "Package" })}</td><td>${quote.packageName}</td></tr>` : ""}
+          ${quote.rentalDuration ? `<tr><td class="dk">${t("quotes.rental_duration_label", { defaultValue: "Duration" })}</td><td>${quote.rentalDuration} ${t("quotes.hours_label", { defaultValue: "hours" })}</td></tr>` : ""}
+          ${quote.includedPrints ? `<tr><td class="dk">${t("quotes.included_prints_label", { defaultValue: "Prints Included" })}</td><td>${quote.includedPrints}</td></tr>` : ""}
+          ${quote.equipmentDescription ? `<tr><td class="dk">${t("quotes.equipment_label", { defaultValue: "Equipment" })}</td><td>${quote.equipmentDescription}</td></tr>` : ""}
+          ${options.length > 0 ? `<tr><td class="dk">${t("quotes.options_label", { defaultValue: "Options" })}</td><td>${options.join(", ")}</td></tr>` : ""}
+          ${quote.optionsList ? `<tr><td class="dk">${t("quotes.options_detail_label", { defaultValue: "Options Detail" })}</td><td>${quote.optionsList}</td></tr>` : ""}
+        </table>
+      </div>`);
+  }
+
+  const hasCustomPricing = Number(quote.rentalPrice) > 0 || Number(quote.optionsPrice) > 0 || Number(quote.deliveryFees) > 0 || Number(quote.discountAmount) > 0;
+  if (hasCustomPricing) {
+    fields.push(`
+      <div class="detail-section">
+        <div class="detail-label">${t("quotes.pricing_breakdown_label", { defaultValue: "Pricing Breakdown" })}</div>
+        <table class="detail-table">
+          ${Number(quote.rentalPrice) > 0 ? `<tr><td class="dk">${t("quotes.rental_price_label", { defaultValue: "Rental" })}</td><td>${formatCurrency(quote.rentalPrice)}</td></tr>` : ""}
+          ${Number(quote.optionsPrice) > 0 ? `<tr><td class="dk">${t("quotes.options_price_label", { defaultValue: "Options" })}</td><td>${formatCurrency(quote.optionsPrice)}</td></tr>` : ""}
+          ${Number(quote.deliveryFees) > 0 ? `<tr><td class="dk">${t("quotes.delivery_fees_label", { defaultValue: "Delivery" })}</td><td>${formatCurrency(quote.deliveryFees)}</td></tr>` : ""}
+          ${Number(quote.discountAmount) > 0 ? `<tr><td class="dk">${t("quotes.discount_label", { defaultValue: "Discount" })}</td><td>-${formatCurrency(quote.discountAmount)}</td></tr>` : ""}
+        </table>
+      </div>`);
+  }
+
+  if (fields.length === 0) return "";
+
+  return `
+    <div class="service-block">
+      ${fields.join("")}
+    </div>`;
+}
+
+function PrintPreview({ quote, lang }: { quote: any; lang: string }) {
   const { t } = useTranslation();
   const { format: formatCurrency } = useCurrency();
   const { data: me } = useGetCurrentUser();
   const handlePrint = () => {
     const today = new Date().toLocaleDateString(lang, { year: "numeric", month: "long", day: "numeric" });
-    const validUntilStr = validUntil
-      ? new Date(validUntil).toLocaleDateString(lang, { year: "numeric", month: "long", day: "numeric" })
+    const validUntilStr = quote.validUntil
+      ? new Date(quote.validUntil).toLocaleDateString(lang, { year: "numeric", month: "long", day: "numeric" })
       : null;
     const logoUrl = (me as any)?.logoUrl ?? "";
     const companyName = (me as any)?.companyName ?? (me as any)?.fullName ?? "";
     const rawEmail = (me as any)?.email ?? "";
     const providerEmail = (!rawEmail || rawEmail.includes("placeholder.com") || /^user_[a-f0-9]+@/.test(rawEmail)) ? "" : rawEmail;
-    const html = `<!DOCTYPE html><html lang="${lang}"><head><meta charset="utf-8"><title>${quoteNumber}</title>
+    const items: Array<{ description: string; quantity: string; unitPrice: string; total: string }> = quote.items ?? [];
+
+    const detailsHtml = serviceDetailsHtml(quote, formatCurrency, t, lang);
+
+    const html = `<!DOCTYPE html><html lang="${lang}"><head><meta charset="utf-8"><title>${quote.quoteNumber}</title>
     <style>
       *{box-sizing:border-box;margin:0;padding:0}
       body{font-family:Arial,Helvetica,sans-serif;max-width:820px;margin:40px auto;color:#111;font-size:13.5px;padding:0 28px}
@@ -59,14 +122,21 @@ function PrintPreview({ quoteNumber, title, clientName, clientEmail, items, subt
       .doc-type{font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:#999;margin-bottom:4px}
       .doc-number{font-size:18px;font-weight:700;font-family:'Courier New',monospace}
       .doc-sub{font-size:12px;color:#666;margin-top:3px}
-      .parties{display:flex;gap:48px;margin-bottom:28px;padding-bottom:20px;border-bottom:1px solid #e5e7eb;font-size:12.5px}
+      .parties{display:flex;gap:48px;margin-bottom:20px;padding-bottom:18px;border-bottom:1px solid #e5e7eb;font-size:12.5px}
       .label{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:#999;margin-bottom:5px;font-weight:600}
       .party-name{font-size:14.5px;font-weight:700;margin-bottom:2px}
       .party-detail{color:#555;line-height:1.55}
+      .service-block{background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:14px 18px;margin-bottom:20px}
+      .detail-section{margin-bottom:10px}
+      .detail-section:last-child{margin-bottom:0}
+      .detail-label{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:#999;font-weight:600;margin-bottom:5px}
+      .detail-table{width:100%;border-collapse:collapse;font-size:12.5px}
+      .detail-table td{padding:2px 0;vertical-align:top}
+      .detail-table td.dk{color:#666;width:130px;padding-right:12px}
       .section{margin-bottom:22px}
-      table{width:100%;border-collapse:collapse;margin-bottom:22px}
-      th{background:#f5f5f5;text-align:left;padding:8px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#666;font-weight:600}
-      td{padding:10px 12px;border-bottom:1px solid #f0f0f0;font-size:13px}
+      table.items{width:100%;border-collapse:collapse;margin-bottom:22px}
+      table.items th{background:#f5f5f5;text-align:left;padding:8px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#666;font-weight:600}
+      table.items td{padding:10px 12px;border-bottom:1px solid #f0f0f0;font-size:13px}
       .totals{margin-left:auto;width:280px}
       .totals tr td:first-child{color:#666}
       .totals tr td:last-child{text-align:right;font-weight:600}
@@ -82,8 +152,8 @@ function PrintPreview({ quoteNumber, title, clientName, clientEmail, items, subt
       </div>
       <div class="doc-meta">
         <div class="doc-type">${t("quotes.print_quote_title", { defaultValue: "QUOTE" })}</div>
-        <div class="doc-number">${quoteNumber}</div>
-        <div class="doc-sub">${title}</div>
+        <div class="doc-number">${quote.quoteNumber}</div>
+        <div class="doc-sub">${quote.title}</div>
         <div style="margin-top:8px;font-size:11px;color:#999">${t("quotes.print_quote_date").toUpperCase()}</div>
         <div style="font-size:12px">${today}</div>
         ${validUntilStr ? `<div style="margin-top:6px;font-size:11px;color:#999">${t("quotes.valid_until_label").toUpperCase()}</div><div style="font-size:12px">${validUntilStr}</div>` : ""}
@@ -92,30 +162,33 @@ function PrintPreview({ quoteNumber, title, clientName, clientEmail, items, subt
     <div class="parties">
       <div>
         <div class="label">${t("quotes.print_from")}</div>
-        <div class="party-name">${me?.fullName ?? ""}</div>
+        <div class="party-name">${(me as any)?.fullName ?? ""}</div>
         ${(me as any)?.companyName ? `<div class="party-detail">${(me as any).companyName}</div>` : ""}
         ${(me as any)?.phone ? `<div class="party-detail">${(me as any).phone}</div>` : ""}
       </div>
       <div>
         <div class="label">${t("quotes.print_prepared_for")}</div>
-        <div class="party-name">${clientName}</div>
-        ${clientEmail ? `<div class="party-detail">${clientEmail}</div>` : ""}
+        <div class="party-name">${quote.clientName}</div>
+        ${quote.clientEmail ? `<div class="party-detail">${quote.clientEmail}</div>` : ""}
+        ${quote.clientPhone ? `<div class="party-detail">${quote.clientPhone}</div>` : ""}
+        ${quote.clientCompany ? `<div class="party-detail">${quote.clientCompany}</div>` : ""}
       </div>
     </div>
-    <table>
+    ${detailsHtml}
+    <table class="items">
       <thead><tr><th style="width:50%">${t("quotes.description_col")}</th><th style="text-align:right">${t("quotes.qty_col")}</th><th style="text-align:right">${t("quotes.unit_price_col")}</th><th style="text-align:right">${t("quotes.total_col")}</th></tr></thead>
       <tbody>${items.map((item) => `<tr><td>${item.description}</td><td style="text-align:right">${item.quantity}</td><td style="text-align:right">${formatCurrency(item.unitPrice)}</td><td style="text-align:right">${formatCurrency(item.total)}</td></tr>`).join("")}</tbody>
     </table>
     <table class="totals">
-      <tr><td>${t("quotes.subtotal")}</td><td>${formatCurrency(subtotal)}</td></tr>
-      <tr><td>${t("quotes.tax_label", { rate: taxRate })}</td><td>${formatCurrency(taxAmount)}</td></tr>
-      <tr class="grand"><td style="font-weight:700">${t("quotes.total_col")}</td><td style="font-size:18px;font-weight:700">${formatCurrency(total)}</td></tr>
+      <tr><td>${t("quotes.subtotal")}</td><td>${formatCurrency(quote.subtotal)}</td></tr>
+      <tr><td>${t("quotes.tax_label", { rate: quote.taxRate })}</td><td>${formatCurrency(quote.taxAmount)}</td></tr>
+      <tr class="grand"><td style="font-weight:700">${t("quotes.total_col")}</td><td style="font-size:18px;font-weight:700">${formatCurrency(quote.total)}</td></tr>
     </table>
-    ${notes ? `<div class="section"><div class="label">${t("quotes.notes_section")}</div><div class="notes">${notes}</div></div>` : ""}
-    ${terms ? `<div class="section"><div class="label">${t("quotes.terms_section")}</div><div class="notes">${terms}</div></div>` : ""}
+    ${quote.notes ? `<div class="section"><div class="label">${t("quotes.notes_section")}</div><div class="notes">${quote.notes}</div></div>` : ""}
+    ${quote.terms ? `<div class="section"><div class="label">${t("quotes.terms_section")}</div><div class="notes">${quote.terms}</div></div>` : ""}
     </body></html>`;
     const w = window.open("", "_blank");
-    if (w) { w.document.write(html); w.document.close(); w.document.title = quoteNumber; w.focus(); w.print(); }
+    if (w) { w.document.write(html); w.document.close(); w.document.title = quote.quoteNumber; w.focus(); w.print(); }
   };
 
   return (
@@ -184,7 +257,7 @@ export default function QuoteDetail() {
       title: `Contract — ${quote.title}`,
       clientName: quote.clientName,
       clientEmail: quote.clientEmail ?? "",
-      clientPhone: quote.clientPhone ?? "",
+      clientPhone: (quote as any).clientPhone ?? "",
       value: quote.total,
     });
     setShowCreateContract(true);
@@ -192,12 +265,12 @@ export default function QuoteDetail() {
 
   const openCreateInvoice = () => {
     if (!quote) return;
-    const firstItem = quote.items?.[0];
+    const firstItem = (quote.items ?? [])[0];
     setInvoiceForm({
       title: `Invoice — ${quote.title}`,
       clientName: quote.clientName,
       clientEmail: quote.clientEmail ?? "",
-      clientPhone: quote.clientPhone ?? "",
+      clientPhone: (quote as any).clientPhone ?? "",
       description: firstItem?.description ?? quote.title,
       unitPrice: quote.total,
       quantity: "1",
@@ -217,7 +290,21 @@ export default function QuoteDetail() {
         clientPhone: contractForm.clientPhone || undefined,
         value: contractForm.value || undefined,
         clientCompany: (quote as any).clientCompany ?? undefined,
+        clientAddress: (quote as any).clientAddress ?? undefined,
         eventType: (quote as any).eventType ?? undefined,
+        eventDate: (quote as any).eventDate ?? undefined,
+        eventLocation: (quote as any).eventLocation ?? undefined,
+        packageName: (quote as any).packageName ?? undefined,
+        rentalDuration: (quote as any).rentalDuration ?? undefined,
+        includedPrints: (quote as any).includedPrints ?? undefined,
+        rentalPrice: (quote as any).rentalPrice ?? undefined,
+        optionsPrice: (quote as any).optionsPrice ?? undefined,
+        deliveryFees: (quote as any).deliveryFees ?? undefined,
+        discountAmount: (quote as any).discountAmount ?? undefined,
+        equipmentIds: (quote as any).equipmentIds ?? undefined,
+        equipmentDescription: (quote as any).equipmentDescription ?? undefined,
+        currency: (quote as any).currency ?? undefined,
+        language: (quote as any).language ?? undefined,
       },
     });
   };
@@ -226,7 +313,6 @@ export default function QuoteDetail() {
     if (!quote || !invoiceForm.title || !invoiceForm.clientName) return;
     const qty = invoiceForm.quantity || "1";
     const price = invoiceForm.unitPrice || "0";
-    const total = String(Number(qty) * Number(price));
     createInvoiceMutation.mutate({
       data: {
         quoteId: id,
@@ -236,7 +322,19 @@ export default function QuoteDetail() {
         clientEmail: invoiceForm.clientEmail || undefined,
         clientPhone: invoiceForm.clientPhone || undefined,
         clientCompany: (quote as any).clientCompany ?? undefined,
+        clientAddress: (quote as any).clientAddress ?? undefined,
         eventType: (quote as any).eventType ?? undefined,
+        eventDate: (quote as any).eventDate ?? undefined,
+        eventLocation: (quote as any).eventLocation ?? undefined,
+        packageName: (quote as any).packageName ?? undefined,
+        rentalDuration: (quote as any).rentalDuration ?? undefined,
+        includedPrints: (quote as any).includedPrints ?? undefined,
+        rentalPrice: (quote as any).rentalPrice ?? undefined,
+        optionsPrice: (quote as any).optionsPrice ?? undefined,
+        deliveryFees: (quote as any).deliveryFees ?? undefined,
+        discountAmount: (quote as any).discountAmount ?? undefined,
+        equipmentIds: (quote as any).equipmentIds ?? undefined,
+        equipmentDescription: (quote as any).equipmentDescription ?? undefined,
         items: [{ description: invoiceForm.description || "Service", quantity: qty, unitPrice: price, order: 1 }],
       },
     });
@@ -246,6 +344,7 @@ export default function QuoteDetail() {
   if (!quote) return <div className="p-8 text-muted-foreground">{t("quotes.not_found")}</div>;
 
   const color = STATUS_COLORS[quote.status];
+  const q = quote as any;
 
   return (
     <div className="space-y-6 max-w-4xl">
@@ -261,23 +360,7 @@ export default function QuoteDetail() {
           </div>
         </div>
         <div className="flex gap-2 flex-wrap">
-          {quote && (
-            <PrintPreview
-              quoteNumber={quote.quoteNumber}
-              title={quote.title}
-              clientName={quote.clientName}
-              clientEmail={quote.clientEmail}
-              items={quote.items ?? []}
-              subtotal={quote.subtotal}
-              taxRate={quote.taxRate}
-              taxAmount={quote.taxAmount}
-              total={quote.total}
-              notes={quote.notes}
-              terms={quote.terms}
-              validUntil={quote.validUntil}
-              lang={lang}
-            />
-          )}
+          <PrintPreview quote={quote} lang={lang} />
           {(quote.status === "draft" || quote.status === "sent") && (
             <Button size="sm" variant="outline" onClick={() => statusMutation.mutate({ id, data: { status: "accepted" } })} className="gap-1.5 border-success/40 text-success hover:bg-success/5">
               <CheckCircle2 className="w-3.5 h-3.5" /> {t("pipeline.accept_quote")}
@@ -309,7 +392,7 @@ export default function QuoteDetail() {
           <div className="space-y-2 text-sm">
             <div className="flex items-center gap-2"><Building2 className="w-4 h-4 text-muted-foreground" /><span className="font-medium">{quote.clientName}</span></div>
             {quote.clientEmail && <div className="flex items-center gap-2"><Mail className="w-4 h-4 text-muted-foreground" /><a href={`mailto:${quote.clientEmail}`} className="hover:text-primary">{quote.clientEmail}</a></div>}
-            {quote.clientPhone && <div className="flex items-center gap-2"><Phone className="w-4 h-4 text-muted-foreground" /><span>{quote.clientPhone}</span></div>}
+            {(quote as any).clientPhone && <div className="flex items-center gap-2"><Phone className="w-4 h-4 text-muted-foreground" /><span>{(quote as any).clientPhone}</span></div>}
           </div>
         </div>
 
@@ -320,18 +403,39 @@ export default function QuoteDetail() {
             <div className="flex justify-between"><span className="text-muted-foreground">{t("quotes.valid_until_label")}</span><span>{formatDate(quote.validUntil, lang)}</span></div>
             {quote.sentAt && <div className="flex justify-between"><span className="text-muted-foreground">{t("quotes.sent_label")}</span><span>{formatDate(quote.sentAt, lang)}</span></div>}
             {quote.acceptedAt && <div className="flex justify-between"><span className="text-muted-foreground">{t("quotes.accepted_at_label")}</span><span>{formatDate(quote.acceptedAt, lang)}</span></div>}
+            {q.eventDate && <div className="flex justify-between"><span className="text-muted-foreground">{t("quotes.event_date_label", { defaultValue: "Event Date" })}</span><span className="font-medium">{formatDate(q.eventDate, lang)}</span></div>}
           </div>
         </div>
 
         <div className="rounded-xl border bg-card p-5 space-y-3">
           <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">{t("quotes.summary_section")}</h3>
           <div className="space-y-2 text-sm">
+            {q.rentalPrice && Number(q.rentalPrice) > 0 && <div className="flex justify-between"><span className="text-muted-foreground">{t("quotes.rental_price_label", { defaultValue: "Rental" })}</span><span>{formatCurrency(q.rentalPrice)}</span></div>}
+            {q.optionsPrice && Number(q.optionsPrice) > 0 && <div className="flex justify-between"><span className="text-muted-foreground">{t("quotes.options_price_label", { defaultValue: "Options" })}</span><span>{formatCurrency(q.optionsPrice)}</span></div>}
+            {q.deliveryFees && Number(q.deliveryFees) > 0 && <div className="flex justify-between"><span className="text-muted-foreground">{t("quotes.delivery_fees_label", { defaultValue: "Delivery" })}</span><span>{formatCurrency(q.deliveryFees)}</span></div>}
+            {q.discountAmount && Number(q.discountAmount) > 0 && <div className="flex justify-between"><span className="text-muted-foreground">{t("quotes.discount_label", { defaultValue: "Discount" })}</span><span className="text-destructive">-{formatCurrency(q.discountAmount)}</span></div>}
             <div className="flex justify-between"><span className="text-muted-foreground">{t("quotes.subtotal")}</span><span>{formatCurrency(quote.subtotal)}</span></div>
             <div className="flex justify-between"><span className="text-muted-foreground">{t("quotes.tax_label", { rate: quote.taxRate })}</span><span>{formatCurrency(quote.taxAmount)}</span></div>
             <div className="flex justify-between border-t pt-2 mt-2"><span className="font-bold">{t("quotes.total_col")}</span><span className="font-bold text-lg">{formatCurrency(quote.total)}</span></div>
           </div>
         </div>
       </div>
+
+      {(q.eventType || q.eventDate || q.eventLocation || q.packageName || q.rentalDuration || q.includedPrints) && (
+        <div className="rounded-xl border bg-card p-5 space-y-4">
+          <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">{t("quotes.event_section", { defaultValue: "Event & Service Details" })}</h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+            {q.eventType && <div><p className="text-xs text-muted-foreground mb-0.5">{t("quotes.event_type_label", { defaultValue: "Event Type" })}</p><p className="font-medium">{q.eventType}</p></div>}
+            {q.eventDate && <div><p className="text-xs text-muted-foreground mb-0.5">{t("quotes.event_date_label", { defaultValue: "Event Date" })}</p><p className="font-medium">{formatDate(q.eventDate, lang)}</p></div>}
+            {q.eventStartTime && <div><p className="text-xs text-muted-foreground mb-0.5">{t("quotes.event_start_label", { defaultValue: "Start Time" })}</p><p className="font-medium">{q.eventStartTime}{q.eventEndTime ? ` – ${q.eventEndTime}` : ""}</p></div>}
+            {q.eventLocation && <div><p className="text-xs text-muted-foreground mb-0.5">{t("quotes.location_label", { defaultValue: "Location" })}</p><p className="font-medium">{q.eventLocation}</p></div>}
+            {q.packageName && <div><p className="text-xs text-muted-foreground mb-0.5">{t("quotes.package_name_label", { defaultValue: "Package" })}</p><p className="font-medium">{q.packageName}</p></div>}
+            {q.rentalDuration && <div><p className="text-xs text-muted-foreground mb-0.5">{t("quotes.rental_duration_label", { defaultValue: "Duration" })}</p><p className="font-medium">{q.rentalDuration}h</p></div>}
+            {q.includedPrints && <div><p className="text-xs text-muted-foreground mb-0.5">{t("quotes.included_prints_label", { defaultValue: "Prints" })}</p><p className="font-medium">{q.includedPrints}</p></div>}
+            {q.equipmentDescription && <div className="col-span-2"><p className="text-xs text-muted-foreground mb-0.5">{t("quotes.equipment_label", { defaultValue: "Equipment" })}</p><p className="font-medium">{q.equipmentDescription}</p></div>}
+          </div>
+        </div>
+      )}
 
       <div className="rounded-xl border bg-card overflow-hidden">
         <div className="px-5 py-4 border-b bg-muted/30">
@@ -347,7 +451,7 @@ export default function QuoteDetail() {
             </tr>
           </thead>
           <tbody className="divide-y">
-            {(quote.items ?? []).map((item) => (
+            {((quote.items ?? []) as any[]).map((item: any) => (
               <tr key={item.id} className={cn(Number(item.total) < 0 ? "text-destructive" : "")}>
                 <td className="px-5 py-3">{item.description}</td>
                 <td className="px-4 py-3 text-right text-muted-foreground">{item.quantity}</td>

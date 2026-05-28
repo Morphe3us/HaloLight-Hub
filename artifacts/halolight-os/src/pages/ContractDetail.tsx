@@ -32,7 +32,7 @@ function formatDate(d: string | null | undefined, locale = "en") {
 }
 
 function PrintButton({ contractNumber, title, clientName, content, value, lang }: {
-  contractNumber: string; title: string; clientName: string; content: string; value: string; lang: string;
+  contractNumber: string; title: string; clientName: string; content: string | null | undefined; value: string; lang: string;
 }) {
   const { t } = useTranslation();
   const { format: formatCurrency } = useCurrency();
@@ -46,12 +46,18 @@ function PrintButton({ contractNumber, title, clientName, content, value, lang }
     const providerPhone = (me as any)?.phone ?? "";
     const sep = lang === "fr" ? " :" : ":";
 
+    const rawContent = content ?? "";
+
     // Convert text content to clean HTML: replace heavy separators with subtle dividers
-    const escaped = content.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    const escaped = rawContent.replace(/</g, "&lt;").replace(/>/g, "&gt;");
     const formattedBody = escaped
       .replace(/═{5,}/g, '<hr class="sep-major">')
       .replace(/─{5,}/g, '<hr class="sep-minor">')
       .replace(/\n/g, "<br>");
+
+    const bodyHtml = formattedBody.trim()
+      ? `<div class="body-wrap">${formattedBody}</div>`
+      : `<div class="body-empty">${t("contracts.no_content_message", { defaultValue: "No contract body has been generated yet. Use the Edit button to add contract content, or generate a contract from a template." })}</div>`;
 
     const html = `<!DOCTYPE html><html lang="${lang}"><head><meta charset="utf-8"><title>${contractNumber}</title>
 <style>
@@ -75,6 +81,7 @@ function PrintButton({ contractNumber, title, clientName, content, value, lang }
   .cv-label{font-size:10px;text-transform:uppercase;letter-spacing:.1em;opacity:.65;margin-bottom:3px}
   .cv-amount{font-size:20px;font-weight:700}
   .body-wrap{font-size:13px;line-height:1.8;color:#1a1a1a}
+  .body-empty{font-size:13px;color:#888;font-style:italic;background:#fafafa;border:1px dashed #ddd;border-radius:8px;padding:24px 20px;text-align:center}
   .sep-major{border:none;border-top:1.5px solid #d1d5db;margin:18px 0}
   .sep-minor{border:none;border-top:1px solid #e9eaec;margin:10px 0}
   @media print{
@@ -114,7 +121,7 @@ function PrintButton({ contractNumber, title, clientName, content, value, lang }
     <div class="cv-amount">${formatCurrency(Number(value))}</div>
   </div>
 </div>
-<div class="body-wrap">${formattedBody}</div>
+${bodyHtml}
 </body></html>`;
     const w = window.open("", "_blank");
     if (w) { w.document.write(html); w.document.close(); w.document.title = contractNumber; w.focus(); w.print(); }
@@ -188,7 +195,6 @@ export default function ContractDetail() {
     if (!contract || !invoiceForm.title || !invoiceForm.clientName) return;
     const qty = invoiceForm.quantity || "1";
     const price = invoiceForm.unitPrice || "0";
-    const total = String(Number(qty) * Number(price));
     createInvoiceMutation.mutate({
       data: {
         contractId: id,
@@ -200,6 +206,17 @@ export default function ContractDetail() {
         clientPhone: invoiceForm.clientPhone || undefined,
         clientCompany: (contract as any).clientCompany ?? undefined,
         eventType: (contract as any).eventType ?? undefined,
+        eventDate: (contract as any).eventDate ?? undefined,
+        eventLocation: (contract as any).eventLocation ?? undefined,
+        packageName: (contract as any).packageName ?? undefined,
+        rentalDuration: (contract as any).rentalDuration ?? undefined,
+        includedPrints: (contract as any).includedPrints ?? undefined,
+        rentalPrice: (contract as any).rentalPrice ?? undefined,
+        optionsPrice: (contract as any).optionsPrice ?? undefined,
+        deliveryFees: (contract as any).deliveryFees ?? undefined,
+        discountAmount: (contract as any).discountAmount ?? undefined,
+        equipmentIds: (contract as any).equipmentIds ?? undefined,
+        equipmentDescription: (contract as any).equipmentDescription ?? undefined,
         items: [{ description: invoiceForm.description || "Service", quantity: qty, unitPrice: price, order: 1 }],
       },
     });
@@ -207,7 +224,7 @@ export default function ContractDetail() {
 
   const startEdit = () => {
     if (!contract) return;
-    setEditForm({ title: contract.title, clientName: contract.clientName, clientEmail: contract.clientEmail ?? "", value: contract.value, content: contract.content, notes: contract.notes ?? "" });
+    setEditForm({ title: contract.title, clientName: contract.clientName, clientEmail: contract.clientEmail ?? "", value: contract.value, content: contract.content ?? "", notes: contract.notes ?? "" });
     setEditing(true);
   };
 
@@ -289,7 +306,13 @@ export default function ContractDetail() {
           <h3 className="font-semibold">{t("contracts.document_section")}</h3>
         </div>
         <div className="p-6">
-          <pre className="text-sm text-foreground whitespace-pre-wrap font-sans leading-relaxed">{contract.content}</pre>
+          {contract.content ? (
+            <pre className="text-sm text-foreground whitespace-pre-wrap font-sans leading-relaxed">{contract.content}</pre>
+          ) : (
+            <p className="text-sm text-muted-foreground italic text-center py-8">
+              {t("contracts.no_content_message", { defaultValue: "No contract body yet. Use the Edit button to add content, or generate a contract from a template." })}
+            </p>
+          )}
         </div>
       </div>
 

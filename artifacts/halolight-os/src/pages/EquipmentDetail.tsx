@@ -1,10 +1,10 @@
 import { Link, useParams } from "wouter";
 import { useTranslation } from "react-i18next";
-import { useGetEquipmentById } from "@workspace/api-client-react";
+import { useGetEquipmentById, useListEvents } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Monitor, Wrench, ArrowLeft, ShieldCheck, ShieldAlert, ShieldX,
-  Clock, Hash, Info,
+  Clock, Hash, Info, Calendar, MapPin,
 } from "lucide-react";
 
 type ServiceRecord = {
@@ -34,6 +34,13 @@ const SERVICE_TYPE_STYLES: Record<string, { color: string; dot: string }> = {
   warranty_claim:      { color: "bg-destructive/10 text-destructive border-destructive/30", dot: "bg-destructive" },
 };
 
+const EVENT_STATUS_COLORS: Record<string, string> = {
+  upcoming:  "bg-info/15 text-info",
+  active:    "bg-success/15 text-success",
+  completed: "bg-muted text-muted-foreground",
+  cancelled: "bg-destructive/15 text-destructive",
+};
+
 function fmtDate(d: string | null, opts?: Intl.DateTimeFormatOptions) {
   if (!d) return "—";
   return new Date(d).toLocaleDateString(undefined, opts ?? { month: "long", day: "numeric", year: "numeric" });
@@ -44,6 +51,13 @@ export default function EquipmentDetail() {
   const { id } = useParams<{ id: string }>();
   const { data, isLoading } = useGetEquipmentById(id);
   const item = data as EquipmentDetailData | undefined;
+
+  const { data: eventsData } = useListEvents({ limit: 100 });
+  const linkedEvents = (eventsData?.items ?? []).filter((ev) => {
+    const equipIds = (ev as any).equipmentIds;
+    if (!equipIds || !Array.isArray(equipIds)) return false;
+    return equipIds.includes(id);
+  }).filter((ev) => ev.status === "upcoming" || ev.status === "active");
 
   function warrantyInfo(expiry: string | null) {
     if (!expiry) return { label: t("equipment_detail.warranty_none"), color: "text-muted-foreground", Icon: ShieldX, alert: false };
@@ -198,6 +212,60 @@ export default function EquipmentDetail() {
           </CardContent>
         </Card>
       )}
+
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-primary" />
+              {t("equipment_detail.upcoming_events_title", { defaultValue: "Upcoming Assignments" })}
+            </CardTitle>
+            <span className="text-xs text-muted-foreground">
+              {linkedEvents.length} {t("equipment_detail.events_count", { defaultValue: "event(s)" })}
+            </span>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {linkedEvents.length === 0 ? (
+            <div className="py-6 text-center text-muted-foreground text-sm">
+              {t("equipment_detail.no_upcoming_events", { defaultValue: "No upcoming events assigned to this equipment." })}
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {linkedEvents.map((ev) => {
+                const evAny = ev as any;
+                const statusColor = EVENT_STATUS_COLORS[ev.status] ?? EVENT_STATUS_COLORS.upcoming!;
+                return (
+                  <div key={ev.id} className="flex items-start gap-3 p-3 rounded-lg border bg-muted/20">
+                    <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                      <Calendar className="w-4 h-4 text-primary" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-sm font-semibold text-foreground">{ev.title}</p>
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusColor}`}>{ev.status}</span>
+                      </div>
+                      <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground flex-wrap">
+                        <span className="flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          {fmtDate(ev.eventDate, { weekday: "short", month: "short", day: "numeric", year: "numeric" })}
+                          {evAny.eventStartTime ? ` · ${evAny.eventStartTime}` : ""}
+                        </span>
+                        {ev.location && (
+                          <span className="flex items-center gap-1">
+                            <MapPin className="w-3 h-3" /> {ev.location}
+                          </span>
+                        )}
+                        {evAny.clientName && <span>{evAny.clientName}</span>}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader className="pb-3">

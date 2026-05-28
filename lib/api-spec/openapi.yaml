@@ -4487,6 +4487,32 @@ components:
         eventDate:
           type: string
           format: date-time
+        eventLocation:
+          type: string
+        eventStartTime:
+          type: string
+        eventEndTime:
+          type: string
+        packageName:
+          type: string
+        rentalDuration:
+          type: string
+        includedPrints:
+          type: string
+        rentalPrice:
+          type: string
+        optionsPrice:
+          type: string
+        deliveryFees:
+          type: string
+        discountAmount:
+          type: string
+        equipmentIds:
+          type: array
+          items:
+            type: string
+        equipmentDescription:
+          type: string
         currency:
           type: string
         language:

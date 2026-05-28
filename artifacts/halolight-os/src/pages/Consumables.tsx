@@ -4,7 +4,7 @@ import {
   useGetConsumables, useGetConsumableOrders,
   useCreateConsumableStock, useRestockConsumable,
 } from "@workspace/api-client-react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,6 +21,7 @@ import {
   Package, AlertTriangle, ShoppingCart, Clock,
   Layers, Printer, Brush, TrendingDown, RotateCcw,
   ChevronDown, ChevronUp, Plus, Loader2, RefreshCw,
+  Calendar, Zap, CheckCircle2,
 } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -531,6 +532,21 @@ export default function Consumables() {
   const { data: stockData = [], isLoading: stockLoading } = useGetConsumables();
   const { data: ordersData = [], isLoading: ordersLoading } = useGetConsumableOrders();
 
+  const { data: forecastData } = useQuery({
+    queryKey: ["/api/consumables/forecast"],
+    queryFn: async () => {
+      const res = await fetch("/api/consumables/forecast", { credentials: "include" });
+      if (!res.ok) return null;
+      return res.json() as Promise<{
+        totalRequired: number;
+        totalAvailable: number;
+        shortage: number;
+        events: Array<{ id: string; title: string; eventDate: string; clientName?: string | null; includedPrints: number }>;
+      }>;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
   const stock = stockData as StockItem[];
   const orders = ordersData as Order[];
 
@@ -620,6 +636,66 @@ export default function Consumables() {
             {t("consumables.reorder")}
           </Button>
         </div>
+      )}
+
+      {/* Forecast Card */}
+      {forecastData && forecastData.events.length > 0 && (
+        <Card className={forecastData.shortage > 0 ? "border-destructive/30 bg-destructive/5" : "border-success/30 bg-success/5"}>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Calendar className={`w-4 h-4 ${forecastData.shortage > 0 ? "text-destructive" : "text-success"}`} />
+              {t("consumables.forecast_title", { defaultValue: "Print Forecast — Upcoming Events" })}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="grid grid-cols-3 gap-3 text-sm">
+              <div className="text-center">
+                <p className="text-lg font-bold text-foreground">{forecastData.totalRequired.toLocaleString()}</p>
+                <p className="text-xs text-muted-foreground">{t("consumables.forecast_required", { defaultValue: "Prints Required" })}</p>
+              </div>
+              <div className="text-center">
+                <p className="text-lg font-bold text-foreground">{forecastData.totalAvailable.toLocaleString()}</p>
+                <p className="text-xs text-muted-foreground">{t("consumables.forecast_available", { defaultValue: "Prints Available" })}</p>
+              </div>
+              <div className="text-center">
+                {forecastData.shortage > 0 ? (
+                  <>
+                    <p className="text-lg font-bold text-destructive">-{forecastData.shortage.toLocaleString()}</p>
+                    <p className="text-xs text-destructive">{t("consumables.forecast_shortage", { defaultValue: "Shortage" })}</p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-lg font-bold text-success flex items-center justify-center gap-1"><CheckCircle2 className="w-4 h-4" />{t("consumables.forecast_ok", { defaultValue: "OK" })}</p>
+                    <p className="text-xs text-success">{t("consumables.forecast_sufficient", { defaultValue: "Stock Sufficient" })}</p>
+                  </>
+                )}
+              </div>
+            </div>
+            {forecastData.shortage > 0 && (
+              <div className="flex items-center gap-2">
+                <Zap className="w-3.5 h-3.5 text-destructive shrink-0" />
+                <p className="text-xs text-destructive font-medium">
+                  {t("consumables.forecast_reorder_hint", { defaultValue: "Reorder paper before your next event to avoid running short." })}
+                </p>
+                <Button size="sm" variant="outline" className="shrink-0 ml-auto gap-1.5 border-destructive/30 text-destructive hover:bg-destructive/8 text-xs h-7"
+                  onClick={() => openRestock()}>
+                  <RefreshCw className="w-3 h-3" /> {t("consumables.reorder")}
+                </Button>
+              </div>
+            )}
+            <div className="space-y-1.5 pt-1 border-t">
+              {forecastData.events.slice(0, 5).map(ev => (
+                <div key={ev.id} className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span className="truncate max-w-[60%]">{ev.title}{ev.clientName ? ` — ${ev.clientName}` : ""}</span>
+                  <span className="shrink-0 ml-2">{new Date(ev.eventDate).toLocaleDateString(undefined, { month: "short", day: "numeric" })} · {ev.includedPrints} {t("consumables.forecast_prints_label", { defaultValue: "prints" })}</span>
+                </div>
+              ))}
+              {forecastData.events.length > 5 && (
+                <p className="text-xs text-muted-foreground text-center">+{forecastData.events.length - 5} {t("consumables.forecast_more_events", { defaultValue: "more events" })}</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* Summary KPIs */}

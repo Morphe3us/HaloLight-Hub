@@ -37,6 +37,70 @@ function formatDate(d: string | null | undefined, locale = "en") {
   return new Date(d).toLocaleDateString(locale, { year: "numeric", month: "long", day: "numeric" });
 }
 
+function invoiceServiceDetailsHtml(invoice: any, formatCurrency: (v: any) => string, t: (k: string, opts?: any) => string, lang: string): string {
+  const fields: string[] = [];
+
+  const eventDate = invoice.eventDate
+    ? new Date(invoice.eventDate).toLocaleDateString(lang, { weekday: "long", year: "numeric", month: "long", day: "numeric" })
+    : null;
+
+  if (invoice.eventType || eventDate || invoice.eventLocation) {
+    fields.push(`
+      <div class="detail-section">
+        <div class="detail-label">${t("invoices.event_section", { defaultValue: "Event Details" })}</div>
+        <table class="detail-table">
+          ${invoice.eventType ? `<tr><td class="dk">${t("invoices.event_type_label", { defaultValue: "Type" })}</td><td>${invoice.eventType}</td></tr>` : ""}
+          ${eventDate ? `<tr><td class="dk">${t("invoices.event_date_label", { defaultValue: "Date" })}</td><td>${eventDate}</td></tr>` : ""}
+          ${invoice.eventStartTime ? `<tr><td class="dk">${t("invoices.event_start_label", { defaultValue: "Start Time" })}</td><td>${invoice.eventStartTime}${invoice.eventEndTime ? ` – ${invoice.eventEndTime}` : ""}</td></tr>` : ""}
+          ${invoice.eventLocation ? `<tr><td class="dk">${t("invoices.location_label", { defaultValue: "Location" })}</td><td>${invoice.eventLocation}</td></tr>` : ""}
+        </table>
+      </div>`);
+  }
+
+  const hasPackage = invoice.packageName || invoice.rentalDuration || invoice.includedPrints || invoice.equipmentDescription;
+  if (hasPackage) {
+    const options: string[] = [];
+    if (invoice.digitalGallery) options.push(t("invoices.option_digital_gallery", { defaultValue: "Digital Gallery" }));
+    if (invoice.customTemplate) options.push(t("invoices.option_custom_template", { defaultValue: "Custom Template" }));
+    if (invoice.deliveryIncluded) options.push(t("invoices.option_delivery", { defaultValue: "Delivery" }));
+    if (invoice.setupIncluded) options.push(t("invoices.option_setup", { defaultValue: "Setup & Pickup" }));
+    if (invoice.operatorIncluded) options.push(t("invoices.option_operator", { defaultValue: "Operator" }));
+
+    fields.push(`
+      <div class="detail-section">
+        <div class="detail-label">${t("invoices.package_section", { defaultValue: "Service Package" })}</div>
+        <table class="detail-table">
+          ${invoice.packageName ? `<tr><td class="dk">${t("invoices.package_name_label", { defaultValue: "Package" })}</td><td>${invoice.packageName}</td></tr>` : ""}
+          ${invoice.rentalDuration ? `<tr><td class="dk">${t("invoices.rental_duration_label", { defaultValue: "Duration" })}</td><td>${invoice.rentalDuration} ${t("invoices.hours_label", { defaultValue: "hours" })}</td></tr>` : ""}
+          ${invoice.includedPrints ? `<tr><td class="dk">${t("invoices.included_prints_label", { defaultValue: "Prints Included" })}</td><td>${invoice.includedPrints}</td></tr>` : ""}
+          ${invoice.equipmentDescription ? `<tr><td class="dk">${t("invoices.equipment_label", { defaultValue: "Equipment" })}</td><td>${invoice.equipmentDescription}</td></tr>` : ""}
+          ${options.length > 0 ? `<tr><td class="dk">${t("invoices.options_label", { defaultValue: "Options" })}</td><td>${options.join(", ")}</td></tr>` : ""}
+        </table>
+      </div>`);
+  }
+
+  const hasCustomPricing = Number(invoice.rentalPrice) > 0 || Number(invoice.optionsPrice) > 0 || Number(invoice.deliveryFees) > 0 || Number(invoice.discountAmount) > 0;
+  if (hasCustomPricing) {
+    fields.push(`
+      <div class="detail-section">
+        <div class="detail-label">${t("invoices.pricing_breakdown_label", { defaultValue: "Pricing Breakdown" })}</div>
+        <table class="detail-table">
+          ${Number(invoice.rentalPrice) > 0 ? `<tr><td class="dk">${t("invoices.rental_price_label", { defaultValue: "Rental" })}</td><td>${formatCurrency(invoice.rentalPrice)}</td></tr>` : ""}
+          ${Number(invoice.optionsPrice) > 0 ? `<tr><td class="dk">${t("invoices.options_price_label", { defaultValue: "Options" })}</td><td>${formatCurrency(invoice.optionsPrice)}</td></tr>` : ""}
+          ${Number(invoice.deliveryFees) > 0 ? `<tr><td class="dk">${t("invoices.delivery_fees_label", { defaultValue: "Delivery" })}</td><td>${formatCurrency(invoice.deliveryFees)}</td></tr>` : ""}
+          ${Number(invoice.discountAmount) > 0 ? `<tr><td class="dk">${t("invoices.discount_label", { defaultValue: "Discount" })}</td><td>-${formatCurrency(invoice.discountAmount)}</td></tr>` : ""}
+        </table>
+      </div>`);
+  }
+
+  if (fields.length === 0) return "";
+
+  return `
+    <div class="service-block">
+      ${fields.join("")}
+    </div>`;
+}
+
 function PrintButton({ invoice, items, lang }: { invoice: any; items: any[]; lang: string }) {
   const { t } = useTranslation();
   const { format: formatCurrency } = useCurrency();
@@ -53,6 +117,9 @@ function PrintButton({ invoice, items, lang }: { invoice: any; items: any[]; lan
     const companyName = (me as any)?.companyName ?? (me as any)?.fullName ?? "";
     const rawEmail = (me as any)?.email ?? "";
     const providerEmail = (!rawEmail || rawEmail.includes("placeholder.com") || /^user_[a-f0-9]+@/.test(rawEmail)) ? "" : rawEmail;
+
+    const detailsHtml = invoiceServiceDetailsHtml(invoice, formatCurrency, t, lang);
+
     const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${invoice.invoiceNumber}</title>
     <style>
       *{box-sizing:border-box;margin:0;padding:0}
@@ -67,11 +134,18 @@ function PrintButton({ invoice, items, lang }: { invoice: any; items: any[]; lan
       .label{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:#999;margin-bottom:5px;font-weight:600}
       .party-name{font-size:14.5px;font-weight:700;margin-bottom:2px}
       .party-detail{color:#555;line-height:1.55;font-size:12.5px}
-      .parties{display:flex;gap:48px;margin-bottom:28px;padding-bottom:20px;border-bottom:1px solid #e5e7eb}
+      .parties{display:flex;gap:48px;margin-bottom:20px;padding-bottom:18px;border-bottom:1px solid #e5e7eb}
+      .service-block{background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:14px 18px;margin-bottom:20px}
+      .detail-section{margin-bottom:10px}
+      .detail-section:last-child{margin-bottom:0}
+      .detail-label{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:#999;font-weight:600;margin-bottom:5px}
+      .detail-table{width:100%;border-collapse:collapse;font-size:12.5px}
+      .detail-table td{padding:2px 0;vertical-align:top}
+      .detail-table td.dk{color:#666;width:130px;padding-right:12px}
       .section{margin-bottom:22px}
-      table{width:100%;border-collapse:collapse;margin-bottom:22px}
-      th{background:#f5f5f5;text-align:left;padding:8px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#666;font-weight:600}
-      td{padding:10px 12px;border-bottom:1px solid #f0f0f0;font-size:13px}
+      table.items{width:100%;border-collapse:collapse;margin-bottom:22px}
+      table.items th{background:#f5f5f5;text-align:left;padding:8px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#666;font-weight:600}
+      table.items td{padding:10px 12px;border-bottom:1px solid #f0f0f0;font-size:13px}
       .totals{margin-left:auto;width:280px}
       .totals td:first-child{color:#666}
       .totals td:last-child{text-align:right;font-weight:600}
@@ -98,7 +172,7 @@ function PrintButton({ invoice, items, lang }: { invoice: any; items: any[]; lan
     <div class="parties">
       <div>
         <div class="label">${t("invoices.print_from")}</div>
-        <div class="party-name">${me?.fullName ?? ""}</div>
+        <div class="party-name">${(me as any)?.fullName ?? ""}</div>
         ${(me as any)?.companyName ? `<div class="party-detail">${(me as any).companyName}</div>` : ""}
         ${(me as any)?.phone ? `<div class="party-detail">${(me as any).phone}</div>` : ""}
       </div>
@@ -106,9 +180,12 @@ function PrintButton({ invoice, items, lang }: { invoice: any; items: any[]; lan
         <div class="label">${t("invoices.bill_to")}</div>
         <div class="party-name">${invoice.clientName}</div>
         ${invoice.clientEmail ? `<div class="party-detail">${invoice.clientEmail}</div>` : ""}
+        ${invoice.clientPhone ? `<div class="party-detail">${invoice.clientPhone}</div>` : ""}
+        ${invoice.clientCompany ? `<div class="party-detail">${invoice.clientCompany}</div>` : ""}
       </div>
     </div>
-    <table>
+    ${detailsHtml}
+    <table class="items">
       <thead><tr><th style="width:50%">${t("invoices.description_col")}</th><th style="text-align:right">${t("invoices.qty_col")}</th><th style="text-align:right">${t("invoices.unit_price_col")}</th><th style="text-align:right">${t("invoices.total_col")}</th></tr></thead>
       <tbody>${items.map((item: any) => `<tr><td>${item.description}</td><td style="text-align:right">${item.quantity}</td><td style="text-align:right">${formatCurrency(item.unitPrice)}</td><td style="text-align:right">${formatCurrency(item.total)}</td></tr>`).join("")}</tbody>
     </table>
@@ -180,6 +257,7 @@ export default function InvoiceDetail() {
   const color = STATUS_COLORS[invoice.status];
   const StatusIcon = STATUS_ICONS[invoice.status] ?? Clock;
   const items = invoice.items ?? [];
+  const inv = invoice as any;
 
   const handleMarkPaid = () => {
     statusMutation.mutate({
@@ -270,17 +348,38 @@ export default function InvoiceDetail() {
             {invoice.dueDate && <div className="flex justify-between"><span className="text-muted-foreground">{t("invoices.due_date_label")}</span><span className={cn(invoice.status === "overdue" ? "text-destructive font-medium" : "")}>{formatDate(invoice.dueDate, lang)}</span></div>}
             {invoice.sentAt && <div className="flex justify-between"><span className="text-muted-foreground">{t("invoices.sent_label")}</span><span>{formatDate(invoice.sentAt, lang)}</span></div>}
             {invoice.paidAt && <div className="flex justify-between"><span className="text-muted-foreground">{t("invoices.paid_label")}</span><span className="text-success font-medium">{formatDate(invoice.paidAt, lang)}</span></div>}
+            {inv.eventDate && <div className="flex justify-between"><span className="text-muted-foreground">{t("invoices.event_date_label", { defaultValue: "Event Date" })}</span><span className="font-medium">{formatDate(inv.eventDate, lang)}</span></div>}
           </div>
         </div>
         <div className="rounded-xl border bg-card p-5 space-y-3">
           <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">{t("invoices.amount_due")}</h3>
           <p className={cn("text-2xl font-bold", invoice.status === "paid" ? "text-success" : invoice.status === "overdue" ? "text-destructive" : "")}>{formatCurrency(invoice.total)}</p>
           <div className="text-xs text-muted-foreground space-y-1">
+            {inv.rentalPrice && Number(inv.rentalPrice) > 0 && <div className="flex justify-between"><span>{t("invoices.rental_price_label", { defaultValue: "Rental" })}</span><span>{formatCurrency(inv.rentalPrice)}</span></div>}
+            {inv.optionsPrice && Number(inv.optionsPrice) > 0 && <div className="flex justify-between"><span>{t("invoices.options_price_label", { defaultValue: "Options" })}</span><span>{formatCurrency(inv.optionsPrice)}</span></div>}
+            {inv.deliveryFees && Number(inv.deliveryFees) > 0 && <div className="flex justify-between"><span>{t("invoices.delivery_fees_label", { defaultValue: "Delivery" })}</span><span>{formatCurrency(inv.deliveryFees)}</span></div>}
+            {inv.discountAmount && Number(inv.discountAmount) > 0 && <div className="flex justify-between"><span>{t("invoices.discount_label", { defaultValue: "Discount" })}</span><span className="text-destructive">-{formatCurrency(inv.discountAmount)}</span></div>}
             <div className="flex justify-between"><span>{t("invoices.subtotal_label")}</span><span>{formatCurrency(invoice.subtotal)}</span></div>
             <div className="flex justify-between"><span>{t("invoices.tax_label", { rate: invoice.taxRate })}</span><span>{formatCurrency(invoice.taxAmount)}</span></div>
           </div>
         </div>
       </div>
+
+      {(inv.eventType || inv.eventDate || inv.eventLocation || inv.packageName || inv.rentalDuration || inv.includedPrints) && (
+        <div className="rounded-xl border bg-card p-5 space-y-4">
+          <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">{t("invoices.event_section", { defaultValue: "Event & Service Details" })}</h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+            {inv.eventType && <div><p className="text-xs text-muted-foreground mb-0.5">{t("invoices.event_type_label", { defaultValue: "Event Type" })}</p><p className="font-medium">{inv.eventType}</p></div>}
+            {inv.eventDate && <div><p className="text-xs text-muted-foreground mb-0.5">{t("invoices.event_date_label", { defaultValue: "Event Date" })}</p><p className="font-medium">{formatDate(inv.eventDate, lang)}</p></div>}
+            {inv.eventStartTime && <div><p className="text-xs text-muted-foreground mb-0.5">{t("invoices.event_start_label", { defaultValue: "Start Time" })}</p><p className="font-medium">{inv.eventStartTime}{inv.eventEndTime ? ` – ${inv.eventEndTime}` : ""}</p></div>}
+            {inv.eventLocation && <div><p className="text-xs text-muted-foreground mb-0.5">{t("invoices.location_label", { defaultValue: "Location" })}</p><p className="font-medium">{inv.eventLocation}</p></div>}
+            {inv.packageName && <div><p className="text-xs text-muted-foreground mb-0.5">{t("invoices.package_name_label", { defaultValue: "Package" })}</p><p className="font-medium">{inv.packageName}</p></div>}
+            {inv.rentalDuration && <div><p className="text-xs text-muted-foreground mb-0.5">{t("invoices.rental_duration_label", { defaultValue: "Duration" })}</p><p className="font-medium">{inv.rentalDuration}h</p></div>}
+            {inv.includedPrints && <div><p className="text-xs text-muted-foreground mb-0.5">{t("invoices.included_prints_label", { defaultValue: "Prints Included" })}</p><p className="font-medium">{inv.includedPrints}</p></div>}
+            {inv.equipmentDescription && <div className="col-span-2"><p className="text-xs text-muted-foreground mb-0.5">{t("invoices.equipment_label", { defaultValue: "Equipment" })}</p><p className="font-medium">{inv.equipmentDescription}</p></div>}
+          </div>
+        </div>
+      )}
 
       <div className="rounded-xl border bg-card overflow-hidden">
         <div className="px-5 py-4 border-b bg-muted/30"><h3 className="font-semibold">{t("invoices.line_items_section")}</h3></div>
@@ -294,7 +393,7 @@ export default function InvoiceDetail() {
             </tr>
           </thead>
           <tbody className="divide-y">
-            {items.map((item) => (
+            {(items as any[]).map((item: any) => (
               <tr key={item.id} className={cn(Number(item.total) < 0 ? "text-destructive" : "")}>
                 <td className="px-5 py-3">{item.description}</td>
                 <td className="px-4 py-3 text-right text-muted-foreground">{item.quantity}</td>

@@ -989,6 +989,18 @@ export interface ContractInput {
   clientAddress?: string;
   eventType?: string;
   eventDate?: string;
+  eventLocation?: string;
+  eventStartTime?: string;
+  eventEndTime?: string;
+  packageName?: string;
+  rentalDuration?: string;
+  includedPrints?: string;
+  rentalPrice?: string;
+  optionsPrice?: string;
+  deliveryFees?: string;
+  discountAmount?: string;
+  equipmentIds?: string[];
+  equipmentDescription?: string;
   currency?: string;
   language?: string;
   content?: string;

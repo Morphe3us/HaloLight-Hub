@@ -1,0 +1,383 @@
+Critical regression — Contracts are almost empty + operational workflow still incomplete.
+
+The previous phase improved some data links, but there are still major issues.
+
+I uploaded screenshots and the latest generated contract PDF.
+
+The latest contract PDF is almost empty: it only shows header/provider/client/value, but the full contract body is missing.
+
+This is a regression and must be fixed before any AI Knowledge Base work.
+
+Do not start AI work.
+Do not add unrelated UX features.
+Fix the operational workflow and document generation bugs below.
+
+==================================================
+
+1. CONTRACT PDF REGRESSION — BODY MISSING
+   ==================================================
+
+Current issue:
+Generated contract PDF is almost empty.
+
+It only shows:
+
+* company header
+* contract number
+* prepared by
+* client
+* value
+
+But it does NOT show the full contract body anymore:
+
+* contract title/body
+* provider section
+* client section
+* event details
+* equipment
+* package/services
+* pricing
+* deposit
+* obligations
+* cancellation
+* liability
+* signatures
+
+Expected:
+Contract PDF must include the complete contract content, like before, but with the improved design.
+
+Fix:
+
+* Check ContractDetail print/export rendering.
+* Check whether the contract.content is being saved correctly.
+* Check whether the print template is accidentally rendering only header metadata.
+* Check whether the professional redesign removed the body insertion.
+* Ensure the full rendered contract content is included in print/export.
+* Ensure no old minimal template overrides the full contract template.
+
+Verification:
+Create a new contract and export PDF.
+It must include all contract sections from the template, not only the header.
+
+==================================================
+2. QUOTE / INVOICE MUST INCLUDE FULL RENTAL DETAILS
+===================================================
+
+Current issue:
+Quotes and invoices still look too basic.
+
+They show line items like:
+
+* Photobooth
+* Options
+* Livraison
+
+But they do not clearly include the full rental/service details.
+
+Expected:
+Quotes and invoices must show the complete service details, not only price lines.
+
+They should include:
+
+Client:
+
+* name
+* company
+* email
+* phone
+* address if available
+
+Event:
+
+* event type
+* event date
+* start time
+* end time
+* event location
+
+Service:
+
+* package name
+* rental duration
+* included prints
+* digital gallery included
+* custom template included
+* delivery included
+* setup included
+* on-site operator included
+* options/add-ons
+* equipment/service description
+* selected equipment if available
+
+Pricing:
+
+* rental price
+* options price
+* delivery fees
+* discount
+* tax/VAT
+* total
+* currency
+
+Print/PDF quote and invoice must be clear enough that the client understands exactly what is included.
+
+==================================================
+3. DELIVERY DUPLICATION / LOGIC
+===============================
+
+Current issue:
+Delivery can appear twice or be confusing:
+
+* as a selected service option “delivery included”
+* as a pricing line “Livraison”
+
+Expected:
+Make the logic clear:
+
+If deliveryIncluded = true and deliveryFees > 0:
+
+* show “Delivery included” in services
+* show delivery fee in pricing
+
+If deliveryIncluded = true and deliveryFees = 0:
+
+* show “Delivery included”
+* hide delivery fee line
+
+If deliveryIncluded = false and deliveryFees > 0:
+
+* show delivery fee in pricing
+* do not say delivery included
+
+If deliveryIncluded = false and deliveryFees = 0:
+
+* hide both
+
+Avoid duplicate/confusing delivery display.
+
+==================================================
+4. OPTIONS / PHOTOBOOTH PRICING LOGIC
+=====================================
+
+Current issue:
+Options and photobooth pricing are still not fully coherent.
+
+Expected:
+
+* The base photobooth/package price should clearly map to rentalPrice.
+* Options price should only appear if optionsPrice > 0.
+* If optionsPrice > 0, the document must include an options description or fallback:
+  FR: Options supplémentaires facturées
+  EN: Additional paid options
+* If optionsPrice = 0 and no options description, hide the options line.
+* Do not show “Aucune option supplémentaire” while charging an options price.
+
+==================================================
+5. EVENT PREPARATION SHEET STILL MISSING KEY INFO
+=================================================
+
+Current issue:
+The event is created correctly, but the prep sheet is missing important operational information.
+
+Missing:
+
+* location
+* package
+* included prints
+* selected equipment
+
+Expected:
+In the event preparation sheet, show:
+
+Client:
+
+* name
+* phone
+* email
+* company
+
+Event:
+
+* date
+* start/end time
+* location
+
+Service:
+
+* package name
+* rental duration
+* included prints
+* options
+* selected equipment
+* manual equipment notes
+
+Documents:
+
+* linked quote
+* linked contract
+* linked invoice
+* payment status
+
+This must be visible directly in the event card/prep sheet.
+
+==================================================
+6. EQUIPMENT → UPCOMING EVENTS
+==============================
+
+Current issue:
+Equipment can be selected in contracts, but the Equipment module does not show which future events use each device.
+
+Expected:
+On each equipment detail/card, show upcoming linked events using that equipment.
+
+For each upcoming event, display:
+
+* event date
+* client name
+* event type
+* location
+* contract/invoice/payment status
+
+This helps plan hardware usage and availability.
+
+If one equipment item is already booked for the same date/time:
+
+* show a warning / conflict indicator.
+
+Do not build full scheduling complexity yet.
+Just show upcoming linked events and basic conflicts.
+
+==================================================
+7. CONSUMABLES STILL NOT CONNECTED IN UI
+========================================
+
+Current issue:
+Backend forecast may exist, but the Consumables UI has not changed.
+
+Expected:
+Wire consumables forecast into the interface.
+
+In Consumables page and/or Dashboard:
+Show:
+
+* upcoming prints required
+* current available print stock
+* estimated shortage
+* reorder recommendation
+
+Rules:
+
+* includedPrints = 200 → forecast 200 prints
+* includedPrints = unlimited → forecast 600 prints
+* includedPrints empty → show warning “Print quantity not specified”
+
+Example:
+“Upcoming events require 1,000 prints. Current stock covers 700. Estimated shortage: 300 prints.”
+
+Also show per upcoming event:
+
+* event name
+* date
+* required prints
+* linked consumable impact
+
+==================================================
+8. FIELD DUPLICATION / FORM UX
+==============================
+
+Tester feedback:
+Fields were easy to fill, but some fields feel like they need to be filled twice.
+
+Audit:
+
+* Quote creation form
+* Contract creation form
+* Invoice creation form
+* conversion flows quote → contract → invoice
+
+Expected:
+If a field was already filled in quote:
+
+* contract should inherit it
+* invoice should inherit it
+
+Do not ask the user to re-enter:
+
+* client info
+* event info
+* package
+* prints
+* equipment
+* pricing
+* options
+
+The user should only edit if needed.
+
+==================================================
+9. FULL WORKFLOW VERIFICATION
+=============================
+
+Test this exact workflow:
+
+1. Create Quote:
+
+* client Jeanne Duflo
+* event type Anniversaire
+* date future
+* location BakBak
+* package Classic Flash
+* rental duration 3h30
+* included prints 200
+* equipment HaloLight Elite
+* rental price 700
+* options price 100
+* delivery fee 50
+* tax 20%
+
+2. Export Quote PDF.
+   Expected:
+   Quote shows full service details, not only line items.
+
+3. Accept quote.
+
+4. Create Contract from Quote.
+   Expected:
+   All quote fields are copied.
+   Contract PDF includes full contract body and full rental details.
+
+5. Mark Contract signed.
+   Expected:
+   Event created/linked.
+
+6. Create Invoice from Contract.
+   Expected:
+   Invoice copies all service details.
+
+7. Mark Invoice paid.
+   Expected:
+   Event payment status becomes paid.
+
+8. Open Event prep sheet.
+   Expected:
+   Shows location, package, prints, equipment, client info, payment status, documents.
+
+9. Open Equipment detail.
+   Expected:
+   Shows linked upcoming event.
+
+10. Open Consumables.
+    Expected:
+    Forecast shows 200 prints needed for this event.
+
+==================================================
+10. QUALITY RULES
+=================
+
+* Do not break existing working language/currency logic.
+* Do not remove contract clauses.
+* Do not generate empty documents.
+* Do not show undefined/null.
+* Do not show raw {{variables}}.
+* Keep all text i18n-ready.
+* Run frontend and API typecheck.
+* Provide root cause, files changed, and verification screenshots/summary.
