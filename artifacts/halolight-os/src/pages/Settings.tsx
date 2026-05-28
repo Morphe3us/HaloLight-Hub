@@ -110,6 +110,9 @@ export default function Settings() {
   const { data: prefs, isLoading: isLoadingPrefs } = useGetNotificationPreferences();
   const updateUser = useUpdateCurrentUser();
   const updatePrefs = useUpdateNotificationPreferences();
+  const sigInitRef = useRef(false);
+  const [sigForm, setSigForm] = useState({ providerSignature: "", providerSignerTitle: "" });
+  const [sigSaving, setSigSaving] = useState(false);
 
   const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
@@ -125,6 +128,17 @@ export default function Settings() {
   const languageValue = watch("language");
   const currencyValue = watch("currency");
   const initRef = useRef(false);
+
+  useEffect(() => {
+    if (user && !sigInitRef.current) {
+      sigInitRef.current = true;
+      const u = user as any;
+      setSigForm({
+        providerSignature: u.providerSignature ?? "",
+        providerSignerTitle: u.providerSignerTitle ?? "",
+      });
+    }
+  }, [user]);
 
   useEffect(() => {
     if (user && !initRef.current) {
@@ -171,6 +185,29 @@ export default function Settings() {
         toast({ title: t("common.error"), variant: "destructive" });
       }
     });
+  };
+
+  const handleSaveSignature = () => {
+    setSigSaving(true);
+    updateUser.mutate(
+      {
+        data: {
+          providerSignature: sigForm.providerSignature || null,
+          providerSignerTitle: sigForm.providerSignerTitle || null,
+        } as any,
+      },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getGetCurrentUserQueryKey() });
+          toast({ title: t("contracts.provider_signature_saved", { defaultValue: "Signature saved" }) });
+          setSigSaving(false);
+        },
+        onError: () => {
+          toast({ title: t("common.error"), variant: "destructive" });
+          setSigSaving(false);
+        },
+      }
+    );
   };
 
   const handleTogglePref = (key: "emailEnabled" | "inAppEnabled", checked: boolean) => {
@@ -407,6 +444,51 @@ export default function Settings() {
               </button>
             ))}
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Provider Signature for Contracts */}
+      <Card className="shadow-sm">
+        <CardHeader>
+          <CardTitle>{t("contracts.provider_signature_section", { defaultValue: "Provider Signature for Contracts" })}</CardTitle>
+          <CardDescription>
+            {t("contracts.provider_signature_desc", { defaultValue: "When set, this text appears as the provider signature in generated contracts." })}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="providerSignerTitle">
+                {t("contracts.provider_signer_title_label", { defaultValue: "Signer Title (optional)" })}
+              </Label>
+              <Input
+                id="providerSignerTitle"
+                value={sigForm.providerSignerTitle}
+                onChange={(e) => setSigForm((p) => ({ ...p, providerSignerTitle: e.target.value }))}
+                placeholder="CEO, Manager, Director…"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="providerSignature">
+                {t("contracts.provider_signature_label", { defaultValue: "Typed Signature (optional)" })}
+              </Label>
+              <Input
+                id="providerSignature"
+                value={sigForm.providerSignature}
+                onChange={(e) => setSigForm((p) => ({ ...p, providerSignature: e.target.value }))}
+                placeholder="/Jean Dupont/"
+              />
+            </div>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={sigSaving}
+            onClick={handleSaveSignature}
+          >
+            {sigSaving ? t("settings.saving") : t("settings.save")}
+          </Button>
         </CardContent>
       </Card>
 

@@ -859,7 +859,22 @@
     "options_list_label": "Options / Add-ons",
     "deposit_conditions_label": "Deposit Conditions",
     "deposit_return_label": "Deposit Return Conditions",
-    "deposit_section": "Deposit / Security"
+    "deposit_section": "Deposit / Security",
+    "setup_time_label": "Setup Time (optional)",
+    "pickup_time_label": "Pickup Time (optional)",
+    "service_options_label": "Service Options",
+    "digital_gallery_label": "Digital Gallery Included",
+    "custom_template_label": "Custom Template Included",
+    "delivery_included_label": "Delivery Included",
+    "setup_included_label": "Setup Included",
+    "operator_included_label": "On-site Operator Included",
+    "equipment_select_label": "Select Equipment (optional)",
+    "equipment_select_placeholder": "Link registered equipment…",
+    "provider_signature_label": "Provider Signature (optional)",
+    "provider_signer_title_label": "Signer Title (optional)",
+    "provider_signature_section": "Provider Signature for Contracts",
+    "provider_signature_desc": "When set, this text appears as the provider signature in generated contracts.",
+    "provider_signature_saved": "Signature saved"
   },
   "invoices": {
     "title": "Invoices",

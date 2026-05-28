@@ -859,7 +859,22 @@
     "options_list_label": "Opções / Extras",
     "deposit_conditions_label": "Condições do depósito",
     "deposit_return_label": "Condições de devolução do depósito",
-    "deposit_section": "Depósito / Garantia"
+    "deposit_section": "Depósito / Garantia",
+    "setup_time_label": "Hora de instalação (opcional)",
+    "pickup_time_label": "Hora de recolha (opcional)",
+    "service_options_label": "Opções de serviço",
+    "digital_gallery_label": "Galeria digital incluída",
+    "custom_template_label": "Modelo personalizado incluído",
+    "delivery_included_label": "Entrega incluída",
+    "setup_included_label": "Instalação incluída",
+    "operator_included_label": "Operador no local incluído",
+    "equipment_select_label": "Selecionar equipamento (opcional)",
+    "equipment_select_placeholder": "Ligar equipamento registado…",
+    "provider_signature_label": "Assinatura do fornecedor (opcional)",
+    "provider_signer_title_label": "Título do signatário (opcional)",
+    "provider_signature_section": "Assinatura do fornecedor para contratos",
+    "provider_signature_desc": "Se definida, esta assinatura aparece nos contratos gerados.",
+    "provider_signature_saved": "Assinatura guardada"
   },
   "invoices": {
     "title": "Faturas",

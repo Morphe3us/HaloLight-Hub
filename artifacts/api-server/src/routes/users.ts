@@ -29,6 +29,7 @@ router.patch("/users/me", requireAuth, async (req: Request, res: Response): Prom
     firstName, lastName, fullName, companyName, phone, language, currency,
     country, city, birthday, website, instagram, facebook, pinterest, tiktok, linkedin,
     businessType, mainMarket, photobooths, businessGoal,
+    providerSignature, providerSignerTitle,
   } = req.body;
   const updates: Partial<typeof usersTable.$inferInsert> = {};
 
@@ -52,6 +53,8 @@ router.patch("/users/me", requireAuth, async (req: Request, res: Response): Prom
   if (mainMarket !== undefined) updates.mainMarket = mainMarket;
   if (photobooths !== undefined) updates.photobooths = photobooths;
   if (businessGoal !== undefined) updates.businessGoal = businessGoal;
+  if (providerSignature !== undefined) updates.providerSignature = providerSignature || null;
+  if (providerSignerTitle !== undefined) updates.providerSignerTitle = providerSignerTitle || null;
 
   const [updated] = await db
     .update(usersTable)

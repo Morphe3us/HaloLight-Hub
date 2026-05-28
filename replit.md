@@ -129,6 +129,17 @@ An all-in-one SaaS customer portal for HaloLight — a professional photobooth a
   - Sidebar: "Exports" nav item added to admin section
 - **i18n**: `nav.exports` + 4 `settings.export_data.*` keys added to all 8 locale files
 
+### Contract Generation Pipeline — 9 fixes (complete)
+- **Contract number in body**: API route generates `contractNumber` first, then does `content.replace(/{{contract_number}}/g, contractNumber)` before DB insert — saved content always has the real number
+- **Pricing format**: `fillAllVariables` now uses `Intl.NumberFormat` for locale-aware amounts (e.g. "700,00 €" in FR); `{{currency}}` outputs `""` eliminating double-currency display; trailing spaces trimmed from every line
+- **HIDE_LINE mechanism**: Variables set to `"\x00HIDE_LINE\x00"` cause the entire containing line to be filtered out in post-processing, then excess blank lines collapsed
+- **Zero discount/fees hiding**: `discount_amount`, `options_price`, `delivery_fees`, `tax_amount` hidden when zero
+- **Service option checkboxes**: 5 boolean flags (`digitalGallery`, `customTemplate`, `deliveryIncluded`, `setupIncluded`, `operatorIncluded`) as `<Checkbox>` in the form; unchecked = line hidden in contract; checked = locale-aware "Included" text
+- **Setup/pickup times**: Optional time fields in event section; hidden via HIDE_LINE when left empty
+- **Equipment linking**: `equipmentIds: json[]` column on contracts table; `useGetEquipment` checkbox list auto-fills `equipmentDescription` and stores IDs
+- **Provider signature**: `providerSignature` + `providerSignerTitle` columns on users table; Settings page "Provider Signature" card; templates use `{{provider_signature}}` / `{{provider_signer_title}}`
+- **Template cleanup**: Node script fixed colon spacing (`:{{` → `: {{`) across all 8 language templates; added `{{provider_signature}}` + `{{provider_signer_title}}` variables to all provider signature sections
+
 ### Sales CRM — Autocomplete + Duplicate Prevention (complete)
 - **API endpoint**: `GET /sales/search?q=` — unified customer search across leads, quotes, contracts, invoices
   - Debounce-friendly: returns `{ items: [] }` for queries shorter than 2 characters

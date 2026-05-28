@@ -859,7 +859,22 @@
     "options_list_label": "Optionen / Extras",
     "deposit_conditions_label": "Kautionsbedingungen",
     "deposit_return_label": "Rückgabebedingungen der Kaution",
-    "deposit_section": "Kaution / Sicherheit"
+    "deposit_section": "Kaution / Sicherheit",
+    "setup_time_label": "Aufbauzeit (optional)",
+    "pickup_time_label": "Abholzeit (optional)",
+    "service_options_label": "Serviceleistungen",
+    "digital_gallery_label": "Digitale Galerie inbegriffen",
+    "custom_template_label": "Vorlage inbegriffen",
+    "delivery_included_label": "Lieferung inbegriffen",
+    "setup_included_label": "Aufbau inbegriffen",
+    "operator_included_label": "Vor-Ort-Operator inbegriffen",
+    "equipment_select_label": "Gerät auswählen (optional)",
+    "equipment_select_placeholder": "Registriertes Gerät verknüpfen…",
+    "provider_signature_label": "Anbieter-Unterschrift (optional)",
+    "provider_signer_title_label": "Unterzeichner-Titel (optional)",
+    "provider_signature_section": "Anbieter-Unterschrift für Verträge",
+    "provider_signature_desc": "Wenn gesetzt, erscheint diese Unterschrift in generierten Verträgen.",
+    "provider_signature_saved": "Unterschrift gespeichert"
   },
   "invoices": {
     "title": "Rechnungen",

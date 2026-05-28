@@ -859,7 +859,22 @@
     "options_list_label": "Opties / Extra's",
     "deposit_conditions_label": "Voorwaarden waarborgsom",
     "deposit_return_label": "Teruggavevoorwaarden waarborgsom",
-    "deposit_section": "Waarborgsom"
+    "deposit_section": "Waarborgsom",
+    "setup_time_label": "Opbouwtijd (optioneel)",
+    "pickup_time_label": "Ophaaltijd (optioneel)",
+    "service_options_label": "Service-opties",
+    "digital_gallery_label": "Digitale galerij inbegrepen",
+    "custom_template_label": "Aangepaste sjabloon inbegrepen",
+    "delivery_included_label": "Levering inbegrepen",
+    "setup_included_label": "Installatie inbegrepen",
+    "operator_included_label": "Operator ter plaatse inbegrepen",
+    "equipment_select_label": "Apparatuur selecteren (optioneel)",
+    "equipment_select_placeholder": "Geregistreerde apparatuur koppelen…",
+    "provider_signature_label": "Handtekening aanbieder (optioneel)",
+    "provider_signer_title_label": "Titel ondertekenaar (optioneel)",
+    "provider_signature_section": "Handtekening aanbieder voor contracten",
+    "provider_signature_desc": "Indien ingesteld, verschijnt deze handtekening in gegenereerde contracten.",
+    "provider_signature_saved": "Handtekening opgeslagen"
   },
   "invoices": {
     "title": "Facturen",

@@ -1,0 +1,248 @@
+Contract PDF final polish + equipment linking + provider signature.
+
+The generated contract is much better, but there are still important issues before beta.
+
+I uploaded a generated contract PDF as reference.
+
+Please fix the following issues only.
+
+==================================================
+
+1. CONTRACT NUMBER
+   ==================================================
+
+Issue:
+The contract header shows a real number:
+CON-2026-5390
+
+But inside the contract body it still says:
+“Contrat N° : À préciser”
+
+Expected:
+The contract number must be used everywhere.
+
+Fix:
+
+* Add contract number field in creation if needed, but auto-generate by default.
+* Use the generated contract number for {{contract_number}}.
+* Never display “À préciser” for contract number if the contract already has an ID/number.
+
+Expected:
+Contrat N° : CON-2026-5390
+
+==================================================
+2. INSTALLATION / PICKUP TIMES
+==============================
+
+Issue:
+Contract shows:
+Heure d'installation : À préciser
+Heure de récupération : À préciser
+
+Question:
+Are these really necessary if we already have event start and end time?
+
+Expected UX:
+Option A — keep them but make them clear:
+
+* Setup time
+* Pickup time
+* Optional fields in the form
+
+Option B — if empty, hide these lines from the contract instead of showing “À préciser”.
+
+Preferred:
+Keep them as optional fields, but:
+
+* show them only if filled
+* do not display “À préciser” for optional setup/pickup times
+
+==================================================
+3. EQUIPMENT LINKING
+====================
+
+Important improvement:
+The contract equipment section should be able to link to existing registered equipment.
+
+Current:
+Equipment is plain text:
+“photobooth”
+
+Expected:
+In the contract creation form, allow selecting one or more existing equipment items from the user’s Equipment module.
+
+Benefits:
+
+* contract knows which photobooth/equipment was rented
+* equipment usage count can increase automatically
+* future ROI/maintenance tracking becomes possible
+
+Requirements:
+
+* Add equipment selector in New Contract form.
+* Allow multi-select equipment.
+* Also allow manual equipment description as fallback.
+* In generated contract, show selected equipment names/details.
+* Link selected equipment IDs to the contract if schema supports it, or add contractEquipment relation if needed.
+* When contract is signed/completed, increment usage count or create an equipment usage entry if such system exists.
+* Do not break manual entry.
+
+==================================================
+4. SERVICE OPTIONS DISPLAY
+==========================
+
+Issue:
+The contract displays many “Non inclus” lines:
+
+Galerie numérique : Non inclus
+Gabarit personnalisé : Non inclus
+Livraison incluse : Non inclus
+Installation incluse : Non inclus
+Opérateur sur place : Non inclus
+
+This feels too heavy and negative when the user did not explicitly configure these options.
+
+Expected:
+Improve display rules.
+
+If option is explicitly true:
+
+* show “Included / Inclus”
+
+If option is explicitly false:
+
+* either show “Not included / Non inclus” only if the user intentionally set it
+* or hide the line by default
+
+Preferred:
+In the contract form, make these clear checkboxes:
+
+* Digital gallery included
+* Custom template included
+* Delivery included
+* Setup included
+* On-site operator included
+
+In contract output:
+
+* show included options
+* hide non-selected optional service lines unless admin chooses “show non-included options”
+
+This makes the contract cleaner.
+
+==================================================
+5. PRICING FORMAT
+=================
+
+Issue:
+Current pricing displays:
+EUR 700.00 EUR
+EUR 100.00 EUR
+-EUR 0.00 EUR
+EUR 1020.00 EUR
+
+Expected French formatting:
+700 €
+100 €
+50 €
+1 020 €
+
+or:
+700,00 €
+100,00 €
+50,00 €
+1 020,00 €
+
+Fix:
+
+* Use the existing currency formatter everywhere in the contract body.
+* Do not manually concatenate currency code twice.
+* No “EUR 700.00 EUR”.
+
+==================================================
+6. HIDE ZERO DISCOUNT
+=====================
+
+Issue:
+The contract shows:
+Remise : -EUR 0.00 EUR
+
+Expected:
+If discount = 0:
+
+* hide the discount line entirely.
+
+If discount > 0:
+
+* show:
+  Remise : -50 €
+
+Same rule for:
+
+* options price if zero and no options
+* delivery fees if zero and delivery not included
+* tax if zero if applicable
+
+==================================================
+7. PROVIDER SIGNATURE
+=====================
+
+Request:
+Allow provider/loueur signature to be included automatically so the contract can be sent already signed by the rental company.
+
+Expected:
+In Settings or Company Profile, add:
+
+* provider signature image upload or signature text field
+* signer name
+* signer title if needed
+
+In contract:
+
+* provider section can show signature image if available
+* otherwise keep blank signature line
+
+Requirements:
+
+* Do not require client signature at creation.
+* Provider signature is optional.
+* If uploaded, print/export includes it.
+* If missing, keep signature line.
+
+==================================================
+8. CONTRACT OUTPUT CLEANUP
+==========================
+
+General cleanup:
+
+* Better spacing around labels and values.
+* Add spaces after colons where missing:
+  “Impressions incluses :1000” should become “Impressions incluses : 1000”
+  “Gabarit personnalisé :Non inclus” should become “Gabarit personnalisé : Non inclus”
+* Avoid ugly separators if possible.
+* Keep contract professional and readable.
+
+==================================================
+9. VERIFICATION
+===============
+
+Use the uploaded contract PDF as the bug reference.
+
+Verify after fix:
+
+1. Contract number appears correctly in header and body.
+2. Setup/pickup times do not show “À préciser” if empty.
+3. Equipment selector works and selected equipment appears in contract.
+4. Non-selected service options are hidden or handled cleanly.
+5. Currency displays correctly as € in French mode.
+6. Zero discount line is hidden.
+7. Provider signature can be added and appears in the export/print.
+8. No raw {{variables}} remain.
+9. Print/export version matches the cleaned contract.
+
+Run typecheck and provide:
+
+* root cause
+* files changed
+* before/after summary
+* verification results

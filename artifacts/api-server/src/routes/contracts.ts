@@ -91,17 +91,26 @@ router.post("/contracts", requireAuth, async (req: Request, res: Response): Prom
     }
   }
 
+  const {
+    equipmentIds,
+  } = req.body as { equipmentIds?: string[] };
+
   let finalContent = content ?? "";
   if (templateId && !content) {
     const [tpl] = await db.select().from(contractTemplates).where(eq(contractTemplates.id, templateId));
     if (tpl) finalContent = tpl.content;
   }
 
+  // Generate contract number first so we can embed it in the content
+  const contractNumber = generateContractNumber();
+  // Replace {{contract_number}} placeholder with the real number
+  const processedContent = finalContent.replace(/\{\{contract_number\}\}/g, contractNumber);
+
   const [contract] = await db.insert(contracts).values({
     userId: user.id,
     leadId: resolvedLeadId ?? null,
     quoteId: quoteId ?? null,
-    contractNumber: generateContractNumber(),
+    contractNumber,
     title,
     clientName: resolvedClientName,
     clientEmail: resolvedClientEmail ?? null,
@@ -112,11 +121,12 @@ router.post("/contracts", requireAuth, async (req: Request, res: Response): Prom
     eventDate: resolvedEventDate ? new Date(resolvedEventDate) : null,
     currency: resolvedCurrency ?? null,
     language: resolvedLanguage ?? null,
-    content: finalContent,
+    content: processedContent,
     value: resolvedValue ?? "0",
     startDate: startDate ? new Date(startDate) : null,
     endDate: endDate ? new Date(endDate) : null,
     notes: notes ?? null,
+    equipmentIds: equipmentIds ?? null,
   }).returning();
 
   // Update lead pipeline stage

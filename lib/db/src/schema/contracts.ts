@@ -1,4 +1,4 @@
-import { pgTable, text, uuid, timestamp, pgEnum, numeric, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, uuid, timestamp, pgEnum, numeric, boolean, json } from "drizzle-orm/pg-core";
 import { usersTable } from "./users";
 import { leads } from "./crm";
 import { quotes } from "./quotes";
@@ -49,6 +49,7 @@ export const contracts = pgTable("contracts", {
   signedAt: timestamp("signed_at"),
   sentAt: timestamp("sent_at"),
   notes: text("notes"),
+  equipmentIds: json("equipment_ids").$type<string[]>(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

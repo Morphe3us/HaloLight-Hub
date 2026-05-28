@@ -39,6 +39,10 @@ export const usersTable = pgTable("users", {
   photobooths: integer("photobooths"),
   businessGoal: text("business_goal"),
 
+  // Provider / contract signature
+  providerSignature: text("provider_signature"),
+  providerSignerTitle: text("provider_signer_title"),
+
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });

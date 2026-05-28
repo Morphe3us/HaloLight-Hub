@@ -7,6 +7,7 @@ import {
   useDeleteContract,
   useListContractTemplates,
   useGetCurrentUser,
+  useGetEquipment,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -17,6 +18,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import {
   Plus,
@@ -241,6 +243,14 @@ export default function Contracts() {
     templateId: "",
     leadId: "",
     quoteId: "",
+    setupTime: "",
+    pickupTime: "",
+    digitalGallery: false,
+    customTemplate: false,
+    deliveryIncluded: false,
+    setupIncluded: false,
+    operatorIncluded: false,
+    equipmentIds: [],
   });
 
   const [form, setForm] = useState<ContractFormData>(EMPTY_FORM);
@@ -248,12 +258,17 @@ export default function Contracts() {
   const { data: currentUserData } = useGetCurrentUser();
   const currentUser = currentUserData as any;
 
+  const { data: equipmentListData } = useGetEquipment();
+  const equipmentItems = (equipmentListData as any[]) ?? [];
+
   const provider: ProviderData = {
     companyName: currentUser?.companyName,
     firstName: currentUser?.firstName,
     lastName: currentUser?.lastName,
     email: currentUser?.email,
     phone: currentUser?.phone,
+    signature: currentUser?.providerSignature,
+    signerTitle: currentUser?.providerSignerTitle,
   };
 
   const placeholders: PlaceholderSet = {
@@ -271,7 +286,7 @@ export default function Contracts() {
     if (!rawTemplate) return "";
     return fillAllVariables(rawTemplate, form, provider, lang, placeholders);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rawTemplate, form, provider.companyName, provider.firstName, provider.lastName, provider.email, provider.phone, lang]);
+  }, [rawTemplate, form, provider.companyName, provider.firstName, provider.lastName, provider.email, provider.phone, provider.signature, provider.signerTitle, lang]);
 
   const { data, isLoading } = useListContracts(
     { status: filterStatus !== "all" ? (filterStatus as any) : undefined },
@@ -358,7 +373,8 @@ export default function Contracts() {
         templateId: form.templateId || undefined,
         content: finalContent,
         notes: form.notes || undefined,
-      },
+        equipmentIds: form.equipmentIds.length > 0 ? form.equipmentIds : undefined,
+      } as any,
     });
   };
 
@@ -382,7 +398,23 @@ export default function Contracts() {
   const f =
     (key: keyof ContractFormData) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
-      setForm((prev) => ({ ...prev, [key]: e.target.value }));
+      setForm((prev) => ({ ...prev, [key]: e.target.value } as ContractFormData));
+
+  const flag =
+    (key: "digitalGallery" | "customTemplate" | "deliveryIncluded" | "setupIncluded" | "operatorIncluded") =>
+    (checked: boolean) =>
+      setForm((prev) => ({ ...prev, [key]: checked }));
+
+  const handleEquipmentToggle = (id: string, name: string, model: string | undefined, checked: boolean) => {
+    setForm((prev) => {
+      const ids = checked ? [...prev.equipmentIds, id] : prev.equipmentIds.filter((eid) => eid !== id);
+      const names = equipmentItems
+        .filter((e: any) => ids.includes(e.id))
+        .map((e: any) => e.name + (e.model ? ` (${e.model})` : ""))
+        .join(", ");
+      return { ...prev, equipmentIds: ids, equipmentDescription: names || prev.equipmentDescription };
+    });
+  };
 
   return (
     <div className="space-y-6">
@@ -659,6 +691,14 @@ export default function Contracts() {
                     <Label>{t("contracts.event_location_label")}</Label>
                     <Input value={form.eventLocation} onChange={f("eventLocation")} placeholder="Venue name, City" />
                   </div>
+                  <div className="space-y-1.5">
+                    <Label>{t("contracts.setup_time_label", { defaultValue: "Setup Time (optional)" })}</Label>
+                    <Input type="time" value={form.setupTime} onChange={f("setupTime")} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>{t("contracts.pickup_time_label", { defaultValue: "Pickup Time (optional)" })}</Label>
+                    <Input type="time" value={form.pickupTime} onChange={f("pickupTime")} />
+                  </div>
                 </div>
               </div>
 
@@ -699,6 +739,60 @@ export default function Contracts() {
                     />
                   </div>
                 </div>
+
+                {/* Service option checkboxes */}
+                <div className="pt-1">
+                  <p className="text-xs font-medium text-muted-foreground mb-2">
+                    {t("contracts.service_options_label", { defaultValue: "Service Options" })}
+                  </p>
+                  <div className="grid grid-cols-2 gap-y-2 gap-x-4">
+                    {(
+                      [
+                        ["digitalGallery", t("contracts.digital_gallery_label", { defaultValue: "Digital Gallery" })],
+                        ["customTemplate", t("contracts.custom_template_label", { defaultValue: "Custom Template" })],
+                        ["deliveryIncluded", t("contracts.delivery_included_label", { defaultValue: "Delivery Included" })],
+                        ["setupIncluded", t("contracts.setup_included_label", { defaultValue: "Setup Included" })],
+                        ["operatorIncluded", t("contracts.operator_included_label", { defaultValue: "On-site Operator" })],
+                      ] as const
+                    ).map(([key, label]) => (
+                      <div key={key} className="flex items-center gap-2">
+                        <Checkbox
+                          id={`flag-${key}`}
+                          checked={form[key]}
+                          onCheckedChange={flag(key)}
+                        />
+                        <label htmlFor={`flag-${key}`} className="text-sm cursor-pointer select-none">
+                          {label}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Equipment selector */}
+                {equipmentItems.length > 0 && (
+                  <div className="pt-1">
+                    <p className="text-xs font-medium text-muted-foreground mb-2">
+                      {t("contracts.equipment_select_label", { defaultValue: "Select Equipment (optional)" })}
+                    </p>
+                    <div className="grid grid-cols-1 gap-y-2 max-h-36 overflow-y-auto pr-1">
+                      {equipmentItems.map((eq: any) => (
+                        <div key={eq.id} className="flex items-center gap-2">
+                          <Checkbox
+                            id={`eq-${eq.id}`}
+                            checked={form.equipmentIds.includes(eq.id)}
+                            onCheckedChange={(checked) =>
+                              handleEquipmentToggle(eq.id, eq.name, eq.model, Boolean(checked))
+                            }
+                          />
+                          <label htmlFor={`eq-${eq.id}`} className="text-sm cursor-pointer select-none">
+                            {eq.name}{eq.model ? ` — ${eq.model}` : ""}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Financial */}

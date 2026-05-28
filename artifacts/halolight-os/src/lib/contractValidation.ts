@@ -1,3 +1,29 @@
+const HIDE = "\x00HIDE_LINE\x00";
+
+const INCLUDED_TEXT: Record<string, string> = {
+  en: "Included", fr: "Inclus", de: "Inbegriffen", es: "Incluido",
+  it: "Incluso", nl: "Inbegrepen", pl: "Wliczone", pt: "Incluído",
+};
+
+function getIncludedText(lang: string): string {
+  return INCLUDED_TEXT[lang] ?? "Included";
+}
+
+function formatPrice(amount: number, currency: string, lang: string): string {
+  if (!currency) return amount.toFixed(2);
+  try {
+    const locale = lang === "en" ? "en-GB" : lang;
+    return new Intl.NumberFormat(locale, {
+      style: "currency",
+      currency: currency,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(amount);
+  } catch {
+    return `${currency} ${amount.toFixed(2)}`;
+  }
+}
+
 export interface ContractFormData {
   title: string;
   clientName: string;
@@ -10,29 +36,43 @@ export interface ContractFormData {
   eventStartTime: string;
   eventEndTime: string;
   eventLocation: string;
+  setupTime: string;
+  pickupTime: string;
   serviceName: string;
   rentalDuration: string;
   includedPrints: string;
   equipmentDescription: string;
   optionsList: string;
+  // Service option flags
+  digitalGallery: boolean;
+  customTemplate: boolean;
+  deliveryIncluded: boolean;
+  setupIncluded: boolean;
+  operatorIncluded: boolean;
+  // Pricing
   value: string;
   optionsPrice: string;
   deliveryFees: string;
   discountAmount: string;
   currency: string;
   taxRate: string;
+  // Deposit
   depositAmount: string;
   depositMethod: string;
   depositConditions: string;
   depositReturn: string;
+  // Terms
   paymentTerms: string;
   cancellationTerms: string;
   signaturePlace: string;
+  // Meta
   content: string;
   notes: string;
   templateId: string;
   leadId: string;
   quoteId: string;
+  // Equipment linking
+  equipmentIds: string[];
 }
 
 export interface ProviderData {
@@ -41,6 +81,8 @@ export interface ProviderData {
   lastName?: string | null;
   email?: string | null;
   phone?: string | null;
+  signature?: string | null;
+  signerTitle?: string | null;
 }
 
 export type ReadinessStatus = "complete" | "partial" | "missing";
@@ -135,7 +177,6 @@ export interface PlaceholderSet {
 
 /**
  * Compute the pricing breakdown from form values.
- * All numeric operations happen here so the template map and doCreate use the same numbers.
  */
 export function computePricing(form: ContractFormData) {
   const rentalVal = Math.max(0, Number(form.value) || 0);
@@ -149,6 +190,12 @@ export function computePricing(form: ContractFormData) {
   return { rentalVal, optionsVal, deliveryVal, discountVal, taxR, subtotal, taxAmt, total };
 }
 
+/**
+ * Fill all {{variable}} placeholders in a contract template.
+ *
+ * Lines containing the HIDE sentinel are removed in post-processing,
+ * so callers can set a variable to HIDE to suppress entire lines.
+ */
 export function fillAllVariables(
   content: string,
   form: ContractFormData,
@@ -166,16 +213,18 @@ export function fillAllVariables(
     : "";
 
   const cur = form.currency || "";
-  const fmt = (n: number) => n.toFixed(2);
-  const fmtCur = (n: number) => (n > 0 ? `${cur} ${fmt(n)}`.trim() : placeholders.to_be_specified);
-  const fmtCurZeroOk = (n: number) => `${cur} ${fmt(n)}`.trim();
+  const fmtP = (n: number) => formatPrice(n, cur, lang);
 
   const { rentalVal, optionsVal, deliveryVal, discountVal, taxR, subtotal, taxAmt, total } = computePricing(form);
-
   const dep = Math.max(0, Number(form.depositAmount) || 0);
+  const included = getIncludedText(lang);
+
+  const providerSig = provider.signature?.trim()
+    ? provider.signature.trim()
+    : "_________________________________";
 
   const replacements: Record<string, string> = {
-    // Contract meta
+    // Contract meta — filled server-side on creation; client-side preview uses placeholder
     contract_number: placeholders.to_be_specified,
 
     // Provider
@@ -186,6 +235,10 @@ export function fillAllVariables(
     rental_company_phone: provider.phone || "",
     rental_company_website: placeholders.not_provided,
     rental_company_vat: placeholders.not_provided,
+
+    // Provider signature block
+    provider_signature: providerSig,
+    provider_signer_title: provider.signerTitle?.trim() ? provider.signerTitle.trim() : HIDE,
 
     // Client
     client_first_name: clientFirst || form.clientName,
@@ -204,8 +257,9 @@ export function fillAllVariables(
     event_start_time: form.eventStartTime || placeholders.to_be_specified,
     event_end_time: form.eventEndTime || placeholders.to_be_specified,
     event_location: form.eventLocation || placeholders.not_provided,
-    setup_time: placeholders.to_be_specified,
-    pickup_time: placeholders.to_be_specified,
+    // Optional — hide line if not filled
+    setup_time: form.setupTime?.trim() ? form.setupTime.trim() : HIDE,
+    pickup_time: form.pickupTime?.trim() ? form.pickupTime.trim() : HIDE,
 
     // Equipment & package
     equipment_list: form.equipmentDescription || placeholders.to_be_specified,
@@ -213,29 +267,28 @@ export function fillAllVariables(
     rental_duration: form.rentalDuration || placeholders.to_be_specified,
     included_prints: form.includedPrints || placeholders.to_be_specified,
     options_list: form.optionsList || placeholders.no_options,
-    digital_gallery: placeholders.not_included,
-    custom_template: placeholders.not_included,
-    delivery_included: placeholders.not_included,
-    setup_included: placeholders.not_included,
-    operator_included: placeholders.not_included,
 
-    // Pricing — each line is now a separate form value
-    rental_price: cur ? fmtCurZeroOk(rentalVal) : fmt(rentalVal),
-    options_price: cur ? fmtCurZeroOk(optionsVal) : fmt(optionsVal),
-    delivery_fees: deliveryVal > 0
-      ? (cur ? fmtCurZeroOk(deliveryVal) : fmt(deliveryVal))
-      : placeholders.no_delivery_fees,
-    discount_amount: cur ? fmtCurZeroOk(discountVal) : fmt(discountVal),
-    subtotal: cur ? fmtCurZeroOk(subtotal) : fmt(subtotal),
-    tax_rate: taxR > 0 ? String(taxR) : "0",
-    tax_amount: cur ? fmtCurZeroOk(taxAmt) : fmt(taxAmt),
-    total_amount: cur ? fmtCurZeroOk(total) : fmt(total),
-    currency: cur,
+    // Service option flags — show "Included" or hide the entire line
+    digital_gallery: form.digitalGallery ? included : HIDE,
+    custom_template: form.customTemplate ? included : HIDE,
+    delivery_included: form.deliveryIncluded ? included : HIDE,
+    setup_included: form.setupIncluded ? included : HIDE,
+    operator_included: form.operatorIncluded ? included : HIDE,
+
+    // Pricing — Intl.NumberFormat with locale-aware format; currency variable = "" (already in price)
+    rental_price: fmtP(rentalVal),
+    options_price: optionsVal > 0 ? fmtP(optionsVal) : HIDE,
+    delivery_fees: deliveryVal > 0 ? fmtP(deliveryVal) : HIDE,
+    discount_amount: discountVal > 0 ? fmtP(discountVal) : HIDE,
+    subtotal: fmtP(subtotal),
+    tax_rate: taxR > 0 ? String(taxR) : HIDE,
+    tax_amount: taxAmt > 0 ? fmtP(taxAmt) : HIDE,
+    total_amount: fmtP(total),
+    // currency variable outputs empty — prices already include the symbol via Intl.NumberFormat
+    currency: "",
 
     // Deposit
-    deposit_amount: dep > 0
-      ? (cur ? `${cur} ${fmt(dep)}`.trim() : fmt(dep))
-      : placeholders.no_deposit,
+    deposit_amount: dep > 0 ? fmtP(dep) : placeholders.no_deposit,
     deposit_method: form.depositMethod || placeholders.not_provided,
     deposit_conditions: form.depositConditions || placeholders.not_provided,
     deposit_return: form.depositReturn || placeholders.not_provided,
@@ -254,6 +307,17 @@ export function fillAllVariables(
 
   // Final safety net: replace any remaining {{...}} with generic fallback
   result = result.replace(/\{\{[a-zA-Z_]+\}\}/g, placeholders.to_be_specified);
+
+  // Post-processing:
+  // 1. Remove any line that contains the HIDE sentinel
+  // 2. Trim trailing whitespace from each line (e.g. "700,00 € " from empty {{currency}})
+  // 3. Collapse more than 2 consecutive blank lines into 2
+  result = result
+    .split("\n")
+    .filter((line) => !line.includes(HIDE))
+    .map((line) => line.trimEnd())
+    .join("\n")
+    .replace(/\n{3,}/g, "\n\n");
 
   return result;
 }

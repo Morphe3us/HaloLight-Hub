@@ -859,7 +859,22 @@
     "options_list_label": "Opcje / Dodatki",
     "deposit_conditions_label": "Warunki kaucji",
     "deposit_return_label": "Warunki zwrotu kaucji",
-    "deposit_section": "Kaucja / Depozyt"
+    "deposit_section": "Kaucja / Depozyt",
+    "setup_time_label": "Godzina montażu (opcjonalnie)",
+    "pickup_time_label": "Godzina odbioru (opcjonalnie)",
+    "service_options_label": "Opcje usług",
+    "digital_gallery_label": "Galeria cyfrowa wliczona",
+    "custom_template_label": "Szablon własny wliczony",
+    "delivery_included_label": "Dostawa wliczona",
+    "setup_included_label": "Montaż wliczony",
+    "operator_included_label": "Operator na miejscu wliczony",
+    "equipment_select_label": "Wybierz sprzęt (opcjonalnie)",
+    "equipment_select_placeholder": "Połącz zarejestrowany sprzęt…",
+    "provider_signature_label": "Podpis dostawcy (opcjonalnie)",
+    "provider_signer_title_label": "Tytuł podpisującego (opcjonalnie)",
+    "provider_signature_section": "Podpis dostawcy dla umów",
+    "provider_signature_desc": "Jeśli ustawiony, ten podpis pojawia się w generowanych umowach.",
+    "provider_signature_saved": "Podpis zapisany"
   },
   "invoices": {
     "title": "Faktury",

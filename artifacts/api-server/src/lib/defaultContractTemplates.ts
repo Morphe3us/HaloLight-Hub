@@ -149,9 +149,10 @@ Signature: _________________________________
 
 PROVIDER
 Name: {{rental_company_representative}}
+{{provider_signer_title}}
 On behalf of: {{rental_company_name}}
 "Read and approved"
-Signature: _________________________________
+Signature: {{provider_signature}}
 
 ══════════════════════════════════════════════════`;
 
@@ -189,8 +190,8 @@ Date :                {{event_date}}
 Heure de début :      {{event_start_time}}
 Heure de fin :        {{event_end_time}}
 Lieu / Adresse :      {{event_location}}
-Heure d'installation :{{setup_time}}
-Heure de récupération :{{pickup_time}}
+Heure d'installation : {{setup_time}}
+Heure de récupération : {{pickup_time}}
 
 ══════════════════════════════════════════════════
 
@@ -204,11 +205,11 @@ Heure de récupération :{{pickup_time}}
 
 Forfait :             {{package_name}}
 Durée de location :   {{rental_duration}}
-Impressions incluses :{{included_prints}}
+Impressions incluses : {{included_prints}}
 Galerie numérique :   {{digital_gallery}}
-Gabarit personnalisé :{{custom_template}}
+Gabarit personnalisé : {{custom_template}}
 Livraison incluse :   {{delivery_included}}
-Installation incluse :{{setup_included}}
+Installation incluse : {{setup_included}}
 Opérateur sur place : {{operator_included}}
 Options supplémentaires : {{options_list}}
 
@@ -300,9 +301,10 @@ Signature : _________________________________
 
 PRESTATAIRE
 Nom : {{rental_company_representative}}
+{{provider_signer_title}}
 Pour le compte de : {{rental_company_name}}
 « Lu et approuvé »
-Signature : _________________________________
+Signature : {{provider_signature}}
 
 ══════════════════════════════════════════════════`;
 
@@ -354,10 +356,10 @@ Hora de recogida:     {{pickup_time}}
 5. PAQUETE & SERVICIOS
 
 Paquete:              {{package_name}}
-Duración del alquiler:{{rental_duration}}
-Impresiones incluidas:{{included_prints}}
+Duración del alquiler: {{rental_duration}}
+Impresiones incluidas: {{included_prints}}
 Galería digital:      {{digital_gallery}}
-Plantilla personalizada:{{custom_template}}
+Plantilla personalizada: {{custom_template}}
 Entrega incluida:     {{delivery_included}}
 Montaje incluido:     {{setup_included}}
 Operador in situ:     {{operator_included}}
@@ -451,9 +453,10 @@ Firma: _________________________________
 
 PROVEEDOR
 Nombre: {{rental_company_representative}}
+{{provider_signer_title}}
 En nombre de: {{rental_company_name}}
 "Leído y aprobado"
-Firma: _________________________________
+Firma: {{provider_signature}}
 
 ══════════════════════════════════════════════════`;
 
@@ -602,9 +605,10 @@ Unterschrift: _________________________________
 
 ANBIETER
 Name: {{rental_company_representative}}
+{{provider_signer_title}}
 Im Auftrag von: {{rental_company_name}}
 „Gelesen und genehmigt"
-Unterschrift: _________________________________
+Unterschrift: {{provider_signature}}
 
 ══════════════════════════════════════════════════`;
 
@@ -753,9 +757,10 @@ Handtekening: _________________________________
 
 VERHUURDER
 Naam: {{rental_company_representative}}
+{{provider_signer_title}}
 Namens: {{rental_company_name}}
 "Gelezen en goedgekeurd"
-Handtekening: _________________________________
+Handtekening: {{provider_signature}}
 
 ══════════════════════════════════════════════════`;
 
@@ -810,7 +815,7 @@ Pacchetto:            {{package_name}}
 Durata noleggio:      {{rental_duration}}
 Stampe incluse:       {{included_prints}}
 Galleria digitale:    {{digital_gallery}}
-Template personalizzato:{{custom_template}}
+Template personalizzato: {{custom_template}}
 Consegna inclusa:     {{delivery_included}}
 Montaggio incluso:    {{setup_included}}
 Operatore in loco:    {{operator_included}}
@@ -904,9 +909,10 @@ Firma: _________________________________
 
 FORNITORE
 Nome: {{rental_company_representative}}
+{{provider_signer_title}}
 Per conto di: {{rental_company_name}}
 "Letto e approvato"
-Firma: _________________________________
+Firma: {{provider_signature}}
 
 ══════════════════════════════════════════════════`;
 
@@ -961,7 +967,7 @@ Pacote:               {{package_name}}
 Duração do aluguel:   {{rental_duration}}
 Impressões incluídas: {{included_prints}}
 Galeria digital:      {{digital_gallery}}
-Template personalizado:{{custom_template}}
+Template personalizado: {{custom_template}}
 Entrega incluída:     {{delivery_included}}
 Montagem incluída:    {{setup_included}}
 Operador no local:    {{operator_included}}
@@ -1055,9 +1061,10 @@ Assinatura: _________________________________
 
 FORNECEDOR
 Nome: {{rental_company_representative}}
+{{provider_signer_title}}
 Em nome de: {{rental_company_name}}
 "Lido e aprovado"
-Assinatura: _________________________________
+Assinatura: {{provider_signature}}
 
 ══════════════════════════════════════════════════`;
 
@@ -1206,9 +1213,10 @@ Podpis: _________________________________
 
 USŁUGODAWCA
 Imię i nazwisko: {{rental_company_representative}}
+{{provider_signer_title}}
 W imieniu: {{rental_company_name}}
 „Zapoznałem/am się i akceptuję"
-Podpis: _________________________________
+Podpis: {{provider_signature}}
 
 ══════════════════════════════════════════════════`;
 
