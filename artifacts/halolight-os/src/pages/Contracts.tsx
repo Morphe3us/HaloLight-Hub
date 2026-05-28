@@ -281,10 +281,13 @@ export default function Contracts() {
     not_applicable: t("contract_validation.placeholder_not_applicable"),
   };
 
-  // Live preview: recomputed every time form fields change
+  // Live preview: recomputed every time form fields change.
+  // {{contract_number}} is preserved by fillAllVariables (server injects real number on save),
+  // so we replace it here with a friendly placeholder for display only.
   const livePreview = useMemo(() => {
     if (!rawTemplate) return "";
-    return fillAllVariables(rawTemplate, form, provider, lang, placeholders);
+    const filled = fillAllVariables(rawTemplate, form, provider, lang, placeholders);
+    return filled.replace(/\{\{contract_number\}\}/g, "[Auto-generated on save]");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rawTemplate, form, provider.companyName, provider.firstName, provider.lastName, provider.email, provider.phone, provider.signature, provider.signerTitle, lang]);
 
@@ -405,12 +408,16 @@ export default function Contracts() {
     (checked: boolean) =>
       setForm((prev) => ({ ...prev, [key]: checked }));
 
-  const handleEquipmentToggle = (id: string, name: string, model: string | undefined, checked: boolean) => {
+  const handleEquipmentToggle = (id: string, checked: boolean) => {
     setForm((prev) => {
       const ids = checked ? [...prev.equipmentIds, id] : prev.equipmentIds.filter((eid) => eid !== id);
       const names = equipmentItems
         .filter((e: any) => ids.includes(e.id))
-        .map((e: any) => e.name + (e.model ? ` (${e.model})` : ""))
+        .map((e: any) => {
+          const parts: string[] = [e.productModel].filter(Boolean);
+          if (e.serialNumber) parts.push(`SN: ${e.serialNumber}`);
+          return parts.join(" — ");
+        })
         .join(", ");
       return { ...prev, equipmentIds: ids, equipmentDescription: names || prev.equipmentDescription };
     });
@@ -770,11 +777,15 @@ export default function Contracts() {
                 </div>
 
                 {/* Equipment selector */}
-                {equipmentItems.length > 0 && (
-                  <div className="pt-1">
-                    <p className="text-xs font-medium text-muted-foreground mb-2">
-                      {t("contracts.equipment_select_label", { defaultValue: "Select Equipment (optional)" })}
+                <div className="pt-1">
+                  <p className="text-xs font-medium text-muted-foreground mb-2">
+                    {t("contracts.equipment_select_label", { defaultValue: "Select Equipment (optional)" })}
+                  </p>
+                  {equipmentItems.length === 0 ? (
+                    <p className="text-xs text-muted-foreground italic">
+                      {t("contracts.equipment_empty", { defaultValue: "No equipment registered yet. You can add equipment in Hardware." })}
                     </p>
+                  ) : (
                     <div className="grid grid-cols-1 gap-y-2 max-h-36 overflow-y-auto pr-1">
                       {equipmentItems.map((eq: any) => (
                         <div key={eq.id} className="flex items-center gap-2">
@@ -782,17 +793,19 @@ export default function Contracts() {
                             id={`eq-${eq.id}`}
                             checked={form.equipmentIds.includes(eq.id)}
                             onCheckedChange={(checked) =>
-                              handleEquipmentToggle(eq.id, eq.name, eq.model, Boolean(checked))
+                              handleEquipmentToggle(eq.id, Boolean(checked))
                             }
                           />
                           <label htmlFor={`eq-${eq.id}`} className="text-sm cursor-pointer select-none">
-                            {eq.name}{eq.model ? ` — ${eq.model}` : ""}
+                            {eq.productModel}
+                            {eq.serialNumber ? ` — SN: ${eq.serialNumber}` : ""}
+                            {eq.status && eq.status !== "active" ? ` (${eq.status})` : ""}
                           </label>
                         </div>
                       ))}
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
 
               {/* Financial */}

@@ -114,6 +114,12 @@ export default function Settings() {
   const [sigForm, setSigForm] = useState({ providerSignature: "", providerSignerTitle: "" });
   const [sigSaving, setSigSaving] = useState(false);
 
+  // Logo upload state
+  const logoInputRef = useRef<HTMLInputElement>(null);
+  const [logoForm, setLogoForm] = useState({ logoUrl: "" });
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [logoSaving, setLogoSaving] = useState(false);
+
   const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
@@ -137,6 +143,9 @@ export default function Settings() {
         providerSignature: u.providerSignature ?? "",
         providerSignerTitle: u.providerSignerTitle ?? "",
       });
+      const existingLogo = u.logoUrl ?? "";
+      setLogoForm({ logoUrl: existingLogo });
+      setLogoPreview(existingLogo || null);
     }
   }, [user]);
 
@@ -208,6 +217,46 @@ export default function Settings() {
         },
       }
     );
+  };
+
+  const handleLogoFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      toast({ title: t("settings.logo_too_large", { defaultValue: "Logo file is too large (max 2 MB)" }), variant: "destructive" });
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const dataUrl = ev.target?.result as string;
+      setLogoPreview(dataUrl);
+      setLogoForm({ logoUrl: dataUrl });
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleSaveLogo = () => {
+    setLogoSaving(true);
+    updateUser.mutate(
+      { data: { logoUrl: logoForm.logoUrl || null } as any },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getGetCurrentUserQueryKey() });
+          toast({ title: t("settings.logo_saved", { defaultValue: "Logo saved" }) });
+          setLogoSaving(false);
+        },
+        onError: () => {
+          toast({ title: t("common.error"), variant: "destructive" });
+          setLogoSaving(false);
+        },
+      }
+    );
+  };
+
+  const handleRemoveLogo = () => {
+    setLogoPreview(null);
+    setLogoForm({ logoUrl: "" });
+    if (logoInputRef.current) logoInputRef.current.value = "";
   };
 
   const handleTogglePref = (key: "emailEnabled" | "inAppEnabled", checked: boolean) => {
@@ -444,6 +493,62 @@ export default function Settings() {
               </button>
             ))}
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Company Logo for Documents */}
+      <Card className="shadow-sm">
+        <CardHeader>
+          <CardTitle>{t("settings.logo_title", { defaultValue: "Company Logo" })}</CardTitle>
+          <CardDescription>
+            {t("settings.logo_desc", { defaultValue: "Shown on quotes, contracts and invoices. If not set, no logo appears on your documents." })}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <input
+            ref={logoInputRef}
+            type="file"
+            accept="image/png,image/jpeg,image/webp,image/svg+xml"
+            className="hidden"
+            onChange={handleLogoFile}
+          />
+          {logoPreview ? (
+            <div className="flex items-start gap-4">
+              <div className="flex-1 border rounded-xl overflow-hidden bg-muted/30 p-4 flex items-center justify-center min-h-[80px]">
+                <img src={logoPreview} alt="Logo preview" className="max-h-20 max-w-full object-contain" />
+              </div>
+              <Button type="button" variant="outline" size="sm" onClick={handleRemoveLogo}>
+                {t("common.remove", { defaultValue: "Remove" })}
+              </Button>
+            </div>
+          ) : (
+            <div className="border-2 border-dashed rounded-xl p-6 text-center text-muted-foreground text-sm">
+              {t("settings.logo_empty", { defaultValue: "No logo uploaded yet." })}
+            </div>
+          )}
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Input
+              placeholder="https://example.com/logo.png"
+              value={logoForm.logoUrl.startsWith("data:") ? "" : logoForm.logoUrl}
+              onChange={(e) => {
+                setLogoForm({ logoUrl: e.target.value });
+                setLogoPreview(e.target.value || null);
+              }}
+              className="flex-1"
+            />
+            <Button type="button" variant="outline" size="sm" onClick={() => logoInputRef.current?.click()}>
+              {t("settings.logo_upload_btn", { defaultValue: "Upload file" })}
+            </Button>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={logoSaving}
+            onClick={handleSaveLogo}
+          >
+            {logoSaving ? t("settings.saving") : t("settings.save")}
+          </Button>
         </CardContent>
       </Card>
 

@@ -44,46 +44,60 @@ function PrintPreview({ quoteNumber, title, clientName, clientEmail, items, subt
     const validUntilStr = validUntil
       ? new Date(validUntil).toLocaleDateString(lang, { year: "numeric", month: "long", day: "numeric" })
       : null;
-    const html = `<!DOCTYPE html><html><head><title>${quoteNumber}</title>
+    const logoUrl = (me as any)?.logoUrl ?? "";
+    const companyName = (me as any)?.companyName ?? (me as any)?.fullName ?? "";
+    const html = `<!DOCTYPE html><html lang="${lang}"><head><meta charset="utf-8"><title>${quoteNumber}</title>
     <style>
-      body{font-family:Arial,sans-serif;max-width:800px;margin:40px auto;color:#111;font-size:14px}
-      h1{font-size:24px;margin:0}
-      .header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:32px}
-      .brand{font-size:22px;font-weight:700;color:#DDB398}
-      .meta{text-align:right;font-size:12px;color:#666}
-      .section{margin-bottom:24px}
-      .label{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#999;margin-bottom:4px}
-      .parties{display:flex;gap:64px;margin-bottom:32px;padding-bottom:24px;border-bottom:1px solid #eee}
-      table{width:100%;border-collapse:collapse;margin-bottom:24px}
-      th{background:#f5f5f5;text-align:left;padding:8px 12px;font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:#666}
-      td{padding:10px 12px;border-bottom:1px solid #f0f0f0}
+      *{box-sizing:border-box;margin:0;padding:0}
+      body{font-family:Arial,Helvetica,sans-serif;max-width:820px;margin:40px auto;color:#111;font-size:13.5px;padding:0 28px}
+      .doc-header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:20px;border-bottom:2px solid #111;margin-bottom:24px}
+      .provider-block img{max-height:52px;max-width:180px;object-fit:contain;display:block;margin-bottom:6px}
+      .provider-name{font-size:16px;font-weight:700;margin-bottom:2px}
+      .doc-meta{text-align:right;flex-shrink:0;margin-left:24px}
+      .doc-type{font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:#999;margin-bottom:4px}
+      .doc-number{font-size:18px;font-weight:700;font-family:'Courier New',monospace}
+      .doc-sub{font-size:12px;color:#666;margin-top:3px}
+      .parties{display:flex;gap:48px;margin-bottom:28px;padding-bottom:20px;border-bottom:1px solid #e5e7eb;font-size:12.5px}
+      .label{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:#999;margin-bottom:5px;font-weight:600}
+      .party-name{font-size:14.5px;font-weight:700;margin-bottom:2px}
+      .party-detail{color:#555;line-height:1.55}
+      .section{margin-bottom:22px}
+      table{width:100%;border-collapse:collapse;margin-bottom:22px}
+      th{background:#f5f5f5;text-align:left;padding:8px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#666;font-weight:600}
+      td{padding:10px 12px;border-bottom:1px solid #f0f0f0;font-size:13px}
       .totals{margin-left:auto;width:280px}
       .totals tr td:first-child{color:#666}
       .totals tr td:last-child{text-align:right;font-weight:600}
-      .grand{font-size:18px;font-weight:700;border-top:2px solid #111!important}
-      .notes{font-size:13px;color:#666;line-height:1.6;white-space:pre-wrap}
-      @media print{body{margin:20px}}
+      .grand td{font-size:18px;font-weight:700;border-top:2px solid #111!important}
+      .notes{font-size:13px;color:#555;line-height:1.65;white-space:pre-wrap}
+      @media print{body{margin:0;padding:16px}@page{margin:1.4cm 1.2cm}}
     </style></head><body>
-    <div class="header">
-      <div><div class="brand">HaloLight Hub</div><h1 style="margin-top:12px">${quoteNumber}</h1><div style="color:#666;margin-top:4px">${title}</div></div>
-      <div class="meta">
-        <div style="font-size:11px;color:#999">${t("quotes.print_quote_date").toUpperCase()}</div>
-        <div>${today}</div>
-        ${validUntilStr ? `<div style="margin-top:8px;font-size:11px;color:#999">${t("quotes.valid_until_label").toUpperCase()}</div><div>${validUntilStr}</div>` : ""}
+    <div class="doc-header">
+      <div class="provider-block">
+        ${logoUrl ? `<img src="${logoUrl}" alt="${companyName.replace(/"/g, "&quot;")}">` : ""}
+        ${companyName ? `<div class="provider-name">${companyName}</div>` : ""}
+        ${(me as any)?.email ? `<div style="font-size:11.5px;color:#555">${(me as any).email}</div>` : ""}
+      </div>
+      <div class="doc-meta">
+        <div class="doc-type">${t("quotes.print_quote_title", { defaultValue: "QUOTE" })}</div>
+        <div class="doc-number">${quoteNumber}</div>
+        <div class="doc-sub">${title}</div>
+        <div style="margin-top:8px;font-size:11px;color:#999">${t("quotes.print_quote_date").toUpperCase()}</div>
+        <div style="font-size:12px">${today}</div>
+        ${validUntilStr ? `<div style="margin-top:6px;font-size:11px;color:#999">${t("quotes.valid_until_label").toUpperCase()}</div><div style="font-size:12px">${validUntilStr}</div>` : ""}
       </div>
     </div>
     <div class="parties">
       <div>
         <div class="label">${t("quotes.print_from")}</div>
-        <div style="font-size:15px;font-weight:600">${me?.fullName ?? ""}</div>
-        ${me?.companyName ? `<div style="color:#666;margin-top:2px">${me.companyName}</div>` : ""}
-        ${me?.email ? `<div style="color:#666">${me.email}</div>` : ""}
-        ${(me as { phone?: string } | undefined)?.phone ? `<div style="color:#666">${(me as { phone?: string }).phone}</div>` : ""}
+        <div class="party-name">${me?.fullName ?? ""}</div>
+        ${(me as any)?.companyName ? `<div class="party-detail">${(me as any).companyName}</div>` : ""}
+        ${(me as any)?.phone ? `<div class="party-detail">${(me as any).phone}</div>` : ""}
       </div>
       <div>
         <div class="label">${t("quotes.print_prepared_for")}</div>
-        <div style="font-size:16px;font-weight:600">${clientName}</div>
-        ${clientEmail ? `<div style="color:#666">${clientEmail}</div>` : ""}
+        <div class="party-name">${clientName}</div>
+        ${clientEmail ? `<div class="party-detail">${clientEmail}</div>` : ""}
       </div>
     </div>
     <table>

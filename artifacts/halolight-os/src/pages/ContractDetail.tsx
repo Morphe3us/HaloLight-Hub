@@ -39,30 +39,81 @@ function PrintButton({ contractNumber, title, clientName, content, value, lang }
   const { data: me } = useGetCurrentUser();
   const handlePrint = () => {
     const today = new Date().toLocaleDateString(lang, { year: "numeric", month: "long", day: "numeric" });
-    const html = `<!DOCTYPE html><html><head><title>${contractNumber}</title>
-    <style>
-      body{font-family:Arial,sans-serif;max-width:800px;margin:40px auto;color:#111;font-size:14px;line-height:1.7}
-      h1{font-size:22px;margin:0 0 4px}
-      .brand{font-size:22px;font-weight:700;color:#DDB398;margin-bottom:24px}
-      .header{border-bottom:2px solid #eee;padding-bottom:24px;margin-bottom:24px}
-      .meta{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;padding:16px;background:#f9f9f9;border-radius:8px;font-size:13px}
-      .meta-label{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#999;margin-bottom:2px}
-      .content{white-space:pre-wrap;font-size:13px;line-height:1.8;background:#fafafa;padding:24px;border-radius:8px;border:1px solid #eee}
-      @media print{body{margin:20px}}
-    </style></head><body>
-    <div class="brand">HaloLight Hub</div>
-    <div class="header">
-      <h1>${title}</h1>
-      <div style="color:#666;margin-top:4px">${contractNumber}</div>
-    </div>
-    <div class="meta">
-      <div><div class="meta-label">${t("contracts.print_prepared_by")}</div><div style="font-weight:600">${me?.fullName ?? ""}</div>${me?.companyName ? `<div style="color:#666;margin-top:2px;font-size:12px">${me.companyName}</div>` : ""}${me?.email ? `<div style="color:#666;font-size:12px">${me.email}</div>` : ""}</div>
-      <div><div class="meta-label">${t("contracts.client_section")}</div><div style="font-weight:600">${clientName}</div></div>
-      <div><div class="meta-label">${t("contracts.contract_value")}</div><div style="font-weight:600">${formatCurrency(Number(value))}</div></div>
-      <div><div class="meta-label">${t("contracts.print_date")}</div><div>${today}</div></div>
-    </div>
-    <div class="content">${content.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</div>
-    </body></html>`;
+    const logoUrl = (me as any)?.logoUrl ?? "";
+    const companyName = (me as any)?.companyName ?? (me as any)?.fullName ?? "";
+    const providerEmail = (me as any)?.email ?? "";
+    const providerPhone = (me as any)?.phone ?? "";
+
+    // Convert text content to clean HTML: replace heavy separators with subtle dividers
+    const escaped = content.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    const formattedBody = escaped
+      .replace(/═{5,}/g, '<hr class="sep-major">')
+      .replace(/─{5,}/g, '<hr class="sep-minor">')
+      .replace(/\n/g, "<br>");
+
+    const html = `<!DOCTYPE html><html lang="${lang}"><head><meta charset="utf-8"><title>${contractNumber}</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:Arial,Helvetica,sans-serif;max-width:820px;margin:40px auto;color:#111;font-size:13.5px;line-height:1.65;padding:0 28px}
+  .doc-header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:20px;border-bottom:2px solid #111;margin-bottom:24px}
+  .provider-block{}
+  .provider-block img{max-height:54px;max-width:180px;object-fit:contain;display:block;margin-bottom:8px}
+  .provider-name{font-size:17px;font-weight:700;line-height:1.2;margin-bottom:3px}
+  .provider-sub{font-size:11.5px;color:#555;line-height:1.5}
+  .doc-meta{text-align:right;flex-shrink:0;margin-left:24px}
+  .doc-type{font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:#999;margin-bottom:5px}
+  .doc-number{font-size:18px;font-weight:700;font-family:'Courier New',monospace;color:#111}
+  .doc-date{font-size:11.5px;color:#666;margin-top:5px}
+  .parties{display:grid;grid-template-columns:1fr 1fr;gap:28px;background:#f7f7f7;border-radius:8px;padding:16px 20px;margin-bottom:20px;font-size:12.5px}
+  .party-label{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:#999;font-weight:600;margin-bottom:5px}
+  .party-name{font-size:14px;font-weight:700;margin-bottom:2px}
+  .party-detail{color:#555;line-height:1.55}
+  .contract-value-bar{display:flex;justify-content:flex-end;margin-bottom:22px}
+  .cv-inner{background:#111;color:#fff;border-radius:8px;padding:10px 18px;text-align:right;display:inline-block}
+  .cv-label{font-size:10px;text-transform:uppercase;letter-spacing:.1em;opacity:.65;margin-bottom:3px}
+  .cv-amount{font-size:20px;font-weight:700}
+  .body-wrap{font-size:13px;line-height:1.8;color:#1a1a1a}
+  .sep-major{border:none;border-top:1.5px solid #d1d5db;margin:18px 0}
+  .sep-minor{border:none;border-top:1px solid #e9eaec;margin:10px 0}
+  @media print{
+    body{margin:0;padding:16px}
+    @page{margin:1.4cm 1.2cm}
+    .doc-header{padding-bottom:14px;margin-bottom:18px}
+  }
+</style></head><body>
+<div class="doc-header">
+  <div class="provider-block">
+    ${logoUrl ? `<img src="${logoUrl}" alt="${companyName.replace(/"/g, "&quot;")}">` : ""}
+    ${companyName ? `<div class="provider-name">${companyName}</div>` : ""}
+    <div class="provider-sub">${providerEmail}${providerPhone ? ` &middot; ${providerPhone}` : ""}</div>
+  </div>
+  <div class="doc-meta">
+    <div class="doc-type">${t("contracts.print_contract_label", { defaultValue: "CONTRACT" })}</div>
+    <div class="doc-number">${contractNumber}</div>
+    <div class="doc-date">${today}</div>
+  </div>
+</div>
+<div class="parties">
+  <div>
+    <div class="party-label">${t("contracts.print_prepared_by")}</div>
+    <div class="party-name">${(me as any)?.fullName ?? ""}</div>
+    ${companyName ? `<div class="party-detail">${companyName}</div>` : ""}
+    ${providerEmail ? `<div class="party-detail">${providerEmail}</div>` : ""}
+  </div>
+  <div>
+    <div class="party-label">${t("contracts.client_section")}</div>
+    <div class="party-name">${clientName}</div>
+    <div class="party-detail">${t("contracts.print_date")}: ${today}</div>
+  </div>
+</div>
+<div class="contract-value-bar">
+  <div class="cv-inner">
+    <div class="cv-label">${t("contracts.contract_value")}</div>
+    <div class="cv-amount">${formatCurrency(Number(value))}</div>
+  </div>
+</div>
+<div class="body-wrap">${formattedBody}</div>
+</body></html>`;
     const w = window.open("", "_blank");
     if (w) { w.document.write(html); w.document.close(); w.focus(); w.print(); }
   };

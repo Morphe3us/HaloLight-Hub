@@ -224,8 +224,10 @@ export function fillAllVariables(
     : "_________________________________";
 
   const replacements: Record<string, string> = {
-    // Contract meta — filled server-side on creation; client-side preview uses placeholder
-    contract_number: placeholders.to_be_specified,
+    // NOTE: contract_number is intentionally omitted here — it is injected
+    // server-side after the contract number is generated. The catch-all regex
+    // below uses a negative lookahead to leave {{contract_number}} untouched
+    // so the server can replace it with the real number.
 
     // Provider
     rental_company_name: provider.companyName || "",
@@ -261,8 +263,11 @@ export function fillAllVariables(
     setup_time: form.setupTime?.trim() ? form.setupTime.trim() : HIDE,
     pickup_time: form.pickupTime?.trim() ? form.pickupTime.trim() : HIDE,
 
-    // Equipment & package
-    equipment_list: form.equipmentDescription || placeholders.to_be_specified,
+    // Equipment & package — guard against "undefined" string from bad auto-fill
+    equipment_list:
+      form.equipmentDescription?.trim() && form.equipmentDescription.trim() !== "undefined"
+        ? form.equipmentDescription.trim()
+        : placeholders.to_be_specified,
     package_name: form.serviceName || placeholders.to_be_specified,
     rental_duration: form.rentalDuration || placeholders.to_be_specified,
     included_prints: form.includedPrints || placeholders.to_be_specified,
@@ -305,8 +310,9 @@ export function fillAllVariables(
     result = result.replace(new RegExp(`\\{\\{${key}\\}\\}`, "g"), value);
   }
 
-  // Final safety net: replace any remaining {{...}} with generic fallback
-  result = result.replace(/\{\{[a-zA-Z_]+\}\}/g, placeholders.to_be_specified);
+  // Final safety net: replace any remaining {{...}} with generic fallback.
+  // Negative lookahead preserves {{contract_number}} for server-side injection.
+  result = result.replace(/\{\{(?!contract_number\}\})[a-zA-Z_]+\}\}/g, placeholders.to_be_specified);
 
   // Post-processing:
   // 1. Remove any line that contains the HIDE sentinel

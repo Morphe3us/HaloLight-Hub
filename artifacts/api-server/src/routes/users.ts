@@ -30,6 +30,7 @@ router.patch("/users/me", requireAuth, async (req: Request, res: Response): Prom
     country, city, birthday, website, instagram, facebook, pinterest, tiktok, linkedin,
     businessType, mainMarket, photobooths, businessGoal,
     providerSignature, providerSignerTitle,
+    logoUrl,
   } = req.body;
   const updates: Partial<typeof usersTable.$inferInsert> = {};
 
@@ -55,6 +56,7 @@ router.patch("/users/me", requireAuth, async (req: Request, res: Response): Prom
   if (businessGoal !== undefined) updates.businessGoal = businessGoal;
   if (providerSignature !== undefined) updates.providerSignature = providerSignature || null;
   if (providerSignerTitle !== undefined) updates.providerSignerTitle = providerSignerTitle || null;
+  if (logoUrl !== undefined) updates.logoUrl = logoUrl || null;
 
   const [updated] = await db
     .update(usersTable)

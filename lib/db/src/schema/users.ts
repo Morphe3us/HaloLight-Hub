@@ -43,6 +43,9 @@ export const usersTable = pgTable("users", {
   providerSignature: text("provider_signature"),
   providerSignerTitle: text("provider_signer_title"),
 
+  // Company logo (data URI or URL) — shown on quotes, contracts, invoices
+  logoUrl: text("logo_url"),
+
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });

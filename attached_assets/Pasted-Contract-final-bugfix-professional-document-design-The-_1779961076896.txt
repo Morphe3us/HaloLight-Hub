@@ -1,0 +1,195 @@
+Contract final bugfix + professional document design.
+
+The contract system is almost good, but there are still important issues.
+
+I uploaded a screenshot and a generated contract PDF.
+
+Please fix the following only.
+
+==================================================
+
+1. Equipment selector bug
+   ==================================================
+
+Current issue:
+In the New Contract form, under “Select equipment”, the UI shows empty radio/checkbox circles with no equipment names.
+
+Expected:
+Each equipment option must clearly display:
+
+* equipment name
+* model
+* serial number if available
+* status if available
+
+Example:
+[ ] HaloLight Box — Canon 2000D — SN: HL-BOX-001
+
+If no equipment exists:
+Show:
+“No equipment registered yet. You can add equipment in Hardware.”
+
+Do not show empty circles.
+
+==================================================
+2. Equipment description bug
+============================
+
+Current issue:
+The generated contract displays:
+
+MATÉRIEL LOUÉ
+undefined
+
+Expected:
+If selected equipment exists:
+
+* show selected equipment details in the contract.
+
+If manual equipment description exists:
+
+* show manual description.
+
+If both exist:
+
+* show selected equipment first, then manual notes.
+
+If nothing exists:
+
+* show localized fallback:
+  FR: “Matériel à préciser”
+  EN: “Equipment to be specified”
+
+Never show:
+undefined
+null
+empty object
+empty array
+
+==================================================
+3. Auto-fill equipment description after selection
+==================================================
+
+When the user selects equipment in the form:
+
+* automatically populate/update the equipment description field
+* include selected equipment name/model/serial
+* allow the user to edit/add notes manually afterward
+
+This should make the contract content reflect the equipment selected.
+
+==================================================
+4. Contract number still not injected
+=====================================
+
+Current issue:
+The contract header shows:
+CON-2026-5217
+
+But inside the contract body it still says:
+Contrat N° : À préciser
+
+Expected:
+The contract body must show:
+Contrat N° : CON-2026-5217
+
+Fix:
+
+* Ensure {{contract_number}} is replaced after the final contract number is generated.
+* If contract number is generated server-side, render/replace the template after number generation.
+* Never fallback to “À préciser” for contract_number if contract.number exists.
+
+==================================================
+5. Logo upload for documents
+============================
+
+Add company logo support.
+
+In Settings / Profile:
+
+* allow user/company to upload or save a logo URL
+* store company logo
+* show preview
+* allow remove/replace
+
+In documents:
+
+* Quotes
+* Contracts
+* Invoices
+
+Use this logo in the header.
+
+Fallback:
+
+* if no custom logo, use HaloLight Hub logo or no logo depending current design.
+
+==================================================
+6. Professional document design
+===============================
+
+The document layout still looks too raw / AI-generated.
+
+Please improve the print/PDF layout for:
+
+* Contracts
+* Quotes
+* Invoices if shared template style exists
+
+Goal:
+The document should look like a professional client-facing business document.
+
+Design requirements:
+
+* clean header with logo, company name, document number
+* structured two-column layout for provider/client info
+* elegant section cards or clean dividers
+* better spacing
+* better typography
+* no heavy “════════════” separators
+* use subtle borders instead
+* clear pricing table
+* clear signature block
+* professional footer if useful
+* keep it printer/PDF friendly
+
+Important:
+Do not overdesign.
+Make it clean, premium, and easy to read.
+
+==================================================
+7. Provider signature
+=====================
+
+If provider signature is saved in Settings:
+
+* show it in the provider signature section
+* so the contract can be sent already signed by the rental company
+
+If missing:
+
+* show signature line.
+
+==================================================
+8. Verification
+===============
+
+Use the uploaded PDF as reference and verify:
+
+1. Equipment selector shows names, not empty circles.
+2. Selected equipment appears in equipment description.
+3. Generated contract never shows “undefined”.
+4. Contract number appears correctly in header and body.
+5. Logo can be uploaded/saved in Settings.
+6. Logo appears on contract PDF/print.
+7. Contract layout is visually cleaner and client-ready.
+8. Pricing remains correctly formatted in currency.
+9. No raw {{variables}} remain.
+10. Existing manual equipment description still works.
+
+Run typecheck and provide:
+
+* root cause
+* files changed
+* before/after summary
+* verification results
