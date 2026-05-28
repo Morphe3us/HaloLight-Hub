@@ -759,7 +759,8 @@
     "create_quote_btn": "Utwórz ofertę",
     "print_quote_date": "Data oferty",
     "print_from": "Od",
-    "print_prepared_for": "Przygotowany dla"
+    "print_prepared_for": "Przygotowany dla",
+    "print_quote_title": "OFERTA"
   },
   "contracts": {
     "title": "Umowy",
@@ -823,6 +824,7 @@
     "create_contract_btn": "Utwórz umowę",
     "print_prepared_by": "Przygotowany przez",
     "print_date": "Data",
+    "print_contract_label": "UMOWA",
     "client_phone_label": "Telefon klienta",
     "client_company_label": "Firma klienta",
     "client_address_label": "Adres klienta",

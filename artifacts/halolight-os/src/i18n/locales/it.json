@@ -759,7 +759,8 @@
     "create_quote_btn": "Crea preventivo",
     "print_quote_date": "Data preventivo",
     "print_from": "Da",
-    "print_prepared_for": "Preparato per"
+    "print_prepared_for": "Preparato per",
+    "print_quote_title": "PREVENTIVO"
   },
   "contracts": {
     "title": "Contratti",
@@ -823,6 +824,7 @@
     "create_contract_btn": "Crea contratto",
     "print_prepared_by": "Preparato da",
     "print_date": "Data",
+    "print_contract_label": "CONTRATTO",
     "client_phone_label": "Telefono del cliente",
     "client_company_label": "Azienda del cliente",
     "client_address_label": "Indirizzo del cliente",

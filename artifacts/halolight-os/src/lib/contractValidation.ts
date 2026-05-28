@@ -5,8 +5,45 @@ const INCLUDED_TEXT: Record<string, string> = {
   it: "Incluso", nl: "Inbegrepen", pl: "Wliczone", pt: "Incluído",
 };
 
+const ADDITIONAL_OPTIONS_INCLUDED: Record<string, string> = {
+  en: "Additional options included",
+  fr: "Options supplémentaires incluses",
+  de: "Zusätzliche Optionen inklusive",
+  es: "Opciones adicionales incluidas",
+  it: "Opzioni aggiuntive incluse",
+  nl: "Extra opties inbegrepen",
+  pl: "Opcje dodatkowe w cenie",
+  pt: "Opções adicionais incluídas",
+};
+
+const EMAIL_NOT_PROVIDED: Record<string, string> = {
+  en: "Email not provided",
+  fr: "E-mail non renseigné",
+  de: "E-Mail nicht angegeben",
+  es: "Correo no especificado",
+  it: "Email non fornita",
+  nl: "E-mail niet opgegeven",
+  pl: "E-mail nie podany",
+  pt: "E-mail não informado",
+};
+
 function getIncludedText(lang: string): string {
   return INCLUDED_TEXT[lang] ?? "Included";
+}
+
+function isPlaceholderEmail(email: string | null | undefined): boolean {
+  if (!email) return false;
+  return (
+    email.includes("placeholder.com") ||
+    email.includes("@placeholder") ||
+    /^user_[a-f0-9]+@/.test(email)
+  );
+}
+
+function sanitizeEmail(email: string | null | undefined, lang: string): string {
+  if (!email) return "";
+  if (isPlaceholderEmail(email)) return EMAIL_NOT_PROVIDED[lang] ?? "Email not provided";
+  return email;
 }
 
 function formatPrice(amount: number, currency: string, lang: string): string {
@@ -233,7 +270,7 @@ export function fillAllVariables(
     rental_company_name: provider.companyName || "",
     rental_company_representative: providerName || "",
     rental_company_address: placeholders.not_provided,
-    rental_company_email: provider.email || "",
+    rental_company_email: sanitizeEmail(provider.email, lang),
     rental_company_phone: provider.phone || "",
     rental_company_website: placeholders.not_provided,
     rental_company_vat: placeholders.not_provided,
@@ -251,7 +288,7 @@ export function fillAllVariables(
     client_company: form.clientCompany || placeholders.not_provided,
     client_address: form.clientAddress || placeholders.not_provided,
     client_phone: form.clientPhone || placeholders.not_provided,
-    client_email: form.clientEmail || "",
+    client_email: sanitizeEmail(form.clientEmail, lang),
 
     // Event
     event_type: form.eventType || placeholders.to_be_specified,
@@ -271,7 +308,12 @@ export function fillAllVariables(
     package_name: form.serviceName || placeholders.to_be_specified,
     rental_duration: form.rentalDuration || placeholders.to_be_specified,
     included_prints: form.includedPrints || placeholders.to_be_specified,
-    options_list: form.optionsList || placeholders.no_options,
+    options_list:
+      optionsVal > 0 && !form.optionsList?.trim()
+        ? (ADDITIONAL_OPTIONS_INCLUDED[lang] ?? "Additional options included")
+        : optionsVal === 0 && !form.optionsList?.trim()
+          ? HIDE
+          : form.optionsList.trim(),
 
     // Service option flags — show "Included" or hide the entire line
     digital_gallery: form.digitalGallery ? included : HIDE,

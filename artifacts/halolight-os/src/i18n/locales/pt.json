@@ -759,7 +759,8 @@
     "create_quote_btn": "Criar orçamento",
     "print_quote_date": "Data do orçamento",
     "print_from": "De",
-    "print_prepared_for": "Preparado para"
+    "print_prepared_for": "Preparado para",
+    "print_quote_title": "ORÇAMENTO"
   },
   "contracts": {
     "title": "Contratos",
@@ -823,6 +824,7 @@
     "create_contract_btn": "Criar contrato",
     "print_prepared_by": "Preparado por",
     "print_date": "Data",
+    "print_contract_label": "CONTRATO",
     "client_phone_label": "Telefone do cliente",
     "client_company_label": "Empresa do cliente",
     "client_address_label": "Endereço do cliente",

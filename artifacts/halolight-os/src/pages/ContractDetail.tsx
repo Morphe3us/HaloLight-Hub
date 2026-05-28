@@ -41,7 +41,8 @@ function PrintButton({ contractNumber, title, clientName, content, value, lang }
     const today = new Date().toLocaleDateString(lang, { year: "numeric", month: "long", day: "numeric" });
     const logoUrl = (me as any)?.logoUrl ?? "";
     const companyName = (me as any)?.companyName ?? (me as any)?.fullName ?? "";
-    const providerEmail = (me as any)?.email ?? "";
+    const rawEmail = (me as any)?.email ?? "";
+    const providerEmail = (!rawEmail || rawEmail.includes("placeholder.com") || /^user_[a-f0-9]+@/.test(rawEmail)) ? "" : rawEmail;
     const providerPhone = (me as any)?.phone ?? "";
 
     // Convert text content to clean HTML: replace heavy separators with subtle dividers
@@ -115,7 +116,7 @@ function PrintButton({ contractNumber, title, clientName, content, value, lang }
 <div class="body-wrap">${formattedBody}</div>
 </body></html>`;
     const w = window.open("", "_blank");
-    if (w) { w.document.write(html); w.document.close(); w.focus(); w.print(); }
+    if (w) { w.document.write(html); w.document.close(); w.document.title = contractNumber; w.focus(); w.print(); }
   };
   return <Button variant="outline" onClick={handlePrint} className="gap-2"><Printer className="w-4 h-4" /> {t("contracts.export_pdf_btn")}</Button>;
 }

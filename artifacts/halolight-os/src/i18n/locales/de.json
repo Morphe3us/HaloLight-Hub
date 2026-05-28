@@ -759,7 +759,8 @@
     "create_quote_btn": "Angebot erstellen",
     "print_quote_date": "Angebotsdatum",
     "print_from": "Von",
-    "print_prepared_for": "Erstellt für"
+    "print_prepared_for": "Erstellt für",
+    "print_quote_title": "ANGEBOT"
   },
   "contracts": {
     "title": "Verträge",
@@ -823,6 +824,7 @@
     "create_contract_btn": "Vertrag erstellen",
     "print_prepared_by": "Erstellt von",
     "print_date": "Datum",
+    "print_contract_label": "VERTRAG",
     "client_phone_label": "Kundentelefon",
     "client_company_label": "Kundenunternehmen",
     "client_address_label": "Kundenadresse",

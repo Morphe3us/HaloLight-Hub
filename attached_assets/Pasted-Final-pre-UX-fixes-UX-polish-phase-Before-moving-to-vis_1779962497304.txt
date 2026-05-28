@@ -1,0 +1,413 @@
+Final pre-UX fixes + UX polish phase.
+
+Before moving to visual/UX improvements, please finish the remaining functional issues from the latest beta feedback and contract testing.
+
+==================================================
+PHASE 1 — FINAL FUNCTIONAL FIXES BEFORE UX POLISH
+=================================================
+
+1. Contract equipment selector
+
+Current issue:
+In the New Contract form, the equipment selector must clearly display the registered equipment.
+
+Fix:
+
+* Show equipment product/model name
+* Serial number if available
+* Status if available
+
+Example:
+[ ] HaloLight Box — Canon 2000D — SN: HL-BOX-001
+
+If no equipment exists:
+Show:
+“No equipment registered yet. Add equipment in Hardware.”
+
+2. Equipment description in contract
+
+Current issue:
+Contract output must never show:
+undefined
+null
+empty object
+empty array
+
+Fix:
+
+* If equipment is selected, show selected equipment details.
+* If manual equipment description exists, show it too.
+* If both exist, show selected equipment first, then manual notes.
+* If nothing exists, show localized fallback:
+  FR: Matériel à préciser
+  EN: Equipment to be specified
+
+3. Auto-fill equipment description
+
+When equipment is selected:
+
+* automatically populate equipment description
+* include product/model/serial number
+* allow user to manually edit/add notes after selection
+
+4. Contract number
+
+Current issue:
+Document header shows the real number, but body previously showed:
+Contrat N° : À préciser
+
+Fix:
+
+* inject the real generated contract number into {{contract_number}}
+* replace after final contract number generation if needed
+* never use fallback for contract_number when contract.number exists
+
+Expected:
+Contrat N° : CON-2026-XXXX
+
+5. Company logo on documents
+
+Add company logo support in Settings/Profile:
+
+* upload or save logo URL
+* preview logo
+* remove/replace logo
+
+Use logo on:
+
+* quotes
+* contracts
+* invoices
+
+Important logo fallback rule:
+If user/company uploaded a logo, display it.
+If no logo is uploaded, show no logo.
+Do NOT use HaloLight Hub logo as fallback on customer-facing documents.
+
+The document belongs to the rental company, not HaloLight.
+
+6. Provider signature
+
+If provider signature is saved in Settings:
+
+* show it in provider signature section
+* contract can be sent already signed by the rental company
+
+If missing:
+
+* keep blank signature line.
+
+7. Placeholder email issue
+
+Current issue:
+Generated documents can still show placeholder emails like:
+[user_xxxx@placeholder.com](mailto:user_xxxx@placeholder.com)
+
+This is not acceptable on client-facing documents.
+
+Fix:
+
+* Sync real email from Clerk/user profile wherever possible.
+* If real email is missing, show a clear editable field in Settings/Profile.
+* Do not display placeholder email on quotes/contracts/invoices.
+* If no valid email is available, show localized fallback:
+  FR: E-mail non renseigné
+  EN: Email not provided
+
+8. Document language issue
+
+Current issue:
+Some document labels can still appear in English, for example:
+CONTRACT
+
+Fix:
+
+* Contract header must use the selected document/user language.
+* FR should show:
+  CONTRAT
+* EN:
+  CONTRACT
+* ES:
+  CONTRATO
+* DE:
+  VERTRAG
+* IT:
+  CONTRATTO
+* PT:
+  CONTRATO
+* PL:
+  UMOWA
+* NL:
+  CONTRACT
+
+Apply same principle to:
+
+* quotes
+* contracts
+* invoices
+* print/export headers
+
+9. Options consistency
+
+Current issue:
+The contract can show:
+Options supplémentaires : Aucune option supplémentaire
+
+while pricing shows:
+Options supplémentaires : 120,00 €
+
+This is incoherent.
+
+Fix:
+
+* If options price > 0 and options description is empty, show localized fallback:
+  FR: Options supplémentaires incluses
+  EN: Additional options included
+* If options description exists, show it.
+* If options price = 0 and no options description, hide the options line.
+* Never show “Aucune option supplémentaire” when an options amount exists.
+
+10. Pricing / optional lines
+
+Keep:
+
+* correct currency formatting
+* hide zero discount
+* hide zero optional fees when irrelevant
+* no duplicated currency code
+* no raw {{variables}}
+
+Rules:
+
+* If discount = 0, hide discount line.
+* If delivery fees = 0 and delivery is not selected, hide delivery fees.
+* If options price = 0 and no options, hide options price.
+* If tax = 0, hide tax line if applicable.
+* Total must remain visible.
+
+11. Contract text quality
+
+User-filled free text can contain typos, but the system should not make the contract look unprofessional.
+
+Add optional improvement:
+
+* Add a “Improve wording” / “Clean text” button for long free-text sections:
+
+  * equipment notes
+  * deposit conditions
+  * cancellation terms
+  * payment terms
+* It should not change legal meaning.
+* It should only fix spelling, grammar and clarity.
+* Keep this optional, not automatic.
+
+12. Document design cleanup
+
+Current output is functional but still too raw / AI-generated.
+
+Improve print/PDF layout for:
+
+* contracts
+* quotes
+* invoices
+
+Design goal:
+Professional, clean, client-facing business document.
+
+Requirements:
+
+* clean header with company logo if available
+* no logo if no company logo uploaded
+* document number clearly visible
+* provider/client blocks in a clean layout
+* event details in a clean section
+* pricing table cleaner
+* signature block cleaner
+* better spacing
+* no heavy “══════” separators
+* use subtle borders/dividers
+* printer/PDF friendly
+* no overdesign
+* make it look ready to send to a real client
+
+13. Browser print artifacts
+
+Current PDFs can show browser artifacts like:
+about:blank
+browser date/time
+page title
+
+If possible:
+
+* improve print CSS/title handling to reduce these artifacts
+* set document title properly before print
+* ensure the exported PDF title is the contract number
+
+If browser limitations prevent full removal, document the limitation clearly.
+
+14. Final verification for contracts
+
+Create a new contract after template reset if needed.
+
+Verify:
+
+* equipment names visible in selector
+* selected equipment appears in contract
+* no undefined
+* contract number appears in header and body
+* logo appears if uploaded
+* no logo appears if not uploaded
+* placeholder email never appears
+* document header language is correct
+* options line is coherent with options pricing
+* provider signature appears if saved
+* pricing is clean
+* print/export is professional
+* no raw {{variables}}
+
+==================================================
+PHASE 2 — UX POLISH / JEANNE FEEDBACK
+=====================================
+
+After Phase 1 is verified, move to UX polish.
+
+GLOBAL UX / NAVIGATION
+
+1. Language switch
+
+* Make the top “FR” language button clickable.
+* Allow users to change language directly from the header.
+* Changing language must update the app immediately and invalidate/refetch language-sensitive queries.
+
+2. Home button
+
+* Add a visible Home/Dashboard button in the top right/header area.
+
+3. User role label
+
+* Replace “Client” under user names with a more neutral term like:
+
+  * Collaborator
+  * Member
+  * Workspace member
+    Localized in all 8 languages.
+
+4. Logo and theme
+
+* Adapt the logo properly to dark mode.
+* Improve light mode with slightly more vivid/premium accent colors.
+* Keep the beige/black premium HaloLight identity.
+
+5. Hover dropdown menus
+
+* Add useful hover dropdowns where relevant:
+
+  * Sales
+  * Support
+  * Hardware
+  * Admin
+* Must still work on mobile with click/tap.
+
+DASHBOARD
+
+6. Continue Learning image
+
+* Add a proper course image/thumbnail to the “Continue Learning” card.
+
+7. Dashboard widgets
+   Allow users to personalize dashboard organization:
+
+* show/hide widgets
+* reorder widgets
+* save layout preference
+
+8. Pipeline values
+   Clarify the value displayed in the pipeline:
+
+* revenue potential
+* signed revenue
+* paid revenue
+* pending revenue
+  Avoid ambiguity.
+
+9. Graphical data view
+   Add charts for:
+
+* prospects
+* quotes
+* contracts
+* invoices
+* revenue
+* conversion rate
+
+EVENTS
+
+10. Upcoming events sorting
+
+* Sort upcoming events from nearest to furthest.
+* Closest event first.
+
+11. Auto-update past events
+
+* If event date is passed, update status automatically or visually classify as past/completed.
+* Do not keep old events as upcoming.
+
+12. Event completion
+    Add:
+
+* “Mark as completed” button
+* comments/notes area on events
+* better past events interface
+
+SALES
+
+13. Quotes status issue
+
+* Fix the quote status button bug.
+* Allow quote status to be edited directly from the quote list page.
+
+14. Documents customization
+    Add more customization on quotes/invoices/contracts:
+
+* accent color
+* logo
+* layout style
+* optional notes
+* payment terms
+* footer/legal text
+
+AI ASSISTANT / COMMUNITY
+
+15. AI Assistant display issues
+
+* Fix responsive/display issues.
+* Must be clean on mobile and desktop.
+
+16. Community display bug
+
+* Fix reported layout/rendering issue in Community.
+
+ACADEMY / HARDWARE VISUALS
+
+17. Academy course images
+
+* Replace blurry placeholders with real course thumbnails/images.
+* Use selected language asset if available.
+
+18. Hardware visuals
+
+* Add more product/equipment visuals to improve attractiveness.
+* Hardware pages should feel more visual and premium.
+
+==================================================
+GENERAL RULES
+=============
+
+* Do not break existing functionality.
+* Keep admin views powerful, client views simple.
+* All text must be i18n-ready.
+* Support all 8 languages:
+  EN, FR, ES, DE, IT, PT, PL, NL.
+* Respect selected currency/language.
+* Run typecheck.
+* Provide before/after summary and verification.

@@ -76,7 +76,10 @@ export default function Events() {
   const { mutate: updateEvent, isPending: isUpdating } = useUpdateEvent();
   const { mutate: deleteEvent, isPending: isDeleting } = useDeleteEvent();
 
-  const events = eventsData?.items ?? [];
+  const now = new Date();
+  const events = [...(eventsData?.items ?? [])].sort(
+    (a, b) => new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime()
+  );
 
   const openCreate = () => {
     setEditingId(null);
@@ -209,17 +212,25 @@ export default function Events() {
         </div>
       ) : (
         <div className="space-y-4">
-          {events.map((ev) => (
-            <Card key={ev.id} className="border border-border shadow-sm hover:shadow-md transition-all">
+          {events.map((ev) => {
+            const isPast = new Date(ev.eventDate) < now && ev.status === "upcoming";
+            return (
+            <Card key={ev.id} className={cn("border border-border shadow-sm hover:shadow-md transition-all", isPast && "opacity-60")}>
               <CardContent className="p-5">
+                {isPast && (
+                  <div className="text-xs text-warning font-medium mb-2 flex items-center gap-1">
+                    <Clock className="w-3 h-3" />
+                    {t("events.past_event_notice", { defaultValue: "This event date has passed" })}
+                  </div>
+                )}
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex gap-4 flex-1 min-w-0">
                     {/* Date box */}
-                    <div className="flex-shrink-0 h-14 w-14 rounded-xl bg-primary/10 flex flex-col items-center justify-center">
-                      <span className="text-xs font-medium text-primary uppercase">
+                    <div className={cn("flex-shrink-0 h-14 w-14 rounded-xl flex flex-col items-center justify-center", isPast ? "bg-muted" : "bg-primary/10")}>
+                      <span className={cn("text-xs font-medium uppercase", isPast ? "text-muted-foreground" : "text-primary")}>
                         {format(parseISO(ev.eventDate), "MMM")}
                       </span>
-                      <span className="text-2xl font-bold text-primary leading-none">
+                      <span className={cn("text-2xl font-bold leading-none", isPast ? "text-muted-foreground" : "text-primary")}>
                         {format(parseISO(ev.eventDate), "d")}
                       </span>
                     </div>
@@ -291,7 +302,8 @@ export default function Events() {
                 </div>
               </CardContent>
             </Card>
-          ))}
+            );
+          })}
         </div>
       )}
 

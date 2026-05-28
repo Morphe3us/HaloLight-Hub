@@ -51,6 +51,8 @@ function PrintButton({ invoice, items, lang }: { invoice: any; items: any[]; lan
       : "";
     const logoUrl = (me as any)?.logoUrl ?? "";
     const companyName = (me as any)?.companyName ?? (me as any)?.fullName ?? "";
+    const rawEmail = (me as any)?.email ?? "";
+    const providerEmail = (!rawEmail || rawEmail.includes("placeholder.com") || /^user_[a-f0-9]+@/.test(rawEmail)) ? "" : rawEmail;
     const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${invoice.invoiceNumber}</title>
     <style>
       *{box-sizing:border-box;margin:0;padding:0}
@@ -81,7 +83,7 @@ function PrintButton({ invoice, items, lang }: { invoice: any; items: any[]; lan
       <div class="provider-block">
         ${logoUrl ? `<img src="${logoUrl}" alt="${companyName.replace(/"/g, "&quot;")}">` : ""}
         ${companyName ? `<div class="provider-name">${companyName}</div>` : ""}
-        ${(me as any)?.email ? `<div style="font-size:11.5px;color:#555">${(me as any).email}</div>` : ""}
+        ${providerEmail ? `<div style="font-size:11.5px;color:#555">${providerEmail}</div>` : ""}
       </div>
       <div class="doc-meta">
         <div class="doc-type">${t("invoices.print_invoice", { defaultValue: "INVOICE" }).toUpperCase()}</div>
@@ -119,7 +121,7 @@ function PrintButton({ invoice, items, lang }: { invoice: any; items: any[]; lan
     ${invoice.terms ? `<div class="section"><div class="label">${t("invoices.payment_terms_section")}</div><div style="font-size:13px;color:#666;white-space:pre-wrap">${invoice.terms}</div></div>` : ""}
     </body></html>`;
     const w = window.open("", "_blank");
-    if (w) { w.document.write(html); w.document.close(); w.focus(); w.print(); }
+    if (w) { w.document.write(html); w.document.close(); w.document.title = invoice.invoiceNumber; w.focus(); w.print(); }
   };
   return <Button variant="outline" onClick={handlePrint} className="gap-2"><Printer className="w-4 h-4" /> {t("quotes.print_btn")}</Button>;
 }

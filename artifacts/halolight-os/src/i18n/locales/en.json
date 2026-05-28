@@ -759,7 +759,8 @@
     "create_quote_btn": "Create Quote",
     "print_quote_date": "Quote Date",
     "print_from": "From",
-    "print_prepared_for": "Prepared For"
+    "print_prepared_for": "Prepared For",
+    "print_quote_title": "QUOTE"
   },
   "contracts": {
     "title": "Contracts",
@@ -823,6 +824,7 @@
     "create_contract_btn": "Create Contract",
     "print_prepared_by": "Prepared By",
     "print_date": "Date",
+    "print_contract_label": "CONTRACT",
     "client_phone_label": "Client Phone",
     "client_company_label": "Client Company",
     "client_address_label": "Client Address",

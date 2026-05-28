@@ -46,6 +46,8 @@ function PrintPreview({ quoteNumber, title, clientName, clientEmail, items, subt
       : null;
     const logoUrl = (me as any)?.logoUrl ?? "";
     const companyName = (me as any)?.companyName ?? (me as any)?.fullName ?? "";
+    const rawEmail = (me as any)?.email ?? "";
+    const providerEmail = (!rawEmail || rawEmail.includes("placeholder.com") || /^user_[a-f0-9]+@/.test(rawEmail)) ? "" : rawEmail;
     const html = `<!DOCTYPE html><html lang="${lang}"><head><meta charset="utf-8"><title>${quoteNumber}</title>
     <style>
       *{box-sizing:border-box;margin:0;padding:0}
@@ -76,7 +78,7 @@ function PrintPreview({ quoteNumber, title, clientName, clientEmail, items, subt
       <div class="provider-block">
         ${logoUrl ? `<img src="${logoUrl}" alt="${companyName.replace(/"/g, "&quot;")}">` : ""}
         ${companyName ? `<div class="provider-name">${companyName}</div>` : ""}
-        ${(me as any)?.email ? `<div style="font-size:11.5px;color:#555">${(me as any).email}</div>` : ""}
+        ${providerEmail ? `<div style="font-size:11.5px;color:#555">${providerEmail}</div>` : ""}
       </div>
       <div class="doc-meta">
         <div class="doc-type">${t("quotes.print_quote_title", { defaultValue: "QUOTE" })}</div>
@@ -113,7 +115,7 @@ function PrintPreview({ quoteNumber, title, clientName, clientEmail, items, subt
     ${terms ? `<div class="section"><div class="label">${t("quotes.terms_section")}</div><div class="notes">${terms}</div></div>` : ""}
     </body></html>`;
     const w = window.open("", "_blank");
-    if (w) { w.document.write(html); w.document.close(); w.focus(); w.print(); }
+    if (w) { w.document.write(html); w.document.close(); w.document.title = quoteNumber; w.focus(); w.print(); }
   };
 
   return (
