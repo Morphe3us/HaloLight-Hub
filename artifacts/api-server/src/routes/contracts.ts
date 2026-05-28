@@ -1,6 +1,6 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import { eq, and, desc, sql } from "drizzle-orm";
-import { db, contracts, contractTemplates, leads, quotes } from "@workspace/db";
+import { db, contracts, contractTemplates, leads, quotes, events } from "@workspace/db";
 import { requireAuth } from "../middlewares/requireAuth";
 import { getOrCreateUser } from "../lib/userSync";
 import { DEFAULT_CONTRACT_TEMPLATES } from "../lib/defaultContractTemplates";
@@ -214,6 +214,46 @@ router.patch("/contracts/:id/status", requireAuth, async (req: Request, res: Res
   if (existing.leadId) {
     if (status === "signed") await updateLeadPipelineStage(existing.leadId, "contract_signed", user.id);
     else if (status === "cancelled") await updateLeadPipelineStage(existing.leadId, "lost", user.id);
+  }
+
+  // Auto-create or update linked event when contract is signed
+  if (status === "signed" && existing.eventDate) {
+    const eventTitle = existing.eventType
+      ? `${existing.clientName} — ${existing.eventType}`
+      : existing.clientName;
+    const [linked] = await db.select().from(events)
+      .where(and(eq(events.contractId, existing.id), eq(events.userId, user.id)));
+    if (linked) {
+      await db.update(events).set({
+        title: eventTitle,
+        type: existing.eventType ?? linked.type,
+        eventDate: existing.eventDate,
+        revenue: existing.value,
+        currency: existing.currency ?? linked.currency,
+        leadId: existing.leadId ?? linked.leadId,
+        quoteId: existing.quoteId ?? linked.quoteId,
+        updatedAt: new Date(),
+      }).where(eq(events.id, linked.id));
+    } else {
+      await db.insert(events).values({
+        userId: user.id,
+        contractId: existing.id,
+        leadId: existing.leadId ?? null,
+        quoteId: existing.quoteId ?? null,
+        title: eventTitle,
+        type: existing.eventType ?? null,
+        eventDate: existing.eventDate,
+        revenue: existing.value,
+        currency: existing.currency ?? null,
+        status: "upcoming",
+      });
+    }
+  }
+
+  // Cancel linked event when contract is cancelled
+  if (status === "cancelled") {
+    await db.update(events).set({ status: "cancelled", updatedAt: new Date() })
+      .where(and(eq(events.contractId, existing.id), eq(events.userId, user.id)));
   }
 
   res.json(updated);

@@ -1,5 +1,5 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { eq, and, desc, count, gte, lt } from "drizzle-orm";
+import { eq, and, desc, count, gte } from "drizzle-orm";
 import { db, events } from "@workspace/db";
 import { requireAuth } from "../middlewares/requireAuth";
 import { getOrCreateUser } from "../lib/userSync";
@@ -107,7 +107,7 @@ router.patch("/events/:id", requireAuth, async (req: Request, res: Response): Pr
 
   if (!existing) { res.status(404).json({ error: "Event not found" }); return; }
 
-  const { title, description, eventDate, location, type, status, notes } = req.body as {
+  const { title, description, eventDate, location, type, status, notes, revenue, currency } = req.body as {
     title?: string;
     description?: string;
     eventDate?: string;
@@ -115,6 +115,8 @@ router.patch("/events/:id", requireAuth, async (req: Request, res: Response): Pr
     type?: string;
     status?: "upcoming" | "active" | "completed" | "cancelled";
     notes?: string;
+    revenue?: string;
+    currency?: string;
   };
 
   const [updated] = await db
@@ -127,6 +129,8 @@ router.patch("/events/:id", requireAuth, async (req: Request, res: Response): Pr
       ...(type !== undefined && { type }),
       ...(status !== undefined && { status }),
       ...(notes !== undefined && { notes }),
+      ...(revenue !== undefined && { revenue }),
+      ...(currency !== undefined && { currency }),
       updatedAt: new Date(),
     })
     .where(and(eq(events.id, eventId), eq(events.userId, user.id)))
@@ -164,6 +168,11 @@ function formatEvent(e: typeof events.$inferSelect) {
     type: e.type ?? null,
     status,
     notes: e.notes ?? null,
+    contractId: e.contractId ?? null,
+    leadId: e.leadId ?? null,
+    quoteId: e.quoteId ?? null,
+    revenue: e.revenue ?? null,
+    currency: e.currency ?? null,
     createdAt: e.createdAt.toISOString(),
   };
 }

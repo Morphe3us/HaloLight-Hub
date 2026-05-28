@@ -745,6 +745,12 @@ export default function Contracts() {
                       placeholder="Custom template, digital gallery, USB key…"
                     />
                   </div>
+                  {Number(form.optionsPrice) > 0 && !form.optionsList.trim() && (
+                    <div className="col-span-2 flex items-start gap-2 text-xs text-warning bg-warning/10 border border-warning/20 rounded-lg px-3 py-2">
+                      <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                      <span>{t("contracts.options_description_warning", { defaultValue: "An options amount is set but no description was provided. A generic label will appear in the document." })}</span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Service option checkboxes */}

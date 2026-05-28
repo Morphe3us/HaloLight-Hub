@@ -44,6 +44,7 @@ function PrintButton({ contractNumber, title, clientName, content, value, lang }
     const rawEmail = (me as any)?.email ?? "";
     const providerEmail = (!rawEmail || rawEmail.includes("placeholder.com") || /^user_[a-f0-9]+@/.test(rawEmail)) ? "" : rawEmail;
     const providerPhone = (me as any)?.phone ?? "";
+    const sep = lang === "fr" ? " :" : ":";
 
     // Convert text content to clean HTML: replace heavy separators with subtle dividers
     const escaped = content.replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -78,7 +79,7 @@ function PrintButton({ contractNumber, title, clientName, content, value, lang }
   .sep-minor{border:none;border-top:1px solid #e9eaec;margin:10px 0}
   @media print{
     body{margin:0;padding:16px}
-    @page{margin:1.4cm 1.2cm}
+    @page{size:A4;margin:1.4cm 1.2cm}
     .doc-header{padding-bottom:14px;margin-bottom:18px}
   }
 </style></head><body>
@@ -104,7 +105,7 @@ function PrintButton({ contractNumber, title, clientName, content, value, lang }
   <div>
     <div class="party-label">${t("contracts.client_section")}</div>
     <div class="party-name">${clientName}</div>
-    <div class="party-detail">${t("contracts.print_date")}: ${today}</div>
+    <div class="party-detail">${t("contracts.print_date")}${sep} ${today}</div>
   </div>
 </div>
 <div class="contract-value-bar">

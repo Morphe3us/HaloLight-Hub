@@ -401,6 +401,16 @@ export interface Event {
   status: EventStatus;
   /** @nullable */
   notes?: string | null;
+  /** @nullable */
+  contractId?: string | null;
+  /** @nullable */
+  leadId?: string | null;
+  /** @nullable */
+  quoteId?: string | null;
+  /** @nullable */
+  revenue?: string | null;
+  /** @nullable */
+  currency?: string | null;
   createdAt: string;
 }
 
@@ -436,6 +446,8 @@ export interface EventUpdate {
   type?: string;
   status?: EventUpdateStatus;
   notes?: string;
+  revenue?: string;
+  currency?: string;
 }
 
 export type LeadSource = typeof LeadSource[keyof typeof LeadSource];

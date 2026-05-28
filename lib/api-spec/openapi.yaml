@@ -3817,6 +3817,16 @@ components:
           enum: [upcoming, active, completed, cancelled]
         notes:
           type: ["string", "null"]
+        contractId:
+          type: ["string", "null"]
+        leadId:
+          type: ["string", "null"]
+        quoteId:
+          type: ["string", "null"]
+        revenue:
+          type: ["string", "null"]
+        currency:
+          type: ["string", "null"]
         createdAt:
           type: string
           format: date-time
@@ -3868,6 +3878,10 @@ components:
           type: string
           enum: [upcoming, active, completed, cancelled]
         notes:
+          type: string
+        revenue:
+          type: string
+        currency:
           type: string
 
     # ─── Leads / CRM ─────────────────────────────────────────────────────────

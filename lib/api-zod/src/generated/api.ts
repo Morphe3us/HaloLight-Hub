@@ -674,6 +674,11 @@ export const ListEventsResponse = zod.object({
   "type": zod.string().nullish(),
   "status": zod.enum(['upcoming', 'active', 'completed', 'cancelled']),
   "notes": zod.string().nullish(),
+  "contractId": zod.string().nullish(),
+  "leadId": zod.string().nullish(),
+  "quoteId": zod.string().nullish(),
+  "revenue": zod.string().nullish(),
+  "currency": zod.string().nullish(),
   "createdAt": zod.coerce.date()
 })),
   "total": zod.number()
@@ -710,6 +715,11 @@ export const GetEventResponse = zod.object({
   "type": zod.string().nullish(),
   "status": zod.enum(['upcoming', 'active', 'completed', 'cancelled']),
   "notes": zod.string().nullish(),
+  "contractId": zod.string().nullish(),
+  "leadId": zod.string().nullish(),
+  "quoteId": zod.string().nullish(),
+  "revenue": zod.string().nullish(),
+  "currency": zod.string().nullish(),
   "createdAt": zod.coerce.date()
 })
 
@@ -728,7 +738,9 @@ export const UpdateEventBody = zod.object({
   "location": zod.string().optional(),
   "type": zod.string().optional(),
   "status": zod.enum(['upcoming', 'active', 'completed', 'cancelled']).optional(),
-  "notes": zod.string().optional()
+  "notes": zod.string().optional(),
+  "revenue": zod.string().optional(),
+  "currency": zod.string().optional()
 })
 
 export const UpdateEventResponse = zod.object({
@@ -741,6 +753,11 @@ export const UpdateEventResponse = zod.object({
   "type": zod.string().nullish(),
   "status": zod.enum(['upcoming', 'active', 'completed', 'cancelled']),
   "notes": zod.string().nullish(),
+  "contractId": zod.string().nullish(),
+  "leadId": zod.string().nullish(),
+  "quoteId": zod.string().nullish(),
+  "revenue": zod.string().nullish(),
+  "currency": zod.string().nullish(),
   "createdAt": zod.coerce.date()
 })
 

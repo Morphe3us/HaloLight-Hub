@@ -5,15 +5,15 @@ const INCLUDED_TEXT: Record<string, string> = {
   it: "Incluso", nl: "Inbegrepen", pl: "Wliczone", pt: "Incluído",
 };
 
-const ADDITIONAL_OPTIONS_INCLUDED: Record<string, string> = {
-  en: "Additional options included",
-  fr: "Options supplémentaires incluses",
-  de: "Zusätzliche Optionen inklusive",
-  es: "Opciones adicionales incluidas",
-  it: "Opzioni aggiuntive incluse",
-  nl: "Extra opties inbegrepen",
-  pl: "Opcje dodatkowe w cenie",
-  pt: "Opções adicionais incluídas",
+const ADDITIONAL_OPTIONS_PAID: Record<string, string> = {
+  en: "Additional paid options",
+  fr: "Options supplémentaires facturées",
+  de: "Kostenpflichtige Zusatzoptionen",
+  es: "Opciones adicionales a cargo",
+  it: "Opzioni aggiuntive a pagamento",
+  nl: "Betaalde extra opties",
+  pl: "Dodatkowe opcje płatne",
+  pt: "Opções adicionais pagas",
 };
 
 const EMAIL_NOT_PROVIDED: Record<string, string> = {
@@ -269,11 +269,11 @@ export function fillAllVariables(
     // Provider
     rental_company_name: provider.companyName || "",
     rental_company_representative: providerName || "",
-    rental_company_address: placeholders.not_provided,
+    rental_company_address: HIDE,
     rental_company_email: sanitizeEmail(provider.email, lang),
     rental_company_phone: provider.phone || "",
-    rental_company_website: placeholders.not_provided,
-    rental_company_vat: placeholders.not_provided,
+    rental_company_website: HIDE,
+    rental_company_vat: HIDE,
 
     // Provider signature block
     provider_signature: providerSig,
@@ -295,7 +295,7 @@ export function fillAllVariables(
     event_date: eventDate || placeholders.to_be_specified,
     event_start_time: form.eventStartTime || placeholders.to_be_specified,
     event_end_time: form.eventEndTime || placeholders.to_be_specified,
-    event_location: form.eventLocation || placeholders.not_provided,
+    event_location: form.eventLocation?.trim() || HIDE,
     // Optional — hide line if not filled
     setup_time: form.setupTime?.trim() ? form.setupTime.trim() : HIDE,
     pickup_time: form.pickupTime?.trim() ? form.pickupTime.trim() : HIDE,
@@ -310,7 +310,7 @@ export function fillAllVariables(
     included_prints: form.includedPrints || placeholders.to_be_specified,
     options_list:
       optionsVal > 0 && !form.optionsList?.trim()
-        ? (ADDITIONAL_OPTIONS_INCLUDED[lang] ?? "Additional options included")
+        ? (ADDITIONAL_OPTIONS_PAID[lang] ?? "Additional paid options")
         : optionsVal === 0 && !form.optionsList?.trim()
           ? HIDE
           : form.optionsList.trim(),
@@ -336,9 +336,9 @@ export function fillAllVariables(
 
     // Deposit
     deposit_amount: dep > 0 ? fmtP(dep) : placeholders.no_deposit,
-    deposit_method: form.depositMethod || placeholders.not_provided,
-    deposit_conditions: form.depositConditions || placeholders.not_provided,
-    deposit_return: form.depositReturn || placeholders.not_provided,
+    deposit_method: form.depositMethod?.trim() || HIDE,
+    deposit_conditions: form.depositConditions?.trim() || HIDE,
+    deposit_return: form.depositReturn?.trim() || HIDE,
 
     // Terms & signature
     payment_terms: form.paymentTerms || placeholders.to_be_specified,

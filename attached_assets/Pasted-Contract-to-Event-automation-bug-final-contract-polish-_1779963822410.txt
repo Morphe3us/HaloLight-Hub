@@ -1,0 +1,181 @@
+Contract-to-Event automation bug + final contract polish.
+
+The language switch is now OK.
+
+I uploaded the latest contract PDF. The contract is much better, but there are still a few final issues and one important workflow bug.
+
+==================================================
+
+1. CONTRACT VALIDATION SHOULD CREATE / LINK EVENT
+   ==================================================
+
+Current issue:
+When a contract is validated/signed/accepted by the client, the related event does not appear in the upcoming events dashboard.
+
+Expected behavior:
+When a contract reaches a confirmed status, the system should automatically create or link an Event.
+
+Trigger:
+
+* contract signed
+* contract accepted
+* contract status changed to signed/active/confirmed
+* client validation if such status exists
+
+Event should be created from contract data:
+
+* event title:
+  client name + event type
+  Example: “Jeanne Duflo — Anniversaire”
+
+* event type:
+  from contract eventType
+
+* event date:
+  from contract eventDate
+
+* start time:
+  from contract eventStartTime
+
+* end time:
+  from contract eventEndTime
+
+* location:
+  from contract eventLocation
+
+* linked contractId
+
+* linked leadId if available
+
+* linked quoteId if available
+
+* linked client/customer info
+
+* selected equipmentIds if available
+
+* revenue/contract value
+
+* currency
+
+Important:
+Do not create duplicate events.
+
+If the contract already has a linked event:
+
+* update the existing event instead of creating a duplicate.
+
+If the user manually created an event before:
+
+* try to detect/link by client email + event date + location.
+* if uncertain, ask user or show “Link existing event” option.
+
+Dashboard:
+
+* upcoming events widget must include events generated from signed contracts.
+* events must be sorted nearest first.
+* past events should not appear as upcoming.
+
+Verification:
+
+1. Create contract with event date in the future.
+2. Mark contract signed/validated.
+3. Go to Dashboard.
+4. Upcoming events should show the event.
+5. Go to Events page.
+6. Event should be visible and linked to the contract.
+7. Mark contract cancelled.
+8. Linked event should become cancelled or show contract cancelled status.
+
+==================================================
+2. CONTRACT PDF SMALL POLISH
+============================
+
+The latest PDF is much better, but still has minor issues.
+
+A. Header/client block language
+Current:
+“Date:”
+
+Expected in French:
+“Date :”
+
+Make sure all labels are localized:
+
+* Date
+* Prepared by
+* Client
+* Contract value
+* Contract
+* Quote
+* Invoice
+
+B. Options consistency
+Current:
+Options supplémentaires : Options supplémentaires incluses
+and pricing shows:
+Options supplémentaires : 100,00 €
+
+This is not ideal.
+
+Expected:
+If options price > 0, require or strongly suggest an option description.
+
+If no description is provided:
+Use:
+FR: Options supplémentaires facturées
+EN: Additional paid options
+
+Better:
+Add validation warning:
+“An options amount is entered but no option description was provided.”
+
+C. Empty optional fields
+Current:
+Méthode : Non renseigné
+Conditions de rétention : Non renseigné
+Conditions de restitution : Non renseigné
+Lieu : À préciser
+
+Improve display:
+
+* For optional legal/contract fields, either hide the line if empty or show a cleaner fallback.
+* Avoid too many “Non renseigné” lines in the final client-facing document.
+* If deposit amount is set, deposit method/conditions should be recommended but not blocking.
+
+D. Print artifacts
+The PDF still shows browser artifacts:
+about:blank
+date/time footer
+page numbers from browser print
+
+If technically possible:
+
+* improve print CSS / title handling
+* reduce browser print artifacts
+* set document title to contract number
+
+If browser limitation, document it clearly.
+
+==================================================
+3. VERIFICATION
+===============
+
+Use the uploaded PDF as reference.
+
+Verify:
+
+* contract still has no undefined
+* no {{variables}}
+* contract number appears correctly
+* document labels are localized
+* options line is coherent
+* empty optional fields are handled cleaner
+* signed contract creates/links upcoming event
+* dashboard shows the new upcoming event
+* event is linked back to contract
+
+Run typecheck and provide:
+
+* root cause
+* files changed
+* verification results
