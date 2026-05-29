@@ -8,6 +8,7 @@ import {
   useListContractTemplates,
   useGetCurrentUser,
   useGetEquipment,
+  useUpdateContractStatus,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -324,6 +325,17 @@ export default function Contracts() {
     },
   });
 
+  const statusMutation = useUpdateContractStatus({
+    mutation: {
+      onSuccess: () => {
+        qc.invalidateQueries({ queryKey: ["contracts"] });
+        qc.invalidateQueries({ queryKey: ["events"] });
+        toast({ title: t("contracts.status_updated", { defaultValue: "Status updated" }) });
+      },
+      onError: () => { toast({ title: t("common.error"), variant: "destructive" }); },
+    },
+  });
+
   const contracts = data?.items ?? [];
   const templates = (templatesData as any)?.items ?? [];
 
@@ -529,11 +541,22 @@ export default function Contracts() {
                       </td>
                       <td className="px-4 py-3 font-medium">{c.clientName}</td>
                       <td className="px-4 py-3 hidden sm:table-cell">
-                        {color && (
-                          <Badge variant="outline" className={cn("text-xs", color)}>
-                            {t(`contracts.status_${c.status}`)}
-                          </Badge>
-                        )}
+                        <Select
+                          value={c.status}
+                          onValueChange={(val) => statusMutation.mutate({ id: c.id, data: { status: val as any } })}
+                          disabled={statusMutation.isPending}
+                        >
+                          <SelectTrigger className={cn("h-7 text-xs w-[120px] border font-medium", color ?? "")}>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {STATUS_KEYS.map((k) => (
+                              <SelectItem key={k} value={k} className="text-xs">
+                                {t(`contracts.status_${k}`)}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </td>
                       <td className="px-4 py-3 hidden md:table-cell text-muted-foreground text-xs">
                         {formatDate(c.signedAt, lang)}

@@ -868,7 +868,7 @@
     "contract_created": "Contract created",
     "contract_deleted": "Contract deleted",
     "contract_updated": "Contract updated",
-    "status_updated": "Status updated",
+    "status_updated": "Status bijgewerkt",
     "print_pdf": "Print / PDF",
     "save_changes": "Save Changes",
     "saving": "Saving…",
@@ -1065,7 +1065,8 @@
     "hours_label": "uur",
     "equipment_label": "Apparatuur",
     "options_label": "Opties",
-    "discount_label": "Korting"
+    "discount_label": "Korting",
+    "status_updated": "Status bijgewerkt"
   },
   "admin_analytics": {
     "title": "Analytics-dashboard",

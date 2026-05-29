@@ -1,0 +1,171 @@
+Final Sales dashboard/list polish — contracts/invoices inline status + chart “View all” error.
+
+Good progress on the last beta polish fixes. The quote status can now be edited from the quotes list, but the same UX is still needed for contracts and invoices.
+
+Also, the Sales Pipeline chart/widget throws an error when clicking “View all”.
+
+Please fix these remaining items only.
+
+==================================================
+
+1. INLINE STATUS EDIT — CONTRACTS LIST
+   ==================================================
+
+Current:
+Quote status can be edited directly from the quote list.
+
+Expected:
+The same behavior must exist on the Contracts list.
+
+On the Contracts page/list:
+
+* Replace static status badge with compact status dropdown or quick action menu.
+* Allow changing contract status directly from the list.
+* Statuses should include existing contract statuses, for example:
+
+  * draft
+  * sent / pending
+  * signed
+  * cancelled
+  * expired if supported
+
+Behavior:
+
+* show loading state while updating
+* success toast after update
+* error toast if update fails
+* update React Query cache / refetch list
+* no page reload required
+
+Pipeline logic:
+
+* signed contract should update linked lead/pipeline stage
+* signed contract should create/link upcoming event if not already linked
+* cancelled contract should update linked event if applicable
+* do not create duplicate events
+
+==================================================
+2. INLINE STATUS EDIT — INVOICES LIST
+=====================================
+
+Expected:
+The same behavior must exist on the Invoices list.
+
+On the Invoices page/list:
+
+* Replace static status badge with compact status dropdown or quick action menu.
+* Allow changing invoice status directly from the list.
+* Statuses should include:
+
+  * draft
+  * sent
+  * paid
+  * overdue
+  * cancelled / void if supported
+
+Behavior:
+
+* show loading state while updating
+* success toast after update
+* error toast if update fails
+* update React Query cache / refetch list
+* no page reload required
+
+Pipeline logic:
+
+* paid invoice should update linked lead/pipeline stage to won/paid
+* paid invoice should update linked event payment status to paid
+* overdue invoice should not mark event as paid
+* do not create duplicate events
+
+==================================================
+3. SALES PIPELINE CHART — “VIEW ALL” ERROR
+==========================================
+
+Current issue:
+The Sales Pipeline graph/widget errors when clicking “View all”.
+
+Please reproduce by:
+
+* Open Dashboard
+* Go to Sales Pipeline graph/widget
+* Click “View all”
+
+Expected:
+Clicking “View all” should navigate cleanly to the correct page or open the full dashboard view.
+
+Fix:
+
+* Check the href / route used by the “View all” button.
+* Ensure route exists.
+* If the target page does not exist, change the link to an existing route, likely:
+
+  * /sales
+  * /leads
+  * /quotes
+  * /contracts
+  * /invoices
+    depending on the intended destination.
+* Do not leave broken links.
+* Add safe fallback if data is missing.
+
+Verification:
+
+* Click “View all” from the Sales Pipeline graph.
+* No error.
+* User lands on the expected page.
+* Works in French and English.
+* Works on desktop and mobile.
+
+==================================================
+4. CONSISTENT LIST ACTION UX
+============================
+
+Make sure Leads / Quotes / Contracts / Invoices list pages have consistent behavior:
+
+* status visible
+* status editable where relevant
+* loading state
+* success/error toast
+* localized labels
+* no hardcoded English
+* mobile-friendly dropdown
+
+==================================================
+5. VERIFICATION
+===============
+
+Please verify:
+
+A. Quotes list:
+
+* status change still works
+
+B. Contracts list:
+
+* status change works
+* signed creates/links event
+* cancelled updates event
+
+C. Invoices list:
+
+* status change works
+* paid updates event payment status
+* paid updates pipeline
+
+D. Dashboard Sales Pipeline:
+
+* “View all” no longer errors
+
+Run:
+
+* frontend typecheck
+* API typecheck
+* console check
+
+Provide:
+
+* root cause
+* files changed
+* before/after behavior
+* verification result

@@ -102,13 +102,19 @@ export default function Invoices() {
     },
   });
 
-  const markPaidMutation = useUpdateInvoiceStatus({
+  const statusMutation = useUpdateInvoiceStatus({
     mutation: {
-      onSuccess: () => {
+      onSuccess: (_data, variables) => {
         qc.invalidateQueries({ queryKey: ["invoices"] });
         qc.invalidateQueries({ queryKey: ["events"] });
-        toast({ title: t("invoices.invoice_marked_paid") });
+        const status = (variables as any)?.data?.status;
+        if (status === "paid") {
+          toast({ title: t("invoices.invoice_marked_paid") });
+        } else {
+          toast({ title: t("invoices.status_updated", { defaultValue: "Status updated" }) });
+        }
       },
+      onError: () => { toast({ title: t("common.error"), variant: "destructive" }); },
     },
   });
 
@@ -286,7 +292,25 @@ export default function Invoices() {
                         )}
                       </td>
                       <td className="px-4 py-3 hidden sm:table-cell">
-                        {color && <Badge variant="outline" className={cn("text-xs", color)}>{t(`invoices.status_${effectiveStatus}`)}</Badge>}
+                        <Select
+                          value={inv.status}
+                          onValueChange={(val) => statusMutation.mutate({
+                            id: inv.id,
+                            data: { status: val as any, ...(val === "paid" ? { paidAmount: inv.total } : {}) },
+                          })}
+                          disabled={statusMutation.isPending}
+                        >
+                          <SelectTrigger className={cn("h-7 text-xs w-[110px] border font-medium", color ?? "")}>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {STATUS_KEYS.map((k) => (
+                              <SelectItem key={k} value={k} className="text-xs">
+                                {t(`invoices.status_${k}`)}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </td>
                       <td className="px-4 py-3 hidden md:table-cell text-xs">
                         <span className={cn(overdue ? "text-destructive font-medium" : "text-muted-foreground")}>{formatDate(inv.dueDate)}</span>
@@ -298,7 +322,7 @@ export default function Invoices() {
                         <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           {inv.status !== "paid" && inv.status !== "cancelled" && (
                             <button
-                              onClick={() => markPaidMutation.mutate({ id: inv.id, data: { status: "paid", paidAmount: inv.total } })}
+                              onClick={() => statusMutation.mutate({ id: inv.id, data: { status: "paid", paidAmount: inv.total } })}
                               className="text-xs text-success hover:text-success/80 border border-success/30 rounded px-2 py-0.5 bg-success/8 hover:bg-success/15 transition-colors whitespace-nowrap"
                             >
                               {t("invoices.mark_paid")}

@@ -1065,7 +1065,8 @@
     "hours_label": "heures",
     "equipment_label": "Équipement",
     "options_label": "Options",
-    "discount_label": "Remise"
+    "discount_label": "Remise",
+    "status_updated": "Statut mis à jour"
   },
   "admin_analytics": {
     "title": "Tableau de bord analytique",

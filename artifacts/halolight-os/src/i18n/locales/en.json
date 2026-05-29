@@ -1065,7 +1065,8 @@
     "hours_label": "hours",
     "equipment_label": "Equipment",
     "options_label": "Options",
-    "discount_label": "Discount"
+    "discount_label": "Discount",
+    "status_updated": "Status updated"
   },
   "admin_analytics": {
     "title": "Analytics Dashboard",

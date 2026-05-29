@@ -868,7 +868,7 @@
     "contract_created": "Contract created",
     "contract_deleted": "Contract deleted",
     "contract_updated": "Contract updated",
-    "status_updated": "Status updated",
+    "status_updated": "Stato aggiornato",
     "print_pdf": "Print / PDF",
     "save_changes": "Save Changes",
     "saving": "Saving…",
@@ -1065,7 +1065,8 @@
     "hours_label": "ore",
     "equipment_label": "Attrezzatura",
     "options_label": "Opzioni",
-    "discount_label": "Sconto"
+    "discount_label": "Sconto",
+    "status_updated": "Stato aggiornato"
   },
   "admin_analytics": {
     "title": "Dashboard di analisi",

@@ -304,13 +304,13 @@ export default function Dashboard() {
         <Card className="border border-border shadow-sm">
           <CardHeader className="pb-3 flex flex-row items-center justify-between">
             <CardTitle className="text-base">{t("dashboard.sales_overview", { defaultValue: "Sales Pipeline" })}</CardTitle>
-            <Link href="/leads">
+            <Link href="/crm/leads">
               <button className="text-xs text-primary hover:underline font-medium">{t("dashboard.view_all")}</button>
             </Link>
           </CardHeader>
           <CardContent className="pt-0">
             <div className="grid grid-cols-4 gap-3 mb-4">
-              <Link href="/leads">
+              <Link href="/crm/leads">
                 <div className="text-center p-3 rounded-lg bg-info/8 hover:bg-info/15 transition-colors cursor-pointer">
                   <Users className="w-5 h-5 text-info mx-auto mb-1" />
                   <p className="text-2xl font-bold text-foreground">{leadsTotal}</p>
