@@ -1,0 +1,212 @@
+Beta polish not fully fixed — please verify visually, not only by code audit.
+
+Several issues were marked as fixed, but they are still visible in the app.
+
+Please stop relying only on typecheck / code inspection. Open the actual app in French mode and verify each page visually.
+
+Do not start AI Knowledge Base integration yet.
+
+==================================================
+
+1. I18N STILL NOT FIXED
+   ==================================================
+
+Current issue:
+With a user profile configured in French, these sections are still displayed in English:
+
+* Knowledge Base
+* Community
+* Configuration
+
+Expected:
+These sections must be fully translated in French.
+
+Please check the actual UI, not just locale files.
+
+Fix:
+
+* Replace all hardcoded English strings with i18n keys.
+* Add missing keys in all 8 languages.
+* Ensure the current language is correctly applied on these pages.
+* Ensure React Query/cache is not keeping stale English content.
+* Ensure page titles, buttons, tabs, empty states, filters, cards and badges are translated.
+
+Pages to verify:
+
+* /knowledge-base or Knowledge Base route
+* /community
+* /configuration or setup/configuration route
+
+French examples:
+
+* Knowledge Base → Base de connaissances
+* Community → Communauté
+* Configuration → Configuration
+* Browse articles → Parcourir les articles
+* Search → Rechercher
+* Popular / Recent / Categories → Populaire / Récent / Catégories
+* Join / Reply / Post → Rejoindre / Répondre / Publier
+
+Verification:
+Switch app to French from the top language selector.
+Hard refresh.
+Open each page.
+Confirm no English text remains.
+
+==================================================
+2. COMMUNITY DISPLAY BUG STILL PRESENT
+======================================
+
+Current issue:
+There is still a visual/layout bug in the Community section.
+
+Please visually inspect it.
+
+Fix:
+
+* Check desktop and mobile.
+* Fix card spacing, overflow, alignment, buttons, badges, tabs and channel list.
+* No elements should overlap.
+* No text should be clipped.
+* No broken grid.
+* No horizontal overflow on mobile.
+
+Test sizes:
+
+* desktop
+* tablet
+* 430px
+* 390px
+* 375px
+
+Please provide a clear before/after explanation and the exact UI issue fixed.
+
+==================================================
+3. CONSUMABLES FORECAST STILL NOT VISIBLE / NOT CONNECTED
+=========================================================
+
+Current issue:
+Consumables do not visibly update based on upcoming events.
+
+The endpoint may exist, but the UI still does not behave as expected.
+
+Expected:
+When an upcoming event has included prints, the Consumables page must clearly show the forecast.
+
+Rules:
+
+* includedPrints = 200 → forecast 200 prints
+* includedPrints = unlimited → forecast 600 prints
+* includedPrints empty → show warning “Print quantity not specified”
+
+Where it must be visible:
+
+* Consumables page
+* Dashboard if feasible
+* Event preparation sheet if relevant
+
+The UI should show:
+
+* upcoming prints required
+* current available print stock
+* estimated shortage
+* reorder recommendation
+* per-event print requirement
+
+Example:
+“Upcoming events require 1,000 prints. Current stock covers 700. Estimated shortage: 300 prints.”
+
+Important:
+This is forecast/reservation planning, not physical stock subtraction.
+Do not subtract stock automatically.
+But the forecast must be visible and useful.
+
+Verification:
+Create or use an upcoming event with includedPrints = 200.
+Open Consumables.
+The forecast must show 200 required prints.
+If current stock is lower, show shortage.
+
+==================================================
+4. LOGO DARK MODE STILL NOT RIGHT
+=================================
+
+Current issue:
+The logo colors are still not properly adapted to dark mode.
+
+Expected:
+
+* Sidebar logo must be readable and premium in dark mode.
+* Topbar/logo if present must also be readable.
+* No washed-out, invisible or badly blended logo.
+* Use a dark-mode logo variant if available.
+* If not available, use safe CSS treatment or monochrome/light version.
+
+Please visually verify:
+
+* dark mode sidebar
+* mobile sidebar/header
+* desktop sidebar
+* auth/loading if applicable
+
+Do not only remove one CSS property and assume fixed.
+Verify visually.
+
+==================================================
+5. ACADEMY COURSE IMAGES STILL BLURRY / PLACEHOLDER
+===================================================
+
+Current issue:
+Academy courses still show blurry placeholders instead of proper course images.
+
+Expected:
+Course cards should display clean images/thumbnails.
+
+Rules:
+
+* Use course thumbnail if available.
+* Use BunnyStream thumbnail if available.
+* Use selected language thumbnail if available.
+* If no thumbnail exists, use a clean non-blurry default Academy image.
+* No blurry gradient placeholder in beta.
+* No empty src.
+* Same for:
+
+  * Academy course cards
+  * Course detail hero
+  * Continue Learning dashboard card
+
+Verification:
+Open Academy in French.
+Course cards must show clean thumbnails.
+Open course detail.
+Hero must show clean image.
+Open Dashboard.
+Continue Learning image must be clean.
+
+==================================================
+6. REQUIRED VERIFICATION FORMAT
+===============================
+
+Please provide actual visual/functional verification, not only “typecheck passed”.
+
+For each item, provide:
+
+* page tested
+* language tested
+* before behavior
+* after behavior
+* exact files changed
+* whether verified visually in browser
+* remaining limitation if any
+
+Test in French specifically.
+
+Run:
+
+* frontend typecheck
+* API typecheck
+* console check
+* mobile responsive check
+
+Do not mark this complete until the actual French UI is visually verified.

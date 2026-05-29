@@ -1712,7 +1712,7 @@
     "posts_count": "({{count}} publicações)",
     "posts_title": "Publicações",
     "new_post": "Nova publicação",
-    "no_posts": "Ainda sem publicações",
+    "no_posts": "Nenhuma publicação ainda",
     "no_posts_hint": "Seja o primeiro a publicar neste canal",
     "pinned": "Afixado",
     "replies": "{{count}} respostas",

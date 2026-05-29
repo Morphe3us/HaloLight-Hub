@@ -535,7 +535,11 @@ export default function Consumables() {
   const { data: forecastData } = useQuery({
     queryKey: ["/api/consumables/forecast"],
     queryFn: async () => {
-      const res = await fetch("/api/consumables/forecast", { credentials: "include" });
+      const { getAuthToken } = await import("@workspace/api-client-react");
+      const token = await getAuthToken();
+      const res = await fetch("/api/consumables/forecast", {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
       if (!res.ok) return null;
       return res.json() as Promise<{
         totalRequired: number;

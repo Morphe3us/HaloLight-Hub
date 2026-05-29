@@ -117,14 +117,14 @@ export default function CommunityChannel() {
       ) : (
         <div className="space-y-3">
           {posts.map((post) => (
-            <div key={post.id} className="relative">
+            <div key={post.id} className={`relative ${post.isPinned ? "pt-4" : ""}`}>
               {post.isPinned && (
-                <div className="absolute -top-1.5 left-4 flex items-center gap-1 bg-warning/15 text-warning text-xs px-2 py-0.5 rounded-full z-10">
+                <div className="absolute top-0 left-4 flex items-center gap-1 bg-warning/15 text-warning text-xs px-2 py-0.5 rounded-full z-10">
                   <Pin className="w-3 h-3" /> {t("community_channel.pinned")}
                 </div>
               )}
               <Link href={`/community/posts/${post.id}`}>
-                <Card className={`hover:shadow-md transition-all cursor-pointer group ${post.isPinned ? "border-amber-200 mt-2" : ""}`}>
+                <Card className={`hover:shadow-md transition-all cursor-pointer group ${post.isPinned ? "border-warning/30" : ""}`}>
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1 min-w-0">
@@ -132,20 +132,20 @@ export default function CommunityChannel() {
                           {post.title}
                         </h3>
                         <p className="text-sm text-muted-foreground line-clamp-2 mb-2">{post.content}</p>
-                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                          <span className="flex items-center gap-1">
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                          <span className="flex items-center gap-1 shrink-0">
                             <div className="w-5 h-5 rounded-full bg-gradient-to-br from-primary/30 to-primary/10 flex items-center justify-center text-primary font-bold text-xs">
                               {((post as unknown as { userName?: string }).userName ?? t("community_channel.user_fallback")).charAt(0).toUpperCase()}
                             </div>
-                            {(post as unknown as { userName?: string }).userName ?? t("community_channel.user_fallback")}
+                            <span className="truncate max-w-[100px]">{(post as unknown as { userName?: string }).userName ?? t("community_channel.user_fallback")}</span>
                           </span>
-                          <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{formatDate(post.createdAt)}</span>
-                          <span className="flex items-center gap-1"><Eye className="w-3 h-3" />{post.views}</span>
-                          <span className="flex items-center gap-1">
+                          <span className="flex items-center gap-1 shrink-0"><Clock className="w-3 h-3" />{formatDate(post.createdAt)}</span>
+                          <span className="flex items-center gap-1 shrink-0"><Eye className="w-3 h-3" />{post.views}</span>
+                          <span className="flex items-center gap-1 shrink-0">
                             <MessageSquare className="w-3 h-3" />
                             {t("community_channel.replies", { count: (post as unknown as { replyCount?: number }).replyCount ?? 0 })}
                           </span>
-                          <span className="flex items-center gap-1">
+                          <span className="flex items-center gap-1 shrink-0">
                             <ThumbsUp className="w-3 h-3" />
                             {(post as unknown as { reactionCount?: number }).reactionCount ?? 0}
                           </span>

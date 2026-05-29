@@ -197,7 +197,7 @@ export function Sidebar() {
       {/* Logo */}
       <div className="px-5 py-5 border-b border-border">
         <img src="/logo-hub-light-orig.png" alt="HaloLight Hub" className="w-[110px] h-auto object-contain dark:hidden" style={{ mixBlendMode: "multiply" }} />
-        <img src="/logo-hub-dark-orig.png" alt="HaloLight Hub" className="w-[110px] h-auto object-contain hidden dark:block" />
+        <img src="/logo-white.png" alt="HaloLight Hub" className="w-[110px] h-auto object-contain hidden dark:block" style={{ filter: "brightness(0.95)" }} />
       </div>
 
       {/* Navigation */}
@@ -241,7 +241,7 @@ export function Sidebar() {
           </SheetContent>
         </Sheet>
         <img src="/logo-hub-light-orig.png" alt="HaloLight Hub" className="w-[90px] h-auto object-contain dark:hidden" style={{ mixBlendMode: "multiply" }} />
-        <img src="/logo-hub-dark-orig.png" alt="HaloLight Hub" className="w-[90px] h-auto object-contain hidden dark:block" />
+        <img src="/logo-white.png" alt="HaloLight Hub" className="w-[90px] h-auto object-contain hidden dark:block" style={{ filter: "brightness(0.95)" }} />
         <div className="flex items-center gap-1 shrink-0">
           <Button
             variant="ghost"

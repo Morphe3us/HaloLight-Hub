@@ -123,6 +123,7 @@ export default function Academy() {
               const progress = course.lessonCount > 0
                 ? Math.round((course.completedLessons / course.lessonCount) * 100)
                 : 0;
+              const hasThumbnail = !!course.thumbnailUrl;
               return (
                 <Link key={course.id} href={`/academy/${course.id}`}>
                   <Card className="group border border-border shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden h-full">
@@ -133,17 +134,17 @@ export default function Academy() {
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         onError={(e) => { (e.target as HTMLImageElement).src = THUMB_FALLBACK; }}
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                      {hasThumbnail && <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />}
                       {isComplete && (
-                        <div className="absolute top-3 right-3 bg-success text-white rounded-full p-1.5">
+                        <div className={cn("absolute top-3 right-3 rounded-full p-1.5", hasThumbnail ? "bg-success text-white" : "bg-success/90 text-white shadow")}>
                           <CheckCircle2 className="w-4 h-4" />
                         </div>
                       )}
                       <div className="absolute bottom-3 left-3 flex gap-2">
-                        <span className={cn("text-xs font-medium px-2.5 py-1 rounded-full", LEVEL_COLORS[course.level] ?? "bg-muted text-foreground")}>
+                        <span className={cn("text-xs font-medium px-2.5 py-1 rounded-full", hasThumbnail ? "bg-black/40 text-white backdrop-blur-sm" : LEVEL_COLORS[course.level] ?? "bg-muted text-foreground")}>
                           {t(`academy.level_${course.level}`)}
                         </span>
-                        <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-black/40 text-white backdrop-blur-sm">
+                        <span className={cn("text-xs font-medium px-2.5 py-1 rounded-full", hasThumbnail ? "bg-black/40 text-white backdrop-blur-sm" : "bg-muted text-muted-foreground")}>
                           {formatDuration(course.totalDurationSeconds)}
                         </span>
                       </div>
