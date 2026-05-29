@@ -74,7 +74,17 @@
     "minutes": "min",
     "equipment_ok": "Tutto OK",
     "stock_ok": "Scorte complete",
-    "watched": "guardato"
+    "watched": "guardato",
+    "customize": "Personalizza",
+    "customize_title": "Personalizza dashboard",
+    "customize_desc": "Mostra o nascondi widget per personalizzare il tuo dashboard.",
+    "sales_overview": "Pipeline vendite",
+    "widget_next_lesson": "Continua a imparare",
+    "widget_onboarding": "Avanzamento onboarding",
+    "widget_notifications": "Notifiche recenti",
+    "widget_upcoming_events": "Prossimi eventi",
+    "widget_academy_stats": "Avanzamento academy",
+    "widget_sales_overview": "Pipeline vendite"
   },
   "academy": {
     "title": "Accademia",
@@ -108,7 +118,8 @@
     "total_progress": "Progresso totale",
     "courses_completed": "Corsi completati",
     "course_overview": "Panoramica del corso",
-    "watch_video": "Guarda video"
+    "watch_video": "Guarda video",
+    "watch_time": "Tempo di visione"
   },
   "events": {
     "title": "Eventi",
@@ -298,7 +309,17 @@
     "days_remaining_short": "~{{days}}g rimanenti",
     "reorder_threshold": "Soglia di riordino: {{threshold}} {{unit}}",
     "last_restocked": "Ultimo rifornimento: {{date}}",
-    "reorder_recommended_msg": "Riordino consigliato"
+    "reorder_recommended_msg": "Riordino consigliato",
+    "forecast_title": "Previsione stampa — Prossimi eventi",
+    "forecast_required": "Stampe necessarie",
+    "forecast_available": "Stampe disponibili",
+    "forecast_shortage": "Carenza",
+    "forecast_ok": "OK",
+    "forecast_sufficient": "Stock sufficiente",
+    "forecast_reorder_hint": "Rifornire la carta prima del prossimo evento per evitare carenze.",
+    "forecast_prints_label": "stampe",
+    "forecast_more_events": "altri eventi",
+    "forecast_no_prints_warning": "Quantità di stampe non specificata"
   },
   "support": {
     "title": "Supporto",
@@ -1650,7 +1671,10 @@
     "service_repair": "Riparazione",
     "service_upgrade": "Aggiornamento",
     "service_inspection": "Ispezione",
-    "service_warranty_claim": "Reclamo di garanzia"
+    "service_warranty_claim": "Reclamo di garanzia",
+    "upcoming_events_title": "Assegnazioni in arrivo",
+    "events_count": "evento/i",
+    "no_upcoming_events": "Nessun evento imminente assegnato a questa attrezzatura."
   },
   "kb_admin": {
     "back": "Base di conoscenza",

@@ -74,7 +74,17 @@
     "minutes": "min",
     "equipment_ok": "Alles OK",
     "stock_ok": "Volledig voorradig",
-    "watched": "bekeken"
+    "watched": "bekeken",
+    "customize": "Aanpassen",
+    "customize_title": "Dashboard aanpassen",
+    "customize_desc": "Widgets in- of uitschakelen om uw dashboard te personaliseren.",
+    "sales_overview": "Verkooppipeline",
+    "widget_next_lesson": "Doorgaan met leren",
+    "widget_onboarding": "Onboarding voortgang",
+    "widget_notifications": "Recente meldingen",
+    "widget_upcoming_events": "Komende evenementen",
+    "widget_academy_stats": "Academy voortgang",
+    "widget_sales_overview": "Verkooppipeline"
   },
   "academy": {
     "title": "Academie",
@@ -108,7 +118,8 @@
     "total_progress": "Totale voortgang",
     "courses_completed": "Voltooide cursussen",
     "course_overview": "Cursusoverzicht",
-    "watch_video": "Video bekijken"
+    "watch_video": "Video bekijken",
+    "watch_time": "Kijktijd"
   },
   "events": {
     "title": "Evenementen",
@@ -298,7 +309,17 @@
     "days_remaining_short": "~{{days}}d resterend",
     "reorder_threshold": "Bestelpunt: {{threshold}} {{unit}}",
     "last_restocked": "Laatst bijgevuld: {{date}}",
-    "reorder_recommended_msg": "Bestelling aanbevolen"
+    "reorder_recommended_msg": "Bestelling aanbevolen",
+    "forecast_title": "Afdrukprognose — Komende evenementen",
+    "forecast_required": "Vereiste afdrukken",
+    "forecast_available": "Beschikbare afdrukken",
+    "forecast_shortage": "Tekort",
+    "forecast_ok": "OK",
+    "forecast_sufficient": "Voorraad voldoende",
+    "forecast_reorder_hint": "Bestel papier vóór uw volgende evenement om tekorten te vermijden.",
+    "forecast_prints_label": "afdrukken",
+    "forecast_more_events": "meer evenementen",
+    "forecast_no_prints_warning": "Afdrukaantal niet opgegeven"
   },
   "support": {
     "title": "Support",
@@ -1650,7 +1671,10 @@
     "service_repair": "Reparatie",
     "service_upgrade": "Upgrade",
     "service_inspection": "Inspectie",
-    "service_warranty_claim": "Garantieclaim"
+    "service_warranty_claim": "Garantieclaim",
+    "upcoming_events_title": "Komende opdrachten",
+    "events_count": "evenement(en)",
+    "no_upcoming_events": "Geen komende evenementen toegewezen aan dit apparaat."
   },
   "kb_admin": {
     "back": "Kennisbank",

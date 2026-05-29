@@ -74,7 +74,17 @@
     "minutes": "Min",
     "equipment_ok": "Alles OK",
     "stock_ok": "Vollständig bevorratet",
-    "watched": "angesehen"
+    "watched": "angesehen",
+    "customize": "Anpassen",
+    "customize_title": "Dashboard anpassen",
+    "customize_desc": "Widgets ein- oder ausblenden, um Ihr Dashboard zu personalisieren.",
+    "sales_overview": "Vertriebspipeline",
+    "widget_next_lesson": "Weiterlernen",
+    "widget_onboarding": "Onboarding-Fortschritt",
+    "widget_notifications": "Letzte Benachrichtigungen",
+    "widget_upcoming_events": "Bevorstehende Termine",
+    "widget_academy_stats": "Akademie-Fortschritt",
+    "widget_sales_overview": "Vertriebspipeline"
   },
   "academy": {
     "title": "Akademie",
@@ -108,7 +118,8 @@
     "total_progress": "Gesamtfortschritt",
     "courses_completed": "Abgeschlossene Kurse",
     "course_overview": "Kursübersicht",
-    "watch_video": "Video ansehen"
+    "watch_video": "Video ansehen",
+    "watch_time": "Wiedergabezeit"
   },
   "events": {
     "title": "Veranstaltungen",
@@ -298,7 +309,17 @@
     "days_remaining_short": "~{{days}}T übrig",
     "reorder_threshold": "Nachbestellgrenze: {{threshold}} {{unit}}",
     "last_restocked": "Zuletzt aufgefüllt: {{date}}",
-    "reorder_recommended_msg": "Nachbestellung empfohlen"
+    "reorder_recommended_msg": "Nachbestellung empfohlen",
+    "forecast_title": "Druckprognose — Bevorstehende Events",
+    "forecast_required": "Benötigte Drucke",
+    "forecast_available": "Verfügbare Drucke",
+    "forecast_shortage": "Fehlbestand",
+    "forecast_ok": "OK",
+    "forecast_sufficient": "Bestand ausreichend",
+    "forecast_reorder_hint": "Bestellen Sie Papier vor Ihrem nächsten Event, um Engpässe zu vermeiden.",
+    "forecast_prints_label": "Drucke",
+    "forecast_more_events": "weitere Events",
+    "forecast_no_prints_warning": "Druckmenge nicht angegeben"
   },
   "support": {
     "title": "Support",
@@ -1650,7 +1671,10 @@
     "service_repair": "Reparatur",
     "service_upgrade": "Upgrade",
     "service_inspection": "Inspektion",
-    "service_warranty_claim": "Garantieanspruch"
+    "service_warranty_claim": "Garantieanspruch",
+    "upcoming_events_title": "Bevorstehende Aufgaben",
+    "events_count": "Ereignis(se)",
+    "no_upcoming_events": "Keine bevorstehenden Events für dieses Gerät."
   },
   "kb_admin": {
     "back": "Wissensdatenbank",

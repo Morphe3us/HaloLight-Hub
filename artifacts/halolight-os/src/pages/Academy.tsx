@@ -99,7 +99,7 @@ export default function Academy() {
                 <Clock className="w-6 h-6 text-foreground" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground font-medium">Watch Time</p>
+                <p className="text-sm text-muted-foreground font-medium">{t("academy.watch_time")}</p>
                 <p className="text-2xl font-bold text-foreground">{formatDuration(summary.watchedDurationSeconds)}</p>
                 <p className="text-xs text-muted-foreground">{t("common.of")} {formatDuration(summary.totalDurationSeconds)}</p>
               </div>

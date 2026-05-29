@@ -74,7 +74,17 @@
     "minutes": "min",
     "equipment_ok": "Tout OK",
     "stock_ok": "Stock complet",
-    "watched": "regardé"
+    "watched": "regardé",
+    "customize": "Personnaliser",
+    "customize_title": "Personnaliser le tableau de bord",
+    "customize_desc": "Afficher ou masquer les widgets pour personnaliser votre tableau de bord.",
+    "sales_overview": "Pipeline commercial",
+    "widget_next_lesson": "Continuer l'apprentissage",
+    "widget_onboarding": "Progression d'intégration",
+    "widget_notifications": "Notifications récentes",
+    "widget_upcoming_events": "Événements à venir",
+    "widget_academy_stats": "Progression académie",
+    "widget_sales_overview": "Pipeline commercial"
   },
   "academy": {
     "title": "Académie",
@@ -108,7 +118,8 @@
     "total_progress": "Progression totale",
     "courses_completed": "Cours terminés",
     "course_overview": "Aperçu du cours",
-    "watch_video": "Regarder la vidéo"
+    "watch_video": "Regarder la vidéo",
+    "watch_time": "Temps de visionnage"
   },
   "events": {
     "title": "Événements",
@@ -298,7 +309,17 @@
     "days_remaining_short": "~{{days}}j restants",
     "reorder_threshold": "Seuil de réapprovisionnement : {{threshold}} {{unit}}",
     "last_restocked": "Dernier réapprovisionnement : {{date}}",
-    "reorder_recommended_msg": "Réapprovisionnement recommandé"
+    "reorder_recommended_msg": "Réapprovisionnement recommandé",
+    "forecast_title": "Prévision impression — Événements à venir",
+    "forecast_required": "Impressions requises",
+    "forecast_available": "Impressions disponibles",
+    "forecast_shortage": "Manque",
+    "forecast_ok": "OK",
+    "forecast_sufficient": "Stock suffisant",
+    "forecast_reorder_hint": "Réapprovisionnez le papier avant votre prochain événement pour éviter la pénurie.",
+    "forecast_prints_label": "impressions",
+    "forecast_more_events": "événements supplémentaires",
+    "forecast_no_prints_warning": "Quantité d'impressions non spécifiée"
   },
   "support": {
     "title": "Support",
@@ -1650,7 +1671,10 @@
     "service_repair": "Réparation",
     "service_upgrade": "Mise à niveau",
     "service_inspection": "Inspection",
-    "service_warranty_claim": "Réclamation de garantie"
+    "service_warranty_claim": "Réclamation de garantie",
+    "upcoming_events_title": "Affectations à venir",
+    "events_count": "événement(s)",
+    "no_upcoming_events": "Aucun événement à venir assigné à cet équipement."
   },
   "kb_admin": {
     "back": "Base de connaissances",

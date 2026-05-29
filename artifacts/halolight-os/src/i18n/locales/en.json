@@ -74,7 +74,17 @@
     "minutes": "min",
     "equipment_ok": "All OK",
     "stock_ok": "Fully Stocked",
-    "watched": "watched"
+    "watched": "watched",
+    "customize": "Customize",
+    "customize_title": "Customize Dashboard",
+    "customize_desc": "Show or hide widgets to personalise your dashboard.",
+    "sales_overview": "Sales Pipeline",
+    "widget_next_lesson": "Continue Learning",
+    "widget_onboarding": "Onboarding Progress",
+    "widget_notifications": "Recent Notifications",
+    "widget_upcoming_events": "Upcoming Events",
+    "widget_academy_stats": "Academy Progress",
+    "widget_sales_overview": "Sales Pipeline"
   },
   "academy": {
     "title": "Academy",
@@ -108,7 +118,8 @@
     "total_progress": "Total Progress",
     "courses_completed": "Courses Completed",
     "course_overview": "Course Overview",
-    "watch_video": "Watch Video"
+    "watch_video": "Watch Video",
+    "watch_time": "Watch Time"
   },
   "events": {
     "title": "Events",
@@ -298,7 +309,17 @@
     "days_remaining_short": "~{{days}}d left",
     "reorder_threshold": "Reorder threshold: {{threshold}} {{unit}}",
     "last_restocked": "Last restocked: {{date}}",
-    "reorder_recommended_msg": "Reorder recommended"
+    "reorder_recommended_msg": "Reorder recommended",
+    "forecast_title": "Print Forecast — Upcoming Events",
+    "forecast_required": "Prints Required",
+    "forecast_available": "Prints Available",
+    "forecast_shortage": "Shortage",
+    "forecast_ok": "OK",
+    "forecast_sufficient": "Stock Sufficient",
+    "forecast_reorder_hint": "Reorder paper before your next event to avoid running short.",
+    "forecast_prints_label": "prints",
+    "forecast_more_events": "more events",
+    "forecast_no_prints_warning": "Print quantity not specified"
   },
   "support": {
     "title": "Support",
@@ -1650,7 +1671,10 @@
     "service_repair": "Repair",
     "service_upgrade": "Upgrade",
     "service_inspection": "Inspection",
-    "service_warranty_claim": "Warranty Claim"
+    "service_warranty_claim": "Warranty Claim",
+    "upcoming_events_title": "Upcoming Assignments",
+    "events_count": "event(s)",
+    "no_upcoming_events": "No upcoming events assigned to this equipment."
   },
   "kb_admin": {
     "back": "Knowledge Base",

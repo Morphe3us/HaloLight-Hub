@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "wouter";
 import { useTranslation } from "react-i18next";
-import { useListQuotes, useCreateQuote, useDeleteQuote, useGetEquipment } from "@workspace/api-client-react";
+import { useListQuotes, useCreateQuote, useDeleteQuote, useGetEquipment, useUpdateQuoteStatus } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -93,6 +93,13 @@ export default function Quotes() {
   const deleteMutation = useDeleteQuote({
     mutation: {
       onSuccess: () => { qc.invalidateQueries({ queryKey: ["quotes"] }); toast({ title: t("quotes.quote_deleted") }); },
+    },
+  });
+
+  const statusMutation = useUpdateQuoteStatus({
+    mutation: {
+      onSuccess: () => { qc.invalidateQueries({ queryKey: ["quotes"] }); },
+      onError: () => { toast({ title: t("common.error"), variant: "destructive" }); },
     },
   });
 
@@ -251,7 +258,21 @@ export default function Quotes() {
                       </td>
                       <td className="px-4 py-3 font-medium">{q.clientName}</td>
                       <td className="px-4 py-3 hidden sm:table-cell">
-                        {color && <Badge variant="outline" className={cn("text-xs", color)}>{t(`quotes.status_${q.status}`)}</Badge>}
+                        <Select
+                          value={q.status}
+                          onValueChange={(val) => statusMutation.mutate({ id: q.id, data: { status: val as "draft" | "sent" | "accepted" | "declined" | "expired" } })}
+                        >
+                          <SelectTrigger className={cn("h-7 text-xs w-[110px] border font-medium", color)}>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {STATUS_KEYS.map((k) => (
+                              <SelectItem key={k} value={k} className="text-xs">
+                                {t(`quotes.status_${k}`)}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </td>
                       <td className="px-4 py-3 hidden md:table-cell text-muted-foreground text-xs">{formatDate(q.validUntil)}</td>
                       <td className="px-4 py-3 text-right font-bold">{formatCurrency(q.total)}</td>

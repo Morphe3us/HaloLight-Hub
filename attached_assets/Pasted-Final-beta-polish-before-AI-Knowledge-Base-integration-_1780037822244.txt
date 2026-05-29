@@ -1,0 +1,388 @@
+Final beta polish before AI Knowledge Base integration.
+
+We are almost ready to move to the AI Knowledge Base / chatbot brain phase, but the following issues are still present and must be fixed first.
+
+Do not start AI Knowledge Base integration yet.
+
+Focus only on the remaining beta bugs and UX polish listed below.
+
+==================================================
+
+1. I18N / LANGUAGE ISSUES
+   ==================================================
+
+Current issue:
+For a user profile configured in French, some sections still appear in English.
+
+Sections affected:
+
+* Knowledge Base
+* Community
+* Configuration
+* Equipment section label: “Upcoming assignment”
+
+Expected:
+All these sections must be fully translated according to the selected user language.
+
+Fix:
+
+* Audit Knowledge Base page
+* Audit Community page
+* Audit Configuration page
+* Audit Equipment page
+* Replace hardcoded English labels with i18n keys
+* Add missing translations in all 8 languages:
+  EN, FR, ES, DE, IT, PT, PL, NL
+
+Specific French fixes:
+
+* “Upcoming assignment” → “Événement à venir” or “Affectation à venir”
+* “Knowledge Base” → “Base de connaissances”
+* “Community” → “Communauté”
+* “Configuration” → “Configuration”
+
+Verification:
+Switch user language to French and verify no English labels remain in these sections.
+
+==================================================
+2. COMMUNITY DISPLAY BUG
+========================
+
+Current issue:
+There is still a visual/layout bug in the Community section.
+
+Expected:
+Community must be clean and usable on:
+
+* desktop
+* tablet
+* mobile
+
+Fix:
+
+* Audit Community layout
+* Fix broken cards/spacing/overflow
+* Ensure responsive behavior works properly
+* No clipped buttons
+* No overlapping elements
+* No horizontal scroll on mobile unless intentional
+
+Verification:
+Test Community at:
+
+* desktop
+* tablet
+* 430px
+* 390px
+* 375px
+
+==================================================
+3. EVENT PREPARATION SHEET MISSING INFORMATION
+==============================================
+
+Current issue:
+The event is created, but the preparation sheet is still missing key operational information.
+
+Missing:
+
+* location
+* package
+* included prints / tirages
+* selected equipment / matériel
+
+Expected:
+The event preparation sheet must show:
+
+Client:
+
+* client name
+* company
+* phone
+* email
+
+Event:
+
+* date
+* start time
+* end time
+* location
+
+Service:
+
+* package name
+* rental duration
+* included prints
+* options/add-ons
+* selected equipment
+* manual equipment notes
+
+Documents:
+
+* linked quote
+* linked contract
+* linked invoice
+* payment status
+
+Important:
+If the event was created from a signed contract or paid invoice, it must inherit these fields automatically.
+
+Verification:
+Create quote → contract → signed contract → invoice paid.
+Open event prep sheet.
+Verify location, package, prints and equipment are visible.
+
+==================================================
+4. CONSUMABLES FORECAST STILL NOT CONNECTED VISIBLY
+===================================================
+
+Current issue:
+Consumables do not visibly update or forecast based on upcoming events.
+
+Expected:
+Consumables should show upcoming print demand.
+
+Rules:
+
+* includedPrints = 200 → forecast 200 prints
+* includedPrints = unlimited → forecast 600 prints
+* includedPrints empty → warning “Print quantity not specified”
+
+Display in Consumables page:
+
+* upcoming prints required
+* current available stock
+* estimated shortage
+* reorder recommendation
+* per-event print requirement
+
+Example:
+“Upcoming events require 1,000 prints. Current stock covers 700. Estimated shortage: 300 prints.”
+
+Important:
+This is forecast/reservation planning, not physical stock consumption.
+Do not subtract physical stock automatically unless explicitly designed later.
+
+Verification:
+Create a paid/signed upcoming event with 200 prints.
+Open Consumables.
+Forecast must show 200 prints required.
+
+==================================================
+5. LOGO DARK MODE
+=================
+
+Current issue:
+The HaloLight Hub logo is not properly adapted to dark mode.
+
+Expected:
+
+* Logo must remain visible and premium in dark mode.
+* Use the correct dark-mode logo variant if available.
+* If no asset exists, apply safe CSS or use a monochrome/light version.
+* Do not make the logo look washed out or invisible.
+
+Verification:
+Switch to dark mode and check:
+
+* sidebar logo
+* topbar if applicable
+* loading / auth pages if applicable
+
+==================================================
+6. DASHBOARD — CONTINUE LEARNING IMAGE
+======================================
+
+Current issue:
+The “Continue Learning” card on the dashboard lacks a proper image / thumbnail.
+
+Expected:
+Add a course thumbnail/image to the Continue Learning section.
+
+Rules:
+
+* Use course thumbnail if available
+* Use selected language thumbnail if available
+* If no thumbnail, use a clean default Academy placeholder
+* Never render empty src=""
+* Must work in light and dark mode
+
+==================================================
+7. UPCOMING EVENTS SORTING
+==========================
+
+Current issue:
+Upcoming events may still not be sorted correctly everywhere.
+
+Expected:
+Upcoming events must always be sorted from nearest to furthest.
+
+Apply to:
+
+* Dashboard upcoming events widget
+* Events page
+* Any event dropdown/list
+
+Verification:
+Create several future events.
+Closest date must appear first.
+
+==================================================
+8. DASHBOARD WIDGET CUSTOMIZATION
+=================================
+
+Add basic dashboard customization.
+
+Users should be able to:
+
+* show/hide widgets
+* reorder widgets if feasible
+* save dashboard layout preference
+
+Keep it simple for v1:
+
+* a “Customize dashboard” button
+* toggle widgets on/off
+* persist layout/settings per user
+
+Widgets can include:
+
+* Academy progress
+* Continue Learning
+* Upcoming Events
+* Sales Pipeline
+* Revenue
+* Consumables Forecast
+* Equipment Alerts
+* Support Tickets
+
+Do not overbuild drag-and-drop if too risky.
+A simple show/hide system is enough for beta.
+
+==================================================
+9. ACADEMY COURSE IMAGES
+========================
+
+Current issue:
+Academy courses still use blurry placeholders.
+
+Expected:
+Add proper course images/thumbnails.
+
+Rules:
+
+* Use course thumbnail if available
+* Use BunnyStream thumbnail if available
+* Use language-specific thumbnail when available
+* Use clean fallback image if no thumbnail
+* No blurry gradient placeholder for final beta
+
+Apply to:
+
+* Academy course cards
+* Course detail hero
+* Continue Learning dashboard card
+
+==================================================
+10. GRAPHICAL DATA VIEW
+=======================
+
+Add simple charts for key business data.
+
+Areas:
+
+* prospects/leads
+* quotes/devis
+* contracts/contrats
+* invoices/factures
+* revenue
+* conversion rate
+
+Start simple:
+
+* small dashboard cards/charts
+* monthly trend
+* status breakdown
+
+Do not overbuild advanced analytics yet.
+
+Expected:
+The dashboard should visually show business activity, not only numbers.
+
+==================================================
+11. QUOTE STATUS EDITABLE FROM LIST
+===================================
+
+Current issue:
+Quote status cannot be easily modified directly from the quote list.
+
+Expected:
+On Quotes list page:
+
+* allow changing status directly from the list
+* statuses:
+
+  * draft
+  * sent
+  * accepted
+  * rejected
+  * expired
+* changing status should update pipeline if linked to a lead
+* accepted quote should allow/create contract workflow as already implemented
+
+UX:
+
+* use dropdown or quick action menu
+* show loading state
+* show success/error toast
+* no page reload required
+
+==================================================
+12. FINAL VERIFICATION
+======================
+
+Test after fixes:
+
+Language/i18n:
+
+* FR mode has no English in Knowledge Base, Community, Configuration, Equipment labels.
+
+Community:
+
+* no layout bug on desktop/mobile.
+
+Events:
+
+* prep sheet shows location, package, prints, equipment.
+* upcoming events sorted nearest first.
+
+Consumables:
+
+* forecast reflects upcoming event print requirements.
+
+Dashboard:
+
+* Continue Learning image visible.
+* widgets can be customized.
+* charts display leads/quotes/contracts/invoices/revenue.
+
+Academy:
+
+* course images visible, not blurry placeholders.
+
+Quotes:
+
+* status editable from list.
+
+Run:
+
+* frontend typecheck
+* API typecheck
+* console check
+* mobile layout check
+
+Provide:
+
+* root cause for each issue
+* files changed
+* screenshots or clear verification summary
+* remaining known limitations if any

@@ -74,7 +74,17 @@
     "minutes": "min",
     "equipment_ok": "Wszystko OK",
     "stock_ok": "Pełny stan",
-    "watched": "obejrzano"
+    "watched": "obejrzano",
+    "customize": "Dostosuj",
+    "customize_title": "Dostosuj pulpit",
+    "customize_desc": "Pokaż lub ukryj widżety, aby spersonalizować swój pulpit.",
+    "sales_overview": "Lejek sprzedaży",
+    "widget_next_lesson": "Kontynuuj naukę",
+    "widget_onboarding": "Postęp wdrożenia",
+    "widget_notifications": "Ostatnie powiadomienia",
+    "widget_upcoming_events": "Nadchodzące wydarzenia",
+    "widget_academy_stats": "Postęp akademii",
+    "widget_sales_overview": "Lejek sprzedaży"
   },
   "academy": {
     "title": "Akademia",
@@ -108,7 +118,8 @@
     "total_progress": "Całkowity postęp",
     "courses_completed": "Ukończone kursy",
     "course_overview": "Przegląd kursu",
-    "watch_video": "Oglądaj wideo"
+    "watch_video": "Oglądaj wideo",
+    "watch_time": "Czas oglądania"
   },
   "events": {
     "title": "Wydarzenia",
@@ -298,7 +309,17 @@
     "days_remaining_short": "~{{days}}d pozostało",
     "reorder_threshold": "Próg zamówienia: {{threshold}} {{unit}}",
     "last_restocked": "Ostatnie uzupełnienie: {{date}}",
-    "reorder_recommended_msg": "Zalecane zamówienie"
+    "reorder_recommended_msg": "Zalecane zamówienie",
+    "forecast_title": "Prognoza druku — Nadchodzące wydarzenia",
+    "forecast_required": "Wymagane wydruki",
+    "forecast_available": "Dostępne wydruki",
+    "forecast_shortage": "Niedobór",
+    "forecast_ok": "OK",
+    "forecast_sufficient": "Zapas wystarczający",
+    "forecast_reorder_hint": "Zamów papier przed następnym wydarzeniem, aby uniknąć braków.",
+    "forecast_prints_label": "wydruków",
+    "forecast_more_events": "więcej wydarzeń",
+    "forecast_no_prints_warning": "Ilość wydruków nie określona"
   },
   "support": {
     "title": "Wsparcie",
@@ -1650,7 +1671,10 @@
     "service_repair": "Naprawa",
     "service_upgrade": "Ulepszenie",
     "service_inspection": "Inspekcja",
-    "service_warranty_claim": "Roszczenie gwarancyjne"
+    "service_warranty_claim": "Roszczenie gwarancyjne",
+    "upcoming_events_title": "Nadchodzące zadania",
+    "events_count": "wydarzenie(ń)",
+    "no_upcoming_events": "Brak nadchodzących wydarzeń przypisanych do tego sprzętu."
   },
   "kb_admin": {
     "back": "Baza wiedzy",
