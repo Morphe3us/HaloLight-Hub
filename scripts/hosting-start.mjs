@@ -2,9 +2,15 @@ import { access } from "node:fs/promises";
 import { constants } from "node:fs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
+import { loadEnvFile } from "node:process";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 process.chdir(root);
+try {
+  loadEnvFile(path.join(root, ".env"));
+} catch (error) {
+  if (error.code !== "ENOENT") throw error;
+}
 process.env.NODE_ENV = "production";
 
 const frontendPath = path.resolve(

@@ -32,10 +32,10 @@ before testing authentication. Do not guess an IP address or change mail DNS.
 
 ## Build environment
 
-Supply `VITE_CLERK_PUBLISHABLE_KEY` as an exported build environment variable,
-using the live publishable key for the production Clerk instance. The script
-fails before installation when this variable is absent or blank; a key only in
-a local `.env` does not satisfy this explicit hosting guard. A nonempty value is
+Supply `VITE_CLERK_PUBLISHABLE_KEY` in the private `.env` at the repository root
+or as an exported build environment variable, using the live publishable key
+for the production Clerk instance. Vite and the hosting guard both read this
+file. The script fails before installation when the key is absent or blank. A nonempty value is
 not proof that the key is valid or that Clerk's domain configuration is correct.
 
 All `VITE_` variables are public, compiled into browser assets. Never put a
@@ -60,8 +60,10 @@ both complete output directories in the deployed release:
 
 ## Runtime environment
 
-Configure these through the host's protected environment configuration, not
-committed files or build/start command strings:
+Configure these in a private root `.env` (file permissions `600`) or through the
+host's protected environment configuration, never in committed files or command
+strings. The start wrapper loads `.env` without overriding host environment
+variables, including `PORT`. The file must remain outside `dist/public`:
 
 | Variable | Purpose |
 | --- | --- |

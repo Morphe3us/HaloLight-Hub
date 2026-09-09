@@ -3,13 +3,13 @@ set -euo pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
-node --input-type=module -e '
+node --env-file-if-exists=.env --input-type=module -e '
   if (Number(process.versions.node.split(".")[0]) < 24) {
     console.error("Hosting build requires Node.js 24 or newer.");
     process.exit(1);
   }
   if (!process.env.VITE_CLERK_PUBLISHABLE_KEY?.trim()) {
-    console.error("Hosting build aborted: VITE_CLERK_PUBLISHABLE_KEY is missing or blank. Export the production Clerk publishable key in the build environment, then rebuild. Never use CLERK_SECRET_KEY or any secret under a VITE_ name.");
+    console.error("Hosting build aborted: VITE_CLERK_PUBLISHABLE_KEY is missing or blank. Set it in the private root .env file or build environment, then rebuild. Never use CLERK_SECRET_KEY or any secret under a VITE_ name.");
     process.exit(1);
   }
   if (!/^pk_(test|live)_/.test(process.env.VITE_CLERK_PUBLISHABLE_KEY)) {
