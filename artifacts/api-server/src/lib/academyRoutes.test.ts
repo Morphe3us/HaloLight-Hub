@@ -13,6 +13,7 @@ import { SubmitQuizBody, UpdateLessonProgressBody } from "@workspace/api-zod";
 import * as academyAccess from "./academyAccess";
 import * as academyLanguage from "./academyLanguage";
 import * as localizedPlayback from "./localizedPlayback";
+import * as bunnySecurity from "./bunnySecurity";
 import type { PublishedAcademyCatalog } from "./academyCatalog";
 
 const lessonId = "11111111-1111-4111-8111-111111111111";
@@ -34,6 +35,7 @@ type Request = {
   params: { id: string };
   query: { lang: string };
   body: unknown;
+  log: { warn: () => void };
 };
 type Response = {
   statusCode: number;
@@ -115,6 +117,7 @@ const routeCode = transformSync(
 function setupRoutes(
   snapshots: PublishedAcademyCatalog[],
   role: string | null = "client",
+  signPlayback: typeof bunnySecurity.secureLessonPlayback = (playback) => playback,
 ) {
   let catalogReads = 0;
   let playbackCalls = 0;
@@ -183,9 +186,6 @@ function setupRoutes(
     "../lib/academyAccess": academyAccess,
     "../lib/academyLanguage": academyLanguage,
     "../lib/localizedPlayback": localizedPlayback,
-    "../lib/bunnyPlaybackVerification": {
-      verifyBunnyPlaybackProtection: async () => {},
-    },
     "../lib/academyCatalog": {
       getPublishedAcademyCatalog: async () => {
         const index = Math.min(catalogReads++, snapshots.length - 1);
@@ -193,11 +193,10 @@ function setupRoutes(
       },
     },
     "../lib/bunnySecurity": {
-      BunnyPlaybackConfigurationError: class extends Error {},
-      isBunnyPlaybackUrl: () => false,
-      secureLessonPlayback: (playback: unknown) => {
+      BunnyPlaybackConfigurationError: bunnySecurity.BunnyPlaybackConfigurationError,
+      secureLessonPlayback: (playback: Parameters<typeof signPlayback>[0]) => {
         playbackCalls++;
-        return playback;
+        return signPlayback(playback);
       },
       thumbnailOnlyVideoAssets: () => null,
     },
@@ -249,6 +248,7 @@ function setupRoutes(
         params: { id: lessonId },
         query: { lang: options.lang ?? "en" },
         body: Object.hasOwn(options, "body") ? options.body : endpoint.body,
+        log: { warn: () => {} },
       };
       const handlers = routes.get(`${endpoint.method} ${endpoint.path}`);
       assert.ok(handlers, "expected route is registered");
@@ -268,6 +268,39 @@ function setupRoutes(
     },
   };
 }
+
+test("published Bunny lessons return signed playback without a remote verification dependency", async (t) => {
+  const names = ["NODE_ENV", "BUNNY_STREAM_LIBRARY_ID", "BUNNY_STREAM_TOKEN_AUTH_KEY", "BUNNY_PLAYBACK_SECURITY_CONFIRMED"];
+  const original = names.map((name) => process.env[name]);
+  t.after(() => names.forEach((name, index) => {
+    const value = original[index];
+    if (value === undefined) delete process.env[name];
+    else process.env[name] = value;
+  }));
+  process.env.NODE_ENV = "production";
+  process.env.BUNNY_STREAM_LIBRARY_ID = "123";
+  process.env.BUNNY_STREAM_TOKEN_AUTH_KEY = "test-signing-key";
+  process.env.BUNNY_PLAYBACK_SECURITY_CONFIRMED = "false";
+  t.mock.method(globalThis, "fetch", async () => {
+    assert.fail("lesson delivery must not make remote requests");
+  });
+  const catalog = publishedCatalog();
+  catalog.lessons[0]!.videoUrl = "https://iframe.mediadelivery.net/embed/123/video";
+  for (const role of ["client", "admin"]) {
+    const routes = setupRoutes([catalog], role, bunnySecurity.secureLessonPlayback);
+    const response = await routes.request(endpoints[0]);
+    assert.equal(response.statusCode, 200);
+    const signed = new URL(response.body!.videoUrl as string);
+    assert.match(signed.searchParams.get("token")!, /^[a-f0-9]{64}$/);
+    assert.ok(Number(signed.searchParams.get("expires")) > Date.now() / 1000);
+  }
+  delete process.env.BUNNY_STREAM_TOKEN_AUTH_KEY;
+  const routes = setupRoutes([catalog], "client", bunnySecurity.secureLessonPlayback);
+  const response = await routes.request(endpoints[0]);
+  assert.equal(response.statusCode, 503);
+  assert.equal(response.body?.code, "PLAYBACK_UNAVAILABLE");
+  assert.equal(response.body?.videoUrl, undefined);
+});
 
 for (const endpoint of endpoints) {
   test(`${endpoint.method} lesson access uses one catalog snapshot and observes unpublishing on the next request`, async () => {

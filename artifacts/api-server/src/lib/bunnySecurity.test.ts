@@ -40,6 +40,8 @@ test.afterEach(() => {
 test("bunnyPlaybackSecurityConfirmed fails closed outside explicit development", () => {
   delete process.env.NODE_ENV;
   delete process.env.BUNNY_PLAYBACK_SECURITY_CONFIRMED;
+  delete process.env.BUNNY_STREAM_TOKEN_AUTH_KEY;
+  delete process.env.BUNNY_STREAM_LIBRARY_ID;
   assert.equal(bunnyPlaybackSecurityConfirmed(), false);
 
   process.env.NODE_ENV = "production";
@@ -51,6 +53,32 @@ test("bunnyPlaybackSecurityConfirmed fails closed outside explicit development",
   process.env.BUNNY_STREAM_TOKEN_AUTH_KEY = "test-key";
   process.env.BUNNY_STREAM_LIBRARY_ID = "123";
   assert.equal(bunnyPlaybackSecurityConfirmed(), true);
+});
+
+test("production signs playback regardless of the legacy confirmation flag", () => {
+  process.env.NODE_ENV = "production";
+  process.env.BUNNY_STREAM_TOKEN_AUTH_KEY = "test-signing-key";
+  process.env.BUNNY_STREAM_LIBRARY_ID = "123";
+  const playback = { videoUrl: "https://iframe.mediadelivery.net/embed/123/video", videoUrls: null, videoAssets: null };
+  for (const flag of [undefined, "false", "true"]) {
+    if (flag === undefined) delete process.env.BUNNY_PLAYBACK_SECURITY_CONFIRMED;
+    else process.env.BUNNY_PLAYBACK_SECURITY_CONFIRMED = flag;
+    assert.equal(bunnyPlaybackSecurityConfirmed(), true);
+    const signed = new URL(secureLessonPlayback(playback, 1700000000).videoUrl);
+    assert.match(signed.searchParams.get("token")!, /^[a-f0-9]{64}$/);
+    assert.equal(signed.searchParams.get("expires"), "1700003600");
+  }
+});
+
+test("production never falls back to unsigned playback with missing or invalid signing configuration", () => {
+  process.env.NODE_ENV = "production";
+  process.env.BUNNY_PLAYBACK_SECURITY_CONFIRMED = "true";
+  const playback = { videoUrl: "https://iframe.mediadelivery.net/embed/123/video", videoUrls: null, videoAssets: null };
+  for (const [library, token] of [["123", ""], ["123", "  "], ["", "test-key"], ["  ", "test-key"], ["invalid", "test-key"], ["456", "test-key"]]) {
+    process.env.BUNNY_STREAM_LIBRARY_ID = library;
+    process.env.BUNNY_STREAM_TOKEN_AUTH_KEY = token;
+    assert.throws(() => secureLessonPlayback(playback), BunnyPlaybackConfigurationError);
+  }
 });
 
 test("isBunnyPlaybackUrl detects Bunny playback hosts", () => {

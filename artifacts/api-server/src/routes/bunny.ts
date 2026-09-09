@@ -360,7 +360,7 @@ router.post("/admin/bunny/import", requireAuth, async (req: Request, res: Respon
   if (!bunnyPlaybackSecurityConfirmed()) {
     res.status(400).json({
       error:
-        "Bunny playback security is not confirmed. Configure Bunny token/referrer restrictions, then set BUNNY_PLAYBACK_SECURITY_CONFIRMED=true before importing videos.",
+        "Bunny playback signing is unavailable. Configure a valid library ID and embed token signing key, and ensure playback is not disabled in development.",
     });
     return;
   }

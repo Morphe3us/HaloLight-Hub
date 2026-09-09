@@ -3,14 +3,12 @@ import { isExplicitDevelopment, parseBooleanEnv } from "./env";
 import type { localizedLessonPlayback } from "./localizedPlayback";
 
 export function bunnyPlaybackSecurityConfirmed(): boolean {
-  const configured = parseBooleanEnv(
-    process.env.BUNNY_PLAYBACK_SECURITY_CONFIRMED,
-  );
-  if (configured === false) return false;
-  if (isExplicitDevelopment()) return true;
-  return configured === true && Boolean(
+  if (isExplicitDevelopment()) {
+    return parseBooleanEnv(process.env.BUNNY_PLAYBACK_SECURITY_CONFIRMED) !== false;
+  }
+  return Boolean(
     process.env.BUNNY_STREAM_TOKEN_AUTH_KEY?.trim() &&
-    process.env.BUNNY_STREAM_LIBRARY_ID?.trim(),
+    /^\d+$/.test(process.env.BUNNY_STREAM_LIBRARY_ID?.trim() ?? ""),
   );
 }
 

@@ -23,11 +23,9 @@ import {
 import {
   BunnyPlaybackConfigurationError,
   secureLessonPlayback,
-  isBunnyPlaybackUrl,
   thumbnailOnlyVideoAssets,
 } from "../lib/bunnySecurity";
 import { localizedLessonPlayback } from "../lib/localizedPlayback";
-import { verifyBunnyPlaybackProtection } from "../lib/bunnyPlaybackVerification";
 
 const router: IRouter = Router();
 router.use("/academy", (_req, res, next) => {
@@ -319,10 +317,6 @@ router.get(
     let playback;
     try {
       playback = secureLessonPlayback(localizedLessonPlayback(lesson, lang));
-      const bunnyUrl = [playback.videoUrl, ...Object.values(playback.videoUrls ?? {}),
-        ...Object.values(playback.videoAssets ?? {}).map((asset) => asset.embedUrl)]
-        .find(isBunnyPlaybackUrl);
-      if (bunnyUrl) await verifyBunnyPlaybackProtection(bunnyUrl);
     } catch (error) {
       if (!(error instanceof BunnyPlaybackConfigurationError)) throw error;
       req.log.warn({ lessonId }, "Bunny playback configuration is incomplete");
