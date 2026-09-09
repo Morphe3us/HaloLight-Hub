@@ -68,6 +68,8 @@ committed files or build/start command strings:
 | `DATABASE_URL` | Reachable production PostgreSQL connection |
 | `CLERK_SECRET_KEY` | Production Clerk secret, server-only |
 | `CLERK_PUBLISHABLE_KEY` | Matching production Clerk publishable key |
+| `APP_PUBLIC_URL` | `https://hub.halolightbooth.com` |
+| `API_ALLOWED_ORIGINS` | `https://hub.halolightbooth.com` |
 | `STORAGE_PROVIDER` | `url` for URL-only resources; otherwise a configured durable provider |
 | `PORT` | Supplied by Infomaniak; preserved by the start wrapper |
 | `FRONTEND_DIST_PATH` | Optional override; defaults to `artifacts/halolight-os/dist/public` |
