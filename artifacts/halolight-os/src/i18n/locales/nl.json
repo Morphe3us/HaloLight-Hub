@@ -639,6 +639,7 @@
     "theme_system": "Systeem"
   },
   "common": {
+    "access_not_validated": "We konden je toegang niet bevestigen. Log uit en log in met het account dat je uitnodiging heeft ontvangen, of neem contact op met je beheerder.",
     "loading": "Laden...",
     "error": "Er is iets misgegaan",
     "retry": "Opnieuw proberen",

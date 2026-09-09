@@ -639,6 +639,7 @@
     "theme_system": "Sistema"
   },
   "common": {
+    "access_not_validated": "Não foi possível validar seu acesso. Saia e entre com a conta que recebeu seu convite ou entre em contato com seu administrador.",
     "loading": "Carregando...",
     "error": "Algo deu errado",
     "retry": "Tentar novamente",

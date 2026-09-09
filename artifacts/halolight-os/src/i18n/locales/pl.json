@@ -639,6 +639,7 @@
     "theme_system": "Systemowy"
   },
   "common": {
+    "access_not_validated": "Nie udało się zweryfikować Twojego dostępu. Wyloguj się i zaloguj na konto, na które wysłano zaproszenie, lub skontaktuj się z administratorem.",
     "loading": "Ładowanie...",
     "error": "Coś poszło nie tak",
     "retry": "Spróbuj ponownie",

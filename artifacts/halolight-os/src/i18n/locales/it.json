@@ -639,6 +639,7 @@
     "theme_system": "Sistema"
   },
   "common": {
+    "access_not_validated": "Non è stato possibile verificare il tuo accesso. Esci e accedi con l'account che ha ricevuto il tuo invito, oppure contatta il tuo amministratore.",
     "loading": "Caricamento...",
     "error": "Qualcosa è andato storto",
     "retry": "Riprova",

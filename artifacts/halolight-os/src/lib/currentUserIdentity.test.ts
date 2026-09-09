@@ -5,6 +5,7 @@ import { createRequire } from "node:module";
 import { runInNewContext } from "node:vm";
 import ts from "typescript";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { apiErrorStatus } from "./apiErrorMessage";
 import {
   isPlaceholderDisplayName,
   resolveCurrentUserIdentity,
@@ -95,8 +96,10 @@ describe("resolveCurrentUserIdentity", () => {
 // Exercise App's actual session boundary without a browser, Clerk network calls,
 // or new test dependencies. Hook state/effect ordering is driven explicitly.
 const require = createRequire(import.meta.url);
+const { matchRoute } = require("wouter");
+const { parse } = createRequire(require.resolve("wouter"))("regexparam");
 const appSource = readFileSync(new URL("../App.tsx", import.meta.url), "utf8");
-const compiledApp = ts.transpileModule(`${appSource}\nexport { ClerkSession, ClerkSessionBoundary, LocalUserGate, AdminRouteContent, ClerkProviderWithRoutes };`, {
+const compiledApp = ts.transpileModule(`${appSource}\nexport { ClerkSession, ClerkSessionBoundary, LocalUserGate, AdminRouteContent, ClerkProviderWithRoutes, RequestedRoutePreloader, ProtectedRoutes };`, {
   compilerOptions: {
     module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX,
   },
@@ -120,6 +123,14 @@ function appHarness(key = "pk_test_fixture") {
   let states: unknown[] = [];
   let effects: Array<() => (() => void)> = [];
   let scheduleEffects = true;
+  let location = "/";
+  let signedIn = true;
+  let failImport = false;
+  const imports: string[] = [];
+  let pageMounts = 0;
+  let userQueries = 0;
+  let preloadDeps: unknown[] | undefined;
+  let renderingPreloader = false;
   const clerk = {
     get user() { return { id: auth.userId }; },
     get session() { return { id: auth.sessionId }; },
@@ -140,32 +151,62 @@ function appHarness(key = "pk_test_fixture") {
           if (!(index in states)) states[index] = typeof init === "function" ? init() : init;
           return [states[index], (value: unknown) => { states[index] = value; }];
         },
-        useEffect: (effect: () => () => void) => { if (scheduleEffects) effects.push(effect); },
+        useEffect: (effect: () => () => void, deps: unknown[]) => {
+          if (renderingPreloader) {
+            if (!preloadDeps || deps.some((value, index) => !Object.is(value, preloadDeps![index]))) {
+              effects.push(effect);
+            }
+            preloadDeps = deps;
+          } else if (scheduleEffects) effects.push(effect);
+        },
       };
       if (id === "react/jsx-runtime") return require(id);
       if (id === "react-i18next") return { useTranslation: () => ({ t: (key: string) => key }) };
       if (id === "@clerk/react") return {
-        useAuth: () => ({ ...auth, getToken: () => token() }), useClerk: () => clerk,
+        useAuth: () => ({ ...auth, isSignedIn: signedIn, getToken: () => token() }), useClerk: () => clerk,
         ClerkProvider: pass, ClerkLoading: pass, ClerkFailed: pass, Show: pass,
       };
       if (id === "@workspace/api-client-react") return {
         setAuthTokenGetter: (getter: typeof tokenGetter) => { tokenGetter = getter; },
-        useGetCurrentUser: () => result,
+        useGetCurrentUser: () => { userQueries++; return result; },
       };
       if (id === "@tanstack/react-query") return { QueryClient, QueryClientProvider };
       if (id === "./lib/queryClient") return { queryClient: new QueryClient({ defaultOptions: { queries: { retry: 1 } } }) };
+      if (id === "./lib/apiErrorMessage") return { apiErrorStatus };
       if (id === "@clerk/themes") return { shadcn: {} };
-      if (id === "wouter") return { Redirect: redirect, useLocation: () => ["/", () => {}], Route: pass, Switch: pass };
+      if (id === "wouter") return {
+        Redirect: redirect, useLocation: () => [location, () => {}],
+        useRouter: () => ({ parser: parse }), matchRoute, Route: pass, Switch: pass,
+      };
       if (id === "./components/theme-provider") return { ThemeProvider: pass };
       if (id === "./components/layout/AppShell") return { AppShell: pass };
       if (id === "./components/LanguageSync") return { LanguageSync: pass };
       if (id === "@/components/ui/toaster") return { Toaster: pass };
       if (id === "@/components/ui/tooltip") return { TooltipProvider: pass };
+      if (id.startsWith("./pages/")) {
+        imports.push(id);
+        if (failImport) throw new Error("Chunk unavailable");
+        return { default: () => { pageMounts++; return null; } };
+      }
       throw new Error(`Unexpected dependency: ${id}`);
     },
   });
   return {
     components: module.exports, redirect,
+    imports,
+    get pageMounts() { return pageMounts; },
+    get userQueries() { return userQueries; },
+    setLocation: (next: string) => { location = next; },
+    setSignedIn: (next: boolean) => { signedIn = next; },
+    setImportFailure: (next: boolean) => { failImport = next; },
+    preload: async () => {
+      effects = []; scheduleEffects = true;
+      renderingPreloader = true;
+      module.exports.RequestedRoutePreloader();
+      renderingPreloader = false;
+      effects.forEach((effect) => effect());
+      await new Promise<void>((resolve) => setImmediate(resolve));
+    },
     get getter() { return tokenGetter!; },
     setAuth: (next: typeof auth) => { auth = next; },
     setToken: (next: typeof token) => { token = next; },
@@ -185,7 +226,7 @@ describe("auth loading and session isolation", () => {
   it("all auth loading and recovery labels exist in all eight locales", () => {
     for (const language of ["en", "fr", "es", "de", "it", "pl", "pt", "nl"]) {
       const locale = JSON.parse(readFileSync(new URL(`../i18n/locales/${language}.json`, import.meta.url), "utf8"));
-      for (const [group, key] of [["common", "loading"], ["common", "error"], ["common", "retry"], ["nav", "sign_out"]]) {
+      for (const [group, key] of [["common", "loading"], ["common", "error"], ["common", "access_not_validated"], ["common", "retry"], ["nav", "sign_out"]]) {
         assert.equal(typeof locale[group]?.[key], "string", `${language}: ${group}.${key}`);
         assert.ok(locale[group][key].trim());
       }
@@ -251,6 +292,44 @@ describe("auth loading and session isolation", () => {
     assert.equal(h.components.LocalUserGate({ children: "protected" }), "protected");
   });
 
+  it("explains access validation failures without exposing API diagnostics", () => {
+    const h = appHarness();
+    for (const result of [
+      { isError: true, error: { status: 401, data: { error: "Internal identity diagnostic" } } },
+      { isError: true, error: { status: 403 } },
+      { isError: true, error: { status: 401 }, data: { isActive: true, clerkId: "user_a" } },
+      { data: { isActive: false, clerkId: "user_a" } },
+      { data: { isActive: true, clerkId: "user_b" } },
+    ]) {
+      h.setResult(result);
+      const alert = h.components.LocalUserGate({ children: "protected" });
+      assert.equal(alert.props.role, "alert");
+      assert.equal(alert.props.children[0].props.children, "common.access_not_validated");
+      const buttons = alert.props.children[1].props.children;
+      assert.equal(buttons[0].props.children, "common.retry");
+      assert.equal(buttons[1].props.children, "nav.sign_out");
+    }
+  });
+
+  it("keeps network, server and other errors generic even without valid user data", () => {
+    const h = appHarness();
+    for (const error of [new Error("Failed to fetch"), { status: 500 }, { status: 503 }, { status: 404 }, { status: "401" }, null]) {
+      for (const data of [undefined, { isActive: false, clerkId: "user_b" }, { isActive: true, clerkId: "user_a" }]) {
+        h.setResult({ isError: true, error, data });
+        const alert = h.components.LocalUserGate({ children: "protected" });
+        assert.equal(alert.props.role, "alert");
+        assert.equal(alert.props.children[0].props.children, "common.error");
+      }
+    }
+  });
+
+  it("keeps pending access validation in the loading state", () => {
+    const h = appHarness();
+    h.setResult({ isPending: true });
+    const pending = h.components.LocalUserGate({ children: "protected" });
+    assert.equal(pending.type().props.role, "status");
+  });
+
   it("does not render admin content for a non-admin", () => {
     const h = appHarness();
     h.setResult({ data: { role: "client" } });
@@ -260,5 +339,90 @@ describe("auth loading and session isolation", () => {
   it("ignores the proxy for development keys in production builds", () => {
     assert.equal(appHarness().components.ClerkProviderWithRoutes().props.proxyUrl, undefined);
     assert.equal(appHarness("pk_live_fixture").components.ClerkProviderWithRoutes().props.proxyUrl, "/api/__clerk");
+  });
+});
+
+describe("requested route code preloading", () => {
+  it("preloads only the requested academy or admin module during local validation", async () => {
+    for (const [path, page] of [
+      ["/academy", "Academy"],
+      ["/academy/course-1", "AcademyCourse"],
+      ["/academy/course-1/lesson-2", "AcademyLesson"],
+      ["/admin/academy", "AdminAcademy"],
+      ["/admin/clients/client-1", "Client360"],
+      ["/kb/admin", "KBAdmin"],
+      ["/community/posts/post-1", "PostDetail"],
+    ]) {
+      const h = appHarness();
+      h.setLocation(path);
+      h.setResult({ isPending: true });
+      await h.preload();
+      assert.deepEqual(h.imports, [`./pages/${page}`]);
+      assert.equal(h.userQueries, 0);
+      assert.equal(h.pageMounts, 0);
+      assert.equal(h.components.LocalUserGate({ children: "protected" }).type().props.role, "status");
+    }
+  });
+
+  it("does not burst-prefetch or unblock content when local authorization fails", async () => {
+    for (const result of [
+      { isError: true, error: { status: 403 } },
+      { data: { isActive: false, clerkId: "user_a" } },
+      { data: { isActive: true, clerkId: "user_b" } },
+    ]) {
+      const h = appHarness();
+      h.setLocation("/academy/course-1/lesson-2");
+      h.setResult(result);
+      await h.preload();
+      await h.preload();
+      assert.deepEqual(h.imports, ["./pages/AcademyLesson"]);
+      assert.equal(h.components.LocalUserGate({ children: "protected" }).props.role, "alert");
+      assert.equal(h.pageMounts, 0);
+    }
+  });
+
+  it("skips signed-out, public and unmatched paths", async () => {
+    const h = appHarness();
+    h.setSignedIn(false);
+    h.setLocation("/admin/academy");
+    await h.preload();
+    h.setSignedIn(true);
+    for (const path of ["/", "/sign-in", "/sign-in/factor-one", "/sign-up", "/missing", "/academy/a/b/extra"]) {
+      h.setLocation(path);
+      await h.preload();
+    }
+    assert.deepEqual(h.imports, []);
+  });
+
+  it("reacts to navigation and sign-in without reloading on validation rerenders", async () => {
+    const h = appHarness();
+    h.setSignedIn(false);
+    h.setLocation("/academy/course-1");
+    await h.preload();
+    h.setSignedIn(true);
+    await h.preload();
+    h.setResult({ data: { isActive: true, clerkId: "user_a" } });
+    await h.preload();
+    h.setLocation("/academy/course-1/lesson-2");
+    await h.preload();
+    assert.deepEqual(h.imports, ["./pages/AcademyCourse", "./pages/AcademyLesson"]);
+  });
+
+  it("handles speculative import failures without bypassing admin authorization", async () => {
+    const h = appHarness();
+    h.setLocation("/admin/academy");
+    h.setImportFailure(true);
+    await h.preload();
+    h.setResult({ data: { role: "client" } });
+    assert.equal(h.components.AdminRouteContent({ component: () => "admin" }).type, h.redirect);
+    assert.deepEqual(h.imports, ["./pages/AdminAcademy"]);
+    assert.equal(h.pageMounts, 0);
+  });
+
+  it("keeps the application shell and route switch inside LocalUserGate", () => {
+    const h = appHarness();
+    const signedIn = h.components.ProtectedRoutes().props.children[0];
+    assert.equal(signedIn.props.when, "signed-in");
+    assert.equal(signedIn.props.children.type, h.components.LocalUserGate);
   });
 });

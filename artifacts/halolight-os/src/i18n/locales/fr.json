@@ -639,6 +639,7 @@
     "theme_system": "Système"
   },
   "common": {
+    "access_not_validated": "Nous n'avons pas pu valider votre accès. Déconnectez-vous et reconnectez-vous avec le compte qui a reçu votre invitation, ou contactez votre administrateur.",
     "loading": "Chargement...",
     "error": "Une erreur s'est produite",
     "retry": "Réessayer",

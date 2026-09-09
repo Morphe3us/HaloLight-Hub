@@ -2,9 +2,10 @@ import { lazy, Suspense, useEffect, useState, type ReactNode } from "react";
 import { ClerkProvider, ClerkLoading, ClerkFailed, SignIn, SignUp, Show, useClerk, useAuth } from '@clerk/react';
 import { setAuthTokenGetter, useGetCurrentUser } from "@workspace/api-client-react";
 import { shadcn } from '@clerk/themes';
-import { Switch, Route, useLocation, Router as WouterRouter, Redirect } from 'wouter';
+import { Switch, Route, useLocation, useRouter, matchRoute, Router as WouterRouter, Redirect } from 'wouter';
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
+import { apiErrorStatus } from "./lib/apiErrorMessage";
 import { ThemeProvider } from "./components/theme-provider";
 import { useTranslation } from "react-i18next";
 
@@ -14,50 +15,52 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 const Landing = lazy(() => import("./pages/Landing"));
-const Dashboard = lazy(() => import("./pages/Dashboard"));
-const Notifications = lazy(() => import("./pages/Notifications"));
-const Settings = lazy(() => import("./pages/Settings"));
-const Admin = lazy(() => import("./pages/Admin"));
-const Onboarding = lazy(() => import("./pages/Onboarding"));
-const Academy = lazy(() => import("./pages/Academy"));
-const AcademyCourse = lazy(() => import("./pages/AcademyCourse"));
-const AcademyLesson = lazy(() => import("./pages/AcademyLesson"));
-const Events = lazy(() => import("./pages/Events"));
-const Leads = lazy(() => import("./pages/Leads"));
-const LeadDetail = lazy(() => import("./pages/LeadDetail"));
-const Quotes = lazy(() => import("./pages/Quotes"));
-const QuoteDetail = lazy(() => import("./pages/QuoteDetail"));
-const Contracts = lazy(() => import("./pages/Contracts"));
-const ContractDetail = lazy(() => import("./pages/ContractDetail"));
-const Invoices = lazy(() => import("./pages/Invoices"));
-const InvoiceDetail = lazy(() => import("./pages/InvoiceDetail"));
-const Support = lazy(() => import("./pages/Support"));
-const TicketDetail = lazy(() => import("./pages/TicketDetail"));
-const KnowledgeBase = lazy(() => import("./pages/KnowledgeBase"));
-const KBArticle = lazy(() => import("./pages/KBArticle"));
-const KBAdmin = lazy(() => import("./pages/KBAdmin"));
-const AIAssistant = lazy(() => import("./pages/AIAssistant"));
-const Community = lazy(() => import("./pages/Community"));
-const CommunityChannel = lazy(() => import("./pages/CommunityChannel"));
-const PostDetail = lazy(() => import("./pages/PostDetail"));
-const AdminAnalytics = lazy(() => import("./pages/AdminAnalytics"));
-const AdminRevenue = lazy(() => import("./pages/AdminRevenue"));
-const AdminClients = lazy(() => import("./pages/AdminClients"));
-const Client360 = lazy(() => import("./pages/Client360"));
-const AdminEquipment = lazy(() => import("./pages/AdminEquipment"));
-const AdminAutomation = lazy(() => import("./pages/AdminAutomation"));
-const AdminAcademy = lazy(() => import("./pages/AdminAcademy"));
-const AdminResources = lazy(() => import("./pages/AdminResources"));
-const AdminSearch = lazy(() => import("./pages/AdminSearch"));
-const AdminTranslations = lazy(() => import("./pages/AdminTranslations"));
-const AdminUploads = lazy(() => import("./pages/AdminUploads"));
-const AdminAIKnowledge = lazy(() => import("./pages/AdminAIKnowledge"));
-const AdminBackup = lazy(() => import("./pages/AdminBackup"));
-const AdminExports = lazy(() => import("./pages/AdminExports"));
-const AdminContractTemplates = lazy(() => import("./pages/AdminContractTemplates"));
-const Equipment = lazy(() => import("./pages/Equipment"));
-const EquipmentDetail = lazy(() => import("./pages/EquipmentDetail"));
-const Consumables = lazy(() => import("./pages/Consumables"));
+const protectedPages = [
+  { path: "/dashboard", load: () => import("./pages/Dashboard"), admin: false },
+  { path: "/academy", load: () => import("./pages/Academy"), admin: false },
+  { path: "/academy/:courseId/:lessonId", load: () => import("./pages/AcademyLesson"), admin: false },
+  { path: "/academy/:courseId", load: () => import("./pages/AcademyCourse"), admin: false },
+  { path: "/events", load: () => import("./pages/Events"), admin: false },
+  { path: "/crm/leads/:id", load: () => import("./pages/LeadDetail"), admin: false },
+  { path: "/crm/leads", load: () => import("./pages/Leads"), admin: false },
+  { path: "/quotes/:id", load: () => import("./pages/QuoteDetail"), admin: false },
+  { path: "/quotes", load: () => import("./pages/Quotes"), admin: false },
+  { path: "/contracts/:id", load: () => import("./pages/ContractDetail"), admin: false },
+  { path: "/contracts", load: () => import("./pages/Contracts"), admin: false },
+  { path: "/invoices/:id", load: () => import("./pages/InvoiceDetail"), admin: false },
+  { path: "/invoices", load: () => import("./pages/Invoices"), admin: false },
+  { path: "/support/tickets/:id", load: () => import("./pages/TicketDetail"), admin: false },
+  { path: "/support", load: () => import("./pages/Support"), admin: false },
+  { path: "/kb/admin", load: () => import("./pages/KBAdmin"), admin: true },
+  { path: "/kb/articles/:id", load: () => import("./pages/KBArticle"), admin: false },
+  { path: "/kb", load: () => import("./pages/KnowledgeBase"), admin: false },
+  { path: "/ai", load: () => import("./pages/AIAssistant"), admin: false },
+  { path: "/community/posts/:id", load: () => import("./pages/PostDetail"), admin: false },
+  { path: "/community/:id", load: () => import("./pages/CommunityChannel"), admin: false },
+  { path: "/community", load: () => import("./pages/Community"), admin: false },
+  { path: "/notifications", load: () => import("./pages/Notifications"), admin: false },
+  { path: "/onboarding", load: () => import("./pages/Onboarding"), admin: false },
+  { path: "/settings", load: () => import("./pages/Settings"), admin: false },
+  { path: "/admin/analytics", load: () => import("./pages/AdminAnalytics"), admin: true },
+  { path: "/admin/revenue", load: () => import("./pages/AdminRevenue"), admin: true },
+  { path: "/admin/clients/:id", load: () => import("./pages/Client360"), admin: true },
+  { path: "/admin/clients", load: () => import("./pages/AdminClients"), admin: true },
+  { path: "/admin/equipment", load: () => import("./pages/AdminEquipment"), admin: true },
+  { path: "/admin/automation", load: () => import("./pages/AdminAutomation"), admin: true },
+  { path: "/admin/academy", load: () => import("./pages/AdminAcademy"), admin: true },
+  { path: "/admin/resources", load: () => import("./pages/AdminResources"), admin: true },
+  { path: "/admin/search", load: () => import("./pages/AdminSearch"), admin: true },
+  { path: "/admin/translations", load: () => import("./pages/AdminTranslations"), admin: true },
+  { path: "/admin/uploads", load: () => import("./pages/AdminUploads"), admin: true },
+  { path: "/admin/ai-knowledge", load: () => import("./pages/AdminAIKnowledge"), admin: true },
+  { path: "/admin/backup", load: () => import("./pages/AdminBackup"), admin: true },
+  { path: "/admin/exports", load: () => import("./pages/AdminExports"), admin: true },
+  { path: "/admin/contract-templates", load: () => import("./pages/AdminContractTemplates"), admin: true },
+  { path: "/admin", load: () => import("./pages/Admin"), admin: true },
+  { path: "/equipment/:id", load: () => import("./pages/EquipmentDetail"), admin: false },
+  { path: "/equipment", load: () => import("./pages/Equipment"), admin: false },
+  { path: "/consumables", load: () => import("./pages/Consumables"), admin: false },
+].map((route) => ({ ...route, component: lazy(route.load) }));
 const NotFound = lazy(() => import("@/pages/not-found"));
 
 const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
@@ -144,31 +147,18 @@ function ClerkSessionBoundary({ children }: { children: ReactNode }) {
   return <ClerkSession key={JSON.stringify([userId, sessionId])}>{children}</ClerkSession>;
 }
 
-function SignedInRoutePrefetcher() {
+function RequestedRoutePreloader() {
   const { isSignedIn } = useAuth();
+  const [location] = useLocation();
+  const { parser } = useRouter();
+  const page = protectedPages.find(({ path }) => matchRoute(parser, path, location)[0]);
 
   useEffect(() => {
-    if (!isSignedIn) return;
-    const primary = window.setTimeout(() => {
-      void import("./pages/Dashboard");
-      void import("./pages/Academy");
-      void import("./pages/Events");
-      void import("./pages/Quotes");
-    }, 250);
-    const secondary = window.setTimeout(() => {
-      void import("./pages/Contracts");
-      void import("./pages/Invoices");
-      void import("./pages/Support");
-      void import("./pages/Equipment");
-      void import("./pages/Consumables");
-      void import("./pages/Settings");
-    }, 1_500);
-
-    return () => {
-      window.clearTimeout(primary);
-      window.clearTimeout(secondary);
-    };
-  }, [isSignedIn]);
+    if (!isSignedIn || !page) return;
+    // Load code while /users/me validates access; never mount the page or its queries.
+    // A failed speculative import must not prevent lazy rendering from retrying.
+    void page.load().catch(() => {});
+  }, [isSignedIn, page]);
 
   return null;
 }
@@ -317,12 +307,16 @@ function LocalUserGate({ children }: { children: ReactNode }) {
   const { t } = useTranslation();
   const { userId } = useAuth();
   const { signOut } = useClerk();
-  const { data: user, isPending, isError, refetch } = useGetCurrentUser();
+  const { data: user, isPending, isError, error, refetch } = useGetCurrentUser();
   if (isPending) return <PageFallback />;
   if (isError || !user?.isActive || user.clerkId !== userId) {
+    const status = apiErrorStatus(error);
+    const accessNotValidated = isError
+      ? status === 401 || status === 403
+      : !!user && (!user.isActive || user.clerkId !== userId);
     return (
       <div role="alert" className="py-16 text-center text-sm">
-        <p>{t("common.error")}</p>
+        <p>{t(accessNotValidated ? "common.access_not_validated" : "common.error")}</p>
         <div className="mt-4 flex justify-center gap-4">
           <button className="underline" onClick={() => void refetch()}>{t("common.retry")}</button>
           <button className="underline" onClick={() => void signOut({ redirectUrl: `${basePath}/sign-in` })}>{t("nav.sign_out")}</button>
@@ -340,50 +334,11 @@ function ProtectedRoutes() {
         <LocalUserGate>
         <AppShell>
           <Switch>
-            <PageRoute path="/dashboard" component={Dashboard} />
-            <PageRoute path="/academy" component={Academy} />
-            <PageRoute path="/academy/:courseId/:lessonId" component={AcademyLesson} />
-            <PageRoute path="/academy/:courseId" component={AcademyCourse} />
-            <PageRoute path="/events" component={Events} />
-            <PageRoute path="/crm/leads/:id" component={LeadDetail} />
-            <PageRoute path="/crm/leads" component={Leads} />
-            <PageRoute path="/quotes/:id" component={QuoteDetail} />
-            <PageRoute path="/quotes" component={Quotes} />
-            <PageRoute path="/contracts/:id" component={ContractDetail} />
-            <PageRoute path="/contracts" component={Contracts} />
-            <PageRoute path="/invoices/:id" component={InvoiceDetail} />
-            <PageRoute path="/invoices" component={Invoices} />
-            <PageRoute path="/support/tickets/:id" component={TicketDetail} />
-            <PageRoute path="/support" component={Support} />
-            <AdminPageRoute path="/kb/admin" component={KBAdmin} />
-            <PageRoute path="/kb/articles/:id" component={KBArticle} />
-            <PageRoute path="/kb" component={KnowledgeBase} />
-            <PageRoute path="/ai" component={AIAssistant} />
-            <PageRoute path="/community/posts/:id" component={PostDetail} />
-            <PageRoute path="/community/:id" component={CommunityChannel} />
-            <PageRoute path="/community" component={Community} />
-            <PageRoute path="/notifications" component={Notifications} />
-            <PageRoute path="/onboarding" component={Onboarding} />
-            <PageRoute path="/settings" component={Settings} />
-            <AdminPageRoute path="/admin/analytics" component={AdminAnalytics} />
-            <AdminPageRoute path="/admin/revenue" component={AdminRevenue} />
-            <AdminPageRoute path="/admin/clients/:id" component={Client360} />
-            <AdminPageRoute path="/admin/clients" component={AdminClients} />
-            <AdminPageRoute path="/admin/equipment" component={AdminEquipment} />
-            <AdminPageRoute path="/admin/automation" component={AdminAutomation} />
-            <AdminPageRoute path="/admin/academy" component={AdminAcademy} />
-            <AdminPageRoute path="/admin/resources" component={AdminResources} />
-            <AdminPageRoute path="/admin/search" component={AdminSearch} />
-            <AdminPageRoute path="/admin/translations" component={AdminTranslations} />
-            <AdminPageRoute path="/admin/uploads" component={AdminUploads} />
-            <AdminPageRoute path="/admin/ai-knowledge" component={AdminAIKnowledge} />
-            <AdminPageRoute path="/admin/backup" component={AdminBackup} />
-            <AdminPageRoute path="/admin/exports" component={AdminExports} />
-            <AdminPageRoute path="/admin/contract-templates" component={AdminContractTemplates} />
-            <AdminPageRoute path="/admin" component={Admin} />
-            <PageRoute path="/equipment/:id" component={EquipmentDetail} />
-            <PageRoute path="/equipment" component={Equipment} />
-            <PageRoute path="/consumables" component={Consumables} />
+            {protectedPages.map(({ path, component, admin }) =>
+              admin
+                ? <AdminPageRoute key={path} path={path} component={component} />
+                : <PageRoute key={path} path={path} component={component} />
+            )}
             <Route>
               {() => (
                 <Suspense fallback={<PageFallback />}>
@@ -430,7 +385,7 @@ function ClerkProviderWithRoutes() {
       routerReplace={(to) => setLocation(stripBase(to), { replace: true })}
     >
       <ClerkSessionBoundary>
-        <SignedInRoutePrefetcher />
+        <RequestedRoutePreloader />
         <LanguageSync />
         <TooltipProvider>
           <Switch>

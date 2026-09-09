@@ -639,6 +639,7 @@
     "theme_system": "System"
   },
   "common": {
+    "access_not_validated": "We couldn't validate your access. Sign out and sign in with the account that received your invitation, or contact your administrator.",
     "loading": "Loading...",
     "error": "Something went wrong",
     "retry": "Retry",

@@ -50,6 +50,8 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks(id) {
+          // CommonJS wrappers are shared by React and lazy dependencies.
+          if (id.includes("commonjsHelpers.js")) return "vendor-react";
           if (id.includes("/lib/api-client-react/")) return "api-client";
           if (!id.includes("node_modules")) return undefined;
           if (id.includes("@clerk")) return "vendor-clerk";
@@ -57,17 +59,17 @@ export default defineConfig({
           if (
             id.includes("/node_modules/react/") ||
             id.includes("/node_modules/react-dom/") ||
+            id.includes("/node_modules/react-is/") ||
+            id.includes("/node_modules/scheduler/") ||
             id.includes("/node_modules/wouter/")
           ) {
             return "vendor-react";
           }
-          if (id.includes("recharts") || id.includes("d3-")) {
-            return "vendor-charts";
-          }
+          // Let Rollup split charts by usage. A forced chart chunk absorbs
+          // shared clsx code, making the entry preload the entire chart library.
           if (id.includes("date-fns")) return "vendor-date";
+          if (id.includes("i18next")) return "vendor-i18n";
           if (
-            id.includes("i18next") ||
-            id.includes("react-i18next") ||
             id.includes("zod") ||
             id.includes("react-hook-form") ||
             id.includes("@hookform")

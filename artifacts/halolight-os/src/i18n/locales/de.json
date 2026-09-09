@@ -639,6 +639,7 @@
     "theme_system": "System"
   },
   "common": {
+    "access_not_validated": "Ihr Zugriff konnte nicht bestätigt werden. Melden Sie sich ab und mit dem Konto an, das Ihre Einladung erhalten hat, oder kontaktieren Sie Ihren Administrator.",
     "loading": "Laden...",
     "error": "Etwas ist schief gelaufen",
     "retry": "Wiederholen",
