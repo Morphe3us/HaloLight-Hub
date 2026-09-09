@@ -12,98 +12,117 @@ import {
   communityReactions,
 } from "@workspace/db";
 import { eq } from "drizzle-orm";
+import { seedDaysAgo } from "./seed-utils";
 
-export async function seedPhase4() {
+export async function seedPhase4(seedUserId?: string) {
   console.log("\n🎧 Seeding Phase 4 data (Support, KB, AI, Community)...");
 
-  const [anyUser] = await db.select().from(usersTable).limit(1);
-  if (!anyUser) {
-    console.log("  ℹ No users found — Phase 4 seed requires at least one logged-in user.");
-    return;
+  let userId = seedUserId;
+  if (!userId) {
+    const [anyUser] = await db.select().from(usersTable).limit(1);
+    if (!anyUser) {
+      console.log(
+        "  ℹ No users found — Phase 4 seed requires at least one user.",
+      );
+      return;
+    }
+    userId = anyUser.id;
   }
-  const userId = anyUser.id;
 
   // ─── Support Tickets ────────────────────────────────────────────────────
   const existingTickets = await db.select().from(supportTickets).limit(1);
   if (existingTickets.length === 0) {
-    const tickets = await db.insert(supportTickets).values([
-      {
-        userId,
-        ticketNumber: "TKT-2025-10001",
-        title: "Print quality issues with my HaloLight unit",
-        description: "Hi, I've been noticing that my prints are coming out slightly blurry on the right side. This started happening about 3 days ago. I haven't changed any settings. The unit is about 6 months old. Please help!",
-        status: "in_progress",
-        priority: "high",
-        category: "technical",
-      },
-      {
-        userId,
-        ticketNumber: "TKT-2025-10002",
-        title: "Question about adding a second booth",
-        description: "I'd like to expand my business and add a second photobooth. Can you walk me through the process? I'm particularly interested in whether I can manage both units from the same HaloLight OS account.",
-        status: "open",
-        priority: "medium",
-        category: "general",
-      },
-      {
-        userId,
-        ticketNumber: "TKT-2025-10003",
-        title: "Invoice INV-2024-018 - incorrect tax amount",
-        description: "I believe there's an error on my recent invoice. The tax rate was applied at 10% but my jurisdiction rate is 8.5%. I need this corrected before I submit it to my client.",
-        status: "resolved",
-        priority: "medium",
-        category: "billing",
-        resolvedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-      },
-      {
-        userId,
-        ticketNumber: "TKT-2025-10004",
-        title: "Feature request: bulk quote generation",
-        description: "It would be really useful to be able to generate multiple quotes from a single template for different clients. Currently I have to create each quote manually which takes a lot of time for large events.",
-        status: "open",
-        priority: "low",
-        category: "feature_request",
-      },
-      {
-        userId,
-        ticketNumber: "TKT-2025-10005",
-        title: "App crashes when uploading custom overlay",
-        description: "Every time I try to upload a PNG overlay larger than 5MB, the app crashes. I've tried multiple times with different files. The file format is correct (PNG, transparent background) but anything over 5MB fails.",
-        status: "waiting_on_client",
-        priority: "urgent",
-        category: "bug_report",
-      },
-    ]).returning();
+    const tickets = await db
+      .insert(supportTickets)
+      .values([
+        {
+          userId,
+          ticketNumber: "TKT-2025-10001",
+          title: "Print quality issues with my HaloLight unit",
+          description:
+            "Hi, I've been noticing that my prints are coming out slightly blurry on the right side. This started happening about 3 days ago. I haven't changed any settings. The unit is about 6 months old. Please help!",
+          status: "in_progress",
+          priority: "high",
+          category: "technical",
+        },
+        {
+          userId,
+          ticketNumber: "TKT-2025-10002",
+          title: "Question about adding a second booth",
+          description:
+            "I'd like to expand my business and add a second photobooth. Can you walk me through the process? I'm particularly interested in whether I can manage both units from the same HaloLight OS account.",
+          status: "open",
+          priority: "medium",
+          category: "general",
+        },
+        {
+          userId,
+          ticketNumber: "TKT-2025-10003",
+          title: "Invoice INV-2024-018 - incorrect tax amount",
+          description:
+            "I believe there's an error on my recent invoice. The tax rate was applied at 10% but my jurisdiction rate is 8.5%. I need this corrected before I submit it to my client.",
+          status: "resolved",
+          priority: "medium",
+          category: "billing",
+          resolvedAt: seedDaysAgo(2),
+        },
+        {
+          userId,
+          ticketNumber: "TKT-2025-10004",
+          title: "Feature request: bulk quote generation",
+          description:
+            "It would be really useful to be able to generate multiple quotes from a single template for different clients. Currently I have to create each quote manually which takes a lot of time for large events.",
+          status: "open",
+          priority: "low",
+          category: "feature_request",
+        },
+        {
+          userId,
+          ticketNumber: "TKT-2025-10005",
+          title: "App crashes when uploading custom overlay",
+          description:
+            "Every time I try to upload a PNG overlay larger than 5MB, the app crashes. I've tried multiple times with different files. The file format is correct (PNG, transparent background) but anything over 5MB fails.",
+          status: "waiting_on_client",
+          priority: "urgent",
+          category: "bug_report",
+        },
+      ])
+      .returning();
 
     await db.insert(supportTicketReplies).values([
       {
         ticketId: tickets[0]!.id,
         userId,
-        content: "Thank you for reporting this. Our technical team has reviewed your case. Could you please try cleaning the print head using the maintenance menu (Settings > Maintenance > Clean Print Head) and let us know if the issue persists?",
+        content:
+          "Thank you for reporting this. Our technical team has reviewed your case. Could you please try cleaning the print head using the maintenance menu (Settings > Maintenance > Clean Print Head) and let us know if the issue persists?",
         isStaff: 1,
       },
       {
         ticketId: tickets[0]!.id,
         userId,
-        content: "I tried the maintenance procedure and it helped a bit, but there's still some blurriness on the right edge. Should I send it in for service?",
+        content:
+          "I tried the maintenance procedure and it helped a bit, but there's still some blurriness on the right edge. Should I send it in for service?",
         isStaff: 0,
       },
       {
         ticketId: tickets[2]!.id,
         userId,
-        content: "We've reviewed your invoice and confirmed the tax rate discrepancy. We've updated the invoice with the correct 8.5% rate. Please find the corrected invoice attached to your account. Apologies for the inconvenience!",
+        content:
+          "We've reviewed your invoice and confirmed the tax rate discrepancy. We've updated the invoice with the correct 8.5% rate. Please find the corrected invoice attached to your account. Apologies for the inconvenience!",
         isStaff: 1,
       },
       {
         ticketId: tickets[2]!.id,
         userId,
-        content: "Thank you for the quick fix! The corrected invoice looks perfect.",
+        content:
+          "Thank you for the quick fix! The corrected invoice looks perfect.",
         isStaff: 0,
       },
       {
         ticketId: tickets[4]!.id,
         userId,
-        content: "We've been able to reproduce this issue in our test environment. It appears to be related to our file size validation. As a workaround, could you try compressing your PNG to under 5MB using a tool like TinyPNG and let us know if that works?",
+        content:
+          "We've been able to reproduce this issue in our test environment. It appears to be related to our file size validation. As a workaround, could you try compressing your PNG to under 5MB using a tool like TinyPNG and let us know if that works?",
         isStaff: 1,
       },
     ]);
@@ -115,20 +134,66 @@ export async function seedPhase4() {
   // ─── Knowledge Base ──────────────────────────────────────────────────────
   const existingCategories = await db.select().from(kbCategories).limit(1);
   if (existingCategories.length === 0) {
-    const categories = await db.insert(kbCategories).values([
-      { name: "Getting Started", slug: "getting-started", description: "Everything you need to know to set up and launch your HaloLight business", icon: "Zap", order: 1 },
-      { name: "Equipment & Setup", slug: "equipment-setup", description: "Technical guides for your photobooth hardware and configuration", icon: "Wrench", order: 2 },
-      { name: "Billing & Payments", slug: "billing-payments", description: "Invoicing, payments, and financial management", icon: "CreditCard", order: 3 },
-      { name: "Features & Tips", slug: "features-tips", description: "Get the most out of HaloLight OS with pro tips and tricks", icon: "Lightbulb", order: 4 },
-      { name: "Troubleshooting", slug: "troubleshooting", description: "Common issues and how to fix them", icon: "HelpCircle", order: 5 },
-      { name: "Business Growth", slug: "business-growth", description: "Guides for growing your photobooth business", icon: "TrendingUp", order: 6 },
-    ]).returning();
+    const categories = await db
+      .insert(kbCategories)
+      .values([
+        {
+          name: "Getting Started",
+          slug: "getting-started",
+          description:
+            "Everything you need to know to set up and launch your HaloLight business",
+          icon: "Zap",
+          order: 1,
+        },
+        {
+          name: "Equipment & Setup",
+          slug: "equipment-setup",
+          description:
+            "Technical guides for your photobooth hardware and configuration",
+          icon: "Wrench",
+          order: 2,
+        },
+        {
+          name: "Billing & Payments",
+          slug: "billing-payments",
+          description: "Invoicing, payments, and financial management",
+          icon: "CreditCard",
+          order: 3,
+        },
+        {
+          name: "Features & Tips",
+          slug: "features-tips",
+          description:
+            "Get the most out of HaloLight OS with pro tips and tricks",
+          icon: "Lightbulb",
+          order: 4,
+        },
+        {
+          name: "Troubleshooting",
+          slug: "troubleshooting",
+          description: "Common issues and how to fix them",
+          icon: "HelpCircle",
+          order: 5,
+        },
+        {
+          name: "Business Growth",
+          slug: "business-growth",
+          description: "Guides for growing your photobooth business",
+          icon: "TrendingUp",
+          order: 6,
+        },
+      ])
+      .returning();
 
-    const gettingStarted = categories.find((c) => c.slug === "getting-started")!;
+    const gettingStarted = categories.find(
+      (c) => c.slug === "getting-started",
+    )!;
     const equipment = categories.find((c) => c.slug === "equipment-setup")!;
     const billing = categories.find((c) => c.slug === "billing-payments")!;
     const features = categories.find((c) => c.slug === "features-tips")!;
-    const troubleshooting = categories.find((c) => c.slug === "troubleshooting")!;
+    const troubleshooting = categories.find(
+      (c) => c.slug === "troubleshooting",
+    )!;
     const growth = categories.find((c) => c.slug === "business-growth")!;
 
     await db.insert(kbArticles).values([
@@ -137,9 +202,10 @@ export async function seedPhase4() {
         authorId: userId,
         title: "Welcome to HaloLight OS — Your Complete Business Hub",
         slug: "welcome-to-halolight-os",
-        excerpt: "A complete overview of everything HaloLight OS can do for your photobooth business.",
+        excerpt:
+          "A complete overview of everything HaloLight OS can do for your photobooth business.",
         status: "published" as const,
-        publishedAt: new Date(),
+        publishedAt: seedDaysAgo(0),
         views: 284,
         order: 1,
         tags: ["overview", "getting-started"],
@@ -189,9 +255,10 @@ Welcome aboard!`,
         authorId: userId,
         title: "Setting Up Your HaloLight Photobooth — Complete Guide",
         slug: "setting-up-halolight-photobooth",
-        excerpt: "Step-by-step guide for setting up your HaloLight unit at an event.",
+        excerpt:
+          "Step-by-step guide for setting up your HaloLight unit at an event.",
         status: "published" as const,
-        publishedAt: new Date(),
+        publishedAt: seedDaysAgo(0),
         views: 196,
         order: 1,
         tags: ["setup", "equipment", "events"],
@@ -253,9 +320,10 @@ Pack components in reverse order. Allow the printer to cool for 10 minutes befor
         authorId: userId,
         title: "How to Create and Send an Invoice",
         slug: "how-to-create-send-invoice",
-        excerpt: "Learn how to create professional invoices and track payments in HaloLight OS.",
+        excerpt:
+          "Learn how to create professional invoices and track payments in HaloLight OS.",
         status: "published" as const,
-        publishedAt: new Date(),
+        publishedAt: seedDaysAgo(0),
         views: 143,
         order: 1,
         tags: ["invoices", "billing", "payments"],
@@ -312,9 +380,10 @@ When a client pays:
         authorId: userId,
         title: "Using the AI Assistant Effectively",
         slug: "using-ai-assistant",
-        excerpt: "Get the most out of the HaloLight AI Assistant for quick answers and guidance.",
+        excerpt:
+          "Get the most out of the HaloLight AI Assistant for quick answers and guidance.",
         status: "published" as const,
-        publishedAt: new Date(),
+        publishedAt: seedDaysAgo(0),
         views: 89,
         order: 1,
         tags: ["ai", "assistant", "tips"],
@@ -363,9 +432,10 @@ For complex issues not covered by the AI, please submit a Support Ticket.`,
         authorId: userId,
         title: "Print Quality Issues — Diagnosis and Fixes",
         slug: "print-quality-diagnosis-fixes",
-        excerpt: "Comprehensive guide to diagnosing and resolving print quality problems.",
+        excerpt:
+          "Comprehensive guide to diagnosing and resolving print quality problems.",
         status: "published" as const,
-        publishedAt: new Date(),
+        publishedAt: seedDaysAgo(0),
         views: 211,
         order: 1,
         tags: ["prints", "troubleshooting", "quality"],
@@ -438,9 +508,10 @@ If none of the above solutions work, please submit a support ticket with:
         authorId: userId,
         title: "Building a 6-Figure Photobooth Business",
         slug: "building-six-figure-photobooth-business",
-        excerpt: "Proven strategies for growing your photobooth operation to six figures.",
+        excerpt:
+          "Proven strategies for growing your photobooth operation to six figures.",
         status: "published" as const,
-        publishedAt: new Date(),
+        publishedAt: seedDaysAgo(0),
         views: 312,
         order: 1,
         tags: ["business", "growth", "revenue", "strategy"],
@@ -517,17 +588,48 @@ Track these metrics monthly in HaloLight OS:
   }
 
   // ─── AI Suggested Questions ──────────────────────────────────────────────
-  const existingSuggestions = await db.select().from(aiSuggestedQuestions).limit(1);
+  const existingSuggestions = await db
+    .select()
+    .from(aiSuggestedQuestions)
+    .limit(1);
   if (existingSuggestions.length === 0) {
     await db.insert(aiSuggestedQuestions).values([
-      { question: "What's included in the standard photobooth package?", category: "pricing", order: 1 },
-      { question: "How do I book HaloLight for an event?", category: "booking", order: 2 },
-      { question: "What are the space requirements for the photobooth?", category: "setup", order: 3 },
-      { question: "How does digital photo delivery work?", category: "features", order: 4 },
-      { question: "What is your cancellation policy?", category: "policy", order: 5 },
-      { question: "Can I use a custom branded overlay?", category: "features", order: 6 },
+      {
+        question: "What's included in the standard photobooth package?",
+        category: "pricing",
+        order: 1,
+      },
+      {
+        question: "How do I book HaloLight for an event?",
+        category: "booking",
+        order: 2,
+      },
+      {
+        question: "What are the space requirements for the photobooth?",
+        category: "setup",
+        order: 3,
+      },
+      {
+        question: "How does digital photo delivery work?",
+        category: "features",
+        order: 4,
+      },
+      {
+        question: "What is your cancellation policy?",
+        category: "policy",
+        order: 5,
+      },
+      {
+        question: "Can I use a custom branded overlay?",
+        category: "features",
+        order: 6,
+      },
       { question: "How long does setup take?", category: "setup", order: 7 },
-      { question: "Do you offer multi-booth discounts?", category: "pricing", order: 8 },
+      {
+        question: "Do you offer multi-booth discounts?",
+        category: "pricing",
+        order: 8,
+      },
     ]);
     console.log("  ✓ Created 8 AI suggested questions");
   } else {
@@ -537,13 +639,58 @@ Track these metrics monthly in HaloLight OS:
   // ─── Community Channels & Posts ──────────────────────────────────────────
   const existingChannels = await db.select().from(communityChannels).limit(1);
   if (existingChannels.length === 0) {
-    const channels = await db.insert(communityChannels).values([
-      { createdBy: userId, name: "Announcements", slug: "announcements", description: "Official HaloLight updates, product news, and important announcements", type: "announcement" as const, icon: "Megaphone", order: 1 },
-      { createdBy: userId, name: "General", slug: "general", description: "General discussion for all HaloLight operators", type: "public" as const, icon: "Hash", order: 2 },
-      { createdBy: userId, name: "Tips & Tricks", slug: "tips-tricks", description: "Share your best tips, hacks, and pro techniques", type: "public" as const, icon: "Lightbulb", order: 3 },
-      { createdBy: userId, name: "Business Growth", slug: "business-growth", description: "Marketing, sales, and scaling your photobooth business", type: "public" as const, icon: "TrendingUp", order: 4 },
-      { createdBy: userId, name: "Equipment Help", slug: "equipment-help", description: "Technical support, setup questions, and hardware discussions", type: "public" as const, icon: "Wrench", order: 5 },
-    ]).returning();
+    const channels = await db
+      .insert(communityChannels)
+      .values([
+        {
+          createdBy: userId,
+          name: "Announcements",
+          slug: "announcements",
+          description:
+            "Official HaloLight updates, product news, and important announcements",
+          type: "announcement" as const,
+          icon: "Megaphone",
+          order: 1,
+        },
+        {
+          createdBy: userId,
+          name: "General",
+          slug: "general",
+          description: "General discussion for all HaloLight operators",
+          type: "public" as const,
+          icon: "Hash",
+          order: 2,
+        },
+        {
+          createdBy: userId,
+          name: "Tips & Tricks",
+          slug: "tips-tricks",
+          description: "Share your best tips, hacks, and pro techniques",
+          type: "public" as const,
+          icon: "Lightbulb",
+          order: 3,
+        },
+        {
+          createdBy: userId,
+          name: "Business Growth",
+          slug: "business-growth",
+          description: "Marketing, sales, and scaling your photobooth business",
+          type: "public" as const,
+          icon: "TrendingUp",
+          order: 4,
+        },
+        {
+          createdBy: userId,
+          name: "Equipment Help",
+          slug: "equipment-help",
+          description:
+            "Technical support, setup questions, and hardware discussions",
+          type: "public" as const,
+          icon: "Wrench",
+          order: 5,
+        },
+      ])
+      .returning();
 
     const announcements = channels.find((c) => c.slug === "announcements")!;
     const general = channels.find((c) => c.slug === "general")!;
@@ -551,12 +698,14 @@ Track these metrics monthly in HaloLight OS:
     const growth = channels.find((c) => c.slug === "business-growth")!;
     const equipment = channels.find((c) => c.slug === "equipment-help")!;
 
-    const posts = await db.insert(communityPosts).values([
-      {
-        channelId: announcements.id,
-        userId,
-        title: "HaloLight OS Phase 4 — Now Live! 🎉",
-        content: `We're thrilled to announce that Phase 4 of HaloLight OS is now available to all partners!
+    const posts = await db
+      .insert(communityPosts)
+      .values([
+        {
+          channelId: announcements.id,
+          userId,
+          title: "HaloLight OS Phase 4 — Now Live! 🎉",
+          content: `We're thrilled to announce that Phase 4 of HaloLight OS is now available to all partners!
 
 What's new in this release:
 - **Support Center** — Submit and track support tickets with real-time status updates
@@ -567,13 +716,13 @@ What's new in this release:
 We're committed to building the most comprehensive platform for photobooth professionals. Stay tuned for Phase 5!
 
 — The HaloLight Team`,
-        isPinned: 1,
-      },
-      {
-        channelId: general.id,
-        userId,
-        title: "Welcome to the HaloLight Community! 👋",
-        content: `Hey everyone! Welcome to the HaloLight Community forum.
+          isPinned: 1,
+        },
+        {
+          channelId: general.id,
+          userId,
+          title: "Welcome to the HaloLight Community! 👋",
+          content: `Hey everyone! Welcome to the HaloLight Community forum.
 
 This is the place to connect with fellow photobooth operators, share experiences, ask questions, and grow together.
 
@@ -584,13 +733,13 @@ A few community guidelines:
 - Keep discussions relevant to photobooth business and HaloLight OS
 
 Looking forward to seeing this community thrive. Introduce yourself below!`,
-        isPinned: 1,
-      },
-      {
-        channelId: tips.id,
-        userId,
-        title: "My #1 tip for corporate events: branded props",
-        content: `After doing 30+ corporate events this year, I've found that providing company-branded props dramatically increases photo volume and client satisfaction.
+          isPinned: 1,
+        },
+        {
+          channelId: tips.id,
+          userId,
+          title: "My #1 tip for corporate events: branded props",
+          content: `After doing 30+ corporate events this year, I've found that providing company-branded props dramatically increases photo volume and client satisfaction.
 
 Simple branded props I've made:
 - Custom speech bubbles with company slogans
@@ -602,12 +751,12 @@ Clients absolutely love seeing their branding in the photos. It also makes for g
 Cost to make: $20-30 per event in materials. Perceived value: massive.
 
 Anyone else doing custom props? Would love to hear your approaches!`,
-      },
-      {
-        channelId: growth.id,
-        userId,
-        title: "How I landed my first $5,000 corporate contract",
-        content: `Six months ago I was doing $800 weddings. Last month I signed a $5,000 annual contract with a tech company for their quarterly events. Here's what made the difference:
+        },
+        {
+          channelId: growth.id,
+          userId,
+          title: "How I landed my first $5,000 corporate contract",
+          content: `Six months ago I was doing $800 weddings. Last month I signed a $5,000 annual contract with a tech company for their quarterly events. Here's what made the difference:
 
 **1. Repositioned my offering**
 Instead of "photobooth rental" I started calling it "branded experience activation" — sounds silly but it actually works for corporate buyers.
@@ -624,12 +773,12 @@ Instead of asking for the full annual contract upfront, I offered one event at a
 The CRM in HaloLight OS has been invaluable for tracking this pipeline. Seeing everything in one place keeps me organized.
 
 Happy to answer questions!`,
-      },
-      {
-        channelId: equipment.id,
-        userId,
-        title: "Quick tip: prevent paper jams at outdoor events",
-        content: `Learned this the hard way at an outdoor summer wedding...
+        },
+        {
+          channelId: equipment.id,
+          userId,
+          title: "Quick tip: prevent paper jams at outdoor events",
+          content: `Learned this the hard way at an outdoor summer wedding...
 
 Paper jams are way more likely in humid or hot conditions. My fix:
 
@@ -641,14 +790,35 @@ Paper jams are way more likely in humid or hot conditions. My fix:
 Also: if you do get a jam, always pull the paper OUT the same direction it was going (toward the front). Never pull it backward.
 
 I also now carry a mini humidifier dehumidifier pack inside my printer case. No jams in 8 months since I started this routine.`,
-      },
-    ]).returning();
+        },
+      ])
+      .returning();
 
     await db.insert(communityReplies).values([
-      { postId: posts[1]!.id, userId, content: "So excited about this community! I've been operating for 2 years in Phoenix, AZ. Mostly corporate and weddings. Looking forward to connecting with everyone!" },
-      { postId: posts[2]!.id, userId, content: "Love this idea! I do logo props for tech companies and they always post them on internal Slack. One company event led to 3 referrals from employees at other companies." },
-      { postId: posts[3]!.id, userId, content: "This is gold! The repositioning tip especially. I've been calling it photobooth rental which sounds so basic. Going to update all my materials." },
-      { postId: posts[4]!.id, userId, content: "The humidity tip is clutch! Lost an hour at a garden party last summer to a paper jam. Wish I'd known this." },
+      {
+        postId: posts[1]!.id,
+        userId,
+        content:
+          "So excited about this community! I've been operating for 2 years in Phoenix, AZ. Mostly corporate and weddings. Looking forward to connecting with everyone!",
+      },
+      {
+        postId: posts[2]!.id,
+        userId,
+        content:
+          "Love this idea! I do logo props for tech companies and they always post them on internal Slack. One company event led to 3 referrals from employees at other companies.",
+      },
+      {
+        postId: posts[3]!.id,
+        userId,
+        content:
+          "This is gold! The repositioning tip especially. I've been calling it photobooth rental which sounds so basic. Going to update all my materials.",
+      },
+      {
+        postId: posts[4]!.id,
+        userId,
+        content:
+          "The humidity tip is clutch! Lost an hour at a garden party last summer to a paper jam. Wish I'd known this.",
+      },
     ]);
 
     await db.insert(communityReactions).values([
@@ -659,7 +829,9 @@ I also now carry a mini humidifier dehumidifier pack inside my printer case. No 
       { postId: posts[4]!.id, userId, emoji: "👏" },
     ]);
 
-    console.log(`  ✓ Created ${channels.length} channels, ${posts.length} posts, with replies and reactions`);
+    console.log(
+      `  ✓ Created ${channels.length} channels, ${posts.length} posts, with replies and reactions`,
+    );
   } else {
     console.log("  - Skipped existing community data");
   }

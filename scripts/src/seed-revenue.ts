@@ -1,5 +1,18 @@
-import { db, usersTable, invoices, invoiceItems, quotes, quoteItems } from "@workspace/db";
-import { eq, and } from "drizzle-orm";
+import {
+  db,
+  usersTable,
+  invoices,
+  invoiceItems,
+  quotes,
+  quoteItems,
+} from "@workspace/db";
+import { eq, and, inArray } from "drizzle-orm";
+import {
+  deterministicRange,
+  seedDaysFromNow,
+  seedMonthsAgo,
+  SEED_DEMO_CLIENT_CLERK_IDS,
+} from "./seed-utils";
 
 // Spread demo revenue across 12 months so charts look interesting
 const MONTHLY_REVENUE_DATA = [
@@ -30,13 +43,35 @@ const QUOTE_DATA = [
   { monthsAgo: 1, status: "accepted" as const, amount: 6800 },
 ];
 
-export async function seedRevenueData() {
+export async function seedRevenueData(seedClientIds?: string[]) {
   console.log("\nSeeding Revenue Intelligence demo data...");
 
-  // Get all client users
-  const clients = await db.select({ id: usersTable.id, email: usersTable.email, fullName: usersTable.fullName, companyName: usersTable.companyName })
+  // Use explicit demo client IDs from Phase 5 when running the main seed. Standalone
+  // execution is also limited to the known demo Clerk IDs.
+  const clientKeys = seedClientIds?.length
+    ? seedClientIds
+    : [...SEED_DEMO_CLIENT_CLERK_IDS];
+  const clientFilter = seedClientIds?.length
+    ? inArray(usersTable.id, seedClientIds)
+    : inArray(usersTable.clerkId, [...SEED_DEMO_CLIENT_CLERK_IDS]);
+  const clientRows = await db
+    .select({
+      id: usersTable.id,
+      clerkId: usersTable.clerkId,
+      email: usersTable.email,
+      fullName: usersTable.fullName,
+      companyName: usersTable.companyName,
+    })
     .from(usersTable)
-    .where(eq(usersTable.role, "client"));
+    .where(clientFilter);
+  type SeedClient = (typeof clientRows)[number];
+  const clients: SeedClient[] = clientKeys
+    .map((key) =>
+      clientRows.find((client) =>
+        seedClientIds?.length ? client.id === key : client.clerkId === key,
+      ),
+    )
+    .filter((client): client is SeedClient => Boolean(client));
 
   if (clients.length === 0) {
     console.log("  - No clients found, skipping revenue seed");
@@ -44,8 +79,18 @@ export async function seedRevenueData() {
   }
 
   // Check if revenue invoices already seeded (by checking marker invoice)
-  const existing = await db.select({ id: invoices.id }).from(invoices)
-    .where(and(eq(invoices.title, "Revenue Intelligence Demo Invoice — Month 1"), eq(invoices.userId, clients[0]!.id)));
+  const existing = await db
+    .select({ id: invoices.id })
+    .from(invoices)
+    .where(
+      and(
+        eq(invoices.invoiceNumber, "INV-REV-0100"),
+        inArray(
+          invoices.userId,
+          clients.map((client) => client.id),
+        ),
+      ),
+    );
   if (existing.length > 0) {
     console.log("  - Skipped: revenue demo invoices already seeded");
     return;
@@ -56,9 +101,10 @@ export async function seedRevenueData() {
   // Distribute monthly invoice data across clients
   for (const monthData of MONTHLY_REVENUE_DATA) {
     const { monthsAgo, amounts } = monthData;
-    const invoiceDate = new Date();
-    invoiceDate.setMonth(invoiceDate.getMonth() - monthsAgo);
-    invoiceDate.setDate(Math.floor(Math.random() * 20) + 1);
+    const invoiceDate = seedMonthsAgo(
+      monthsAgo,
+      deterministicRange(monthsAgo + amounts.length, 1, 20),
+    );
 
     for (let i = 0; i < amounts.length; i++) {
       const amount = amounts[i]!;
@@ -70,27 +116,38 @@ export async function seedRevenueData() {
       const invNum = `INV-REV-${String(invoiceSeq).padStart(4, "0")}`;
       invoiceSeq++;
 
-      const [inv] = await db.insert(invoices).values({
-        userId: client.id,
-        invoiceNumber: invNum,
-        title: `Revenue Intelligence Demo Invoice — Month ${13 - monthsAgo}`,
-        clientName: client.fullName ?? client.email,
-        clientEmail: client.email,
-        subtotal: String(amount),
-        taxRate: "8.5",
-        taxAmount: String(taxAmt),
-        total: String(total),
-        status: "paid",
-        dueDate: invoiceDate,
-        paidAmount: String(total),
-        paymentMethod: ["credit_card", "bank_transfer", "stripe"][invoiceSeq % 3] ?? "credit_card",
-        createdAt: invoiceDate,
-      }).returning({ id: invoices.id });
+      const [inv] = await db
+        .insert(invoices)
+        .values({
+          userId: client.id,
+          invoiceNumber: invNum,
+          title: `Revenue Intelligence Demo Invoice — Month ${13 - monthsAgo}`,
+          clientName: client.fullName ?? client.email,
+          clientEmail: client.email,
+          subtotal: String(amount),
+          taxRate: "8.5",
+          taxAmount: String(taxAmt),
+          total: String(total),
+          status: "paid",
+          dueDate: invoiceDate,
+          paidAmount: String(total),
+          paymentMethod:
+            ["credit_card", "bank_transfer", "stripe"][invoiceSeq % 3] ??
+            "credit_card",
+          createdAt: invoiceDate,
+        })
+        .returning({ id: invoices.id });
 
       if (inv) {
         await db.insert(invoiceItems).values({
           invoiceId: inv.id,
-          description: ["Photobooth rental (4 hours)", "Premium booth package", "Open air booth (6 hours)", "LED booth + print station"][invoiceSeq % 4] ?? "Photobooth rental",
+          description:
+            [
+              "Photobooth rental (4 hours)",
+              "Premium booth package",
+              "Open air booth (6 hours)",
+              "LED booth + print station",
+            ][invoiceSeq % 4] ?? "Photobooth rental",
           quantity: "1",
           unitPrice: String(amount),
           total: String(amount),
@@ -103,9 +160,7 @@ export async function seedRevenueData() {
   let quoteSeq = 200;
   for (const qData of QUOTE_DATA) {
     const { monthsAgo, status, amount } = qData;
-    const quoteDate = new Date();
-    quoteDate.setMonth(quoteDate.getMonth() - monthsAgo);
-    quoteDate.setDate(10);
+    const quoteDate = seedMonthsAgo(monthsAgo, 10);
 
     const clientIdx = quoteSeq % clients.length;
     const client = clients[clientIdx]!;
@@ -115,21 +170,31 @@ export async function seedRevenueData() {
     const qNum = `Q-REV-${String(quoteSeq).padStart(4, "0")}`;
     quoteSeq++;
 
-    const [q] = await db.insert(quotes).values({
-      userId: client.id,
-      quoteNumber: qNum,
-      title: ["Open Air Booth Package", "Enclosed Booth Premium", "LED Ring Light Special", "Full Day Package", "Corporate Event Bundle"][quoteSeq % 5] ?? "Photobooth Quote",
-      clientName: client.fullName ?? client.email,
-      clientEmail: client.email,
-      subtotal: String(amount),
-      taxRate: "8.5",
-      taxAmount: String(taxAmt),
-      total: String(total),
-      status,
-      validUntil: new Date(Date.now() + (status === "expired" ? -7 : 30) * 24 * 60 * 60 * 1000),
-      acceptedAt: status === "accepted" ? quoteDate : null,
-      createdAt: quoteDate,
-    }).returning({ id: quotes.id });
+    const [q] = await db
+      .insert(quotes)
+      .values({
+        userId: client.id,
+        quoteNumber: qNum,
+        title:
+          [
+            "Open Air Booth Package",
+            "Enclosed Booth Premium",
+            "LED Ring Light Special",
+            "Full Day Package",
+            "Corporate Event Bundle",
+          ][quoteSeq % 5] ?? "Photobooth Quote",
+        clientName: client.fullName ?? client.email,
+        clientEmail: client.email,
+        subtotal: String(amount),
+        taxRate: "8.5",
+        taxAmount: String(taxAmt),
+        total: String(total),
+        status,
+        validUntil: seedDaysFromNow(status === "expired" ? -7 : 30),
+        acceptedAt: status === "accepted" ? quoteDate : null,
+        createdAt: quoteDate,
+      })
+      .returning({ id: quotes.id });
 
     if (q) {
       await db.insert(quoteItems).values({

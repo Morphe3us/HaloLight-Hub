@@ -3,10 +3,16 @@ import { eq, asc } from "drizzle-orm";
 import { db, courses, courseModules, lessons } from "@workspace/db";
 import { requireAuth } from "../middlewares/requireAuth";
 import { getOrCreateUser } from "../lib/userSync";
+import {
+  buildBunnyPlaybackAsset,
+  bunnyPlaybackSecurityConfirmed,
+} from "../lib/bunnySecurity";
+import { clearAcademyCatalogCache } from "../lib/academyCatalog";
+import { fetchBunnyJson, getBunnyLibrarySecurity } from "../lib/bunnyApi";
+import { verifyBunnyPlaybackProtection } from "../lib/bunnyPlaybackVerification";
 
 const router: IRouter = Router();
 
-const BUNNY_API = "https://video.bunnycdn.com";
 
 // Fixed collection ID → language mapping. Collection ID is the single source of truth.
 // Never infer language from collection names or video metadata.
@@ -21,29 +27,53 @@ const COLLECTION_ID_TO_LANG: Record<string, string> = {
   "476e5f64-87b2-4dee-8a80-5ef6cc544378": "fr",
 };
 
+type BunnyAssetMap = Record<
+  string,
+  { embedUrl?: string; thumbnailUrl?: string; previewUrl?: string; videoId?: string }
+>;
+
 function requireAdmin(user: { role: string } | null | undefined, res: Response): boolean {
   if (!user) { res.status(401).json({ error: "Unauthorized" }); return false; }
   if (user.role !== "admin") { res.status(403).json({ error: "Forbidden" }); return false; }
   return true;
 }
 
-function getConfig(): { apiKey: string; libraryId: string } | null {
+function sanitizeBunnyAssetMap(value: unknown): BunnyAssetMap {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  return Object.fromEntries(
+    Object.entries(value as Record<string, unknown>)
+      .map(([lang, raw]) => {
+        if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+          return [lang, null] as const;
+        }
+        const input = raw as Record<string, unknown>;
+        const asset: BunnyAssetMap[string] = {};
+        for (const field of ["embedUrl", "thumbnailUrl", "previewUrl", "videoId"] as const) {
+          const fieldValue = input[field];
+          if (typeof fieldValue === "string" && fieldValue.trim()) {
+            asset[field] = fieldValue.trim();
+          }
+        }
+        return [lang, Object.keys(asset).length > 0 ? asset : null] as const;
+      })
+      .filter((entry): entry is readonly [string, BunnyAssetMap[string]] => entry[1] !== null),
+  );
+}
+
+function getConfig(): {
+  apiKey: string;
+  libraryId: string;
+  cdnHostname: string;
+} | null {
   const apiKey = process.env["BUNNY_STREAM_API_KEY"];
   const libraryId = process.env["BUNNY_STREAM_LIBRARY_ID"];
+  const cdnHostname = process.env["BUNNY_STREAM_CDN_HOSTNAME"] ?? "";
   if (!apiKey || !libraryId) return null;
-  return { apiKey, libraryId };
+  return { apiKey, libraryId, cdnHostname };
 }
 
 async function bunnyGet(path: string, apiKey: string): Promise<unknown> {
-  const url = `${BUNNY_API}${path}`;
-  const res = await fetch(url, {
-    headers: { AccessKey: apiKey, accept: "application/json" },
-  });
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(`BunnyStream ${res.status}: ${text || res.statusText}`);
-  }
-  return res.json();
+  return fetchBunnyJson(path, apiKey);
 }
 
 function buildEmbedUrl(libraryId: string, videoId: string): string {
@@ -88,8 +118,8 @@ router.get("/admin/bunny/status", requireAuth, async (req: Request, res: Respons
       connected: true,
       libraryId: cfg.libraryId,
       libraryName: lib["Name"] ?? "",
-      pullZoneHostname: lib["PullZoneHostname"] ?? "",
-      videoCount: lib["VideoCount"] ?? 0,
+      pullZoneHostname: lib["PullZoneHostname"] ?? cfg.cdnHostname,
+      videoCount: lib["videoCount"] ?? lib["VideoCount"] ?? 0,
     });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
@@ -110,22 +140,33 @@ router.get("/admin/bunny/diagnose", requireAuth, async (req: Request, res: Respo
   try {
     const lib = await bunnyGet(`/library/${cfg.libraryId}`, cfg.apiKey) as Record<string, unknown>;
 
+    let security = null;
+    let securityError: string | null = null;
+    try {
+      security = await getBunnyLibrarySecurity(cfg.libraryId);
+    } catch {
+      securityError = "Unable to verify Bunny account security settings";
+    }
     const libraryInfo = {
       name: lib["Name"],
       libraryId: cfg.libraryId,
-      tokenAuthenticationEnabled: lib["TokenAuthenticationEnabled"] ?? false,
-      blockNoneReferrer: lib["BlockNoneReferrer"] ?? false,
-      allowedReferrers: (lib["AllowedReferrers"] as string[] | null) ?? [],
-      pullZoneHostname: lib["PullZoneHostname"] ?? "",
+      securityVerified: security !== null,
+      securityError,
+      tokenAuthenticationEnabled: security?.playerTokenAuthenticationEnabled ?? null,
+      blockNoneReferrer: security?.blockNoneReferrer ?? null,
+      allowedReferrers: security?.allowedReferrers ?? null,
+      pullZoneHostname: lib["PullZoneHostname"] ?? cfg.cdnHostname,
       enabledResolutions: lib["EnabledResolutions"] ?? "",
-      allowDirectPlay: lib["AllowDirectPlay"] ?? false,
+      allowDirectPlay: security?.allowDirectPlay ?? null,
+      signingKeyConfigured: Boolean(process.env.BUNNY_STREAM_TOKEN_AUTH_KEY?.trim()),
+      playbackConfigured: bunnyPlaybackSecurityConfirmed(),
     };
 
     let videoInfo: Record<string, unknown> | null = null;
-    const videoId = req.query["videoId"] as string | undefined;
+    const videoId = typeof req.query["videoId"] === "string" ? req.query["videoId"] : undefined;
     if (videoId) {
       try {
-        const video = await bunnyGet(`/library/${cfg.libraryId}/videos/${videoId}`, cfg.apiKey) as Record<string, unknown>;
+        const video = await bunnyGet(`/library/${cfg.libraryId}/videos/${encodeURIComponent(videoId)}`, cfg.apiKey) as Record<string, unknown>;
         videoInfo = {
           videoId: video["guid"],
           title: video["title"],
@@ -213,7 +254,7 @@ router.get("/admin/bunny/collections/:collectionId/videos", requireAuth, async (
   try {
     // Get library info for pull zone hostname
     const lib = await bunnyGet(`/library/${cfg.libraryId}`, cfg.apiKey) as Record<string, unknown>;
-    const pullZoneHostname = String(lib["PullZoneHostname"] ?? "");
+    const pullZoneHostname = String(lib["PullZoneHostname"] ?? cfg.cdnHostname);
 
     // Paginate through all pages for this collection only.
     // BunnyStream's filter param is "collection" (not "collectionId").
@@ -294,6 +335,7 @@ router.get("/admin/bunny/collections/:collectionId/videos", requireAuth, async (
     res.json({
       items,
       total: items.length,
+      collectionId,
       totalReported: totalItems,
       pagesLoaded: pagesLoaded,
       // Debug fields
@@ -313,12 +355,21 @@ router.get("/admin/bunny/collections/:collectionId/videos", requireAuth, async (
 router.post("/admin/bunny/import", requireAuth, async (req: Request, res: Response): Promise<void> => {
   const user = await getOrCreateUser(req);
   if (!requireAdmin(user, res)) return;
+  const cfg = getConfig();
+  if (!cfg) { res.status(400).json({ error: "BunnyStream not configured" }); return; }
+  if (!bunnyPlaybackSecurityConfirmed()) {
+    res.status(400).json({
+      error:
+        "Bunny playback security is not confirmed. Configure Bunny token/referrer restrictions, then set BUNNY_PLAYBACK_SECURITY_CONFIRMED=true before importing videos.",
+    });
+    return;
+  }
 
   type ImportItem = {
     videoId: string;
     collectionId: string; // required — used to enforce lang via COLLECTION_ID_TO_LANG
-    embedUrl: string;
-    thumbnailUrl: string;
+    embedUrl?: string;
+    thumbnailUrl?: string;
     previewUrl?: string;
     durationSeconds: number;
     videoTitle: string;
@@ -335,12 +386,19 @@ router.post("/admin/bunny/import", requireAuth, async (req: Request, res: Respon
   let created = 0;
   let updated = 0;
   const errors: string[] = [];
+  let pullZoneHostname = cfg.cdnHostname;
+  try {
+    const lib = await bunnyGet(`/library/${cfg.libraryId}`, cfg.apiKey) as Record<string, unknown>;
+    pullZoneHostname = String(lib["PullZoneHostname"] ?? cfg.cdnHostname);
+  } catch (err) {
+    req.log.warn({ err }, "Unable to fetch BunnyStream pull zone hostname before import");
+  }
 
   for (const item of items) {
     try {
-      const { videoId, collectionId, embedUrl, thumbnailUrl, previewUrl, durationSeconds, videoTitle } = item;
+      const { videoId, collectionId, durationSeconds, videoTitle } = item;
 
-      if (!videoId || !collectionId || !embedUrl) {
+      if (!videoId || !collectionId) {
         errors.push(`Missing required fields for video ${videoId ?? "unknown"}`);
         continue;
       }
@@ -352,13 +410,27 @@ router.post("/admin/bunny/import", requireAuth, async (req: Request, res: Respon
         continue;
       }
 
-      // Don't persist empty strings — omit missing fields entirely
-      const newAsset = {
-        embedUrl,
-        ...(thumbnailUrl ? { thumbnailUrl } : {}),
-        ...(previewUrl ? { previewUrl } : {}),
-        videoId,
-      };
+      const bunnyVideo = await bunnyGet(
+        `/library/${cfg.libraryId}/videos/${encodeURIComponent(videoId)}`,
+        cfg.apiKey,
+      ) as Record<string, unknown>;
+      const bunnyStatus = Number(bunnyVideo["status"] ?? -1);
+      const bunnyCollectionId = String(bunnyVideo["collectionId"] ?? "");
+      if (bunnyCollectionId !== collectionId) {
+        errors.push(`Video "${videoTitle}": Bunny collection mismatch. Import blocked.`);
+        continue;
+      }
+      if (bunnyStatus !== 4) {
+        errors.push(`Video "${videoTitle}": Bunny status is ${statusLabel(bunnyStatus)}. Only ready videos can be imported.`);
+        continue;
+      }
+
+      const newAsset = buildBunnyPlaybackAsset({
+        libraryId: cfg.libraryId,
+        pullZoneHostname,
+        videoId: String(bunnyVideo["guid"] ?? videoId),
+      });
+      await verifyBunnyPlaybackProtection(newAsset.embedUrl!);
 
       // Resolve the lesson
       let lessonId = item.lessonId;
@@ -421,7 +493,7 @@ router.post("/admin/bunny/import", requireAuth, async (req: Request, res: Respon
             videoAssets: { [lang]: newAsset } as Record<string, typeof newAsset>,
             durationSeconds,
             order: existingLessons.length + 1,
-            isPublished: true, // publish immediately so client Academy can see it
+            isPublished: false,
           }).returning();
           lessonId = newLesson.id;
           created++;
@@ -437,7 +509,7 @@ router.post("/admin/bunny/import", requireAuth, async (req: Request, res: Respon
         continue;
       }
 
-      const currentAssets = (existing.videoAssets as Record<string, unknown> | null) ?? {};
+      const currentAssets = sanitizeBunnyAssetMap(existing.videoAssets);
       const updatedAssets = { ...currentAssets, [lang]: newAsset };
 
       await db.update(lessons)
@@ -446,7 +518,7 @@ router.post("/admin/bunny/import", requireAuth, async (req: Request, res: Respon
           durationSeconds: durationSeconds || undefined,
           // Set legacy fields from EN as fallback
           ...(lang === "en" ? {
-            thumbnailUrl: thumbnailUrl || undefined,
+            thumbnailUrl: newAsset.thumbnailUrl || undefined,
           } : {}),
         })
         .where(eq(lessons.id, lessonId!));
@@ -460,6 +532,9 @@ router.post("/admin/bunny/import", requireAuth, async (req: Request, res: Respon
     }
   }
 
+  if (imported > 0 || created > 0 || updated > 0) {
+    clearAcademyCatalogCache();
+  }
   res.json({ imported, created, updated, errors });
 });
 

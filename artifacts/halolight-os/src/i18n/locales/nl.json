@@ -5,6 +5,8 @@
     "events": "Evenementen",
     "onboarding": "Instellen",
     "notifications": "Meldingen",
+    "open_menu": "Menu openen",
+    "toggle_theme": "Thema wisselen",
     "settings": "Instellingen",
     "admin": "Admin",
     "sales": "Verkoop",
@@ -119,7 +121,19 @@
     "courses_completed": "Voltooide cursussen",
     "course_overview": "Cursusoverzicht",
     "watch_video": "Video bekijken",
-    "watch_time": "Kijktijd"
+    "watch_time": "Kijktijd",
+    "no_filtered_courses": "Geen cursussen komen overeen met je filters.",
+    "search_placeholder": "Cursussen zoeken...",
+    "filter_category": "Categorie",
+    "all_categories": "Alle categorieën",
+    "error_title": "Academy niet beschikbaar",
+    "error_message": "De academy-inhoud kon niet worden geladen. Probeer het opnieuw.",
+    "retry": "Opnieuw proberen",
+    "retry_video": "Video opnieuw laden",
+    "playback_unavailable": "Video afspelen is tijdelijk niet mogelijk. Probeer het opnieuw.",
+    "database_unavailable": "De academie is tijdelijk niet beschikbaar. Probeer het opnieuw.",
+    "course_unavailable": "Deze cursus is niet beschikbaar.",
+    "lesson_unavailable": "Deze les is niet beschikbaar in de geselecteerde cursus of taal."
   },
   "events": {
     "title": "Evenementen",
@@ -127,6 +141,8 @@
     "add_event": "Evenement toevoegen",
     "no_events": "Geen evenementen. Voeg uw eerste evenement toe.",
     "event_date": "Evenementdatum",
+    "event_start_time": "Starttijd",
+    "event_end_time": "Eindtijd",
     "event_location": "Locatie",
     "event_type": "Evenementtype",
     "event_status": "Status",
@@ -565,6 +581,8 @@
     "saved": "Opgeslagen!",
     "full_name": "Volledige naam",
     "company_name": "Bedrijfsnaam",
+    "company_address": "Bedrijfsadres",
+    "company_address_placeholder": "Straat, postcode, stad, land",
     "phone": "Telefoonnummer",
     "email": "E-mail",
     "email_notifications": "E-mailmeldingen",
@@ -597,14 +615,28 @@
     "business_info_desc": "Help us tailor the platform to your business.",
     "business_type": "Business type",
     "main_market": "Main market",
+    "tax_id": "Fiscaal nummer / btw-nummer",
+    "tax_id_placeholder": "Btw-, GST- of fiscaal registratienummer",
     "photobooths": "Number of photobooths",
     "business_goal": "Business goal",
+    "logo_title": "Bedrijfslogo",
+    "logo_desc": "Wordt getoond op offertes, contracten en facturen. Als dit niet is ingesteld, verschijnt er geen logo op uw documenten.",
+    "logo_empty": "Nog geen logo geüpload.",
+    "logo_upload_btn": "Bestand uploaden",
+    "logo_saved": "Logo opgeslagen",
+    "logo_too_large": "Het logobestand is te groot (max. 2 MB)",
     "profile_complete_title": "Profile incomplete",
     "profile_complete_desc": "Please complete your required profile fields (first name, last name, company, phone).",
     "export_data": "Mijn data exporteren",
     "export_data_desc": "Download al je persoonlijke gegevens als JSON (AVG Artikel 20 — Recht op gegevensoverdraagbaarheid).",
     "export_data_btn": "Persoonlijke data downloaden",
-    "export_data_downloading": "Export voorbereiden…"
+    "export_data_downloading": "Export voorbereiden…",
+    "appearance": "Weergave",
+    "appearance_desc": "Pas aan hoe HaloLight Hub eruitziet op dit apparaat.",
+    "theme": "Thema",
+    "theme_light": "Licht",
+    "theme_dark": "Donker",
+    "theme_system": "Systeem"
   },
   "common": {
     "loading": "Laden...",
@@ -630,7 +662,8 @@
     "created": "Aangemaakt",
     "updated": "Bijgewerkt",
     "today": "Vandaag",
-    "yesterday": "Gisteren"
+    "yesterday": "Gisteren",
+    "remove": "Verwijderen"
   },
   "admin": {
     "console_title": "Admin Console",
@@ -645,7 +678,37 @@
     "unset_name": "Unset",
     "intelligence": "Intelligence",
     "management": "Management",
-    "operations_section": "Operations"
+    "operations_section": "Operations",
+    "create_user": "Gebruiker maken",
+    "active_users": "Actieve gebruikers",
+    "inactive_users": "Inactieve gebruikers",
+    "admin_users": "Admins",
+    "search_users": "Gebruikers zoeken...",
+    "filter_all_roles": "Alle rollen",
+    "filter_all_statuses": "Alle statussen",
+    "status_active": "Actief",
+    "status_inactive": "Inactief",
+    "col_status": "Status",
+    "col_actions": "Acties",
+    "no_users": "Geen gebruikers gevonden.",
+    "edit_user": "Gebruiker bewerken",
+    "label_email": "E-mail",
+    "label_full_name": "Volledige naam",
+    "label_first_name": "Voornaam",
+    "label_last_name": "Achternaam",
+    "label_company": "Bedrijf",
+    "label_phone": "Telefoon",
+    "label_language": "Taal",
+    "label_currency": "Valuta",
+    "role_admin": "Admin",
+    "role_client": "Klant",
+    "role_coach": "Coach",
+    "role_sales_rep": "Verkoop",
+    "toast_user_created": "Gebruiker aangemaakt",
+    "toast_user_updated": "Gebruiker bijgewerkt",
+    "toast_user_save_failed": "Gebruiker opslaan mislukt",
+    "toast_user_required": "E-mail en volledige naam zijn verplicht",
+    "saving_user": "Opslaan..."
   },
   "leads": {
     "title": "CRM — Leads",
@@ -833,7 +896,10 @@
     "equipment_label": "Apparatuur",
     "options_label": "Opties",
     "options_detail_label": "Optiedetails",
-    "discount_label": "Korting"
+    "discount_label": "Korting",
+    "send_quote": "E-mail voorbereiden",
+    "quote_sent": "E-mailconcept voorbereid",
+    "quote_send_failed": "Offerte verzenden mislukt"
   },
   "contracts": {
     "title": "Contracten",
@@ -950,7 +1016,8 @@
     "provider_signer_title_label": "Titel ondertekenaar (optioneel)",
     "provider_signature_section": "Handtekening aanbieder voor contracten",
     "provider_signature_desc": "Indien ingesteld, verschijnt deze handtekening in gegenereerde contracten.",
-    "provider_signature_saved": "Handtekening opgeslagen"
+    "provider_signature_saved": "Handtekening opgeslagen",
+    "no_content_message": "Er is nog geen contractinhoud. Gebruik Bewerken om inhoud toe te voegen of genereer een contract vanuit een sjabloon."
   },
   "invoices": {
     "title": "Facturen",
@@ -1413,7 +1480,9 @@
     "toast_updated": "Bron bijgewerkt",
     "toast_deleted": "Bron verwijderd",
     "toast_create_failed": "Aanmaken van bron mislukt",
-    "toast_update_failed": "Bijwerken van bron mislukt"
+    "toast_update_failed": "Bijwerken van bron mislukt",
+    "upload_file": "Bestand uploaden",
+    "toast_open_failed": "Resource openen mislukt"
   },
   "admin_revenue": {
     "title": "Omzetanalyse",
@@ -1454,8 +1523,12 @@
     "clear": "Wissen",
     "no_uploads": "Nog geen uploads",
     "no_uploads_hint": "Voeg uw eerste upload toe via de knop hierboven",
+    "error_loading": "Uploads kunnen niet worden geladen",
+    "retry": "Opnieuw proberen",
     "dialog_add": "Upload toevoegen",
     "dialog_edit": "Upload bewerken",
+    "url_only_title": "Voeg het bestand toe via een URL",
+    "url_only_hint": "Directe bestandsupload is in deze omgeving uitgeschakeld. Plak hieronder een HTTPS-bestands-URL.",
     "dropzone_title": "Bestand hier neerzetten of klikken om te bladeren",
     "dropzone_hint": "Legt bestandsmetadata vast — voer de URL hieronder in",
     "label_title": "Titel",
@@ -1501,7 +1574,8 @@
     "cat_contracts": "Contracten",
     "cat_product_manuals": "Producthandleidingen",
     "cat_ai_knowledge_base": "AI-kennisbank",
-    "cat_support_documentation": "Supportdocumentatie"
+    "cat_support_documentation": "Supportdocumentatie",
+    "toast_open_failed": "Bestand openen mislukt"
   },
   "admin_academy": {
     "title": "Academie-beheer",
@@ -1578,7 +1652,13 @@
     "toast_module_deleted": "Module verwijderd",
     "toast_module_add_fail": "Toevoegen module mislukt",
     "type_module": "module",
-    "type_lesson": "les"
+    "type_lesson": "les",
+    "filter_archived": "Gearchiveerd",
+    "stat_archived": "Gearchiveerd",
+    "archived_badge": "Gearchiveerd",
+    "archive": "Archiveren",
+    "restore": "Herstellen",
+    "toast_course_status_updated": "Cursusstatus bijgewerkt"
   },
   "admin_automation": {
     "title": "Automatiseringsmotor",
@@ -1762,6 +1842,7 @@
     "footer_copy": "© {{year}} HaloLight Inc. Alle rechten voorbehouden."
   },
   "academy_lesson": {
+    "no_video": "De video is nog niet beschikbaar in deze taal.",
     "toast_completed": "Les voltooid!",
     "toast_completed_desc": "Goed werk. Ga door!",
     "toast_error": "Fout",

@@ -5,6 +5,10 @@ import { ArrowRight, BarChart3, GraduationCap, Users, CheckCircle2, Monitor, Spa
 
 export default function Landing() {
   const { t } = useTranslation();
+  const signupHref =
+    import.meta.env.DEV || import.meta.env.VITE_ALLOW_PUBLIC_SIGNUPS === "true"
+      ? "/sign-up"
+      : "/sign-in";
 
   const features = [
     { icon: BarChart3,    color: "bg-accent/15 text-foreground",   title: t("landing.f1_title"), desc: t("landing.f1_desc") },
@@ -28,7 +32,7 @@ export default function Landing() {
               {t("landing.nav_sign_in")}
             </Button>
           </Link>
-          <Link href="/sign-up">
+          <Link href={signupHref}>
             <Button className="font-medium shadow-sm" data-testid="button-landing-signup">
               {t("landing.nav_get_started")}
             </Button>
@@ -53,7 +57,7 @@ export default function Landing() {
             {t("landing.hero_subtitle")}
           </p>
           <div className="flex flex-col sm:flex-row gap-4">
-            <Link href="/sign-up">
+            <Link href={signupHref}>
               <Button size="lg" className="h-14 px-8 text-lg font-medium shadow-md group">
                 {t("landing.hero_cta")} <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
               </Button>
@@ -92,7 +96,7 @@ export default function Landing() {
             <div className="absolute top-0 left-0 w-full h-1 bg-accent rounded-t-3xl"></div>
             <h2 className="text-3xl font-bold text-background mb-4">{t("landing.cta_title")}</h2>
             <p className="text-background/80 text-lg mb-8 max-w-xl mx-auto">{t("landing.cta_subtitle")}</p>
-            <Link href="/sign-up">
+            <Link href={signupHref}>
               <Button size="lg" className="h-12 px-8 text-base font-semibold bg-accent text-foreground hover:bg-accent/90 border-0 shadow-none">
                 {t("landing.cta_btn")}
               </Button>

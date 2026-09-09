@@ -45,7 +45,8 @@ export async function seedAcademy() {
         },
         category: "foundation",
         level: "beginner",
-        thumbnailUrl: "https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?w=800&q=80",
+        thumbnailUrl:
+          "https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?w=800&q=80",
         order: 1,
         totalDurationSeconds: 4260,
       })
@@ -155,7 +156,16 @@ export async function seedAcademy() {
     await db.insert(lessonResources).values([
       {
         lessonId: l1_1.id,
-        title: { en: "Setup Checklist PDF", fr: "Checklist d'installation PDF", es: "Lista de verificación PDF", de: "Installations-Checkliste PDF", it: "Lista di controllo PDF", pl: "Lista kontrolna PDF", pt: "Lista de verificação PDF", nl: "Installatie checklist PDF" },
+        title: {
+          en: "Setup Checklist PDF",
+          fr: "Checklist d'installation PDF",
+          es: "Lista de verificación PDF",
+          de: "Installations-Checkliste PDF",
+          it: "Lista di controllo PDF",
+          pl: "Lista kontrolna PDF",
+          pt: "Lista de verificação PDF",
+          nl: "Installatie checklist PDF",
+        },
         type: "pdf",
         url: "https://example.com/resources/setup-checklist.pdf",
       },
@@ -184,7 +194,16 @@ export async function seedAcademy() {
     await db.insert(lessonResources).values([
       {
         lessonId: l1_2.id,
-        title: { en: "Hardware Assembly Guide", fr: "Guide d'assemblage", es: "Guía de ensamblaje", de: "Montageanleitung", it: "Guida al montaggio", pl: "Przewodnik montażu", pt: "Guia de montagem", nl: "Montagehandleiding" },
+        title: {
+          en: "Hardware Assembly Guide",
+          fr: "Guide d'assemblage",
+          es: "Guía de ensamblaje",
+          de: "Montageanleitung",
+          it: "Guida al montaggio",
+          pl: "Przewodnik montażu",
+          pt: "Guia de montagem",
+          nl: "Montagehandleiding",
+        },
         type: "pdf",
         url: "https://example.com/resources/assembly-guide.pdf",
       },
@@ -243,10 +262,46 @@ export async function seedAcademy() {
           nl: "Wat is de minimale RAM-vereiste voor HaloLight-software?",
         },
         options: [
-          { en: "4 GB", fr: "4 Go", es: "4 GB", de: "4 GB", it: "4 GB", pl: "4 GB", pt: "4 GB", nl: "4 GB" },
-          { en: "8 GB", fr: "8 Go", es: "8 GB", de: "8 GB", it: "8 GB", pl: "8 GB", pt: "8 GB", nl: "8 GB" },
-          { en: "16 GB", fr: "16 Go", es: "16 GB", de: "16 GB", it: "16 GB", pl: "16 GB", pt: "16 GB", nl: "16 GB" },
-          { en: "32 GB", fr: "32 Go", es: "32 GB", de: "32 GB", it: "32 GB", pl: "32 GB", pt: "32 GB", nl: "32 GB" },
+          {
+            en: "4 GB",
+            fr: "4 Go",
+            es: "4 GB",
+            de: "4 GB",
+            it: "4 GB",
+            pl: "4 GB",
+            pt: "4 GB",
+            nl: "4 GB",
+          },
+          {
+            en: "8 GB",
+            fr: "8 Go",
+            es: "8 GB",
+            de: "8 GB",
+            it: "8 GB",
+            pl: "8 GB",
+            pt: "8 GB",
+            nl: "8 GB",
+          },
+          {
+            en: "16 GB",
+            fr: "16 Go",
+            es: "16 GB",
+            de: "16 GB",
+            it: "16 GB",
+            pl: "16 GB",
+            pt: "16 GB",
+            nl: "16 GB",
+          },
+          {
+            en: "32 GB",
+            fr: "32 Go",
+            es: "32 GB",
+            de: "32 GB",
+            it: "32 GB",
+            pl: "32 GB",
+            pt: "32 GB",
+            nl: "32 GB",
+          },
         ],
         correctOption: 1,
         order: 1,
@@ -401,7 +456,8 @@ export async function seedAcademy() {
         },
         category: "advanced",
         level: "intermediate",
-        thumbnailUrl: "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=800&q=80",
+        thumbnailUrl:
+          "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=800&q=80",
         order: 2,
         totalDurationSeconds: 5400,
       })
@@ -569,7 +625,8 @@ export async function seedAcademy() {
         },
         category: "business",
         level: "advanced",
-        thumbnailUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&q=80",
+        thumbnailUrl:
+          "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&q=80",
         order: 3,
         totalDurationSeconds: 7200,
       })

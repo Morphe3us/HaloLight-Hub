@@ -5,6 +5,8 @@
     "events": "Eventi",
     "onboarding": "Configurazione",
     "notifications": "Notifiche",
+    "open_menu": "Apri menu",
+    "toggle_theme": "Cambia tema",
     "settings": "Impostazioni",
     "admin": "Admin",
     "sales": "Vendite",
@@ -119,7 +121,19 @@
     "courses_completed": "Corsi completati",
     "course_overview": "Panoramica del corso",
     "watch_video": "Guarda video",
-    "watch_time": "Tempo di visione"
+    "watch_time": "Tempo di visione",
+    "no_filtered_courses": "Nessun corso corrisponde ai filtri.",
+    "search_placeholder": "Cerca corsi...",
+    "filter_category": "Categoria",
+    "all_categories": "Tutte le categorie",
+    "error_title": "Academy non disponibile",
+    "error_message": "Impossibile caricare i contenuti dell’academy. Riprova.",
+    "retry": "Riprova",
+    "retry_video": "Ricarica video",
+    "playback_unavailable": "La riproduzione video è temporaneamente non disponibile. Riprova.",
+    "database_unavailable": "L'accademia è temporaneamente non disponibile. Riprova.",
+    "course_unavailable": "Questo corso non è disponibile.",
+    "lesson_unavailable": "Questa lezione non è disponibile nel corso o nella lingua selezionati."
   },
   "events": {
     "title": "Eventi",
@@ -127,6 +141,8 @@
     "add_event": "Aggiungi evento",
     "no_events": "Nessun evento. Aggiungi il tuo primo evento per iniziare.",
     "event_date": "Data evento",
+    "event_start_time": "Ora di inizio",
+    "event_end_time": "Ora di fine",
     "event_location": "Luogo",
     "event_type": "Tipo evento",
     "event_status": "Stato",
@@ -565,6 +581,8 @@
     "saved": "Salvato!",
     "full_name": "Nome completo",
     "company_name": "Nome azienda",
+    "company_address": "Indirizzo azienda",
+    "company_address_placeholder": "Via, CAP, città, paese",
     "phone": "Telefono",
     "email": "Email",
     "email_notifications": "Notifiche email",
@@ -597,14 +615,28 @@
     "business_info_desc": "Help us tailor the platform to your business.",
     "business_type": "Business type",
     "main_market": "Main market",
+    "tax_id": "Codice fiscale / Partita IVA",
+    "tax_id_placeholder": "Partita IVA, GST o numero di registrazione fiscale",
     "photobooths": "Number of photobooths",
     "business_goal": "Business goal",
+    "logo_title": "Logo aziendale",
+    "logo_desc": "Mostrato su preventivi, contratti e fatture. Se non impostato, non appare alcun logo nei documenti.",
+    "logo_empty": "Nessun logo caricato.",
+    "logo_upload_btn": "Carica file",
+    "logo_saved": "Logo salvato",
+    "logo_too_large": "Il file del logo è troppo grande (max 2 MB)",
     "profile_complete_title": "Profile incomplete",
     "profile_complete_desc": "Please complete your required profile fields (first name, last name, company, phone).",
     "export_data": "Esporta i miei dati",
     "export_data_desc": "Scarica tutti i tuoi dati personali in JSON (GDPR Art. 20 — Portabilità dei dati).",
     "export_data_btn": "Scarica dati personali",
-    "export_data_downloading": "Preparazione esportazione…"
+    "export_data_downloading": "Preparazione esportazione…",
+    "appearance": "Aspetto",
+    "appearance_desc": "Regola l’aspetto di HaloLight Hub su questo dispositivo.",
+    "theme": "Tema",
+    "theme_light": "Chiaro",
+    "theme_dark": "Scuro",
+    "theme_system": "Sistema"
   },
   "common": {
     "loading": "Caricamento...",
@@ -630,7 +662,8 @@
     "created": "Creato",
     "updated": "Aggiornato",
     "today": "Oggi",
-    "yesterday": "Ieri"
+    "yesterday": "Ieri",
+    "remove": "Rimuovi"
   },
   "admin": {
     "console_title": "Admin Console",
@@ -645,7 +678,37 @@
     "unset_name": "Unset",
     "intelligence": "Intelligence",
     "management": "Management",
-    "operations_section": "Operations"
+    "operations_section": "Operations",
+    "create_user": "Crea utente",
+    "active_users": "Utenti attivi",
+    "inactive_users": "Utenti inattivi",
+    "admin_users": "Admin",
+    "search_users": "Cerca utenti...",
+    "filter_all_roles": "Tutti i ruoli",
+    "filter_all_statuses": "Tutti gli stati",
+    "status_active": "Attivo",
+    "status_inactive": "Inattivo",
+    "col_status": "Stato",
+    "col_actions": "Azioni",
+    "no_users": "Nessun utente trovato.",
+    "edit_user": "Modifica utente",
+    "label_email": "Email",
+    "label_full_name": "Nome completo",
+    "label_first_name": "Nome",
+    "label_last_name": "Cognome",
+    "label_company": "Azienda",
+    "label_phone": "Telefono",
+    "label_language": "Lingua",
+    "label_currency": "Valuta",
+    "role_admin": "Admin",
+    "role_client": "Cliente",
+    "role_coach": "Coach",
+    "role_sales_rep": "Vendite",
+    "toast_user_created": "Utente creato",
+    "toast_user_updated": "Utente aggiornato",
+    "toast_user_save_failed": "Impossibile salvare l’utente",
+    "toast_user_required": "Email e nome completo obbligatori",
+    "saving_user": "Salvataggio..."
   },
   "leads": {
     "title": "CRM — Lead",
@@ -833,7 +896,10 @@
     "equipment_label": "Attrezzatura",
     "options_label": "Opzioni",
     "options_detail_label": "Dettaglio opzioni",
-    "discount_label": "Sconto"
+    "discount_label": "Sconto",
+    "send_quote": "Prepara email",
+    "quote_sent": "Bozza email preparata",
+    "quote_send_failed": "Impossibile inviare il preventivo"
   },
   "contracts": {
     "title": "Contratti",
@@ -950,7 +1016,8 @@
     "provider_signer_title_label": "Titolo del firmatario (opzionale)",
     "provider_signature_section": "Firma del fornitore per i contratti",
     "provider_signature_desc": "Se impostata, questa firma appare nei contratti generati.",
-    "provider_signature_saved": "Firma salvata"
+    "provider_signature_saved": "Firma salvata",
+    "no_content_message": "Nessun contenuto del contratto ancora presente. Usa Modifica per aggiungere contenuto o genera un contratto da un modello."
   },
   "invoices": {
     "title": "Fatture",
@@ -1413,7 +1480,9 @@
     "toast_updated": "Risorsa aggiornata",
     "toast_deleted": "Risorsa eliminata",
     "toast_create_failed": "Impossibile creare la risorsa",
-    "toast_update_failed": "Impossibile aggiornare la risorsa"
+    "toast_update_failed": "Impossibile aggiornare la risorsa",
+    "upload_file": "Carica file",
+    "toast_open_failed": "Impossibile aprire la risorsa"
   },
   "admin_revenue": {
     "title": "Analisi dei ricavi",
@@ -1454,8 +1523,12 @@
     "clear": "Cancella",
     "no_uploads": "Ancora nessun file",
     "no_uploads_hint": "Aggiungi il tuo primo file usando il pulsante sopra",
+    "error_loading": "Impossibile caricare i file",
+    "retry": "Riprova",
     "dialog_add": "Aggiungi file",
     "dialog_edit": "Modifica file",
+    "url_only_title": "Aggiungi il file da un URL",
+    "url_only_hint": "Il caricamento diretto dei file è disattivato in questo ambiente. Incolla un URL HTTPS qui sotto.",
     "dropzone_title": "Trascina un file qui o clicca per sfogliare",
     "dropzone_hint": "Acquisisce i metadati del file — inserisci l'URL sotto",
     "label_title": "Titolo",
@@ -1501,7 +1574,8 @@
     "cat_contracts": "Contratti",
     "cat_product_manuals": "Manuali prodotto",
     "cat_ai_knowledge_base": "Base di conoscenza IA",
-    "cat_support_documentation": "Documentazione di supporto"
+    "cat_support_documentation": "Documentazione di supporto",
+    "toast_open_failed": "Impossibile aprire il file"
   },
   "admin_academy": {
     "title": "Gestione Academy",
@@ -1578,7 +1652,13 @@
     "toast_module_deleted": "Modulo eliminato",
     "toast_module_add_fail": "Impossibile aggiungere il modulo",
     "type_module": "modulo",
-    "type_lesson": "lezione"
+    "type_lesson": "lezione",
+    "filter_archived": "Archiviati",
+    "stat_archived": "Archiviati",
+    "archived_badge": "Archiviato",
+    "archive": "Archivia",
+    "restore": "Ripristina",
+    "toast_course_status_updated": "Stato del corso aggiornato"
   },
   "admin_automation": {
     "title": "Motore di automazione",
@@ -1762,6 +1842,7 @@
     "footer_copy": "© {{year}} HaloLight Inc. Tutti i diritti riservati."
   },
   "academy_lesson": {
+    "no_video": "Il video non è ancora disponibile in questa lingua.",
     "toast_completed": "Lezione completata!",
     "toast_completed_desc": "Ottimo lavoro. Continua così!",
     "toast_error": "Errore",

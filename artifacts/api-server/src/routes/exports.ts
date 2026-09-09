@@ -17,38 +17,9 @@ import {
 } from "@workspace/db";
 import { requireAuth } from "../middlewares/requireAuth";
 import { getOrCreateUser } from "../lib/userSync";
+import { toCSV } from "../lib/csv";
 
 const router: IRouter = Router();
-
-// ─── CSV utilities ────────────────────────────────────────────────────────────
-
-const UTF8_BOM = "\uFEFF";
-
-function escapeCSV(val: unknown, sep: string): string {
-  if (val === null || val === undefined) return "";
-  const str = String(val);
-  if (
-    str.includes(sep) ||
-    str.includes('"') ||
-    str.includes("\n") ||
-    str.includes("\r")
-  ) {
-    return '"' + str.replace(/"/g, '""') + '"';
-  }
-  return str;
-}
-
-function toCSV(rows: Record<string, unknown>[], sep = ","): string {
-  if (rows.length === 0) return UTF8_BOM + "\r\n";
-  const headers = Object.keys(rows[0]);
-  const lines = [
-    headers.map((h) => escapeCSV(h, sep)).join(sep),
-    ...rows.map((row) =>
-      headers.map((h) => escapeCSV(row[h], sep)).join(sep)
-    ),
-  ];
-  return UTF8_BOM + lines.join("\r\n");
-}
 
 function isoDate(d: Date | string | null | undefined): string {
   if (!d) return "";

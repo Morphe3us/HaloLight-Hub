@@ -1,252 +1,288 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { eq, and, count, gt, sql, lte, or, ne, isNotNull } from "drizzle-orm";
 import {
-  db,
-  notificationsTable,
-  onboardingStepsTable,
-  userOnboardingProgressTable,
-  courses,
-  courseModules,
-  lessons,
-  userLessonProgress,
-  events,
-  equipment,
-  consumableStock,
+  and,
+  count,
+  eq,
+  gt,
+  inArray,
+  isNotNull,
+  lte,
+  ne,
+  or,
+  sql,
+} from "drizzle-orm";
+import {
   consumableCatalog,
+  consumableStock,
+  db,
+  equipment,
+  events,
+  contracts,
+  invoices,
+  leads,
+  notificationsTable,
+  quotes,
+  onboardingStepsTable,
   supportTickets,
+  userLessonProgress,
+  userOnboardingProgressTable,
 } from "@workspace/db";
 import { requireAuth } from "../middlewares/requireAuth";
+import { getPublishedAcademyCatalog } from "../lib/academyCatalog";
+import {
+  filterModulesForLang,
+  normalizeAcademyLang,
+  resolveLocale,
+  sortAcademyLessons,
+} from "../lib/academyLanguage";
 import { getOrCreateUser } from "../lib/userSync";
 
 const router: IRouter = Router();
 
-// GET /dashboard/summary
-router.get("/dashboard/summary", requireAuth, async (req: Request, res: Response): Promise<void> => {
-  const user = await getOrCreateUser(req);
-  if (!user) { res.status(401).json({ error: "Unauthorized" }); return; }
-
-  const lang = user.language ?? "en";
-  const now = new Date();
-  const thirtyDaysOut = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-  const fourteenDaysOut = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
-
-  // Run all queries in parallel for performance
-  const [
-    unreadNotifResult,
-    allSteps,
-    doneSteps,
-    allCourses,
-    allModules,
-    allLessons,
-    allProgress,
-    upcomingCountResult,
-    totalEventsCountResult,
-    equipmentAlertsResult,
-    openTicketsResult,
-  ] = await Promise.all([
-    // Unread notifications
-    db
-      .select({ value: count() })
-      .from(notificationsTable)
-      .where(and(eq(notificationsTable.userId, user.id), eq(notificationsTable.isRead, false))),
-
-    // Onboarding steps
-    db.select().from(onboardingStepsTable),
-
-    // Completed onboarding
-    db
-      .select()
-      .from(userOnboardingProgressTable)
-      .where(
-        and(
-          eq(userOnboardingProgressTable.userId, user.id),
-          sql`${userOnboardingProgressTable.completedAt} IS NOT NULL`
-        )
-      ),
-
-    // Published courses
-    db.select().from(courses).where(eq(courses.isPublished, true)),
-
-    // All modules
-    db.select().from(courseModules),
-
-    // Published lessons
-    db.select().from(lessons).where(eq(lessons.isPublished, true)),
-
-    // User lesson progress
-    db.select().from(userLessonProgress).where(eq(userLessonProgress.userId, user.id)),
-
-    // Upcoming events count
-    db
-      .select({ value: count() })
-      .from(events)
-      .where(and(eq(events.userId, user.id), eq(events.status, "upcoming"), gt(events.eventDate, now))),
-
-    // Total events count
-    db
-      .select({ value: count() })
-      .from(events)
-      .where(eq(events.userId, user.id)),
-
-    // Equipment alerts: warranty expiring ≤30 days OR service due ≤14 days
-    db
-      .select({ value: count() })
-      .from(equipment)
-      .where(
-        and(
-          eq(equipment.userId, user.id),
-          ne(equipment.status, "retired"),
-          or(
-            and(isNotNull(equipment.warrantyExpiration), lte(equipment.warrantyExpiration, thirtyDaysOut)),
-            and(isNotNull(equipment.nextMaintenanceDate), lte(equipment.nextMaintenanceDate, fourteenDaysOut))
-          )
-        )
-      ),
-
-    // Open support tickets (open or in_progress)
-    db
-      .select({ value: count() })
-      .from(supportTickets)
-      .where(
-        and(
-          eq(supportTickets.userId, user.id),
-          or(eq(supportTickets.status, "open"), eq(supportTickets.status, "in_progress"))
-        )
-      ),
-  ]);
-
-  const unreadNotifications = unreadNotifResult[0]?.value ?? 0;
-  const onboardingPercent =
-    allSteps.length > 0 ? Math.round((doneSteps.length / allSteps.length) * 100) : 0;
-
-  // Academy stats — language-filtered (same detection logic as academy.ts)
-  const LANG_MOD_MAP: Record<string, string> = {
-    "english": "en", "english language": "en",
-    "french": "fr", "french language": "fr",
-    "spanish": "es", "spanish language": "es",
-    "german": "de", "german language": "de",
-    "dutch": "nl", "dutch language": "nl",
-    "italian": "it", "italian language": "it",
-    "portuguese": "pt", "portuguese language": "pt",
-    "polish": "pl", "polish language": "pl",
-  };
-  function detectLangTrack(title: unknown): string | null {
-    if (!title || typeof title !== "object") return null;
-    const t = ((title as Record<string, string>)["en"] ?? "").toLowerCase().trim();
-    return LANG_MOD_MAP[t] ?? null;
-  }
-
-  // Build course → modules map, compute language-visible module IDs
-  const courseModsByCourse = new Map<string, typeof allModules>();
-  for (const mod of allModules) {
-    const list = courseModsByCourse.get(mod.courseId) ?? [];
-    list.push(mod);
-    courseModsByCourse.set(mod.courseId, list);
-  }
-  const visibleModuleIds = new Set<string>();
-  for (const course of allCourses) {
-    const mods = courseModsByCourse.get(course.id) ?? [];
-    const hasLangMods = mods.some((m) => detectLangTrack(m.title) !== null);
-    if (!hasLangMods) { mods.forEach((m) => visibleModuleIds.add(m.id)); continue; }
-    const langMods = mods.filter((m) => detectLangTrack(m.title) === lang);
-    const chosen = langMods.length > 0 ? langMods : mods.filter((m) => detectLangTrack(m.title) === "en");
-    (chosen.length > 0 ? chosen : mods).forEach((m) => visibleModuleIds.add(m.id));
-  }
-  const visibleLessons = allLessons.filter((l) => visibleModuleIds.has(l.moduleId));
-
-  const completedProgressIds = new Set(
-    allProgress.filter((p) => p.completedAt).map((p) => p.lessonId)
-  );
-  const academyLessonsCompleted = visibleLessons.filter((l) => completedProgressIds.has(l.id)).length;
-  const academyTotalLessons = visibleLessons.length;
-
-  const lessonsByModule = new Map<string, string[]>();
-  for (const l of visibleLessons) {
-    const list = lessonsByModule.get(l.moduleId) ?? [];
-    list.push(l.id);
-    lessonsByModule.set(l.moduleId, list);
-  }
-  let academyCoursesCompleted = 0;
-  for (const course of allCourses) {
-    const mids = Array.from(visibleModuleIds).filter((mid) =>
-      (courseModsByCourse.get(course.id) ?? []).some((m) => m.id === mid)
-    );
-    const lids = mids.flatMap((mid) => lessonsByModule.get(mid) ?? []);
-    if (lids.length > 0 && lids.every((lid) => completedProgressIds.has(lid))) {
-      academyCoursesCompleted++;
+router.get(
+  "/dashboard/summary",
+  requireAuth,
+  async (req: Request, res: Response): Promise<void> => {
+    const user = await getOrCreateUser(req);
+    if (!user) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
     }
-  }
 
-  // Low-stock consumables: join stock with catalog, count rows where qty ≤ threshold
-  const lowStockRows = await db
-    .select({
-      id: consumableStock.id,
-      currentQuantity: consumableStock.currentQuantity,
-      reorderThreshold: consumableCatalog.reorderThreshold,
-    })
-    .from(consumableStock)
-    .innerJoin(consumableCatalog, eq(consumableStock.catalogItemId, consumableCatalog.id))
-    .where(
-      and(
-        eq(consumableStock.userId, user.id),
-        sql`${consumableStock.currentQuantity} <= ${consumableCatalog.reorderThreshold}`
-      )
+    const lang = normalizeAcademyLang(req.query.lang ?? user.language);
+    const now = new Date();
+    const thirtyDaysOut = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+    const fourteenDaysOut = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+
+    const [
+      unreadNotifResult,
+      allStepsCountResult,
+      doneStepsCountResult,
+      catalog,
+      upcomingCountResult,
+      totalEventsCountResult,
+      equipmentAlertsResult,
+      lowStockCountResult,
+      openTicketsResult,
+      leadsCountResult,
+      quotesCountResult,
+      contractsCountResult,
+      invoicesCountResult,
+    ] = await Promise.all([
+      db
+        .select({ value: count() })
+        .from(notificationsTable)
+        .where(
+          and(
+            eq(notificationsTable.userId, user.id),
+            eq(notificationsTable.isRead, false),
+          ),
+        ),
+      db.select({ value: count() }).from(onboardingStepsTable),
+      db
+        .select({ value: count() })
+        .from(userOnboardingProgressTable)
+        .where(
+          and(
+            eq(userOnboardingProgressTable.userId, user.id),
+            sql`${userOnboardingProgressTable.completedAt} IS NOT NULL`,
+          ),
+        ),
+      getPublishedAcademyCatalog(),
+      db
+        .select({ value: count() })
+        .from(events)
+        .where(
+          and(
+            eq(events.userId, user.id),
+            eq(events.status, "upcoming"),
+            gt(events.eventDate, now),
+          ),
+        ),
+      db
+        .select({ value: count() })
+        .from(events)
+        .where(eq(events.userId, user.id)),
+      db
+        .select({ value: count() })
+        .from(equipment)
+        .where(
+          and(
+            eq(equipment.userId, user.id),
+            ne(equipment.status, "retired"),
+            or(
+              and(
+                isNotNull(equipment.warrantyExpiration),
+                lte(equipment.warrantyExpiration, thirtyDaysOut),
+              ),
+              and(
+                isNotNull(equipment.nextMaintenanceDate),
+                lte(equipment.nextMaintenanceDate, fourteenDaysOut),
+              ),
+            ),
+          ),
+        ),
+      db
+        .select({ value: count() })
+        .from(consumableStock)
+        .innerJoin(
+          consumableCatalog,
+          eq(consumableStock.catalogItemId, consumableCatalog.id),
+        )
+        .where(
+          and(
+            eq(consumableStock.userId, user.id),
+            sql`${consumableStock.currentQuantity} <= ${consumableCatalog.reorderThreshold}`,
+          ),
+        ),
+      db
+        .select({ value: count() })
+        .from(supportTickets)
+        .where(
+          and(
+            eq(supportTickets.userId, user.id),
+            or(
+              eq(supportTickets.status, "open"),
+              eq(supportTickets.status, "in_progress"),
+            ),
+          ),
+        ),
+      db
+        .select({ value: count() })
+        .from(leads)
+        .where(eq(leads.userId, user.id)),
+      db
+        .select({ value: count() })
+        .from(quotes)
+        .where(eq(quotes.userId, user.id)),
+      db
+        .select({ value: count() })
+        .from(contracts)
+        .where(eq(contracts.userId, user.id)),
+      db
+        .select({ value: count() })
+        .from(invoices)
+        .where(eq(invoices.userId, user.id)),
+    ]);
+
+    const allCourses = catalog.courses;
+    const allModules = catalog.modules;
+    const allLessons = catalog.lessons;
+    const courseModsByCourse = new Map<string, typeof allModules>();
+    for (const mod of allModules) {
+      const list = courseModsByCourse.get(mod.courseId) ?? [];
+      list.push(mod);
+      courseModsByCourse.set(mod.courseId, list);
+    }
+
+    const visibleModuleIds = new Set<string>();
+    for (const course of allCourses) {
+      filterModulesForLang(courseModsByCourse.get(course.id) ?? [], lang).forEach(
+        (module) => visibleModuleIds.add(module.id),
+      );
+    }
+
+    const visibleLessons = allLessons.filter((lesson) =>
+      visibleModuleIds.has(lesson.moduleId),
     );
-  const lowStockCount = lowStockRows.length;
+    const visibleLessonIds = visibleLessons.map((lesson) => lesson.id);
+    const progressRows =
+      visibleLessonIds.length > 0
+        ? await db
+            .select()
+            .from(userLessonProgress)
+            .where(
+              and(
+                eq(userLessonProgress.userId, user.id),
+                inArray(userLessonProgress.lessonId, visibleLessonIds),
+              ),
+            )
+        : [];
 
-  // Next lesson — first incomplete lesson (within user's language track)
-  const moduleMap = new Map(allModules.map((m) => [m.id, m]));
-  const courseMap = new Map(allCourses.map((c) => [c.id, c]));
-  const progressMap = new Map(allProgress.map((p) => [p.lessonId, p]));
+    const completedLessonIds = new Set(
+      progressRows
+        .filter((progress) => progress.completedAt)
+        .map((progress) => progress.lessonId),
+    );
+    const lessonsByModule = new Map<string, typeof visibleLessons>();
+    for (const lesson of visibleLessons) {
+      const list = lessonsByModule.get(lesson.moduleId) ?? [];
+      list.push(lesson);
+      lessonsByModule.set(lesson.moduleId, list);
+    }
 
-  const sortedLessons = [...visibleLessons].sort((a, b) => {
-    const ma = moduleMap.get(a.moduleId);
-    const mb = moduleMap.get(b.moduleId);
-    const ca = ma ? courseMap.get(ma.courseId) : undefined;
-    const cb = mb ? courseMap.get(mb.courseId) : undefined;
-    return (ca?.order ?? 0) - (cb?.order ?? 0) || (ma?.order ?? 0) - (mb?.order ?? 0) || a.order - b.order;
-  });
+    let academyCoursesCompleted = 0;
+    for (const course of allCourses) {
+      const visibleModules = filterModulesForLang(
+        courseModsByCourse.get(course.id) ?? [],
+        lang,
+      );
+      const courseLessonIds = visibleModules.flatMap((module) =>
+        (lessonsByModule.get(module.id) ?? []).map((lesson) => lesson.id),
+      );
+      if (
+        courseLessonIds.length > 0 &&
+        courseLessonIds.every((lessonId) => completedLessonIds.has(lessonId))
+      ) {
+        academyCoursesCompleted++;
+      }
+    }
 
-  let nextLesson = null;
-  for (const lesson of sortedLessons) {
-    if (!completedProgressIds.has(lesson.id)) {
-      const mod = moduleMap.get(lesson.moduleId);
-      const course = mod ? courseMap.get(mod.courseId) : undefined;
-      if (!course) continue;
-      const p = progressMap.get(lesson.id);
+    const moduleMap = new Map(allModules.map((module) => [module.id, module]));
+    const courseMap = new Map(allCourses.map((course) => [course.id, course]));
+    const progressMap = new Map(
+      progressRows.map((progress) => [progress.lessonId, progress]),
+    );
+    const orderedLessons = allCourses.flatMap((course) =>
+      filterModulesForLang(courseModsByCourse.get(course.id) ?? [], lang).flatMap(
+        (module) => sortAcademyLessons(lessonsByModule.get(module.id) ?? []),
+      ),
+    );
+
+    let nextLesson = null;
+    for (const lesson of orderedLessons) {
+      if (completedLessonIds.has(lesson.id)) continue;
+      const module = moduleMap.get(lesson.moduleId);
+      const course = module ? courseMap.get(module.courseId) : undefined;
+      if (!module || !course) continue;
+      const progress = progressMap.get(lesson.id);
       nextLesson = {
         lessonId: lesson.id,
         lessonTitle: resolveLocale(lang, lesson.title),
         courseId: course.id,
         courseTitle: resolveLocale(lang, course.title),
         courseThumbnailUrl: course.thumbnailUrl,
-        moduleTitle: resolveLocale(lang, mod!.title),
+        moduleTitle: resolveLocale(lang, module.title),
         durationSeconds: lesson.durationSeconds,
-        watchPercent: p?.watchPercent ?? 0,
+        watchPercent: progress?.watchPercent ?? 0,
       };
       break;
     }
-  }
 
-  res.json({
-    unreadNotifications,
-    onboardingPercent,
-    academyCoursesCompleted,
-    academyLessonsCompleted,
-    academyTotalLessons,
-    upcomingEventsCount: upcomingCountResult[0]?.value ?? 0,
-    totalEventsCount: totalEventsCountResult[0]?.value ?? 0,
-    equipmentAlerts: equipmentAlertsResult[0]?.value ?? 0,
-    lowStockCount,
-    openTicketsCount: openTicketsResult[0]?.value ?? 0,
-    nextLesson,
-  });
-});
+    const allStepsCount = allStepsCountResult[0]?.value ?? 0;
+    const doneStepsCount = doneStepsCountResult[0]?.value ?? 0;
 
-function resolveLocale(lang: string, obj: unknown): string {
-  if (!obj || typeof obj !== "object") return "";
-  const map = obj as Record<string, string>;
-  return map[lang] ?? map["en"] ?? Object.values(map)[0] ?? "";
-}
+    res.json({
+      unreadNotifications: unreadNotifResult[0]?.value ?? 0,
+      onboardingPercent:
+        allStepsCount > 0
+          ? Math.round((doneStepsCount / allStepsCount) * 100)
+          : 0,
+      academyCoursesCompleted,
+      academyLessonsCompleted: completedLessonIds.size,
+      academyTotalLessons: visibleLessons.length,
+      upcomingEventsCount: upcomingCountResult[0]?.value ?? 0,
+      totalEventsCount: totalEventsCountResult[0]?.value ?? 0,
+      equipmentAlerts: equipmentAlertsResult[0]?.value ?? 0,
+      lowStockCount: lowStockCountResult[0]?.value ?? 0,
+      openTicketsCount: openTicketsResult[0]?.value ?? 0,
+      leadsCount: leadsCountResult[0]?.value ?? 0,
+      quotesCount: quotesCountResult[0]?.value ?? 0,
+      contractsCount: contractsCountResult[0]?.value ?? 0,
+      invoicesCount: invoicesCountResult[0]?.value ?? 0,
+      nextLesson,
+    });
+  },
+);
 
 export default router;

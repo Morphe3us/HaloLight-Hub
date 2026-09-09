@@ -224,7 +224,7 @@ export default function ContractDetail() {
 
   const startEdit = () => {
     if (!contract) return;
-    setEditForm({ title: contract.title, clientName: contract.clientName, clientEmail: contract.clientEmail ?? "", value: contract.value, content: contract.content ?? "", notes: contract.notes ?? "" });
+    setEditForm({ title: contract.title, content: contract.content ?? "", notes: contract.notes ?? "" });
     setEditing(true);
   };
 
@@ -233,9 +233,6 @@ export default function ContractDetail() {
       id,
       data: {
         title: editForm.title,
-        clientName: editForm.clientName,
-        clientEmail: editForm.clientEmail || undefined,
-        value: editForm.value,
         content: editForm.content,
         notes: editForm.notes || undefined,
       },
@@ -322,9 +319,6 @@ export default function ContractDetail() {
           <div className="space-y-4 py-2">
             <div className="grid grid-cols-2 gap-4">
               <div className="col-span-2 space-y-1.5"><Label>{t("contracts.title_label")}</Label><Input value={editForm.title ?? ""} onChange={(e) => setEditForm({ ...editForm, title: e.target.value })} /></div>
-              <div className="space-y-1.5"><Label>{t("contracts.client_name_label")}</Label><Input value={editForm.clientName ?? ""} onChange={(e) => setEditForm({ ...editForm, clientName: e.target.value })} /></div>
-              <div className="space-y-1.5"><Label>{t("contracts.client_email_label")}</Label><Input value={editForm.clientEmail ?? ""} onChange={(e) => setEditForm({ ...editForm, clientEmail: e.target.value })} /></div>
-              <div className="space-y-1.5"><Label>{t("contracts.value_dollar_label")}</Label><Input type="number" value={editForm.value ?? ""} onChange={(e) => setEditForm({ ...editForm, value: e.target.value })} /></div>
             </div>
             <div className="space-y-1.5"><Label>{t("contracts.content_label")}</Label><Textarea value={editForm.content ?? ""} onChange={(e) => setEditForm({ ...editForm, content: e.target.value })} rows={12} className="font-mono text-xs" /></div>
             <div className="space-y-1.5"><Label>{t("contracts.notes_label")}</Label><Textarea value={editForm.notes ?? ""} onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })} rows={2} /></div>

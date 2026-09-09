@@ -7,7 +7,6 @@ import {
 } from "@workspace/db";
 import { requireAuth } from "../middlewares/requireAuth";
 import { getOrCreateUser } from "../lib/userSync";
-import { computeAndStoreScore } from "../lib/scoreEngine";
 
 const router: IRouter = Router();
 
@@ -18,13 +17,6 @@ router.get("/admin/analytics", requireAuth, async (req: Request, res: Response):
   if (user.role !== "admin") { res.status(403).json({ error: "Forbidden" }); return; }
 
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-  const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
-
-  // Recompute scores for all non-admin users
-  const allClients = await db.select({ id: usersTable.id }).from(usersTable).where(eq(usersTable.role, "client"));
-  for (const client of allClients) {
-    await computeAndStoreScore(client.id);
-  }
 
   // Users
   const [totalUsersRow] = await db.select({ count: sql<number>`count(*)::int` }).from(usersTable).where(eq(usersTable.role, "client"));

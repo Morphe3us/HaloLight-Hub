@@ -46,12 +46,15 @@ export interface User {
   /** @nullable */
   companyName?: string | null;
   /** @nullable */
+  companyAddress?: string | null;
+  /** @nullable */
   phone?: string | null;
   /** @nullable */
   country?: string | null;
   /** @nullable */
   city?: string | null;
   role: UserRole;
+  isActive: boolean;
   language: UserLanguage;
   currency: string;
   /** @nullable */
@@ -73,9 +76,17 @@ export interface User {
   /** @nullable */
   mainMarket?: string | null;
   /** @nullable */
+  taxId?: string | null;
+  /** @nullable */
   photobooths?: number | null;
   /** @nullable */
   businessGoal?: string | null;
+  /** @nullable */
+  providerSignature?: string | null;
+  /** @nullable */
+  providerSignerTitle?: string | null;
+  /** @nullable */
+  logoUrl?: string | null;
   createdAt: string;
   updatedAt?: string;
 }
@@ -99,6 +110,7 @@ export interface UserUpdate {
   lastName?: string;
   fullName?: string;
   companyName?: string;
+  companyAddress?: string;
   phone?: string;
   country?: string;
   city?: string;
@@ -113,8 +125,89 @@ export interface UserUpdate {
   linkedin?: string;
   businessType?: string;
   mainMarket?: string;
+  taxId?: string;
   photobooths?: number;
   businessGoal?: string;
+  /** @nullable */
+  providerSignature?: string | null;
+  /** @nullable */
+  providerSignerTitle?: string | null;
+  /** @nullable */
+  logoUrl?: string | null;
+}
+
+export type UserAdminCreateRole = typeof UserAdminCreateRole[keyof typeof UserAdminCreateRole];
+
+
+export const UserAdminCreateRole = {
+  admin: 'admin',
+  client: 'client',
+  coach: 'coach',
+  sales_rep: 'sales_rep',
+} as const;
+
+export type UserAdminCreateLanguage = typeof UserAdminCreateLanguage[keyof typeof UserAdminCreateLanguage];
+
+
+export const UserAdminCreateLanguage = {
+  en: 'en',
+  fr: 'fr',
+  es: 'es',
+  de: 'de',
+  it: 'it',
+  pl: 'pl',
+  pt: 'pt',
+  nl: 'nl',
+} as const;
+
+export interface UserAdminCreate {
+  email: string;
+  fullName: string;
+  firstName?: string;
+  lastName?: string;
+  companyName?: string;
+  phone?: string;
+  role: UserAdminCreateRole;
+  isActive?: boolean;
+  language?: UserAdminCreateLanguage;
+  currency?: string;
+}
+
+export type UserAdminUpdateRole = typeof UserAdminUpdateRole[keyof typeof UserAdminUpdateRole];
+
+
+export const UserAdminUpdateRole = {
+  admin: 'admin',
+  client: 'client',
+  coach: 'coach',
+  sales_rep: 'sales_rep',
+} as const;
+
+export type UserAdminUpdateLanguage = typeof UserAdminUpdateLanguage[keyof typeof UserAdminUpdateLanguage];
+
+
+export const UserAdminUpdateLanguage = {
+  en: 'en',
+  fr: 'fr',
+  es: 'es',
+  de: 'de',
+  it: 'it',
+  pl: 'pl',
+  pt: 'pt',
+  nl: 'nl',
+} as const;
+
+export interface UserAdminUpdate {
+  email?: string;
+  fullName?: string;
+  firstName?: string;
+  lastName?: string;
+  companyName?: string;
+  phone?: string;
+  role?: UserAdminUpdateRole;
+  isActive?: boolean;
+  language?: UserAdminUpdateLanguage;
+  currency?: string;
 }
 
 export interface UserList {
@@ -212,6 +305,13 @@ export interface DashboardSummary {
   academyTotalLessons: number;
   upcomingEventsCount: number;
   totalEventsCount: number;
+  equipmentAlerts: number;
+  lowStockCount: number;
+  openTicketsCount: number;
+  leadsCount: number;
+  quotesCount: number;
+  contractsCount: number;
+  invoicesCount: number;
   nextLesson: NextLesson;
 }
 
@@ -243,14 +343,11 @@ export interface CourseList {
   items: Course[];
 }
 
-export interface VideoAsset {
-  embedUrl?: string | null;
-  thumbnailUrl?: string | null;
-  previewUrl?: string | null;
-  videoId?: string | null;
+export interface ThumbnailVideoAsset {
+  thumbnailUrl?: string;
 }
 
-export type LessonSummaryVideoAssets = {[key: string]: VideoAsset} | null;
+export type LessonSummaryVideoAssets = {[key: string]: ThumbnailVideoAsset} | null;
 
 export interface LessonSummary {
   id: string;
@@ -312,7 +409,13 @@ export interface QuizQuestion {
   id: string;
   question: string;
   options: string[];
-  correctOption: number;
+}
+
+export interface VideoAsset {
+  embedUrl?: string | null;
+  thumbnailUrl?: string | null;
+  previewUrl?: string | null;
+  videoId?: string | null;
 }
 
 export type LessonDetailVideoUrls = {[key: string]: string} | null;
@@ -345,11 +448,16 @@ export interface LessonProgress {
 }
 
 export interface LessonProgressUpdate {
+  /**
+     * @minimum 0
+     * @maximum 100
+     */
   watchPercent: number;
   completed?: boolean;
 }
 
 export interface QuizSubmission {
+  /** @maxItems 200 */
   answers: number[];
 }
 
@@ -454,6 +562,14 @@ export interface EventInput {
   location?: string;
   type?: string;
   notes?: string;
+  /** @nullable */
+  leadId?: string | null;
+  /** @nullable */
+  quoteId?: string | null;
+  /** @nullable */
+  contractId?: string | null;
+  /** @nullable */
+  invoiceId?: string | null;
   clientName?: string;
   clientEmail?: string;
   clientPhone?: string;
@@ -489,6 +605,12 @@ export interface EventUpdate {
   type?: string;
   status?: EventUpdateStatus;
   notes?: string;
+  /** @nullable */
+  leadId?: string | null;
+  /** @nullable */
+  quoteId?: string | null;
+  /** @nullable */
+  contractId?: string | null;
   clientName?: string;
   clientEmail?: string;
   clientPhone?: string;
@@ -504,7 +626,8 @@ export interface EventUpdate {
   revenue?: string;
   currency?: string;
   paymentStatus?: string;
-  invoiceId?: string;
+  /** @nullable */
+  invoiceId?: string | null;
 }
 
 export type LeadSource = typeof LeadSource[keyof typeof LeadSource];
@@ -702,6 +825,62 @@ export interface Contract {
   eventType?: string | null;
   /** @nullable */
   eventDate?: string | null;
+  /** @nullable */
+  eventLocation?: string | null;
+  /** @nullable */
+  eventStartTime?: string | null;
+  /** @nullable */
+  eventEndTime?: string | null;
+  /** @nullable */
+  setupTime?: string | null;
+  /** @nullable */
+  pickupTime?: string | null;
+  /** @nullable */
+  packageName?: string | null;
+  /** @nullable */
+  rentalDuration?: string | null;
+  /** @nullable */
+  includedPrints?: string | null;
+  /** @nullable */
+  rentalPrice?: string | null;
+  /** @nullable */
+  optionsPrice?: string | null;
+  /** @nullable */
+  deliveryFees?: string | null;
+  /** @nullable */
+  discountAmount?: string | null;
+  /** @nullable */
+  taxRate?: string | null;
+  /** @nullable */
+  depositAmount?: string | null;
+  /** @nullable */
+  depositMethod?: string | null;
+  /** @nullable */
+  depositConditions?: string | null;
+  /** @nullable */
+  depositReturn?: string | null;
+  /** @nullable */
+  paymentTerms?: string | null;
+  /** @nullable */
+  cancellationTerms?: string | null;
+  /** @nullable */
+  signaturePlace?: string | null;
+  /** @nullable */
+  equipmentIds?: string[] | null;
+  /** @nullable */
+  equipmentDescription?: string | null;
+  /** @nullable */
+  digitalGallery?: boolean | null;
+  /** @nullable */
+  customTemplate?: boolean | null;
+  /** @nullable */
+  deliveryIncluded?: boolean | null;
+  /** @nullable */
+  setupIncluded?: boolean | null;
+  /** @nullable */
+  operatorIncluded?: boolean | null;
+  /** @nullable */
+  optionsList?: string | null;
   /** @nullable */
   currency?: string | null;
   /** @nullable */
@@ -911,6 +1090,13 @@ export type QuoteDetail = Quote & {
   items: QuoteItem[];
 };
 
+export interface QuoteSendResult {
+  quote: QuoteDetail;
+  mailtoUrl: string;
+  clientEmail?: string;
+  subject?: string;
+}
+
 export interface QuoteList {
   items: Quote[];
   total: number;
@@ -992,6 +1178,8 @@ export interface ContractInput {
   eventLocation?: string;
   eventStartTime?: string;
   eventEndTime?: string;
+  setupTime?: string;
+  pickupTime?: string;
   packageName?: string;
   rentalDuration?: string;
   includedPrints?: string;
@@ -999,6 +1187,14 @@ export interface ContractInput {
   optionsPrice?: string;
   deliveryFees?: string;
   discountAmount?: string;
+  taxRate?: string;
+  depositAmount?: string;
+  depositMethod?: string;
+  depositConditions?: string;
+  depositReturn?: string;
+  paymentTerms?: string;
+  cancellationTerms?: string;
+  signaturePlace?: string;
   equipmentIds?: string[];
   equipmentDescription?: string;
   digitalGallery?: boolean;
@@ -1015,6 +1211,19 @@ export interface ContractInput {
   startDate?: string;
   endDate?: string;
   notes?: string;
+}
+
+export interface ContractUpdate {
+  /** @nullable */
+  leadId?: string | null;
+  /** @nullable */
+  quoteId?: string | null;
+  title?: string;
+  content?: string;
+  startDate?: string;
+  endDate?: string;
+  notes?: string;
+  equipmentIds?: string[];
 }
 
 export interface InvoiceItem {
@@ -1736,6 +1945,33 @@ export interface ConsumableStockItem {
   reorderRecommended?: boolean;
 }
 
+export interface ConsumableForecastEvent {
+  id?: string;
+  title?: string;
+  eventDate?: string;
+  includedPrints?: string | null;
+  clientName?: string | null;
+  location?: string | null;
+  printsCount?: number;
+}
+
+export interface ConsumableForecastStock {
+  id?: string;
+  catalogItemId?: string;
+  currentQuantity?: number;
+  name?: string;
+  category?: string;
+}
+
+export interface ConsumableForecast {
+  eventsCount?: number;
+  totalRequired?: number;
+  totalAvailable?: number;
+  shortage?: number;
+  events?: ConsumableForecastEvent[];
+  paperStock?: ConsumableForecastStock[];
+}
+
 export type AdminConsumableItem = ConsumableStockItem & {
   userId?: string;
   ownerName?: string;
@@ -1785,6 +2021,8 @@ export interface ConsumableOrder {
 export interface RevenueOverview {
   totalRevenue?: number;
   pipelineRevenue?: number;
+  outstandingRevenue?: number;
+  overdueRevenue?: number;
   paidInvoices?: number;
   avgBookingValue?: number;
   quoteAcceptanceRate?: number;
@@ -2461,6 +2699,22 @@ export interface UploadList {
   total: number;
 }
 
+export interface UploadFileInput {
+  fileName: string;
+  mimeType?: string;
+  dataBase64: string;
+  folder?: string;
+}
+
+export interface UploadFileResult {
+  url: string;
+  key: string;
+  fileName: string;
+  mimeType?: string | null;
+  fileSize: number;
+  provider: string;
+}
+
 export type CreateUploadInputCategory = typeof CreateUploadInputCategory[keyof typeof CreateUploadInputCategory];
 
 
@@ -2714,11 +2968,22 @@ export interface BunnyStatus {
   videoCount?: number;
 }
 
+export type BunnyDiagnoseLibraryInfo = { [key: string]: unknown };
+
+export type BunnyDiagnoseVideoInfo = { [key: string]: unknown } | null;
+
+export interface BunnyDiagnose {
+  libraryInfo?: BunnyDiagnoseLibraryInfo;
+  videoInfo?: BunnyDiagnoseVideoInfo;
+}
+
 export interface BunnyCollection {
   guid: string;
   name: string;
   videoCount: number;
-  lang: string;
+  /** @nullable */
+  lang: string | null;
+  langKnown: boolean;
 }
 
 export interface BunnyCollectionList {
@@ -2745,13 +3010,19 @@ export interface BunnyVideoList {
   items: BunnyVideo[];
   total: number;
   collectionId: string;
+  totalReported?: number;
+  pagesLoaded?: number;
+  requestedCollectionId?: string;
+  detectedLanguage?: string;
+  totalVideosReturned?: number;
+  pagesFetched?: number;
 }
 
 export interface BunnyImportItem {
   videoId: string;
-  lang: string;
-  embedUrl: string;
-  thumbnailUrl: string;
+  collectionId: string;
+  embedUrl?: string;
+  thumbnailUrl?: string;
   previewUrl?: string;
   durationSeconds: number;
   videoTitle: string;
@@ -2842,16 +3113,42 @@ export interface CustomerSuggestion {
   lastActivityAt?: string | null;
 }
 
+export type ReadinessCheck503Code = typeof ReadinessCheck503Code[keyof typeof ReadinessCheck503Code];
+
+
+export const ReadinessCheck503Code = {
+  DATABASE_UNAVAILABLE: 'DATABASE_UNAVAILABLE',
+} as const;
+
+export type ReadinessCheck503 = {
+  error: string;
+  code: ReadinessCheck503Code;
+};
+
+export type DiagnoseBunnyStreamParams = {
+videoId?: string;
+};
+
 export type ListUsersParams = {
 role?: string;
+active?: boolean;
+q?: string;
 limit?: number;
 offset?: number;
+};
+
+export type UpdateUserParams = {
+lang?: string;
 };
 
 export type ListNotificationsParams = {
 unread_only?: boolean;
 limit?: number;
 offset?: number;
+};
+
+export type GetDashboardSummaryParams = {
+lang?: string;
 };
 
 export type ListCoursesParams = {
@@ -2865,6 +3162,18 @@ lang?: string;
 };
 
 export type GetLessonParams = {
+lang?: string;
+};
+
+export type UpdateLessonProgressParams = {
+lang?: string;
+};
+
+export type SubmitQuizParams = {
+lang?: string;
+};
+
+export type GetAcademyProgressSummaryParams = {
 lang?: string;
 };
 
@@ -3084,8 +3393,9 @@ export type TogglePostReaction200 = {
 export type UpdateEquipmentBody = { [key: string]: unknown };
 
 export type CreateConsumableOrderBody = {
-  catalogItemId?: string;
-  quantity?: number;
+  catalogItemId: string;
+  /** @minimum 1 */
+  quantity: number;
   notes?: string;
 };
 

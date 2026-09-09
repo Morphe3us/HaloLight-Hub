@@ -13,8 +13,20 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -57,11 +69,22 @@ const STATUS_COLORS: Record<string, string> = {
   cancelled: "bg-destructive/10 text-destructive border-destructive/30",
 };
 
-const STATUS_KEYS = ["draft", "sent", "signed", "active", "expired", "cancelled"];
+const STATUS_KEYS = [
+  "draft",
+  "sent",
+  "signed",
+  "active",
+  "expired",
+  "cancelled",
+];
 
 function formatDate(d: string | null | undefined, locale = "en") {
   if (!d) return "—";
-  return new Date(d).toLocaleDateString(locale, { year: "numeric", month: "short", day: "numeric" });
+  return new Date(d).toLocaleDateString(locale, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
 }
 
 function ReadinessRow({ section }: { section: ReadinessSection }) {
@@ -72,7 +95,9 @@ function ReadinessRow({ section }: { section: ReadinessSection }) {
       <div className="flex items-center gap-2">
         <CheckCircle2 className="w-3.5 h-3.5 text-success shrink-0" />
         <span className="text-xs text-success font-medium">{label}</span>
-        <span className="text-xs text-muted-foreground ml-auto">{t("contract_validation.readiness_complete")}</span>
+        <span className="text-xs text-muted-foreground ml-auto">
+          {t("contract_validation.readiness_complete")}
+        </span>
       </div>
     );
   }
@@ -82,7 +107,8 @@ function ReadinessRow({ section }: { section: ReadinessSection }) {
         <AlertTriangle className="w-3.5 h-3.5 text-warning shrink-0" />
         <span className="text-xs text-warning font-medium">{label}</span>
         <span className="text-xs text-muted-foreground ml-auto">
-          {section.presentCount}/{section.totalCount} — {t("contract_validation.readiness_partial")}
+          {section.presentCount}/{section.totalCount} —{" "}
+          {t("contract_validation.readiness_partial")}
         </span>
       </div>
     );
@@ -91,7 +117,9 @@ function ReadinessRow({ section }: { section: ReadinessSection }) {
     <div className="flex items-center gap-2">
       <XCircle className="w-3.5 h-3.5 text-destructive shrink-0" />
       <span className="text-xs text-destructive font-medium">{label}</span>
-      <span className="text-xs text-muted-foreground ml-auto">{t("contract_validation.readiness_missing")}</span>
+      <span className="text-xs text-muted-foreground ml-auto">
+        {t("contract_validation.readiness_missing")}
+      </span>
     </div>
   );
 }
@@ -127,11 +155,21 @@ function MissingInfoDialog({
   const hasOptional = validation.optional.length > 0;
 
   return (
-    <Dialog open={open} onOpenChange={(o) => { if (!o) onCancel(); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(o) => {
+        if (!o) onCancel();
+      }}
+    >
       <DialogContent className="max-w-md flex flex-col max-h-[80vh]">
         <DialogHeader className="shrink-0">
           <DialogTitle className="flex items-center gap-2">
-            <AlertCircle className={cn("w-5 h-5 shrink-0", hasBlocking ? "text-destructive" : "text-warning")} />
+            <AlertCircle
+              className={cn(
+                "w-5 h-5 shrink-0",
+                hasBlocking ? "text-destructive" : "text-warning",
+              )}
+            />
             {t("contract_validation.missing_title")}
           </DialogTitle>
         </DialogHeader>
@@ -139,7 +177,9 @@ function MissingInfoDialog({
         <div className="overflow-y-auto flex-1 py-2 space-y-4">
           {hasBlocking && (
             <div className="space-y-2">
-              <p className="text-sm font-medium text-destructive">{t("contract_validation.blocking_intro")}</p>
+              <p className="text-sm font-medium text-destructive">
+                {t("contract_validation.blocking_intro")}
+              </p>
               <ul className="space-y-1.5">
                 {validation.blocking.map((f) => (
                   <li key={f} className="flex items-center gap-2 text-sm">
@@ -153,19 +193,26 @@ function MissingInfoDialog({
 
           {!hasBlocking && hasOptional && (
             <div className="space-y-3">
-              <p className="text-sm text-warning font-medium">{t("contract_validation.optional_summary")}</p>
+              <p className="text-sm text-warning font-medium">
+                {t("contract_validation.optional_summary")}
+              </p>
               <ul className="space-y-1.5 border rounded-lg p-3 bg-warning/5">
                 {validation.optional.map(({ field, placeholderKey }) => (
                   <li key={field} className="flex items-start gap-2 text-sm">
                     <AlertTriangle className="w-3.5 h-3.5 text-warning shrink-0 mt-0.5" />
                     <span>
                       {t(`contract_validation.${field}`)}
-                      <span className="text-muted-foreground"> → "{t(`contract_validation.${placeholderKey}`)}"</span>
+                      <span className="text-muted-foreground">
+                        {" "}
+                        → "{t(`contract_validation.${placeholderKey}`)}"
+                      </span>
                     </span>
                   </li>
                 ))}
               </ul>
-              <p className="text-xs text-muted-foreground">{t("contract_validation.optional_intro")}</p>
+              <p className="text-xs text-muted-foreground">
+                {t("contract_validation.optional_intro")}
+              </p>
             </div>
           )}
         </div>
@@ -175,9 +222,14 @@ function MissingInfoDialog({
             {t("common.cancel")}
           </Button>
           {!hasBlocking && (
-            <Button onClick={onConfirm}>{t("contract_validation.continue_anyway")}</Button>
+            <Button onClick={onConfirm}>
+              {t("contract_validation.continue_anyway")}
+            </Button>
           )}
-          <Button variant={hasBlocking ? "default" : "outline"} onClick={onCancel}>
+          <Button
+            variant={hasBlocking ? "default" : "outline"}
+            onClick={onCancel}
+          >
             {t("contract_validation.complete_info")}
           </Button>
         </DialogFooter>
@@ -204,7 +256,8 @@ export default function Contracts() {
   const [showCreate, setShowCreate] = useState(false);
   const [customerSearch, setCustomerSearch] = useState("");
   const [showMissingDialog, setShowMissingDialog] = useState(false);
-  const [pendingValidation, setPendingValidation] = useState<ValidationResult | null>(null);
+  const [pendingValidation, setPendingValidation] =
+    useState<ValidationResult | null>(null);
 
   // rawTemplate stores the unfilled template content — form.content is NOT used for saving
   const [rawTemplate, setRawTemplate] = useState("");
@@ -244,6 +297,7 @@ export default function Contracts() {
     templateId: "",
     leadId: "",
     quoteId: "",
+    invoiceId: "",
     setupTime: "",
     pickupTime: "",
     digitalGallery: false,
@@ -264,10 +318,16 @@ export default function Contracts() {
 
   const provider: ProviderData = {
     companyName: currentUser?.companyName,
+    companyAddress:
+      currentUser?.companyAddress ??
+      [currentUser?.city, currentUser?.country].filter(Boolean).join(", "),
     firstName: currentUser?.firstName,
     lastName: currentUser?.lastName,
     email: currentUser?.email,
     phone: currentUser?.phone,
+    website: currentUser?.website,
+    logoUrl: currentUser?.logoUrl,
+    taxId: currentUser?.taxId,
     signature: currentUser?.providerSignature,
     signerTitle: currentUser?.providerSignerTitle,
   };
@@ -287,18 +347,42 @@ export default function Contracts() {
   // so we replace it here with a friendly placeholder for display only.
   const livePreview = useMemo(() => {
     if (!rawTemplate) return "";
-    const filled = fillAllVariables(rawTemplate, form, provider, lang, placeholders);
-    return filled.replace(/\{\{contract_number\}\}/g, "[Auto-generated on save]");
+    const filled = fillAllVariables(
+      rawTemplate,
+      form,
+      provider,
+      lang,
+      placeholders,
+    );
+    return filled.replace(
+      /\{\{contract_number\}\}/g,
+      "[Auto-generated on save]",
+    );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rawTemplate, form, provider.companyName, provider.firstName, provider.lastName, provider.email, provider.phone, provider.signature, provider.signerTitle, lang]);
+  }, [
+    rawTemplate,
+    form,
+    provider.companyName,
+    provider.companyAddress,
+    provider.firstName,
+    provider.lastName,
+    provider.email,
+    provider.phone,
+    provider.website,
+    provider.logoUrl,
+    provider.taxId,
+    provider.signature,
+    provider.signerTitle,
+    lang,
+  ]);
 
   const { data, isLoading } = useListContracts(
     { status: filterStatus !== "all" ? (filterStatus as any) : undefined },
-    { query: { queryKey: ["contracts", filterStatus] } }
+    { query: { queryKey: ["contracts", filterStatus] } },
   );
   const { data: templatesData } = useListContractTemplates(
     { lang },
-    { query: { queryKey: ["contract-templates", lang] } }
+    { query: { queryKey: ["contract-templates", lang] } },
   );
 
   const createMutation = useCreateContract({
@@ -330,9 +414,15 @@ export default function Contracts() {
       onSuccess: () => {
         qc.invalidateQueries({ queryKey: ["contracts"] });
         qc.invalidateQueries({ queryKey: ["events"] });
-        toast({ title: t("contracts.status_updated", { defaultValue: "Status updated" }) });
+        toast({
+          title: t("contracts.status_updated", {
+            defaultValue: "Status updated",
+          }),
+        });
       },
-      onError: () => { toast({ title: t("common.error"), variant: "destructive" }); },
+      onError: () => {
+        toast({ title: t("common.error"), variant: "destructive" });
+      },
     },
   });
 
@@ -369,13 +459,19 @@ export default function Contracts() {
 
   const doCreate = () => {
     const finalContent = getFinalContent();
+    const isSourceLinked = Boolean(form.quoteId || form.invoiceId);
+    const sourceAwareContent =
+      isSourceLinked && rawTemplate ? rawTemplate : finalContent;
+    const amountOrUndefined = (value: string) =>
+      isSourceLinked && value === "0" ? undefined : value || undefined;
     // Compute total from the full pricing breakdown to store as the contract's value
     const { total } = computePricing(form);
     // Auto-generate title if the user left it blank
     const autoTitle =
       form.title.trim() ||
       [form.clientName.trim(), form.eventType.trim() || form.eventDate || null]
-        .filter(Boolean).join(" — ") ||
+        .filter(Boolean)
+        .join(" — ") ||
       "Contract";
     createMutation.mutate({
       data: {
@@ -387,14 +483,49 @@ export default function Contracts() {
         clientAddress: form.clientAddress || undefined,
         eventType: form.eventType || undefined,
         eventDate: form.eventDate || undefined,
+        eventLocation: form.eventLocation || undefined,
+        eventStartTime: form.eventStartTime || undefined,
+        eventEndTime: form.eventEndTime || undefined,
+        setupTime: form.setupTime || undefined,
+        pickupTime: form.pickupTime || undefined,
+        packageName: form.serviceName || undefined,
+        rentalDuration: form.rentalDuration || undefined,
+        includedPrints: form.includedPrints || undefined,
+        rentalPrice: form.value || undefined,
+        optionsPrice: amountOrUndefined(form.optionsPrice),
+        deliveryFees: amountOrUndefined(form.deliveryFees),
+        discountAmount: amountOrUndefined(form.discountAmount),
+        taxRate: amountOrUndefined(form.taxRate),
+        depositAmount: form.depositAmount || undefined,
+        depositMethod: form.depositMethod || undefined,
+        depositConditions: form.depositConditions || undefined,
+        depositReturn: form.depositReturn || undefined,
+        paymentTerms: form.paymentTerms || undefined,
+        cancellationTerms: form.cancellationTerms || undefined,
+        signaturePlace: form.signaturePlace || undefined,
+        equipmentDescription: form.equipmentDescription || undefined,
+        digitalGallery: form.digitalGallery,
+        customTemplate: form.customTemplate,
+        deliveryIncluded: form.deliveryIncluded,
+        setupIncluded: form.setupIncluded,
+        operatorIncluded: form.operatorIncluded,
+        optionsList: form.optionsList || undefined,
         currency: form.currency || undefined,
+        language: lang,
         leadId: form.leadId || undefined,
         quoteId: form.quoteId || undefined,
-        value: total > 0 ? String(total) : (form.value || "0"),
+        invoiceId: form.invoiceId || undefined,
+        value:
+          isSourceLinked && !form.value
+            ? undefined
+            : total > 0
+              ? String(total)
+              : form.value || "0",
         templateId: form.templateId || undefined,
-        content: finalContent,
+        content: sourceAwareContent,
         notes: form.notes || undefined,
-        equipmentIds: form.equipmentIds.length > 0 ? form.equipmentIds : undefined,
+        equipmentIds:
+          form.equipmentIds.length > 0 ? form.equipmentIds : undefined,
       } as any,
     });
   };
@@ -419,23 +550,43 @@ export default function Contracts() {
   const liveValidation = useMemo(
     () => validateContract(form, provider),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [form.clientName, form.clientEmail, form.value, form.currency,
-      provider.companyName, provider.firstName, provider.lastName],
+    [
+      form.clientName,
+      form.clientEmail,
+      form.value,
+      form.currency,
+      form.quoteId,
+      form.invoiceId,
+      provider.companyName,
+      provider.firstName,
+      provider.lastName,
+    ],
   );
 
   const f =
     (key: keyof ContractFormData) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
-      setForm((prev) => ({ ...prev, [key]: e.target.value } as ContractFormData));
+      setForm(
+        (prev) => ({ ...prev, [key]: e.target.value }) as ContractFormData,
+      );
 
   const flag =
-    (key: "digitalGallery" | "customTemplate" | "deliveryIncluded" | "setupIncluded" | "operatorIncluded") =>
+    (
+      key:
+        | "digitalGallery"
+        | "customTemplate"
+        | "deliveryIncluded"
+        | "setupIncluded"
+        | "operatorIncluded",
+    ) =>
     (checked: boolean) =>
       setForm((prev) => ({ ...prev, [key]: checked }));
 
   const handleEquipmentToggle = (id: string, checked: boolean) => {
     setForm((prev) => {
-      const ids = checked ? [...prev.equipmentIds, id] : prev.equipmentIds.filter((eid) => eid !== id);
+      const ids = checked
+        ? [...prev.equipmentIds, id]
+        : prev.equipmentIds.filter((eid) => eid !== id);
       const names = equipmentItems
         .filter((e: any) => ids.includes(e.id))
         .map((e: any) => {
@@ -444,7 +595,11 @@ export default function Contracts() {
           return parts.join(" — ");
         })
         .join(", ");
-      return { ...prev, equipmentIds: ids, equipmentDescription: names || prev.equipmentDescription };
+      return {
+        ...prev,
+        equipmentIds: ids,
+        equipmentDescription: names || prev.equipmentDescription,
+      };
     });
   };
 
@@ -452,8 +607,12 @@ export default function Contracts() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">{t("contracts.title")}</h1>
-          <p className="text-muted-foreground text-sm mt-1">{t("contracts.subtitle")}</p>
+          <h1 className="text-2xl font-bold tracking-tight">
+            {t("contracts.title")}
+          </h1>
+          <p className="text-muted-foreground text-sm mt-1">
+            {t("contracts.subtitle")}
+          </p>
         </div>
         <Button onClick={() => setShowCreate(true)} className="gap-2 shrink-0">
           <Plus className="w-4 h-4" /> {t("contracts.new_contract")}
@@ -462,19 +621,33 @@ export default function Contracts() {
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
-          { label: t("contracts.total_label"), value: String(contracts.length) },
+          {
+            label: t("contracts.total_label"),
+            value: String(contracts.length),
+          },
           {
             label: t("contracts.signed_label"),
-            value: String(contracts.filter((c) => c.status === "signed" || c.status === "active").length),
+            value: String(
+              contracts.filter(
+                (c) => c.status === "signed" || c.status === "active",
+              ).length,
+            ),
           },
-          { label: t("contracts.pending_label"), value: String(contracts.filter((c) => c.status === "sent").length) },
+          {
+            label: t("contracts.pending_label"),
+            value: String(contracts.filter((c) => c.status === "sent").length),
+          },
           {
             label: t("contracts.contract_value"),
-            value: formatCurrency(contracts.reduce((s, c) => s + Number(c.value), 0)),
+            value: formatCurrency(
+              contracts.reduce((s, c) => s + Number(c.value), 0),
+            ),
           },
         ].map((s) => (
           <div key={s.label} className="rounded-xl border bg-card p-4">
-            <p className="text-xs text-muted-foreground font-medium">{s.label}</p>
+            <p className="text-xs text-muted-foreground font-medium">
+              {s.label}
+            </p>
             <p className="text-xl font-bold mt-1">{s.value}</p>
           </div>
         ))}
@@ -494,16 +667,22 @@ export default function Contracts() {
             ))}
           </SelectContent>
         </Select>
-        <span className="text-sm text-muted-foreground">{t("contracts.count", { count: contracts.length })}</span>
+        <span className="text-sm text-muted-foreground">
+          {t("contracts.count", { count: contracts.length })}
+        </span>
       </div>
 
       <div className="rounded-xl border bg-card overflow-hidden">
         {isLoading ? (
-          <div className="flex items-center justify-center h-40 text-muted-foreground">{t("contracts.loading")}</div>
+          <div className="flex items-center justify-center h-40 text-muted-foreground">
+            {t("contracts.loading")}
+          </div>
         ) : contracts.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16">
             <FileSignature className="w-10 h-10 text-muted-foreground/30 mb-3" />
-            <p className="font-medium text-muted-foreground">{t("contracts.no_contracts")}</p>
+            <p className="font-medium text-muted-foreground">
+              {t("contracts.no_contracts")}
+            </p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -513,7 +692,9 @@ export default function Contracts() {
                   <th className="text-left px-4 py-3 font-medium text-muted-foreground">
                     {t("contracts.col_contract_num")}
                   </th>
-                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">{t("contracts.col_client")}</th>
+                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">
+                    {t("contracts.col_client")}
+                  </th>
                   <th className="text-left px-4 py-3 font-medium text-muted-foreground hidden sm:table-cell">
                     {t("common.status")}
                   </th>
@@ -530,23 +711,38 @@ export default function Contracts() {
                 {contracts.map((c) => {
                   const color = STATUS_COLORS[c.status];
                   return (
-                    <tr key={c.id} className="hover:bg-muted/20 transition-colors group">
+                    <tr
+                      key={c.id}
+                      className="hover:bg-muted/20 transition-colors group"
+                    >
                       <td className="px-4 py-3">
                         <Link href={`/contracts/${c.id}`}>
                           <span className="font-mono text-sm font-medium hover:text-primary cursor-pointer">
                             {c.contractNumber}
                           </span>
                         </Link>
-                        <p className="text-xs text-muted-foreground truncate max-w-[160px]">{c.title}</p>
+                        <p className="text-xs text-muted-foreground truncate max-w-[160px]">
+                          {c.title}
+                        </p>
                       </td>
                       <td className="px-4 py-3 font-medium">{c.clientName}</td>
                       <td className="px-4 py-3 hidden sm:table-cell">
                         <Select
                           value={c.status}
-                          onValueChange={(val) => statusMutation.mutate({ id: c.id, data: { status: val as any } })}
+                          onValueChange={(val) =>
+                            statusMutation.mutate({
+                              id: c.id,
+                              data: { status: val as any },
+                            })
+                          }
                           disabled={statusMutation.isPending}
                         >
-                          <SelectTrigger className={cn("h-7 text-xs w-[120px] border font-medium", color ?? "")}>
+                          <SelectTrigger
+                            className={cn(
+                              "h-7 text-xs w-[120px] border font-medium",
+                              color ?? "",
+                            )}
+                          >
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -561,11 +757,17 @@ export default function Contracts() {
                       <td className="px-4 py-3 hidden md:table-cell text-muted-foreground text-xs">
                         {formatDate(c.signedAt, lang)}
                       </td>
-                      <td className="px-4 py-3 text-right font-medium">{formatCurrency(c.value)}</td>
+                      <td className="px-4 py-3 text-right font-medium">
+                        {formatCurrency(c.value)}
+                      </td>
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           <Link href={`/contracts/${c.id}`}>
-                            <Button variant="ghost" size="icon" className="h-7 w-7">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7"
+                            >
                               <ChevronRight className="w-4 h-4" />
                             </Button>
                           </Link>
@@ -603,19 +805,28 @@ export default function Contracts() {
             <DialogTitle>{t("contracts.new_contract")}</DialogTitle>
           </DialogHeader>
 
-          <Tabs defaultValue="form" className="flex flex-col flex-1 overflow-hidden">
+          <Tabs
+            defaultValue="form"
+            className="flex flex-col flex-1 overflow-hidden"
+          >
             <TabsList className="shrink-0 mx-auto mb-2">
               <TabsTrigger value="form" className="gap-1.5">
                 <FileText className="w-3.5 h-3.5" /> {t("contracts.tab_form")}
               </TabsTrigger>
-              <TabsTrigger value="preview" className="gap-1.5" disabled={!rawTemplate}>
+              <TabsTrigger
+                value="preview"
+                className="gap-1.5"
+                disabled={!rawTemplate}
+              >
                 <Eye className="w-3.5 h-3.5" /> {t("contracts.tab_preview")}
               </TabsTrigger>
             </TabsList>
 
             {/* ── FORM TAB ── */}
-            <TabsContent value="form" className="overflow-y-auto flex-1 space-y-5 py-1 pr-1 mt-0">
-
+            <TabsContent
+              value="form"
+              className="overflow-y-auto flex-1 space-y-5 py-1 pr-1 mt-0"
+            >
               {/* Customer search */}
               <div className="space-y-1.5">
                 <Label>{t("sales_search.search_label")}</Label>
@@ -631,26 +842,36 @@ export default function Contracts() {
                       clientCompany: s.company ?? prev.clientCompany,
                       clientAddress: s.address ?? prev.clientAddress,
                       eventType: s.eventType ?? prev.eventType,
-                      eventDate: s.eventDate ? s.eventDate.slice(0, 10) : prev.eventDate,
+                      eventDate: s.eventDate
+                        ? s.eventDate.slice(0, 10)
+                        : prev.eventDate,
                       eventLocation: s.eventLocation ?? prev.eventLocation,
                       currency: s.currency ?? prev.currency,
                       leadId: s.leadId ?? prev.leadId,
                       quoteId: s.quoteId ?? prev.quoteId,
+                      invoiceId: s.invoiceId ?? prev.invoiceId,
                     }));
                   }}
                   onClear={() => setCustomerSearch("")}
                   existingEmail={form.clientEmail}
                 />
-                <p className="text-xs text-muted-foreground">{t("sales_search.or_create_new")}</p>
+                <p className="text-xs text-muted-foreground">
+                  {t("sales_search.or_create_new")}
+                </p>
               </div>
 
               {/* Template */}
               {templates.length > 0 && (
                 <div className="space-y-1.5">
                   <Label>{t("contracts.template_label")}</Label>
-                  <Select value={form.templateId} onValueChange={handleTemplateSelect}>
+                  <Select
+                    value={form.templateId}
+                    onValueChange={handleTemplateSelect}
+                  >
                     <SelectTrigger>
-                      <SelectValue placeholder={t("contracts.template_placeholder")} />
+                      <SelectValue
+                        placeholder={t("contracts.template_placeholder")}
+                      />
                     </SelectTrigger>
                     <SelectContent>
                       {templates.map((tmpl: any) => (
@@ -685,19 +906,33 @@ export default function Contracts() {
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
                     <Label>{t("contracts.client_name_label")} *</Label>
-                    <Input value={form.clientName} onChange={f("clientName")} placeholder="Full name" />
+                    <Input
+                      value={form.clientName}
+                      onChange={f("clientName")}
+                      placeholder="Full name"
+                    />
                   </div>
                   <div className="space-y-1.5">
                     <Label>{t("contracts.client_email_label")} *</Label>
-                    <Input type="email" value={form.clientEmail} onChange={f("clientEmail")} />
+                    <Input
+                      type="email"
+                      value={form.clientEmail}
+                      onChange={f("clientEmail")}
+                    />
                   </div>
                   <div className="space-y-1.5">
                     <Label>{t("contracts.client_phone_label")}</Label>
-                    <Input value={form.clientPhone} onChange={f("clientPhone")} />
+                    <Input
+                      value={form.clientPhone}
+                      onChange={f("clientPhone")}
+                    />
                   </div>
                   <div className="space-y-1.5">
                     <Label>{t("contracts.client_company_label")}</Label>
-                    <Input value={form.clientCompany} onChange={f("clientCompany")} />
+                    <Input
+                      value={form.clientCompany}
+                      onChange={f("clientCompany")}
+                    />
                   </div>
                   <div className="col-span-2 space-y-1.5">
                     <Label>{t("contracts.client_address_label")}</Label>
@@ -716,31 +951,67 @@ export default function Contracts() {
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
                     <Label>{t("contracts.event_type_label")}</Label>
-                    <Input value={form.eventType} onChange={f("eventType")} placeholder="Wedding, Corporate…" />
+                    <Input
+                      value={form.eventType}
+                      onChange={f("eventType")}
+                      placeholder="Wedding, Corporate…"
+                    />
                   </div>
                   <div className="space-y-1.5">
                     <Label>{t("contracts.event_date_label")}</Label>
-                    <Input type="date" value={form.eventDate} onChange={f("eventDate")} />
+                    <Input
+                      type="date"
+                      value={form.eventDate}
+                      onChange={f("eventDate")}
+                    />
                   </div>
                   <div className="space-y-1.5">
                     <Label>{t("contracts.event_start_time_label")}</Label>
-                    <Input type="time" value={form.eventStartTime} onChange={f("eventStartTime")} />
+                    <Input
+                      type="time"
+                      value={form.eventStartTime}
+                      onChange={f("eventStartTime")}
+                    />
                   </div>
                   <div className="space-y-1.5">
                     <Label>{t("contracts.event_end_time_label")}</Label>
-                    <Input type="time" value={form.eventEndTime} onChange={f("eventEndTime")} />
+                    <Input
+                      type="time"
+                      value={form.eventEndTime}
+                      onChange={f("eventEndTime")}
+                    />
                   </div>
                   <div className="col-span-2 space-y-1.5">
                     <Label>{t("contracts.event_location_label")}</Label>
-                    <Input value={form.eventLocation} onChange={f("eventLocation")} placeholder="Venue name, City" />
+                    <Input
+                      value={form.eventLocation}
+                      onChange={f("eventLocation")}
+                      placeholder="Venue name, City"
+                    />
                   </div>
                   <div className="space-y-1.5">
-                    <Label>{t("contracts.setup_time_label", { defaultValue: "Setup Time (optional)" })}</Label>
-                    <Input type="time" value={form.setupTime} onChange={f("setupTime")} />
+                    <Label>
+                      {t("contracts.setup_time_label", {
+                        defaultValue: "Setup Time (optional)",
+                      })}
+                    </Label>
+                    <Input
+                      type="time"
+                      value={form.setupTime}
+                      onChange={f("setupTime")}
+                    />
                   </div>
                   <div className="space-y-1.5">
-                    <Label>{t("contracts.pickup_time_label", { defaultValue: "Pickup Time (optional)" })}</Label>
-                    <Input type="time" value={form.pickupTime} onChange={f("pickupTime")} />
+                    <Label>
+                      {t("contracts.pickup_time_label", {
+                        defaultValue: "Pickup Time (optional)",
+                      })}
+                    </Label>
+                    <Input
+                      type="time"
+                      value={form.pickupTime}
+                      onChange={f("pickupTime")}
+                    />
                   </div>
                 </div>
               </div>
@@ -759,11 +1030,19 @@ export default function Contracts() {
                   </div>
                   <div className="space-y-1.5">
                     <Label>{t("contracts.rental_duration_label")}</Label>
-                    <Input value={form.rentalDuration} onChange={f("rentalDuration")} placeholder="4 hours" />
+                    <Input
+                      value={form.rentalDuration}
+                      onChange={f("rentalDuration")}
+                      placeholder="4 hours"
+                    />
                   </div>
                   <div className="space-y-1.5">
                     <Label>{t("contracts.included_prints_label")}</Label>
-                    <Input value={form.includedPrints} onChange={f("includedPrints")} placeholder="Unlimited" />
+                    <Input
+                      value={form.includedPrints}
+                      onChange={f("includedPrints")}
+                      placeholder="Unlimited"
+                    />
                   </div>
                   <div className="col-span-2 space-y-1.5">
                     <Label>{t("contracts.equipment_description_label")}</Label>
@@ -781,27 +1060,60 @@ export default function Contracts() {
                       placeholder="Custom template, digital gallery, USB key…"
                     />
                   </div>
-                  {Number(form.optionsPrice) > 0 && !form.optionsList.trim() && (
-                    <div className="col-span-2 flex items-start gap-2 text-xs text-warning bg-warning/10 border border-warning/20 rounded-lg px-3 py-2">
-                      <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-                      <span>{t("contracts.options_description_warning", { defaultValue: "An options amount is set but no description was provided. A generic label will appear in the document." })}</span>
-                    </div>
-                  )}
+                  {Number(form.optionsPrice) > 0 &&
+                    !form.optionsList.trim() && (
+                      <div className="col-span-2 flex items-start gap-2 text-xs text-warning bg-warning/10 border border-warning/20 rounded-lg px-3 py-2">
+                        <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                        <span>
+                          {t("contracts.options_description_warning", {
+                            defaultValue:
+                              "An options amount is set but no description was provided. A generic label will appear in the document.",
+                          })}
+                        </span>
+                      </div>
+                    )}
                 </div>
 
                 {/* Service option checkboxes */}
                 <div className="pt-1">
                   <p className="text-xs font-medium text-muted-foreground mb-2">
-                    {t("contracts.service_options_label", { defaultValue: "Service Options" })}
+                    {t("contracts.service_options_label", {
+                      defaultValue: "Service Options",
+                    })}
                   </p>
                   <div className="grid grid-cols-2 gap-y-2 gap-x-4">
                     {(
                       [
-                        ["digitalGallery", t("contracts.digital_gallery_label", { defaultValue: "Digital Gallery" })],
-                        ["customTemplate", t("contracts.custom_template_label", { defaultValue: "Custom Template" })],
-                        ["deliveryIncluded", t("contracts.delivery_included_label", { defaultValue: "Delivery Included" })],
-                        ["setupIncluded", t("contracts.setup_included_label", { defaultValue: "Setup Included" })],
-                        ["operatorIncluded", t("contracts.operator_included_label", { defaultValue: "On-site Operator" })],
+                        [
+                          "digitalGallery",
+                          t("contracts.digital_gallery_label", {
+                            defaultValue: "Digital Gallery",
+                          }),
+                        ],
+                        [
+                          "customTemplate",
+                          t("contracts.custom_template_label", {
+                            defaultValue: "Custom Template",
+                          }),
+                        ],
+                        [
+                          "deliveryIncluded",
+                          t("contracts.delivery_included_label", {
+                            defaultValue: "Delivery Included",
+                          }),
+                        ],
+                        [
+                          "setupIncluded",
+                          t("contracts.setup_included_label", {
+                            defaultValue: "Setup Included",
+                          }),
+                        ],
+                        [
+                          "operatorIncluded",
+                          t("contracts.operator_included_label", {
+                            defaultValue: "On-site Operator",
+                          }),
+                        ],
                       ] as const
                     ).map(([key, label]) => (
                       <div key={key} className="flex items-center gap-2">
@@ -810,7 +1122,10 @@ export default function Contracts() {
                           checked={form[key]}
                           onCheckedChange={flag(key)}
                         />
-                        <label htmlFor={`flag-${key}`} className="text-sm cursor-pointer select-none">
+                        <label
+                          htmlFor={`flag-${key}`}
+                          className="text-sm cursor-pointer select-none"
+                        >
                           {label}
                         </label>
                       </div>
@@ -821,11 +1136,16 @@ export default function Contracts() {
                 {/* Equipment selector */}
                 <div className="pt-1">
                   <p className="text-xs font-medium text-muted-foreground mb-2">
-                    {t("contracts.equipment_select_label", { defaultValue: "Select Equipment (optional)" })}
+                    {t("contracts.equipment_select_label", {
+                      defaultValue: "Select Equipment (optional)",
+                    })}
                   </p>
                   {equipmentItems.length === 0 ? (
                     <p className="text-xs text-muted-foreground italic">
-                      {t("contracts.equipment_empty", { defaultValue: "No equipment registered yet. You can add equipment in Hardware." })}
+                      {t("contracts.equipment_empty", {
+                        defaultValue:
+                          "No equipment registered yet. You can add equipment in Hardware.",
+                      })}
                     </p>
                   ) : (
                     <div className="grid grid-cols-1 gap-y-2 max-h-36 overflow-y-auto pr-1">
@@ -838,10 +1158,15 @@ export default function Contracts() {
                               handleEquipmentToggle(eq.id, Boolean(checked))
                             }
                           />
-                          <label htmlFor={`eq-${eq.id}`} className="text-sm cursor-pointer select-none">
+                          <label
+                            htmlFor={`eq-${eq.id}`}
+                            className="text-sm cursor-pointer select-none"
+                          >
                             {eq.productModel}
                             {eq.serialNumber ? ` — SN: ${eq.serialNumber}` : ""}
-                            {eq.status && eq.status !== "active" ? ` (${eq.status})` : ""}
+                            {eq.status && eq.status !== "active"
+                              ? ` (${eq.status})`
+                              : ""}
                           </label>
                         </div>
                       ))}
@@ -856,23 +1181,52 @@ export default function Contracts() {
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
                     <Label>{t("contracts.rental_price_label")} *</Label>
-                    <Input type="number" min="0" value={form.value} onChange={f("value")} placeholder="700" />
+                    <Input
+                      type="number"
+                      min="0"
+                      value={form.value}
+                      onChange={f("value")}
+                      placeholder="700"
+                    />
                   </div>
                   <div className="space-y-1.5">
                     <Label>{t("contracts.currency_label")} *</Label>
-                    <Input value={form.currency} onChange={f("currency")} placeholder="EUR" maxLength={3} />
+                    <Input
+                      value={form.currency}
+                      onChange={f("currency")}
+                      placeholder="EUR"
+                      maxLength={3}
+                    />
                   </div>
                   <div className="space-y-1.5">
                     <Label>{t("contracts.options_price_label")}</Label>
-                    <Input type="number" min="0" value={form.optionsPrice} onChange={f("optionsPrice")} placeholder="0" />
+                    <Input
+                      type="number"
+                      min="0"
+                      value={form.optionsPrice}
+                      onChange={f("optionsPrice")}
+                      placeholder="0"
+                    />
                   </div>
                   <div className="space-y-1.5">
                     <Label>{t("contracts.delivery_fees_label")}</Label>
-                    <Input type="number" min="0" value={form.deliveryFees} onChange={f("deliveryFees")} placeholder="0" />
+                    <Input
+                      type="number"
+                      min="0"
+                      value={form.deliveryFees}
+                      onChange={f("deliveryFees")}
+                      placeholder="0"
+                    />
                   </div>
                   <div className="space-y-1.5">
                     <Label>{t("contracts.discount_label")}</Label>
-                    <Input type="number" min="0" value={form.discountAmount} onChange={f("discountAmount")} placeholder="0" />
+                    <Input
+                      type="number"
+                      min="0"
+                      value={form.discountAmount}
+                      onChange={f("discountAmount")}
+                      placeholder="0"
+                    />
                   </div>
                   <div className="space-y-1.5">
                     <Label>{t("contracts.tax_rate_label")}</Label>
@@ -939,7 +1293,9 @@ export default function Contracts() {
 
               {/* Cancellation */}
               <div className="space-y-2">
-                <SectionLabel>{t("contracts.cancellation_section")}</SectionLabel>
+                <SectionLabel>
+                  {t("contracts.cancellation_section")}
+                </SectionLabel>
                 <Textarea
                   value={form.cancellationTerms}
                   onChange={f("cancellationTerms")}
@@ -953,7 +1309,11 @@ export default function Contracts() {
                 <SectionLabel>{t("contracts.signature_section")}</SectionLabel>
                 <div className="space-y-1.5">
                   <Label>{t("contracts.signature_place_label")}</Label>
-                  <Input value={form.signaturePlace} onChange={f("signaturePlace")} placeholder="Paris" />
+                  <Input
+                    value={form.signaturePlace}
+                    onChange={f("signaturePlace")}
+                    placeholder="Paris"
+                  />
                 </div>
               </div>
 
@@ -968,7 +1328,10 @@ export default function Contracts() {
             </TabsContent>
 
             {/* ── PREVIEW TAB ── */}
-            <TabsContent value="preview" className="flex-1 overflow-hidden mt-0">
+            <TabsContent
+              value="preview"
+              className="flex-1 overflow-hidden mt-0"
+            >
               <div className="h-full overflow-y-auto rounded-lg border bg-white dark:bg-muted/10 p-4">
                 {livePreview ? (
                   <pre className="text-xs font-mono whitespace-pre-wrap leading-relaxed text-foreground">
@@ -977,7 +1340,9 @@ export default function Contracts() {
                 ) : (
                   <div className="flex flex-col items-center justify-center h-40 text-muted-foreground gap-2">
                     <FileText className="w-8 h-8 opacity-30" />
-                    <p className="text-sm">Select a template to see a live preview here.</p>
+                    <p className="text-sm">
+                      Select a template to see a live preview here.
+                    </p>
                   </div>
                 )}
               </div>
@@ -1003,10 +1368,30 @@ export default function Contracts() {
             {import.meta.env.DEV && (
               <div className="text-xs bg-muted/40 border border-dashed rounded px-3 py-2 font-mono text-muted-foreground space-y-0.5">
                 <p className="font-semibold text-foreground">DEV</p>
-                <p>canCreate: <span className={liveValidation.blocking.length === 0 ? "text-success" : "text-destructive"}>{String(liveValidation.blocking.length === 0)}</span></p>
-                <p>blocking ({liveValidation.blocking.length}): {liveValidation.blocking.join(", ") || "—"}</p>
-                <p>total: {form.value || "—"} | currency: {form.currency || "—"} | lang: {lang}</p>
-                <p>provider: &quot;{provider.companyName ?? ""}&quot; | client: &quot;{form.clientName || ""}&quot;</p>
+                <p>
+                  canCreate:{" "}
+                  <span
+                    className={
+                      liveValidation.blocking.length === 0
+                        ? "text-success"
+                        : "text-destructive"
+                    }
+                  >
+                    {String(liveValidation.blocking.length === 0)}
+                  </span>
+                </p>
+                <p>
+                  blocking ({liveValidation.blocking.length}):{" "}
+                  {liveValidation.blocking.join(", ") || "—"}
+                </p>
+                <p>
+                  total: {form.value || "—"} | currency: {form.currency || "—"}{" "}
+                  | lang: {lang}
+                </p>
+                <p>
+                  provider: &quot;{provider.companyName ?? ""}&quot; | client:
+                  &quot;{form.clientName || ""}&quot;
+                </p>
               </div>
             )}
             <DialogFooter>
@@ -1015,9 +1400,13 @@ export default function Contracts() {
               </Button>
               <Button
                 onClick={handleCreate}
-                disabled={createMutation.isPending || liveValidation.blocking.length > 0}
+                disabled={
+                  createMutation.isPending || liveValidation.blocking.length > 0
+                }
               >
-                {createMutation.isPending ? t("contracts.creating") : t("contracts.create_contract_btn")}
+                {createMutation.isPending
+                  ? t("contracts.creating")
+                  : t("contracts.create_contract_btn")}
               </Button>
             </DialogFooter>
           </div>

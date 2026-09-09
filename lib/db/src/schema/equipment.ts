@@ -1,4 +1,4 @@
-import { pgTable, text, uuid, timestamp, pgEnum, numeric } from "drizzle-orm/pg-core";
+import { pgTable, text, uuid, timestamp, pgEnum, numeric, index } from "drizzle-orm/pg-core";
 import { usersTable } from "./users";
 
 export const equipmentStatusEnum = pgEnum("equipment_status", [
@@ -16,24 +16,39 @@ export const serviceTypeEnum = pgEnum("service_type", [
   "warranty_claim",
 ]);
 
-export const equipment = pgTable("equipment", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  userId: text("user_id")
-    .notNull()
-    .references(() => usersTable.id, { onDelete: "cascade" }),
-  productModel: text("product_model").notNull(),
-  serialNumber: text("serial_number").notNull().unique(),
-  purchaseDate: timestamp("purchase_date"),
-  warrantyExpiration: timestamp("warranty_expiration"),
-  status: equipmentStatusEnum("status").notNull().default("active"),
-  maintenanceNotes: text("maintenance_notes"),
-  lastMaintenanceDate: timestamp("last_maintenance_date"),
-  nextMaintenanceDate: timestamp("next_maintenance_date"),
-  purchasePrice: numeric("purchase_price", { precision: 12, scale: 2 }),
-  vendorName: text("vendor_name"),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
-});
+export const equipment = pgTable(
+  "equipment",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => usersTable.id, { onDelete: "cascade" }),
+    productModel: text("product_model").notNull(),
+    serialNumber: text("serial_number").notNull().unique(),
+    purchaseDate: timestamp("purchase_date"),
+    warrantyExpiration: timestamp("warranty_expiration"),
+    status: equipmentStatusEnum("status").notNull().default("active"),
+    maintenanceNotes: text("maintenance_notes"),
+    lastMaintenanceDate: timestamp("last_maintenance_date"),
+    nextMaintenanceDate: timestamp("next_maintenance_date"),
+    purchasePrice: numeric("purchase_price", { precision: 12, scale: 2 }),
+    vendorName: text("vendor_name"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (t) => [
+    index("equipment_user_status_warranty_idx").on(
+      t.userId,
+      t.status,
+      t.warrantyExpiration,
+    ),
+    index("equipment_user_status_maintenance_idx").on(
+      t.userId,
+      t.status,
+      t.nextMaintenanceDate,
+    ),
+  ],
+);
 
 export const serviceHistory = pgTable("service_history", {
   id: uuid("id").primaryKey().defaultRandom(),

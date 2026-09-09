@@ -17,6 +17,14 @@ export const HealthCheckResponse = zod.object({
 
 
 /**
+ * @summary Check database readiness within a bounded deadline
+ */
+export const ReadinessCheckResponse = zod.object({
+  "status": zod.string()
+})
+
+
+/**
  * @summary Check BunnyStream connection status
  */
 export const GetBunnyStatusResponse = zod.object({
@@ -30,6 +38,19 @@ export const GetBunnyStatusResponse = zod.object({
 
 
 /**
+ * @summary Diagnose BunnyStream library and optional video status
+ */
+export const DiagnoseBunnyStreamQueryParams = zod.object({
+  "videoId": zod.coerce.string().optional()
+})
+
+export const DiagnoseBunnyStreamResponse = zod.object({
+  "libraryInfo": zod.record(zod.string(), zod.unknown()).optional(),
+  "videoInfo": zod.record(zod.string(), zod.unknown()).nullish()
+})
+
+
+/**
  * @summary List BunnyStream collections
  */
 export const ListBunnyCollectionsResponse = zod.object({
@@ -37,7 +58,8 @@ export const ListBunnyCollectionsResponse = zod.object({
   "guid": zod.string(),
   "name": zod.string(),
   "videoCount": zod.number(),
-  "lang": zod.string()
+  "lang": zod.string().nullable(),
+  "langKnown": zod.boolean()
 })),
   "total": zod.number()
 })
@@ -66,7 +88,13 @@ export const ListBunnyVideosResponse = zod.object({
   "height": zod.number().optional()
 })),
   "total": zod.number(),
-  "collectionId": zod.string()
+  "collectionId": zod.string(),
+  "totalReported": zod.number().optional(),
+  "pagesLoaded": zod.number().optional(),
+  "requestedCollectionId": zod.string().optional(),
+  "detectedLanguage": zod.string().optional(),
+  "totalVideosReturned": zod.number().optional(),
+  "pagesFetched": zod.number().optional()
 })
 
 
@@ -76,9 +104,9 @@ export const ListBunnyVideosResponse = zod.object({
 export const ImportBunnyVideosBody = zod.object({
   "items": zod.array(zod.object({
   "videoId": zod.string(),
-  "lang": zod.string(),
-  "embedUrl": zod.string(),
-  "thumbnailUrl": zod.string(),
+  "collectionId": zod.string(),
+  "embedUrl": zod.string().optional(),
+  "thumbnailUrl": zod.string().optional(),
   "previewUrl": zod.string().optional(),
   "durationSeconds": zod.number(),
   "videoTitle": zod.string(),
@@ -111,10 +139,12 @@ export const GetCurrentUserResponse = zod.object({
   "lastName": zod.string().nullish(),
   "fullName": zod.string().nullish(),
   "companyName": zod.string().nullish(),
+  "companyAddress": zod.string().nullish(),
   "phone": zod.string().nullish(),
   "country": zod.string().nullish(),
   "city": zod.string().nullish(),
   "role": zod.enum(['admin', 'client', 'coach', 'sales_rep']),
+  "isActive": zod.boolean(),
   "language": zod.enum(['en', 'fr', 'es', 'de', 'it', 'pl', 'pt', 'nl']),
   "currency": zod.string().default(getCurrentUserResponseCurrencyDefault),
   "birthday": zod.string().nullish(),
@@ -126,8 +156,12 @@ export const GetCurrentUserResponse = zod.object({
   "linkedin": zod.string().nullish(),
   "businessType": zod.string().nullish(),
   "mainMarket": zod.string().nullish(),
+  "taxId": zod.string().nullish(),
   "photobooths": zod.number().nullish(),
   "businessGoal": zod.string().nullish(),
+  "providerSignature": zod.string().nullish(),
+  "providerSignerTitle": zod.string().nullish(),
+  "logoUrl": zod.string().nullish(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date().optional()
 })
@@ -141,6 +175,7 @@ export const UpdateCurrentUserBody = zod.object({
   "lastName": zod.string().optional(),
   "fullName": zod.string().optional(),
   "companyName": zod.string().optional(),
+  "companyAddress": zod.string().optional(),
   "phone": zod.string().optional(),
   "country": zod.string().optional(),
   "city": zod.string().optional(),
@@ -155,8 +190,12 @@ export const UpdateCurrentUserBody = zod.object({
   "linkedin": zod.string().optional(),
   "businessType": zod.string().optional(),
   "mainMarket": zod.string().optional(),
+  "taxId": zod.string().optional(),
   "photobooths": zod.number().optional(),
-  "businessGoal": zod.string().optional()
+  "businessGoal": zod.string().optional(),
+  "providerSignature": zod.string().nullish(),
+  "providerSignerTitle": zod.string().nullish(),
+  "logoUrl": zod.string().nullish()
 })
 
 export const updateCurrentUserResponseCurrencyDefault = `EUR`;
@@ -169,10 +208,12 @@ export const UpdateCurrentUserResponse = zod.object({
   "lastName": zod.string().nullish(),
   "fullName": zod.string().nullish(),
   "companyName": zod.string().nullish(),
+  "companyAddress": zod.string().nullish(),
   "phone": zod.string().nullish(),
   "country": zod.string().nullish(),
   "city": zod.string().nullish(),
   "role": zod.enum(['admin', 'client', 'coach', 'sales_rep']),
+  "isActive": zod.boolean(),
   "language": zod.enum(['en', 'fr', 'es', 'de', 'it', 'pl', 'pt', 'nl']),
   "currency": zod.string().default(updateCurrentUserResponseCurrencyDefault),
   "birthday": zod.string().nullish(),
@@ -184,8 +225,12 @@ export const UpdateCurrentUserResponse = zod.object({
   "linkedin": zod.string().nullish(),
   "businessType": zod.string().nullish(),
   "mainMarket": zod.string().nullish(),
+  "taxId": zod.string().nullish(),
   "photobooths": zod.number().nullish(),
   "businessGoal": zod.string().nullish(),
+  "providerSignature": zod.string().nullish(),
+  "providerSignerTitle": zod.string().nullish(),
+  "logoUrl": zod.string().nullish(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date().optional()
 })
@@ -199,6 +244,8 @@ export const listUsersQueryOffsetDefault = 0;
 
 export const ListUsersQueryParams = zod.object({
   "role": zod.coerce.string().optional(),
+  "active": zod.coerce.boolean().optional(),
+  "q": zod.coerce.string().optional(),
   "limit": zod.coerce.number().default(listUsersQueryLimitDefault),
   "offset": zod.coerce.number().default(listUsersQueryOffsetDefault)
 })
@@ -214,10 +261,12 @@ export const ListUsersResponse = zod.object({
   "lastName": zod.string().nullish(),
   "fullName": zod.string().nullish(),
   "companyName": zod.string().nullish(),
+  "companyAddress": zod.string().nullish(),
   "phone": zod.string().nullish(),
   "country": zod.string().nullish(),
   "city": zod.string().nullish(),
   "role": zod.enum(['admin', 'client', 'coach', 'sales_rep']),
+  "isActive": zod.boolean(),
   "language": zod.enum(['en', 'fr', 'es', 'de', 'it', 'pl', 'pt', 'nl']),
   "currency": zod.string().default(listUsersResponseItemsItemCurrencyDefault),
   "birthday": zod.string().nullish(),
@@ -229,12 +278,33 @@ export const ListUsersResponse = zod.object({
   "linkedin": zod.string().nullish(),
   "businessType": zod.string().nullish(),
   "mainMarket": zod.string().nullish(),
+  "taxId": zod.string().nullish(),
   "photobooths": zod.number().nullish(),
   "businessGoal": zod.string().nullish(),
+  "providerSignature": zod.string().nullish(),
+  "providerSignerTitle": zod.string().nullish(),
+  "logoUrl": zod.string().nullish(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date().optional()
 })),
   "total": zod.number()
+})
+
+
+/**
+ * @summary Create a managed user record (admin only)
+ */
+export const CreateUserBody = zod.object({
+  "email": zod.string(),
+  "fullName": zod.string(),
+  "firstName": zod.string().optional(),
+  "lastName": zod.string().optional(),
+  "companyName": zod.string().optional(),
+  "phone": zod.string().optional(),
+  "role": zod.enum(['admin', 'client', 'coach', 'sales_rep']),
+  "isActive": zod.boolean().optional(),
+  "language": zod.enum(['en', 'fr', 'es', 'de', 'it', 'pl', 'pt', 'nl']).optional(),
+  "currency": zod.string().optional()
 })
 
 
@@ -255,10 +325,12 @@ export const GetUserResponse = zod.object({
   "lastName": zod.string().nullish(),
   "fullName": zod.string().nullish(),
   "companyName": zod.string().nullish(),
+  "companyAddress": zod.string().nullish(),
   "phone": zod.string().nullish(),
   "country": zod.string().nullish(),
   "city": zod.string().nullish(),
   "role": zod.enum(['admin', 'client', 'coach', 'sales_rep']),
+  "isActive": zod.boolean(),
   "language": zod.enum(['en', 'fr', 'es', 'de', 'it', 'pl', 'pt', 'nl']),
   "currency": zod.string().default(getUserResponseCurrencyDefault),
   "birthday": zod.string().nullish(),
@@ -270,8 +342,76 @@ export const GetUserResponse = zod.object({
   "linkedin": zod.string().nullish(),
   "businessType": zod.string().nullish(),
   "mainMarket": zod.string().nullish(),
+  "taxId": zod.string().nullish(),
   "photobooths": zod.number().nullish(),
   "businessGoal": zod.string().nullish(),
+  "providerSignature": zod.string().nullish(),
+  "providerSignerTitle": zod.string().nullish(),
+  "logoUrl": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date().optional()
+})
+
+
+/**
+ * @summary Update a managed user record (admin only)
+ */
+export const UpdateUserParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const updateUserQueryLangDefault = `en`;
+
+export const UpdateUserQueryParams = zod.object({
+  "lang": zod.coerce.string().default(updateUserQueryLangDefault)
+})
+
+export const UpdateUserBody = zod.object({
+  "email": zod.string().optional(),
+  "fullName": zod.string().optional(),
+  "firstName": zod.string().optional(),
+  "lastName": zod.string().optional(),
+  "companyName": zod.string().optional(),
+  "phone": zod.string().optional(),
+  "role": zod.enum(['admin', 'client', 'coach', 'sales_rep']).optional(),
+  "isActive": zod.boolean().optional(),
+  "language": zod.enum(['en', 'fr', 'es', 'de', 'it', 'pl', 'pt', 'nl']).optional(),
+  "currency": zod.string().optional()
+})
+
+export const updateUserResponseCurrencyDefault = `EUR`;
+
+export const UpdateUserResponse = zod.object({
+  "id": zod.string(),
+  "clerkId": zod.string(),
+  "email": zod.string(),
+  "firstName": zod.string().nullish(),
+  "lastName": zod.string().nullish(),
+  "fullName": zod.string().nullish(),
+  "companyName": zod.string().nullish(),
+  "companyAddress": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "country": zod.string().nullish(),
+  "city": zod.string().nullish(),
+  "role": zod.enum(['admin', 'client', 'coach', 'sales_rep']),
+  "isActive": zod.boolean(),
+  "language": zod.enum(['en', 'fr', 'es', 'de', 'it', 'pl', 'pt', 'nl']),
+  "currency": zod.string().default(updateUserResponseCurrencyDefault),
+  "birthday": zod.string().nullish(),
+  "website": zod.string().nullish(),
+  "instagram": zod.string().nullish(),
+  "facebook": zod.string().nullish(),
+  "pinterest": zod.string().nullish(),
+  "tiktok": zod.string().nullish(),
+  "linkedin": zod.string().nullish(),
+  "businessType": zod.string().nullish(),
+  "mainMarket": zod.string().nullish(),
+  "taxId": zod.string().nullish(),
+  "photobooths": zod.number().nullish(),
+  "businessGoal": zod.string().nullish(),
+  "providerSignature": zod.string().nullish(),
+  "providerSignerTitle": zod.string().nullish(),
+  "logoUrl": zod.string().nullish(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date().optional()
 })
@@ -426,6 +566,12 @@ export const GetOnboardingSummaryResponse = zod.object({
 /**
  * @summary Get dashboard KPI summary for current user
  */
+export const getDashboardSummaryQueryLangDefault = `en`;
+
+export const GetDashboardSummaryQueryParams = zod.object({
+  "lang": zod.coerce.string().default(getDashboardSummaryQueryLangDefault)
+})
+
 export const GetDashboardSummaryResponse = zod.object({
   "unreadNotifications": zod.number(),
   "onboardingPercent": zod.number(),
@@ -434,6 +580,13 @@ export const GetDashboardSummaryResponse = zod.object({
   "academyTotalLessons": zod.number(),
   "upcomingEventsCount": zod.number(),
   "totalEventsCount": zod.number(),
+  "equipmentAlerts": zod.number(),
+  "lowStockCount": zod.number(),
+  "openTicketsCount": zod.number(),
+  "leadsCount": zod.number(),
+  "quotesCount": zod.number(),
+  "contractsCount": zod.number(),
+  "invoicesCount": zod.number(),
   "nextLesson": zod.object({
   "lessonId": zod.string(),
   "lessonTitle": zod.string(),
@@ -515,10 +668,7 @@ export const GetCourseResponse = zod.object({
   "isPublished": zod.boolean(),
   "thumbnailUrl": zod.string().nullish(),
   "videoAssets": zod.record(zod.string(), zod.object({
-  "embedUrl": zod.string().nullish(),
-  "thumbnailUrl": zod.string().nullish(),
-  "previewUrl": zod.string().nullish(),
-  "videoId": zod.string().nullish()
+  "thumbnailUrl": zod.string().optional()
 })).nullish(),
   "completedAt": zod.coerce.date().nullable(),
   "watchPercent": zod.number().nullish()
@@ -528,6 +678,7 @@ export const GetCourseResponse = zod.object({
 
 
 /**
+ * Authenticated response is private and not stored by HTTP caches. Bunny embed URLs expire and must be refreshed by requesting lesson detail again.
  * @summary Get lesson detail with resources and quiz
  */
 export const GetLessonParams = zod.object({
@@ -565,8 +716,7 @@ export const GetLessonResponse = zod.object({
   "quizQuestions": zod.array(zod.object({
   "id": zod.string(),
   "question": zod.string(),
-  "options": zod.array(zod.string()),
-  "correctOption": zod.number()
+  "options": zod.array(zod.string())
 })),
   "completedAt": zod.coerce.date().nullable(),
   "watchPercent": zod.number().nullable()
@@ -580,8 +730,20 @@ export const UpdateLessonProgressParams = zod.object({
   "id": zod.coerce.string()
 })
 
+export const updateLessonProgressQueryLangDefault = `en`;
+
+export const UpdateLessonProgressQueryParams = zod.object({
+  "lang": zod.coerce.string().default(updateLessonProgressQueryLangDefault)
+})
+
+export const updateLessonProgressBodyWatchPercentMin = 0;
+export const updateLessonProgressBodyWatchPercentMax = 100;
+export const updateLessonProgressBodyWatchPercentMultipleOf = 1;
+
+
+
 export const UpdateLessonProgressBody = zod.object({
-  "watchPercent": zod.number(),
+  "watchPercent": zod.number().min(updateLessonProgressBodyWatchPercentMin).max(updateLessonProgressBodyWatchPercentMax).multipleOf(updateLessonProgressBodyWatchPercentMultipleOf),
   "completed": zod.boolean().optional()
 })
 
@@ -599,8 +761,21 @@ export const SubmitQuizParams = zod.object({
   "id": zod.coerce.string()
 })
 
+export const submitQuizQueryLangDefault = `en`;
+
+export const SubmitQuizQueryParams = zod.object({
+  "lang": zod.coerce.string().default(submitQuizQueryLangDefault)
+})
+
+export const submitQuizBodyAnswersItemMin = -1;
+export const submitQuizBodyAnswersItemMultipleOf = 1;
+
+export const submitQuizBodyAnswersMax = 200;
+
+
+
 export const SubmitQuizBody = zod.object({
-  "answers": zod.array(zod.number())
+  "answers": zod.array(zod.number().min(submitQuizBodyAnswersItemMin).multipleOf(submitQuizBodyAnswersItemMultipleOf)).max(submitQuizBodyAnswersMax)
 })
 
 export const SubmitQuizResponse = zod.object({
@@ -619,6 +794,12 @@ export const SubmitQuizResponse = zod.object({
 /**
  * @summary Get academy progress summary for current user
  */
+export const getAcademyProgressSummaryQueryLangDefault = `en`;
+
+export const GetAcademyProgressSummaryQueryParams = zod.object({
+  "lang": zod.coerce.string().default(getAcademyProgressSummaryQueryLangDefault)
+})
+
 export const GetAcademyProgressSummaryResponse = zod.object({
   "totalCourses": zod.number(),
   "completedCourses": zod.number(),
@@ -709,6 +890,10 @@ export const CreateEventBody = zod.object({
   "location": zod.string().optional(),
   "type": zod.string().optional(),
   "notes": zod.string().optional(),
+  "leadId": zod.string().nullish(),
+  "quoteId": zod.string().nullish(),
+  "contractId": zod.string().nullish(),
+  "invoiceId": zod.string().nullish(),
   "clientName": zod.string().optional(),
   "clientEmail": zod.string().optional(),
   "clientPhone": zod.string().optional(),
@@ -782,6 +967,9 @@ export const UpdateEventBody = zod.object({
   "type": zod.string().optional(),
   "status": zod.enum(['upcoming', 'active', 'completed', 'cancelled']).optional(),
   "notes": zod.string().optional(),
+  "leadId": zod.string().nullish(),
+  "quoteId": zod.string().nullish(),
+  "contractId": zod.string().nullish(),
   "clientName": zod.string().optional(),
   "clientEmail": zod.string().optional(),
   "clientPhone": zod.string().optional(),
@@ -797,7 +985,7 @@ export const UpdateEventBody = zod.object({
   "revenue": zod.string().optional(),
   "currency": zod.string().optional(),
   "paymentStatus": zod.string().optional(),
-  "invoiceId": zod.string().optional()
+  "invoiceId": zod.string().nullish()
 })
 
 export const UpdateEventResponse = zod.object({
@@ -989,6 +1177,34 @@ export const GetLeadResponse = zod.object({
   "clientAddress": zod.string().nullish(),
   "eventType": zod.string().nullish(),
   "eventDate": zod.coerce.date().nullish(),
+  "eventLocation": zod.string().nullish(),
+  "eventStartTime": zod.string().nullish(),
+  "eventEndTime": zod.string().nullish(),
+  "setupTime": zod.string().nullish(),
+  "pickupTime": zod.string().nullish(),
+  "packageName": zod.string().nullish(),
+  "rentalDuration": zod.string().nullish(),
+  "includedPrints": zod.string().nullish(),
+  "rentalPrice": zod.string().nullish(),
+  "optionsPrice": zod.string().nullish(),
+  "deliveryFees": zod.string().nullish(),
+  "discountAmount": zod.string().nullish(),
+  "taxRate": zod.string().nullish(),
+  "depositAmount": zod.string().nullish(),
+  "depositMethod": zod.string().nullish(),
+  "depositConditions": zod.string().nullish(),
+  "depositReturn": zod.string().nullish(),
+  "paymentTerms": zod.string().nullish(),
+  "cancellationTerms": zod.string().nullish(),
+  "signaturePlace": zod.string().nullish(),
+  "equipmentIds": zod.array(zod.string()).nullish(),
+  "equipmentDescription": zod.string().nullish(),
+  "digitalGallery": zod.boolean().nullish(),
+  "customTemplate": zod.boolean().nullish(),
+  "deliveryIncluded": zod.boolean().nullish(),
+  "setupIncluded": zod.boolean().nullish(),
+  "operatorIncluded": zod.boolean().nullish(),
+  "optionsList": zod.string().nullish(),
   "currency": zod.string().nullish(),
   "language": zod.string().nullish(),
   "status": zod.enum(['draft', 'sent', 'signed', 'active', 'expired', 'cancelled']),
@@ -1191,6 +1407,34 @@ export const GetLeadPipelineResponse = zod.object({
   "clientAddress": zod.string().nullish(),
   "eventType": zod.string().nullish(),
   "eventDate": zod.coerce.date().nullish(),
+  "eventLocation": zod.string().nullish(),
+  "eventStartTime": zod.string().nullish(),
+  "eventEndTime": zod.string().nullish(),
+  "setupTime": zod.string().nullish(),
+  "pickupTime": zod.string().nullish(),
+  "packageName": zod.string().nullish(),
+  "rentalDuration": zod.string().nullish(),
+  "includedPrints": zod.string().nullish(),
+  "rentalPrice": zod.string().nullish(),
+  "optionsPrice": zod.string().nullish(),
+  "deliveryFees": zod.string().nullish(),
+  "discountAmount": zod.string().nullish(),
+  "taxRate": zod.string().nullish(),
+  "depositAmount": zod.string().nullish(),
+  "depositMethod": zod.string().nullish(),
+  "depositConditions": zod.string().nullish(),
+  "depositReturn": zod.string().nullish(),
+  "paymentTerms": zod.string().nullish(),
+  "cancellationTerms": zod.string().nullish(),
+  "signaturePlace": zod.string().nullish(),
+  "equipmentIds": zod.array(zod.string()).nullish(),
+  "equipmentDescription": zod.string().nullish(),
+  "digitalGallery": zod.boolean().nullish(),
+  "customTemplate": zod.boolean().nullish(),
+  "deliveryIncluded": zod.boolean().nullish(),
+  "setupIncluded": zod.boolean().nullish(),
+  "operatorIncluded": zod.boolean().nullish(),
+  "optionsList": zod.string().nullish(),
   "currency": zod.string().nullish(),
   "language": zod.string().nullish(),
   "status": zod.enum(['draft', 'sent', 'signed', 'active', 'expired', 'cancelled']),
@@ -1641,6 +1885,76 @@ export const UpdateQuoteStatusResponse = zod.object({
 
 
 /**
+ * @summary Prepare a client email draft for a quote
+ */
+export const SendQuoteParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const SendQuoteResponse = zod.object({
+  "quote": zod.object({
+  "id": zod.string(),
+  "userId": zod.string(),
+  "leadId": zod.string().nullish(),
+  "quoteNumber": zod.string(),
+  "title": zod.string(),
+  "clientName": zod.string(),
+  "clientEmail": zod.string().nullish(),
+  "clientPhone": zod.string().nullish(),
+  "clientCompany": zod.string().nullish(),
+  "clientAddress": zod.string().nullish(),
+  "eventType": zod.string().nullish(),
+  "eventDate": zod.coerce.date().nullish(),
+  "eventLocation": zod.string().nullish(),
+  "eventStartTime": zod.string().nullish(),
+  "eventEndTime": zod.string().nullish(),
+  "packageName": zod.string().nullish(),
+  "rentalDuration": zod.string().nullish(),
+  "includedPrints": zod.string().nullish(),
+  "digitalGallery": zod.boolean().optional(),
+  "customTemplate": zod.boolean().optional(),
+  "deliveryIncluded": zod.boolean().optional(),
+  "setupIncluded": zod.boolean().optional(),
+  "operatorIncluded": zod.boolean().optional(),
+  "equipmentIds": zod.array(zod.string()).nullish(),
+  "equipmentDescription": zod.string().nullish(),
+  "optionsList": zod.string().nullish(),
+  "rentalPrice": zod.string().nullish(),
+  "optionsPrice": zod.string().nullish(),
+  "deliveryFees": zod.string().nullish(),
+  "discountAmount": zod.string().nullish(),
+  "currency": zod.string().nullish(),
+  "language": zod.string().nullish(),
+  "status": zod.enum(['draft', 'sent', 'accepted', 'declined', 'expired']),
+  "subtotal": zod.string(),
+  "taxRate": zod.string(),
+  "taxAmount": zod.string(),
+  "total": zod.string(),
+  "notes": zod.string().nullish(),
+  "terms": zod.string().nullish(),
+  "validUntil": zod.coerce.date().nullish(),
+  "sentAt": zod.coerce.date().nullish(),
+  "acceptedAt": zod.coerce.date().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}).and(zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.string(),
+  "quoteId": zod.string(),
+  "description": zod.string(),
+  "quantity": zod.string(),
+  "unitPrice": zod.string(),
+  "total": zod.string(),
+  "order": zod.number()
+}))
+})),
+  "mailtoUrl": zod.string(),
+  "clientEmail": zod.string().optional(),
+  "subject": zod.string().optional()
+})
+
+
+/**
  * @summary List contracts for current user
  */
 export const listContractsQueryLimitDefault = 50;
@@ -1667,6 +1981,34 @@ export const ListContractsResponse = zod.object({
   "clientAddress": zod.string().nullish(),
   "eventType": zod.string().nullish(),
   "eventDate": zod.coerce.date().nullish(),
+  "eventLocation": zod.string().nullish(),
+  "eventStartTime": zod.string().nullish(),
+  "eventEndTime": zod.string().nullish(),
+  "setupTime": zod.string().nullish(),
+  "pickupTime": zod.string().nullish(),
+  "packageName": zod.string().nullish(),
+  "rentalDuration": zod.string().nullish(),
+  "includedPrints": zod.string().nullish(),
+  "rentalPrice": zod.string().nullish(),
+  "optionsPrice": zod.string().nullish(),
+  "deliveryFees": zod.string().nullish(),
+  "discountAmount": zod.string().nullish(),
+  "taxRate": zod.string().nullish(),
+  "depositAmount": zod.string().nullish(),
+  "depositMethod": zod.string().nullish(),
+  "depositConditions": zod.string().nullish(),
+  "depositReturn": zod.string().nullish(),
+  "paymentTerms": zod.string().nullish(),
+  "cancellationTerms": zod.string().nullish(),
+  "signaturePlace": zod.string().nullish(),
+  "equipmentIds": zod.array(zod.string()).nullish(),
+  "equipmentDescription": zod.string().nullish(),
+  "digitalGallery": zod.boolean().nullish(),
+  "customTemplate": zod.boolean().nullish(),
+  "deliveryIncluded": zod.boolean().nullish(),
+  "setupIncluded": zod.boolean().nullish(),
+  "operatorIncluded": zod.boolean().nullish(),
+  "optionsList": zod.string().nullish(),
   "currency": zod.string().nullish(),
   "language": zod.string().nullish(),
   "status": zod.enum(['draft', 'sent', 'signed', 'active', 'expired', 'cancelled']),
@@ -1702,6 +2044,8 @@ export const CreateContractBody = zod.object({
   "eventLocation": zod.string().optional(),
   "eventStartTime": zod.string().optional(),
   "eventEndTime": zod.string().optional(),
+  "setupTime": zod.string().optional(),
+  "pickupTime": zod.string().optional(),
   "packageName": zod.string().optional(),
   "rentalDuration": zod.string().optional(),
   "includedPrints": zod.string().optional(),
@@ -1709,6 +2053,14 @@ export const CreateContractBody = zod.object({
   "optionsPrice": zod.string().optional(),
   "deliveryFees": zod.string().optional(),
   "discountAmount": zod.string().optional(),
+  "taxRate": zod.string().optional(),
+  "depositAmount": zod.string().optional(),
+  "depositMethod": zod.string().optional(),
+  "depositConditions": zod.string().optional(),
+  "depositReturn": zod.string().optional(),
+  "paymentTerms": zod.string().optional(),
+  "cancellationTerms": zod.string().optional(),
+  "signaturePlace": zod.string().optional(),
   "equipmentIds": zod.array(zod.string()).optional(),
   "equipmentDescription": zod.string().optional(),
   "digitalGallery": zod.boolean().optional(),
@@ -1749,6 +2101,34 @@ export const GetContractResponse = zod.object({
   "clientAddress": zod.string().nullish(),
   "eventType": zod.string().nullish(),
   "eventDate": zod.coerce.date().nullish(),
+  "eventLocation": zod.string().nullish(),
+  "eventStartTime": zod.string().nullish(),
+  "eventEndTime": zod.string().nullish(),
+  "setupTime": zod.string().nullish(),
+  "pickupTime": zod.string().nullish(),
+  "packageName": zod.string().nullish(),
+  "rentalDuration": zod.string().nullish(),
+  "includedPrints": zod.string().nullish(),
+  "rentalPrice": zod.string().nullish(),
+  "optionsPrice": zod.string().nullish(),
+  "deliveryFees": zod.string().nullish(),
+  "discountAmount": zod.string().nullish(),
+  "taxRate": zod.string().nullish(),
+  "depositAmount": zod.string().nullish(),
+  "depositMethod": zod.string().nullish(),
+  "depositConditions": zod.string().nullish(),
+  "depositReturn": zod.string().nullish(),
+  "paymentTerms": zod.string().nullish(),
+  "cancellationTerms": zod.string().nullish(),
+  "signaturePlace": zod.string().nullish(),
+  "equipmentIds": zod.array(zod.string()).nullish(),
+  "equipmentDescription": zod.string().nullish(),
+  "digitalGallery": zod.boolean().nullish(),
+  "customTemplate": zod.boolean().nullish(),
+  "deliveryIncluded": zod.boolean().nullish(),
+  "setupIncluded": zod.boolean().nullish(),
+  "operatorIncluded": zod.boolean().nullish(),
+  "optionsList": zod.string().nullish(),
   "currency": zod.string().nullish(),
   "language": zod.string().nullish(),
   "status": zod.enum(['draft', 'sent', 'signed', 'active', 'expired', 'cancelled']),
@@ -1772,43 +2152,14 @@ export const UpdateContractParams = zod.object({
 })
 
 export const UpdateContractBody = zod.object({
-  "leadId": zod.string().optional(),
-  "quoteId": zod.string().optional(),
-  "templateId": zod.string().optional(),
-  "title": zod.string(),
-  "clientName": zod.string(),
-  "clientEmail": zod.string().optional(),
-  "clientPhone": zod.string().optional(),
-  "clientCompany": zod.string().optional(),
-  "clientAddress": zod.string().optional(),
-  "eventType": zod.string().optional(),
-  "eventDate": zod.coerce.date().optional(),
-  "eventLocation": zod.string().optional(),
-  "eventStartTime": zod.string().optional(),
-  "eventEndTime": zod.string().optional(),
-  "packageName": zod.string().optional(),
-  "rentalDuration": zod.string().optional(),
-  "includedPrints": zod.string().optional(),
-  "rentalPrice": zod.string().optional(),
-  "optionsPrice": zod.string().optional(),
-  "deliveryFees": zod.string().optional(),
-  "discountAmount": zod.string().optional(),
-  "equipmentIds": zod.array(zod.string()).optional(),
-  "equipmentDescription": zod.string().optional(),
-  "digitalGallery": zod.boolean().optional(),
-  "customTemplate": zod.boolean().optional(),
-  "deliveryIncluded": zod.boolean().optional(),
-  "setupIncluded": zod.boolean().optional(),
-  "operatorIncluded": zod.boolean().optional(),
-  "optionsList": zod.string().optional(),
-  "invoiceId": zod.string().optional(),
-  "currency": zod.string().optional(),
-  "language": zod.string().optional(),
+  "leadId": zod.string().nullish(),
+  "quoteId": zod.string().nullish(),
+  "title": zod.string().optional(),
   "content": zod.string().optional(),
-  "value": zod.string().optional(),
   "startDate": zod.coerce.date().optional(),
   "endDate": zod.coerce.date().optional(),
-  "notes": zod.string().optional()
+  "notes": zod.string().optional(),
+  "equipmentIds": zod.array(zod.string()).optional()
 })
 
 export const UpdateContractResponse = zod.object({
@@ -1825,6 +2176,34 @@ export const UpdateContractResponse = zod.object({
   "clientAddress": zod.string().nullish(),
   "eventType": zod.string().nullish(),
   "eventDate": zod.coerce.date().nullish(),
+  "eventLocation": zod.string().nullish(),
+  "eventStartTime": zod.string().nullish(),
+  "eventEndTime": zod.string().nullish(),
+  "setupTime": zod.string().nullish(),
+  "pickupTime": zod.string().nullish(),
+  "packageName": zod.string().nullish(),
+  "rentalDuration": zod.string().nullish(),
+  "includedPrints": zod.string().nullish(),
+  "rentalPrice": zod.string().nullish(),
+  "optionsPrice": zod.string().nullish(),
+  "deliveryFees": zod.string().nullish(),
+  "discountAmount": zod.string().nullish(),
+  "taxRate": zod.string().nullish(),
+  "depositAmount": zod.string().nullish(),
+  "depositMethod": zod.string().nullish(),
+  "depositConditions": zod.string().nullish(),
+  "depositReturn": zod.string().nullish(),
+  "paymentTerms": zod.string().nullish(),
+  "cancellationTerms": zod.string().nullish(),
+  "signaturePlace": zod.string().nullish(),
+  "equipmentIds": zod.array(zod.string()).nullish(),
+  "equipmentDescription": zod.string().nullish(),
+  "digitalGallery": zod.boolean().nullish(),
+  "customTemplate": zod.boolean().nullish(),
+  "deliveryIncluded": zod.boolean().nullish(),
+  "setupIncluded": zod.boolean().nullish(),
+  "operatorIncluded": zod.boolean().nullish(),
+  "optionsList": zod.string().nullish(),
   "currency": zod.string().nullish(),
   "language": zod.string().nullish(),
   "status": zod.enum(['draft', 'sent', 'signed', 'active', 'expired', 'cancelled']),
@@ -1873,6 +2252,34 @@ export const UpdateContractStatusResponse = zod.object({
   "clientAddress": zod.string().nullish(),
   "eventType": zod.string().nullish(),
   "eventDate": zod.coerce.date().nullish(),
+  "eventLocation": zod.string().nullish(),
+  "eventStartTime": zod.string().nullish(),
+  "eventEndTime": zod.string().nullish(),
+  "setupTime": zod.string().nullish(),
+  "pickupTime": zod.string().nullish(),
+  "packageName": zod.string().nullish(),
+  "rentalDuration": zod.string().nullish(),
+  "includedPrints": zod.string().nullish(),
+  "rentalPrice": zod.string().nullish(),
+  "optionsPrice": zod.string().nullish(),
+  "deliveryFees": zod.string().nullish(),
+  "discountAmount": zod.string().nullish(),
+  "taxRate": zod.string().nullish(),
+  "depositAmount": zod.string().nullish(),
+  "depositMethod": zod.string().nullish(),
+  "depositConditions": zod.string().nullish(),
+  "depositReturn": zod.string().nullish(),
+  "paymentTerms": zod.string().nullish(),
+  "cancellationTerms": zod.string().nullish(),
+  "signaturePlace": zod.string().nullish(),
+  "equipmentIds": zod.array(zod.string()).nullish(),
+  "equipmentDescription": zod.string().nullish(),
+  "digitalGallery": zod.boolean().nullish(),
+  "customTemplate": zod.boolean().nullish(),
+  "deliveryIncluded": zod.boolean().nullish(),
+  "setupIncluded": zod.boolean().nullish(),
+  "operatorIncluded": zod.boolean().nullish(),
+  "optionsList": zod.string().nullish(),
   "currency": zod.string().nullish(),
   "language": zod.string().nullish(),
   "status": zod.enum(['draft', 'sent', 'signed', 'active', 'expired', 'cancelled']),
@@ -3342,6 +3749,33 @@ export const GetConsumablesResponse = zod.array(GetConsumablesResponseItem)
 
 
 /**
+ * @summary Forecast paper stock needs from upcoming events
+ */
+export const GetConsumableForecastResponse = zod.object({
+  "eventsCount": zod.number().optional(),
+  "totalRequired": zod.number().optional(),
+  "totalAvailable": zod.number().optional(),
+  "shortage": zod.number().optional(),
+  "events": zod.array(zod.object({
+  "id": zod.string().optional(),
+  "title": zod.string().optional(),
+  "eventDate": zod.string().optional(),
+  "includedPrints": zod.string().nullish(),
+  "clientName": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "printsCount": zod.number().optional()
+})).optional(),
+  "paperStock": zod.array(zod.object({
+  "id": zod.string().optional(),
+  "catalogItemId": zod.string().optional(),
+  "currentQuantity": zod.number().optional(),
+  "name": zod.string().optional(),
+  "category": zod.string().optional()
+})).optional()
+})
+
+
+/**
  * @summary Client's order history
  */
 export const GetConsumableOrdersResponseItem = zod.object({
@@ -3364,9 +3798,12 @@ export const GetConsumableOrdersResponse = zod.array(GetConsumableOrdersResponse
 /**
  * @summary Place a reorder
  */
+
+
+
 export const CreateConsumableOrderBody = zod.object({
-  "catalogItemId": zod.string().optional(),
-  "quantity": zod.number().optional(),
+  "catalogItemId": zod.string(),
+  "quantity": zod.number().min(1),
   "notes": zod.string().optional()
 })
 
@@ -3462,6 +3899,8 @@ export const GetAdminRevenueResponse = zod.object({
   "overview": zod.object({
   "totalRevenue": zod.number().optional(),
   "pipelineRevenue": zod.number().optional(),
+  "outstandingRevenue": zod.number().optional(),
+  "overdueRevenue": zod.number().optional(),
   "paidInvoices": zod.number().optional(),
   "avgBookingValue": zod.number().optional(),
   "quoteAcceptanceRate": zod.number().optional(),
@@ -3746,6 +4185,25 @@ export const CreateUploadBody = zod.object({
   "relatedLessonId": zod.string().optional(),
   "relatedProduct": zod.string().optional(),
   "description": zod.string().optional()
+})
+
+
+/**
+ * @summary Upload file bytes and return a stored file URL
+ */
+export const UploadFileBody = zod.object({
+  "fileName": zod.string(),
+  "mimeType": zod.string().optional(),
+  "dataBase64": zod.string(),
+  "folder": zod.string().optional()
+})
+
+
+/**
+ * @summary Download an authenticated file
+ */
+export const DownloadFileParams = zod.object({
+  "key": zod.coerce.string()
 })
 
 

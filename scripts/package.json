@@ -5,7 +5,10 @@
   "type": "module",
   "scripts": {
     "hello": "tsx ./src/hello.ts",
+    "check-academy-launch": "tsx ./src/check-academy-launch.ts",
     "seed": "tsx ./src/seed.ts",
+    "dedupe-academy-progress": "tsx ./src/dedupe-academy-progress.ts",
+    "organize-bunny-academy": "tsx ./src/organize-bunny-academy.ts",
     "seed-automation": "tsx ./src/seed-automation.ts",
     "seed-contract-templates": "tsx ./src/seed-contract-templates.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"

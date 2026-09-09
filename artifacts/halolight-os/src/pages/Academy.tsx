@@ -1,12 +1,35 @@
+import { useDeferredValue, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useListCourses, useGetAcademyProgressSummary } from "@workspace/api-client-react";
+import {
+  useListCourses,
+  useGetAcademyProgressSummary,
+} from "@workspace/api-client-react";
 import { Link } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
-import { BookOpen, Clock, PlayCircle, CheckCircle2, GraduationCap, TrendingUp } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  AlertCircle,
+  BookOpen,
+  Clock,
+  PlayCircle,
+  CheckCircle2,
+  GraduationCap,
+  TrendingUp,
+  Search,
+  RefreshCw,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
+import { academyErrorMessage } from "@/lib/apiErrorMessage";
 
 function formatDuration(seconds: number): string {
   const h = Math.floor(seconds / 3600);
@@ -21,22 +44,70 @@ const LEVEL_COLORS: Record<string, string> = {
   advanced: "bg-muted text-foreground",
 };
 
-const THUMB_FALLBACK = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='450' viewBox='0 0 800 450'%3E%3Crect width='800' height='450' fill='%23DDB398' opacity='0.25'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='48' fill='%23DDB398'%3E▶%3C/text%3E%3C/svg%3E";
+const THUMB_FALLBACK =
+  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='450' viewBox='0 0 800 450'%3E%3Crect width='800' height='450' fill='%23DDB398' opacity='0.25'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='48' fill='%23DDB398'%3E▶%3C/text%3E%3C/svg%3E";
 
 export default function Academy() {
   const { t, i18n } = useTranslation();
   const lang = i18n.language?.split("-")[0] ?? "en";
+  const [search, setSearch] = useState("");
+  const deferredSearch = useDeferredValue(search);
+  const [categoryFilter, setCategoryFilter] = useState("all");
 
   // Pass lang as a query param so React Query creates a per-language cache slot.
   // The server uses this param (or falls back to user.language in DB) to filter modules.
-  const { data: coursesData, isLoading: isLoadingCourses } = useListCourses({ lang });
-  const { data: progressSummary, isLoading: isLoadingProgress } = useGetAcademyProgressSummary({
-    query: { queryKey: ["/api/academy/progress/summary", lang] },
+  const {
+    data: coursesData,
+    error: coursesError,
+    isError: isCoursesError,
+    isLoading: isLoadingCourses,
+    isFetching: isFetchingCourses,
+    refetch: refetchCourses,
+  } = useListCourses({
+    lang,
   });
+  const {
+    data: progressSummary,
+    error: progressError,
+    isError: isProgressError,
+    isLoading: isLoadingProgress,
+    isFetching: isFetchingProgress,
+    refetch: refetchProgress,
+  } = useGetAcademyProgressSummary({ lang });
 
-  const isLoading = isLoadingCourses || isLoadingProgress;
+  const courses = coursesData?.items ?? [];
+  const categories = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          courses
+            .map((course) => course.category)
+            .filter((category): category is string => Boolean(category)),
+        ),
+      ).sort((a, b) => a.localeCompare(b)),
+    [courses],
+  );
+  const filteredCourses = useMemo(() => {
+    const q = deferredSearch.trim().toLowerCase();
+    return courses.filter((course) => {
+      const matchesCategory =
+        categoryFilter === "all" || course.category === categoryFilter;
+      const haystack = [
+        course.title,
+        course.description,
+        course.category,
+        course.level,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      const matchesSearch = !q || haystack.includes(q);
+      return matchesCategory && matchesSearch;
+    });
+  }, [categoryFilter, courses, deferredSearch]);
+  const summary = progressSummary;
 
-  if (isLoading) {
+  if (isLoadingCourses) {
     return (
       <div className="space-y-8" data-testid="page-academy-loading">
         <div className="space-y-2">
@@ -44,28 +115,73 @@ export default function Academy() {
           <Skeleton className="h-5 w-80" />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-24 rounded-xl" />)}
+          {[...Array(3)].map((_, i) => (
+            <Skeleton key={i} className="h-24 rounded-xl" />
+          ))}
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-          {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-64 rounded-xl" />)}
+          {[...Array(3)].map((_, i) => (
+            <Skeleton key={i} className="h-64 rounded-xl" />
+          ))}
         </div>
       </div>
     );
   }
 
-  const courses = coursesData?.items ?? [];
-  const summary = progressSummary;
+  if (isCoursesError) {
+    return (
+      <div role="alert" className="rounded-xl border border-destructive/20 bg-destructive/8 p-5 text-destructive break-words">
+        <div className="flex items-start gap-3">
+          <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
+          <div>
+            <p className="font-semibold">{t("academy.error_title")}</p>
+            <p className="mt-1 text-sm">
+              {academyErrorMessage(coursesError, t)}
+            </p>
+          </div>
+        </div>
+        <Button variant="outline" className="mt-4" disabled={isFetchingCourses} onClick={() => void refetchCourses()}>
+          <RefreshCw className={cn("mr-2 h-4 w-4", isFetchingCourses && "animate-spin")} />
+          {t("academy.retry")}
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8" data-testid="page-academy">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold tracking-tight text-foreground">{t("academy.title")}</h1>
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">
+          {t("academy.title")}
+        </h1>
         <p className="text-muted-foreground mt-1">{t("academy.subtitle")}</p>
       </div>
 
       {/* Progress Summary */}
-      {summary && (
+      {isLoadingProgress ? (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {[...Array(3)].map((_, i) => (
+            <Skeleton key={i} className="h-24 rounded-xl" />
+          ))}
+        </div>
+      ) : isProgressError ? (
+        <div role="alert" className="rounded-xl border border-warning/20 bg-warning/8 p-4 text-warning break-words">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
+            <div>
+              <p className="font-semibold">{t("academy.error_title")}</p>
+              <p className="mt-1 text-sm">
+                {academyErrorMessage(progressError, t)}
+              </p>
+            </div>
+          </div>
+          <Button variant="outline" className="mt-4" disabled={isFetchingProgress} onClick={() => void refetchProgress()}>
+            <RefreshCw className={cn("mr-2 h-4 w-4", isFetchingProgress && "animate-spin")} />
+            {t("academy.retry")}
+          </Button>
+        </div>
+      ) : summary ? (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card className="border-0 shadow-sm bg-info/8">
             <CardContent className="p-5 flex items-center gap-4">
@@ -73,9 +189,16 @@ export default function Academy() {
                 <TrendingUp className="w-6 h-6 text-white" />
               </div>
               <div>
-                <p className="text-sm text-info font-medium">{t("academy.total_progress")}</p>
-                <p className="text-2xl font-bold text-foreground">{summary.percentComplete}%</p>
-                <p className="text-xs text-info">{summary.completedLessons} / {summary.totalLessons} {t("academy.lessons")}</p>
+                <p className="text-sm text-info font-medium">
+                  {t("academy.total_progress")}
+                </p>
+                <p className="text-2xl font-bold text-foreground">
+                  {summary.percentComplete}%
+                </p>
+                <p className="text-xs text-info">
+                  {summary.completedLessons} / {summary.totalLessons}{" "}
+                  {t("academy.lessons")}
+                </p>
               </div>
             </CardContent>
           </Card>
@@ -86,9 +209,16 @@ export default function Academy() {
                 <GraduationCap className="w-6 h-6 text-white" />
               </div>
               <div>
-                <p className="text-sm text-success font-medium">{t("academy.courses_completed")}</p>
-                <p className="text-2xl font-bold text-foreground">{summary.completedCourses}</p>
-                <p className="text-xs text-muted-foreground">{t("common.of")} {summary.totalCourses} {t("academy.courses").toLowerCase()}</p>
+                <p className="text-sm text-success font-medium">
+                  {t("academy.courses_completed")}
+                </p>
+                <p className="text-2xl font-bold text-foreground">
+                  {summary.completedCourses}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {t("common.of")} {summary.totalCourses}{" "}
+                  {t("academy.courses").toLowerCase()}
+                </p>
               </div>
             </CardContent>
           </Card>
@@ -99,30 +229,78 @@ export default function Academy() {
                 <Clock className="w-6 h-6 text-foreground" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground font-medium">{t("academy.watch_time")}</p>
-                <p className="text-2xl font-bold text-foreground">{formatDuration(summary.watchedDurationSeconds)}</p>
-                <p className="text-xs text-muted-foreground">{t("common.of")} {formatDuration(summary.totalDurationSeconds)}</p>
+                <p className="text-sm text-muted-foreground font-medium">
+                  {t("academy.watch_time")}
+                </p>
+                <p className="text-2xl font-bold text-foreground">
+                  {formatDuration(summary.watchedDurationSeconds)}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {t("common.of")}{" "}
+                  {formatDuration(summary.totalDurationSeconds)}
+                </p>
               </div>
             </CardContent>
           </Card>
         </div>
-      )}
+      ) : null}
 
       {/* Course Grid */}
       <div>
-        <h2 className="text-xl font-semibold text-foreground mb-4">{t("academy.all_courses")}</h2>
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-4">
+          <h2 className="text-xl font-semibold text-foreground">
+            {t("academy.all_courses")}
+          </h2>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                className="pl-9 sm:w-72"
+                placeholder={t("academy.search_placeholder")}
+                aria-label={t("academy.search_placeholder")}
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+              />
+            </div>
+            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+              <SelectTrigger className="sm:w-52" aria-label={t("academy.filter_category")}>
+                <SelectValue placeholder={t("academy.filter_category")} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">
+                  {t("academy.all_categories")}
+                </SelectItem>
+                {categories.map((category) => (
+                  <SelectItem key={category} value={category}>
+                    {category}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
         {courses.length === 0 ? (
           <div className="text-center py-16 text-muted-foreground">
             <BookOpen className="w-12 h-12 mx-auto mb-3 opacity-40" />
             <p>{t("academy.no_courses")}</p>
           </div>
+        ) : filteredCourses.length === 0 ? (
+          <div className="text-center py-16 text-muted-foreground">
+            <Search className="w-12 h-12 mx-auto mb-3 opacity-40" />
+            <p>{t("academy.no_filtered_courses")}</p>
+          </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            {courses.map((course) => {
-              const isComplete = course.completedLessons >= course.lessonCount && course.lessonCount > 0;
-              const progress = course.lessonCount > 0
-                ? Math.round((course.completedLessons / course.lessonCount) * 100)
-                : 0;
+            {filteredCourses.map((course) => {
+              const isComplete =
+                course.completedLessons >= course.lessonCount &&
+                course.lessonCount > 0;
+              const progress =
+                course.lessonCount > 0
+                  ? Math.round(
+                      (course.completedLessons / course.lessonCount) * 100,
+                    )
+                  : 0;
               const hasThumbnail = !!course.thumbnailUrl;
               return (
                 <Link key={course.id} href={`/academy/${course.id}`}>
@@ -131,20 +309,48 @@ export default function Academy() {
                       <img
                         src={course.thumbnailUrl || THUMB_FALLBACK}
                         alt={course.title}
+                        loading="lazy"
+                        decoding="async"
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        onError={(e) => { (e.target as HTMLImageElement).src = THUMB_FALLBACK; }}
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = THUMB_FALLBACK;
+                        }}
                       />
-                      {hasThumbnail && <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />}
+                      {hasThumbnail && (
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                      )}
                       {isComplete && (
-                        <div className={cn("absolute top-3 right-3 rounded-full p-1.5", hasThumbnail ? "bg-success text-white" : "bg-success/90 text-white shadow")}>
+                        <div
+                          className={cn(
+                            "absolute top-3 right-3 rounded-full p-1.5",
+                            hasThumbnail
+                              ? "bg-success text-white"
+                              : "bg-success/90 text-white shadow",
+                          )}
+                        >
                           <CheckCircle2 className="w-4 h-4" />
                         </div>
                       )}
                       <div className="absolute bottom-3 left-3 flex gap-2">
-                        <span className={cn("text-xs font-medium px-2.5 py-1 rounded-full", hasThumbnail ? "bg-black/40 text-white backdrop-blur-sm" : LEVEL_COLORS[course.level] ?? "bg-muted text-foreground")}>
+                        <span
+                          className={cn(
+                            "text-xs font-medium px-2.5 py-1 rounded-full",
+                            hasThumbnail
+                              ? "bg-black/40 text-white backdrop-blur-sm"
+                              : (LEVEL_COLORS[course.level] ??
+                                  "bg-muted text-foreground"),
+                          )}
+                        >
                           {t(`academy.level_${course.level}`)}
                         </span>
-                        <span className={cn("text-xs font-medium px-2.5 py-1 rounded-full", hasThumbnail ? "bg-black/40 text-white backdrop-blur-sm" : "bg-muted text-muted-foreground")}>
+                        <span
+                          className={cn(
+                            "text-xs font-medium px-2.5 py-1 rounded-full",
+                            hasThumbnail
+                              ? "bg-black/40 text-white backdrop-blur-sm"
+                              : "bg-muted text-muted-foreground",
+                          )}
+                        >
                           {formatDuration(course.totalDurationSeconds)}
                         </span>
                       </div>
@@ -154,7 +360,9 @@ export default function Academy() {
                         <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors leading-snug">
                           {course.title}
                         </h3>
-                        <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{course.description}</p>
+                        <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                          {course.description}
+                        </p>
                       </div>
                       <div className="flex items-center gap-3 text-xs text-muted-foreground">
                         <span className="flex items-center gap-1">

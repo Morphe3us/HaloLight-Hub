@@ -188,3 +188,25 @@ See architecture document for full 30-module scope.
 
 - See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details
 - See `.local/skills/clerk-auth/references/setup-and-customization.md` for Clerk wiring details
+
+## Maintenance log (notes for the next AI)
+
+### 2026-07-07 — Bug-hunt session (Claude Code, local)
+
+Fixed three classes of bugs found by audit. All changes typecheck and pass tests (`pnpm run typecheck`, `pnpm run test` — 35 api-server + 4 frontend tests green). Nothing committed; changes are in the working tree alongside earlier uncommitted work.
+
+1. **Document numbers were random, now sequential per user.**
+   Contract/quote/invoice numbers were `PREFIX-YEAR-{random 1000–9999}` with no unique constraint — birthday-paradox duplicate risk after ~100 documents (~50% collision at 112), unacceptable for invoices (legal requirement in FR: sequential unique numbering).
+   - New: `artifacts/api-server/src/lib/documentNumbers.ts` (pure `buildNextDocumentNumber`, unit-tested) and `documentNumberQueries.ts` (`nextContractNumber` / `nextQuoteNumber` / `nextInvoiceNumber`, DB-backed: max existing suffix for the user+year, +1, padded to 4 digits).
+   - Wired into `routes/contracts.ts`, `routes/quotes.ts`, `routes/invoices.ts` (the old `generate*Number()` functions are gone). Prefixes unchanged: `CON-`, `Q-`, `INV-`. Legacy random numbers are treated as part of the sequence (next = max+1), so existing data needs no migration.
+   - Known limitation: two concurrent creates by the same user could still collide (no unique constraint / no serialized allocation). If this matters later: add a unique index on `(user_id, contract_number)` etc. and retry on conflict.
+
+2. **User-supplied `language`/dates could crash contract generation (HTTP 500).**
+   - `fillContractVariables` in `routes/contracts.ts` passed `data.language` straight to `toLocaleDateString`/`toLocaleString`; any tag outside the 8 supported languages threw a `RangeError`. Now whitelisted against the `INCLUDED` map keys, fallback `en`. `fmtDate` also guards against Invalid Date.
+   - Unparseable date strings (`eventDate`, `startDate`, `endDate`, `validUntil`, `dueDate`) previously became `Invalid Date` — either a DB serialization crash or the literal text "Invalid Date" inside a legal document. New helper `artifacts/api-server/src/lib/dateInput.ts` (`parseOptionalDateInput`, unit-tested) returns 400 with a field-specific message. Wired into POST+PUT of contracts, quotes, invoices.
+
+3. **Frontend/server pricing mismatch.** `computePricing` in `artifacts/halolight-os/src/lib/contractValidation.ts` allowed a negative subtotal in the live preview while the server clamps to 0 (`Math.max(0, …)` in both `fillContractVariables` and `quotePricing.ts`). Preview now clamps too.
+
+Audit notes (checked, no action needed): the 8 i18n locale files are fully in sync (1865 keys each); ownership checks (`validateOwnedLinks`) are consistently applied on create/update/status routes; division-by-zero spots in `revenue.ts`/`analytics.ts` are guarded; upload security, CORS policy, and academy access have test coverage.
+
+Dev environment gotcha (macOS local): `pnpm` is only available through corepack and the root scripts re-invoke bare `pnpm`. Run `corepack enable --install-directory /tmp/clbin pnpm && export PATH=/tmp/clbin:$PATH` first, then `pnpm run …` works.

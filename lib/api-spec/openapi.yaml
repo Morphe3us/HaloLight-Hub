@@ -55,6 +55,29 @@ paths:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
 
+  /readyz:
+    get:
+      operationId: readinessCheck
+      tags: [health]
+      summary: Check database readiness within a bounded deadline
+      responses:
+        "200":
+          description: Database available
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+        "503":
+          description: Database unavailable
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [error, code]
+                properties:
+                  error: { type: string }
+                  code: { type: string, enum: [DATABASE_UNAVAILABLE] }
+
   # ─── BunnyStream ──────────────────────────────────────────────────────────
   /admin/bunny/status:
     get:
@@ -68,6 +91,25 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/BunnyStatus"
+
+  /admin/bunny/diagnose:
+    get:
+      operationId: diagnoseBunnyStream
+      tags: [academy]
+      summary: Diagnose BunnyStream library and optional video status
+      parameters:
+        - name: videoId
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: BunnyStream diagnostic information
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BunnyDiagnose"
 
   /admin/bunny/collections:
     get:
@@ -165,6 +207,14 @@ paths:
           schema:
             type: string
         - in: query
+          name: active
+          schema:
+            type: boolean
+        - in: query
+          name: q
+          schema:
+            type: string
+        - in: query
           name: limit
           schema:
             type: integer
@@ -181,6 +231,33 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/UserList"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+    post:
+      operationId: createUser
+      tags: [users]
+      summary: Create a managed user record (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserAdminCreate"
+      responses:
+        "201":
+          description: Created user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          description: Invalid input
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
 
   /users/{id}:
     get:
@@ -200,6 +277,46 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/User"
+        "404":
+          description: Not found
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+    patch:
+      operationId: updateUser
+      tags: [users]
+      summary: Update a managed user record (admin only)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: lang
+          schema:
+            type: string
+            default: en
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserAdminUpdate"
+      responses:
+        "200":
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          description: Invalid input
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
         "404":
           description: Not found
 
@@ -360,6 +477,12 @@ paths:
       operationId: getDashboardSummary
       tags: [dashboard]
       summary: Get dashboard KPI summary for current user
+      parameters:
+        - in: query
+          name: lang
+          schema:
+            type: string
+            default: en
       responses:
         "200":
           description: Dashboard summary
@@ -429,6 +552,7 @@ paths:
       operationId: getLesson
       tags: [academy]
       summary: Get lesson detail with resources and quiz
+      description: Authenticated response is private and not stored by HTTP caches. Bunny embed URLs expire and must be refreshed by requesting lesson detail again.
       parameters:
         - in: path
           name: id
@@ -461,6 +585,11 @@ paths:
           required: true
           schema:
             type: string
+        - in: query
+          name: lang
+          schema:
+            type: string
+            default: en
       requestBody:
         required: true
         content:
@@ -486,6 +615,11 @@ paths:
           required: true
           schema:
             type: string
+        - in: query
+          name: lang
+          schema:
+            type: string
+            default: en
       requestBody:
         required: true
         content:
@@ -505,6 +639,12 @@ paths:
       operationId: getAcademyProgressSummary
       tags: [academy]
       summary: Get academy progress summary for current user
+      parameters:
+        - in: query
+          name: lang
+          schema:
+            type: string
+            default: en
       responses:
         "200":
           description: Academy progress summary
@@ -950,6 +1090,29 @@ paths:
               schema:
                 $ref: "#/components/schemas/QuoteDetail"
 
+  /quotes/{id}/send:
+    post:
+      operationId: sendQuote
+      tags: [quotes]
+      summary: Prepare a client email draft for a quote
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Quote send result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuoteSendResult"
+        "400":
+          description: Quote has no client email
+        "404":
+          description: Not found
+
   # ─── Contracts ───────────────────────────────────────────────────────────
   /contracts:
     get:
@@ -1032,7 +1195,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ContractInput"
+              $ref: "#/components/schemas/ContractUpdate"
       responses:
         "200":
           description: Updated contract
@@ -2195,6 +2358,19 @@ paths:
                 items:
                   $ref: "#/components/schemas/ConsumableStockItem"
 
+  /consumables/forecast:
+    get:
+      operationId: getConsumableForecast
+      tags: [consumables]
+      summary: Forecast paper stock needs from upcoming events
+      responses:
+        "200":
+          description: Consumable forecast
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConsumableForecast"
+
   /consumables/orders:
     get:
       operationId: getConsumableOrders
@@ -2219,9 +2395,10 @@ paths:
           application/json:
             schema:
               type: object
+              required: [catalogItemId, quantity]
               properties:
                 catalogItemId: { type: string }
-                quantity: { type: integer }
+                quantity: { type: integer, minimum: 1 }
                 notes: { type: string }
       responses:
         "201":
@@ -2441,6 +2618,57 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/UploadItem"
+
+  /admin/uploads/file:
+    post:
+      operationId: uploadFile
+      tags: [uploads]
+      summary: Upload file bytes and return a stored file URL
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UploadFileInput"
+      responses:
+        "201":
+          description: Uploaded file
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UploadFileResult"
+        "400":
+          description: Invalid file payload
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+
+  /files/{key}:
+    get:
+      operationId: downloadFile
+      tags: [uploads]
+      summary: Download an authenticated file
+      parameters:
+        - name: key
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: File bytes
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
 
   /admin/uploads/{id}:
     put:
@@ -3107,7 +3335,6 @@ paths:
               schema:
                 $ref: "#/components/schemas/AutomationRunResult"
 
-
   /admin/backup/status:
     get:
       tags: [admin]
@@ -3180,7 +3407,18 @@ paths:
           required: true
           schema:
             type: string
-            enum: [leads, quotes, contracts, invoices, events, support-tickets, equipment, consumables, clients]
+            enum:
+              [
+                leads,
+                quotes,
+                contracts,
+                invoices,
+                events,
+                support-tickets,
+                equipment,
+                consumables,
+                clients,
+              ]
         - in: query
           name: sep
           schema: { type: string, enum: [comma, semicolon] }
@@ -3230,7 +3468,8 @@ components:
     # ─── Users ─────────────────────────────────────────────────────────────
     User:
       type: object
-      required: [id, clerkId, email, role, language, currency, createdAt]
+      required:
+        [id, clerkId, email, role, isActive, language, currency, createdAt]
       properties:
         id:
           type: string
@@ -3246,6 +3485,8 @@ components:
           type: ["string", "null"]
         companyName:
           type: ["string", "null"]
+        companyAddress:
+          type: ["string", "null"]
         phone:
           type: ["string", "null"]
         country:
@@ -3255,6 +3496,8 @@ components:
         role:
           type: string
           enum: [admin, client, coach, sales_rep]
+        isActive:
+          type: boolean
         language:
           type: string
           enum: [en, fr, es, de, it, pl, pt, nl]
@@ -3279,9 +3522,17 @@ components:
           type: ["string", "null"]
         mainMarket:
           type: ["string", "null"]
+        taxId:
+          type: ["string", "null"]
         photobooths:
           type: ["integer", "null"]
         businessGoal:
+          type: ["string", "null"]
+        providerSignature:
+          type: ["string", "null"]
+        providerSignerTitle:
+          type: ["string", "null"]
+        logoUrl:
           type: ["string", "null"]
         createdAt:
           type: string
@@ -3300,6 +3551,8 @@ components:
         fullName:
           type: string
         companyName:
+          type: string
+        companyAddress:
           type: string
         phone:
           type: string
@@ -3330,9 +3583,70 @@ components:
           type: string
         mainMarket:
           type: string
+        taxId:
+          type: string
         photobooths:
           type: integer
         businessGoal:
+          type: string
+        providerSignature:
+          type: ["string", "null"]
+        providerSignerTitle:
+          type: ["string", "null"]
+        logoUrl:
+          type: ["string", "null"]
+
+    UserAdminCreate:
+      type: object
+      required: [email, fullName, role]
+      properties:
+        email:
+          type: string
+        fullName:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        companyName:
+          type: string
+        phone:
+          type: string
+        role:
+          type: string
+          enum: [admin, client, coach, sales_rep]
+        isActive:
+          type: boolean
+        language:
+          type: string
+          enum: [en, fr, es, de, it, pl, pt, nl]
+        currency:
+          type: string
+
+    UserAdminUpdate:
+      type: object
+      properties:
+        email:
+          type: string
+        fullName:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        companyName:
+          type: string
+        phone:
+          type: string
+        role:
+          type: string
+          enum: [admin, client, coach, sales_rep]
+        isActive:
+          type: boolean
+        language:
+          type: string
+          enum: [en, fr, es, de, it, pl, pt, nl]
+        currency:
           type: string
 
     UserList:
@@ -3426,7 +3740,18 @@ components:
     # ─── Onboarding ─────────────────────────────────────────────────────────
     OnboardingStep:
       type: object
-      required: [id, key, title, description, order, isRequired, category, pointsReward, completedAt]
+      required:
+        [
+          id,
+          key,
+          title,
+          description,
+          order,
+          isRequired,
+          category,
+          pointsReward,
+          completedAt,
+        ]
       properties:
         id:
           type: string
@@ -3462,7 +3787,14 @@ components:
 
     OnboardingSummary:
       type: object
-      required: [totalSteps, completedSteps, requiredSteps, completedRequired, percentComplete]
+      required:
+        [
+          totalSteps,
+          completedSteps,
+          requiredSteps,
+          completedRequired,
+          percentComplete,
+        ]
       properties:
         totalSteps:
           type: integer
@@ -3478,7 +3810,24 @@ components:
     # ─── Dashboard ───────────────────────────────────────────────────────────
     DashboardSummary:
       type: object
-      required: [unreadNotifications, onboardingPercent, academyCoursesCompleted, academyLessonsCompleted, academyTotalLessons, upcomingEventsCount, totalEventsCount, nextLesson]
+      required:
+        [
+          unreadNotifications,
+          onboardingPercent,
+          academyCoursesCompleted,
+          academyLessonsCompleted,
+          academyTotalLessons,
+          upcomingEventsCount,
+          totalEventsCount,
+          equipmentAlerts,
+          lowStockCount,
+          openTicketsCount,
+          leadsCount,
+          quotesCount,
+          contractsCount,
+          invoicesCount,
+          nextLesson,
+        ]
       properties:
         unreadNotifications:
           type: integer
@@ -3494,13 +3843,41 @@ components:
           type: integer
         totalEventsCount:
           type: integer
+        equipmentAlerts:
+          type: integer
+        lowStockCount:
+          type: integer
+        openTicketsCount:
+          type: integer
+        leadsCount:
+          type: integer
+        quotesCount:
+          type: integer
+        contractsCount:
+          type: integer
+        invoicesCount:
+          type: integer
         nextLesson:
           $ref: "#/components/schemas/NextLesson"
 
     # ─── Academy ─────────────────────────────────────────────────────────────
     Course:
       type: object
-      required: [id, slug, title, description, category, level, order, thumbnailUrl, moduleCount, lessonCount, totalDurationSeconds, completedLessons]
+      required:
+        [
+          id,
+          slug,
+          title,
+          description,
+          category,
+          level,
+          order,
+          thumbnailUrl,
+          moduleCount,
+          lessonCount,
+          totalDurationSeconds,
+          completedLessons,
+        ]
       properties:
         id:
           type: string
@@ -3556,7 +3933,8 @@ components:
 
     LessonSummary:
       type: object
-      required: [id, moduleId, title, durationSeconds, order, isPublished, completedAt]
+      required:
+        [id, moduleId, title, durationSeconds, order, isPublished, completedAt]
       properties:
         id:
           type: string
@@ -3576,7 +3954,7 @@ components:
         videoAssets:
           type: object
           additionalProperties:
-            $ref: "#/components/schemas/VideoAsset"
+            $ref: "#/components/schemas/ThumbnailVideoAsset"
           nullable: true
         completedAt:
           type: ["string", "null"]
@@ -3586,7 +3964,21 @@ components:
 
     CourseDetail:
       type: object
-      required: [id, slug, title, description, category, level, order, thumbnailUrl, completedLessons, lessonCount, totalDurationSeconds, modules]
+      required:
+        [
+          id,
+          slug,
+          title,
+          description,
+          category,
+          level,
+          order,
+          thumbnailUrl,
+          completedLessons,
+          lessonCount,
+          totalDurationSeconds,
+          modules,
+        ]
       properties:
         id:
           type: string
@@ -3633,7 +4025,7 @@ components:
 
     QuizQuestion:
       type: object
-      required: [id, question, options, correctOption]
+      required: [id, question, options]
       properties:
         id:
           type: string
@@ -3643,8 +4035,6 @@ components:
           type: array
           items:
             type: string
-        correctOption:
-          type: integer
 
     VideoAsset:
       type: object
@@ -3654,9 +4044,26 @@ components:
         previewUrl: { type: string, nullable: true }
         videoId: { type: string, nullable: true }
 
+    ThumbnailVideoAsset:
+      type: object
+      properties:
+        thumbnailUrl: { type: string }
+
     LessonDetail:
       type: object
-      required: [id, moduleId, title, videoUrl, durationSeconds, order, resources, quizQuestions, completedAt, watchPercent]
+      required:
+        [
+          id,
+          moduleId,
+          title,
+          videoUrl,
+          durationSeconds,
+          order,
+          resources,
+          quizQuestions,
+          completedAt,
+          watchPercent,
+        ]
       properties:
         id:
           type: string
@@ -3715,6 +4122,9 @@ components:
       properties:
         watchPercent:
           type: integer
+          minimum: 0
+          maximum: 100
+          multipleOf: 1
         completed:
           type: boolean
 
@@ -3724,8 +4134,11 @@ components:
       properties:
         answers:
           type: array
+          maxItems: 200
           items:
             type: integer
+            minimum: -1
+            multipleOf: 1
 
     QuizResult:
       type: object
@@ -3754,7 +4167,16 @@ components:
 
     AcademyProgressSummary:
       type: object
-      required: [totalCourses, completedCourses, totalLessons, completedLessons, totalDurationSeconds, watchedDurationSeconds, percentComplete]
+      required:
+        [
+          totalCourses,
+          completedCourses,
+          totalLessons,
+          completedLessons,
+          totalDurationSeconds,
+          watchedDurationSeconds,
+          percentComplete,
+        ]
       properties:
         totalCourses:
           type: integer
@@ -3773,7 +4195,17 @@ components:
 
     NextLesson:
       type: object
-      required: [lessonId, lessonTitle, courseId, courseTitle, courseThumbnailUrl, moduleTitle, durationSeconds, watchPercent]
+      required:
+        [
+          lessonId,
+          lessonTitle,
+          courseId,
+          courseTitle,
+          courseThumbnailUrl,
+          moduleTitle,
+          durationSeconds,
+          watchPercent,
+        ]
       properties:
         lessonId:
           type: string
@@ -3889,6 +4321,14 @@ components:
           type: string
         notes:
           type: string
+        leadId:
+          type: ["string", "null"]
+        quoteId:
+          type: ["string", "null"]
+        contractId:
+          type: ["string", "null"]
+        invoiceId:
+          type: ["string", "null"]
         clientName:
           type: string
         clientEmail:
@@ -3941,6 +4381,12 @@ components:
           enum: [upcoming, active, completed, cancelled]
         notes:
           type: string
+        leadId:
+          type: ["string", "null"]
+        quoteId:
+          type: ["string", "null"]
+        contractId:
+          type: ["string", "null"]
         clientName:
           type: string
         clientEmail:
@@ -3974,12 +4420,23 @@ components:
         paymentStatus:
           type: string
         invoiceId:
-          type: string
+          type: ["string", "null"]
 
     # ─── Leads / CRM ─────────────────────────────────────────────────────────
     Lead:
       type: object
-      required: [id, userId, companyName, contactName, source, status, value, createdAt, updatedAt]
+      required:
+        [
+          id,
+          userId,
+          companyName,
+          contactName,
+          source,
+          status,
+          value,
+          createdAt,
+          updatedAt,
+        ]
       properties:
         id:
           type: string
@@ -3995,7 +4452,16 @@ components:
           type: ["string", "null"]
         source:
           type: string
-          enum: [website, referral, social_media, trade_show, cold_outreach, inbound_call, other]
+          enum:
+            [
+              website,
+              referral,
+              social_media,
+              trade_show,
+              cold_outreach,
+              inbound_call,
+              other,
+            ]
         status:
           type: string
           enum: [new, contacted, qualified, proposal, negotiation, won, lost]
@@ -4031,7 +4497,17 @@ components:
           type: string
         type:
           type: string
-          enum: [note, call, email, meeting, status_change, quote_sent, contract_sent, invoice_sent]
+          enum:
+            [
+              note,
+              call,
+              email,
+              meeting,
+              status_change,
+              quote_sent,
+              contract_sent,
+              invoice_sent,
+            ]
         title:
           type: string
         description:
@@ -4088,7 +4564,16 @@ components:
           type: string
         source:
           type: string
-          enum: [website, referral, social_media, trade_show, cold_outreach, inbound_call, other]
+          enum:
+            [
+              website,
+              referral,
+              social_media,
+              trade_show,
+              cold_outreach,
+              inbound_call,
+              other,
+            ]
         status:
           type: string
           enum: [new, contacted, qualified, proposal, negotiation, won, lost]
@@ -4110,7 +4595,17 @@ components:
       properties:
         type:
           type: string
-          enum: [note, call, email, meeting, status_change, quote_sent, contract_sent, invoice_sent]
+          enum:
+            [
+              note,
+              call,
+              email,
+              meeting,
+              status_change,
+              quote_sent,
+              contract_sent,
+              invoice_sent,
+            ]
         title:
           type: string
         description:
@@ -4151,7 +4646,21 @@ components:
 
     Quote:
       type: object
-      required: [id, userId, quoteNumber, title, clientName, status, subtotal, taxRate, taxAmount, total, createdAt, updatedAt]
+      required:
+        [
+          id,
+          userId,
+          quoteNumber,
+          title,
+          clientName,
+          status,
+          subtotal,
+          taxRate,
+          taxAmount,
+          total,
+          createdAt,
+          updatedAt,
+        ]
       properties:
         id:
           type: string
@@ -4261,6 +4770,19 @@ components:
               type: array
               items:
                 $ref: "#/components/schemas/QuoteItem"
+
+    QuoteSendResult:
+      type: object
+      required: [quote, mailtoUrl]
+      properties:
+        quote:
+          $ref: "#/components/schemas/QuoteDetail"
+        mailtoUrl:
+          type: string
+        clientEmail:
+          type: string
+        subject:
+          type: string
 
     QuoteList:
       type: object
@@ -4388,7 +4910,19 @@ components:
 
     Contract:
       type: object
-      required: [id, userId, contractNumber, title, clientName, status, content, value, createdAt, updatedAt]
+      required:
+        [
+          id,
+          userId,
+          contractNumber,
+          title,
+          clientName,
+          status,
+          content,
+          value,
+          createdAt,
+          updatedAt,
+        ]
       properties:
         id:
           type: string
@@ -4417,6 +4951,64 @@ components:
         eventDate:
           type: ["string", "null"]
           format: date-time
+        eventLocation:
+          type: ["string", "null"]
+        eventStartTime:
+          type: ["string", "null"]
+        eventEndTime:
+          type: ["string", "null"]
+        setupTime:
+          type: ["string", "null"]
+        pickupTime:
+          type: ["string", "null"]
+        packageName:
+          type: ["string", "null"]
+        rentalDuration:
+          type: ["string", "null"]
+        includedPrints:
+          type: ["string", "null"]
+        rentalPrice:
+          type: ["string", "null"]
+        optionsPrice:
+          type: ["string", "null"]
+        deliveryFees:
+          type: ["string", "null"]
+        discountAmount:
+          type: ["string", "null"]
+        taxRate:
+          type: ["string", "null"]
+        depositAmount:
+          type: ["string", "null"]
+        depositMethod:
+          type: ["string", "null"]
+        depositConditions:
+          type: ["string", "null"]
+        depositReturn:
+          type: ["string", "null"]
+        paymentTerms:
+          type: ["string", "null"]
+        cancellationTerms:
+          type: ["string", "null"]
+        signaturePlace:
+          type: ["string", "null"]
+        equipmentIds:
+          type: ["array", "null"]
+          items:
+            type: string
+        equipmentDescription:
+          type: ["string", "null"]
+        digitalGallery:
+          type: ["boolean", "null"]
+        customTemplate:
+          type: ["boolean", "null"]
+        deliveryIncluded:
+          type: ["boolean", "null"]
+        setupIncluded:
+          type: ["boolean", "null"]
+        operatorIncluded:
+          type: ["boolean", "null"]
+        optionsList:
+          type: ["string", "null"]
         currency:
           type: ["string", "null"]
         language:
@@ -4493,6 +5085,10 @@ components:
           type: string
         eventEndTime:
           type: string
+        setupTime:
+          type: string
+        pickupTime:
+          type: string
         packageName:
           type: string
         rentalDuration:
@@ -4506,6 +5102,22 @@ components:
         deliveryFees:
           type: string
         discountAmount:
+          type: string
+        taxRate:
+          type: string
+        depositAmount:
+          type: string
+        depositMethod:
+          type: string
+        depositConditions:
+          type: string
+        depositReturn:
+          type: string
+        paymentTerms:
+          type: string
+        cancellationTerms:
+          type: string
+        signaturePlace:
           type: string
         equipmentIds:
           type: array
@@ -4544,6 +5156,30 @@ components:
         notes:
           type: string
 
+    ContractUpdate:
+      type: object
+      properties:
+        leadId:
+          type: ["string", "null"]
+        quoteId:
+          type: ["string", "null"]
+        title:
+          type: string
+        content:
+          type: string
+        startDate:
+          type: string
+          format: date-time
+        endDate:
+          type: string
+          format: date-time
+        notes:
+          type: string
+        equipmentIds:
+          type: array
+          items:
+            type: string
+
     # ─── Invoices ────────────────────────────────────────────────────────────
     InvoiceItem:
       type: object
@@ -4579,7 +5215,21 @@ components:
 
     Invoice:
       type: object
-      required: [id, userId, invoiceNumber, title, clientName, status, subtotal, taxRate, taxAmount, total, createdAt, updatedAt]
+      required:
+        [
+          id,
+          userId,
+          invoiceNumber,
+          title,
+          clientName,
+          status,
+          subtotal,
+          taxRate,
+          taxAmount,
+          total,
+          createdAt,
+          updatedAt,
+        ]
       properties:
         id:
           type: string
@@ -5633,6 +6283,40 @@ components:
         daysRemaining: { type: integer, nullable: true }
         reorderRecommended: { type: boolean }
 
+    ConsumableForecastEvent:
+      type: object
+      properties:
+        id: { type: string }
+        title: { type: string }
+        eventDate: { type: string }
+        includedPrints: { type: string, nullable: true }
+        clientName: { type: string, nullable: true }
+        location: { type: string, nullable: true }
+        printsCount: { type: integer }
+
+    ConsumableForecastStock:
+      type: object
+      properties:
+        id: { type: string }
+        catalogItemId: { type: string }
+        currentQuantity: { type: integer }
+        name: { type: string }
+        category: { type: string }
+
+    ConsumableForecast:
+      type: object
+      properties:
+        eventsCount: { type: integer }
+        totalRequired: { type: integer }
+        totalAvailable: { type: integer }
+        shortage: { type: integer }
+        events:
+          type: array
+          items: { $ref: "#/components/schemas/ConsumableForecastEvent" }
+        paperStock:
+          type: array
+          items: { $ref: "#/components/schemas/ConsumableForecastStock" }
+
     AdminConsumableItem:
       allOf:
         - $ref: "#/components/schemas/ConsumableStockItem"
@@ -5693,6 +6377,8 @@ components:
       properties:
         totalRevenue: { type: integer }
         pipelineRevenue: { type: integer }
+        outstandingRevenue: { type: integer }
+        overdueRevenue: { type: integer }
         paidInvoices: { type: integer }
         avgBookingValue: { type: integer }
         quoteAcceptanceRate: { type: integer }
@@ -5892,7 +6578,17 @@ components:
 
     AutomationRule:
       type: object
-      required: [id, name, triggerType, actionType, isEnabled, runCount, matchCount, createdAt]
+      required:
+        [
+          id,
+          name,
+          triggerType,
+          actionType,
+          isEnabled,
+          runCount,
+          matchCount,
+          createdAt,
+        ]
       properties:
         id: { type: string }
         name: { type: string }
@@ -5982,7 +6678,17 @@ components:
 
     AutomationLog:
       type: object
-      required: [id, executionId, ruleId, ruleName, triggerType, actionType, status, createdAt]
+      required:
+        [
+          id,
+          executionId,
+          ruleId,
+          ruleName,
+          triggerType,
+          actionType,
+          status,
+          createdAt,
+        ]
       properties:
         id: { type: string }
         executionId: { type: string }
@@ -6018,7 +6724,23 @@ components:
     # ─── Admin Academy ────────────────────────────────────────────────────────────
     AdminCourse:
       type: object
-      required: [id, slug, title, description, category, level, thumbnailUrl, isPublished, isFeatured, order, totalDurationSeconds, moduleCount, lessonCount, createdAt]
+      required:
+        [
+          id,
+          slug,
+          title,
+          description,
+          category,
+          level,
+          thumbnailUrl,
+          isPublished,
+          isFeatured,
+          order,
+          totalDurationSeconds,
+          moduleCount,
+          lessonCount,
+          createdAt,
+        ]
       properties:
         id: { type: string }
         slug: { type: string }
@@ -6050,7 +6772,24 @@ components:
 
     AdminCourseDetail:
       type: object
-      required: [id, slug, title, description, category, level, thumbnailUrl, isPublished, isFeatured, order, totalDurationSeconds, moduleCount, lessonCount, createdAt, modules]
+      required:
+        [
+          id,
+          slug,
+          title,
+          description,
+          category,
+          level,
+          thumbnailUrl,
+          isPublished,
+          isFeatured,
+          order,
+          totalDurationSeconds,
+          moduleCount,
+          lessonCount,
+          createdAt,
+          modules,
+        ]
       properties:
         id: { type: string }
         slug: { type: string }
@@ -6131,14 +6870,25 @@ components:
 
     AdminLesson:
       type: object
-      required: [id, moduleId, title, videoUrl, durationSeconds, order, isPublished]
+      required:
+        [id, moduleId, title, videoUrl, durationSeconds, order, isPublished]
       properties:
         id: { type: string }
         moduleId: { type: string }
         title: { type: object, additionalProperties: { type: string } }
-        description: { type: object, additionalProperties: { type: string }, nullable: true }
+        description:
+          {
+            type: object,
+            additionalProperties: { type: string },
+            nullable: true,
+          }
         videoUrl: { type: string }
-        videoUrls: { type: object, additionalProperties: { type: string }, nullable: true }
+        videoUrls:
+          {
+            type: object,
+            additionalProperties: { type: string },
+            nullable: true,
+          }
         thumbnailUrl: { type: string, nullable: true }
         videoAssets:
           type: object
@@ -6156,9 +6906,19 @@ components:
       properties:
         moduleId: { type: string }
         title: { type: object, additionalProperties: { type: string } }
-        description: { type: object, additionalProperties: { type: string }, nullable: true }
+        description:
+          {
+            type: object,
+            additionalProperties: { type: string },
+            nullable: true,
+          }
         videoUrl: { type: string, nullable: true }
-        videoUrls: { type: object, additionalProperties: { type: string }, nullable: true }
+        videoUrls:
+          {
+            type: object,
+            additionalProperties: { type: string },
+            nullable: true,
+          }
         thumbnailUrl: { type: string, nullable: true }
         videoAssets:
           type: object
@@ -6173,9 +6933,19 @@ components:
       type: object
       properties:
         title: { type: object, additionalProperties: { type: string } }
-        description: { type: object, additionalProperties: { type: string }, nullable: true }
+        description:
+          {
+            type: object,
+            additionalProperties: { type: string },
+            nullable: true,
+          }
         videoUrl: { type: string, nullable: true }
-        videoUrls: { type: object, additionalProperties: { type: string }, nullable: true }
+        videoUrls:
+          {
+            type: object,
+            additionalProperties: { type: string },
+            nullable: true,
+          }
         thumbnailUrl: { type: string, nullable: true }
         videoAssets:
           type: object
@@ -6194,7 +6964,11 @@ components:
       properties:
         id: { type: string }
         title: { type: string }
-        category: { type: string, enum: [pdf, marketing, template, contract, checklist, guide] }
+        category:
+          {
+            type: string,
+            enum: [pdf, marketing, template, contract, checklist, guide],
+          }
         language: { type: string }
         fileUrl: { type: string }
         description: { type: string, nullable: true }
@@ -6217,7 +6991,11 @@ components:
       required: [title, category, language, fileUrl]
       properties:
         title: { type: string }
-        category: { type: string, enum: [pdf, marketing, template, contract, checklist, guide] }
+        category:
+          {
+            type: string,
+            enum: [pdf, marketing, template, contract, checklist, guide],
+          }
         language: { type: string }
         fileUrl: { type: string }
         description: { type: string, nullable: true }
@@ -6227,7 +7005,11 @@ components:
       type: object
       properties:
         title: { type: string }
-        category: { type: string, enum: [pdf, marketing, template, contract, checklist, guide] }
+        category:
+          {
+            type: string,
+            enum: [pdf, marketing, template, contract, checklist, guide],
+          }
         language: { type: string }
         fileUrl: { type: string }
         description: { type: string, nullable: true }
@@ -6239,7 +7021,11 @@ components:
       required: [id, type, title, subtitle]
       properties:
         id: { type: string }
-        type: { type: string, enum: [user, course, lesson, resource, article, ticket, equipment] }
+        type:
+          {
+            type: string,
+            enum: [user, course, lesson, resource, article, ticket, equipment],
+          }
         title: { type: string }
         subtitle: { type: string }
         href: { type: string }
@@ -6257,13 +7043,15 @@ components:
     # ─── Translations ─────────────────────────────────────────────────────────────
     TranslationRecord:
       type: object
-      required: [id, contentType, contentId, language, status, createdAt, updatedAt]
+      required:
+        [id, contentType, contentId, language, status, createdAt, updatedAt]
       properties:
         id: { type: string }
         contentType: { type: string }
         contentId: { type: string }
         language: { type: string }
-        status: { type: string, enum: [draft, needs_review, approved, published] }
+        status:
+          { type: string, enum: [draft, needs_review, approved, published] }
         translatedTitle: { type: string, nullable: true }
         translatedBody: { type: string, nullable: true }
         reviewedBy: { type: string, nullable: true }
@@ -6273,7 +7061,8 @@ components:
 
     TranslationItem:
       type: object
-      required: [contentId, contentType, sourceTitle, sourceLanguage, translations]
+      required:
+        [contentId, contentType, sourceTitle, sourceLanguage, translations]
       properties:
         contentId: { type: string }
         contentType: { type: string }
@@ -6303,24 +7092,44 @@ components:
     UpdateTranslationInput:
       type: object
       properties:
-        status: { type: string, enum: [draft, needs_review, approved, published] }
+        status:
+          { type: string, enum: [draft, needs_review, approved, published] }
         translatedTitle: { type: string }
         translatedBody: { type: string }
 
     # ─── Uploads ─────────────────────────────────────────────────────────────────
     UploadItem:
       type: object
-      required: [id, title, language, category, fileUrl, visibility, status, createdAt]
+      required:
+        [id, title, language, category, fileUrl, visibility, status, createdAt]
       properties:
         id: { type: string }
         title: { type: string }
         language: { type: string }
-        category: { type: string, enum: [academy, knowledge_base, resources, marketing, contracts, product_manuals, ai_knowledge_base, support_documentation] }
+        category:
+          {
+            type: string,
+            enum:
+              [
+                academy,
+                knowledge_base,
+                resources,
+                marketing,
+                contracts,
+                product_manuals,
+                ai_knowledge_base,
+                support_documentation,
+              ],
+          }
         fileUrl: { type: string }
         fileName: { type: string, nullable: true }
         mimeType: { type: string, nullable: true }
         fileSize: { type: integer, nullable: true }
-        visibility: { type: string, enum: [admin_only, client_visible, ai_only, public_resource] }
+        visibility:
+          {
+            type: string,
+            enum: [admin_only, client_visible, ai_only, public_resource],
+          }
         status: { type: string, enum: [pending, processing, ready, failed] }
         relatedCourseId: { type: string, nullable: true }
         relatedLessonId: { type: string, nullable: true }
@@ -6340,18 +7149,56 @@ components:
             $ref: "#/components/schemas/UploadItem"
         total: { type: integer }
 
+    UploadFileInput:
+      type: object
+      required: [fileName, dataBase64]
+      properties:
+        fileName: { type: string }
+        mimeType: { type: string }
+        dataBase64: { type: string }
+        folder: { type: string }
+
+    UploadFileResult:
+      type: object
+      required: [url, key, fileName, fileSize, provider]
+      properties:
+        url: { type: string }
+        key: { type: string }
+        fileName: { type: string }
+        mimeType: { type: string, nullable: true }
+        fileSize: { type: integer }
+        provider: { type: string }
+
     CreateUploadInput:
       type: object
       required: [title, category, fileUrl]
       properties:
         title: { type: string }
         language: { type: string }
-        category: { type: string, enum: [academy, knowledge_base, resources, marketing, contracts, product_manuals, ai_knowledge_base, support_documentation] }
+        category:
+          {
+            type: string,
+            enum:
+              [
+                academy,
+                knowledge_base,
+                resources,
+                marketing,
+                contracts,
+                product_manuals,
+                ai_knowledge_base,
+                support_documentation,
+              ],
+          }
         fileUrl: { type: string }
         fileName: { type: string }
         mimeType: { type: string }
         fileSize: { type: integer }
-        visibility: { type: string, enum: [admin_only, client_visible, ai_only, public_resource] }
+        visibility:
+          {
+            type: string,
+            enum: [admin_only, client_visible, ai_only, public_resource],
+          }
         relatedCourseId: { type: string }
         relatedLessonId: { type: string }
         relatedProduct: { type: string }
@@ -6362,12 +7209,30 @@ components:
       properties:
         title: { type: string }
         language: { type: string }
-        category: { type: string, enum: [academy, knowledge_base, resources, marketing, contracts, product_manuals, ai_knowledge_base, support_documentation] }
+        category:
+          {
+            type: string,
+            enum:
+              [
+                academy,
+                knowledge_base,
+                resources,
+                marketing,
+                contracts,
+                product_manuals,
+                ai_knowledge_base,
+                support_documentation,
+              ],
+          }
         fileUrl: { type: string }
         fileName: { type: string }
         mimeType: { type: string }
         fileSize: { type: integer }
-        visibility: { type: string, enum: [admin_only, client_visible, ai_only, public_resource] }
+        visibility:
+          {
+            type: string,
+            enum: [admin_only, client_visible, ai_only, public_resource],
+          }
         status: { type: string, enum: [pending, processing, ready, failed] }
         relatedCourseId: { type: string }
         relatedLessonId: { type: string }
@@ -6377,12 +7242,41 @@ components:
     # ─── AI Knowledge Base ────────────────────────────────────────────────────────
     AIKnowledgeDoc:
       type: object
-      required: [id, title, language, category, content, tags, aiActive, status, createdAt, updatedAt]
+      required:
+        [
+          id,
+          title,
+          language,
+          category,
+          content,
+          tags,
+          aiActive,
+          status,
+          createdAt,
+          updatedAt,
+        ]
       properties:
         id: { type: string }
         title: { type: string }
         language: { type: string }
-        category: { type: string, enum: [faq, troubleshooting, printer_manual, camera_manual, software_guide, business_guide, pricing_guide, event_guide, product_guide, academy_lesson, support_article] }
+        category:
+          {
+            type: string,
+            enum:
+              [
+                faq,
+                troubleshooting,
+                printer_manual,
+                camera_manual,
+                software_guide,
+                business_guide,
+                pricing_guide,
+                event_guide,
+                product_guide,
+                academy_lesson,
+                support_article,
+              ],
+          }
         productModel: { type: string, nullable: true }
         sourceUrl: { type: string, nullable: true }
         content: { type: string }
@@ -6406,7 +7300,21 @@ components:
 
     AIKnowledgeDocDetail:
       type: object
-      required: [id, title, language, category, content, tags, aiActive, status, createdAt, updatedAt, chunks, tagList]
+      required:
+        [
+          id,
+          title,
+          language,
+          category,
+          content,
+          tags,
+          aiActive,
+          status,
+          createdAt,
+          updatedAt,
+          chunks,
+          tagList,
+        ]
       properties:
         id: { type: string }
         title: { type: string }
@@ -6445,7 +7353,24 @@ components:
       properties:
         title: { type: string }
         language: { type: string }
-        category: { type: string, enum: [faq, troubleshooting, printer_manual, camera_manual, software_guide, business_guide, pricing_guide, event_guide, product_guide, academy_lesson, support_article] }
+        category:
+          {
+            type: string,
+            enum:
+              [
+                faq,
+                troubleshooting,
+                printer_manual,
+                camera_manual,
+                software_guide,
+                business_guide,
+                pricing_guide,
+                event_guide,
+                product_guide,
+                academy_lesson,
+                support_article,
+              ],
+          }
         productModel: { type: string }
         sourceUrl: { type: string }
         content: { type: string }
@@ -6458,7 +7383,24 @@ components:
       properties:
         title: { type: string }
         language: { type: string }
-        category: { type: string, enum: [faq, troubleshooting, printer_manual, camera_manual, software_guide, business_guide, pricing_guide, event_guide, product_guide, academy_lesson, support_article] }
+        category:
+          {
+            type: string,
+            enum:
+              [
+                faq,
+                troubleshooting,
+                printer_manual,
+                camera_manual,
+                software_guide,
+                business_guide,
+                pricing_guide,
+                event_guide,
+                product_guide,
+                academy_lesson,
+                support_article,
+              ],
+          }
         productModel: { type: string }
         sourceUrl: { type: string }
         content: { type: string }
@@ -6477,14 +7419,26 @@ components:
         pullZoneHostname: { type: string }
         videoCount: { type: integer }
 
+    BunnyDiagnose:
+      type: object
+      properties:
+        libraryInfo:
+          type: object
+          additionalProperties: true
+        videoInfo:
+          type: object
+          nullable: true
+          additionalProperties: true
+
     BunnyCollection:
       type: object
-      required: [guid, name, videoCount, lang]
+      required: [guid, name, videoCount, lang, langKnown]
       properties:
         guid: { type: string }
         name: { type: string }
         videoCount: { type: integer }
-        lang: { type: string }
+        lang: { type: ["string", "null"] }
+        langKnown: { type: boolean }
 
     BunnyCollectionList:
       type: object
@@ -6497,7 +7451,19 @@ components:
 
     BunnyVideo:
       type: object
-      required: [guid, title, collectionId, durationSeconds, status, statusLabel, isReady, embedUrl, thumbnailUrl, previewUrl]
+      required:
+        [
+          guid,
+          title,
+          collectionId,
+          durationSeconds,
+          status,
+          statusLabel,
+          isReady,
+          embedUrl,
+          thumbnailUrl,
+          previewUrl,
+        ]
       properties:
         guid: { type: string }
         title: { type: string }
@@ -6521,13 +7487,20 @@ components:
           items: { $ref: "#/components/schemas/BunnyVideo" }
         total: { type: integer }
         collectionId: { type: string }
+        totalReported: { type: integer }
+        pagesLoaded: { type: integer }
+        requestedCollectionId: { type: string }
+        detectedLanguage: { type: string }
+        totalVideosReturned: { type: integer }
+        pagesFetched: { type: integer }
 
     BunnyImportItem:
       type: object
-      required: [videoId, lang, embedUrl, thumbnailUrl, durationSeconds, videoTitle]
+      required:
+        [videoId, collectionId, durationSeconds, videoTitle]
       properties:
         videoId: { type: string }
-        lang: { type: string }
+        collectionId: { type: string }
         embedUrl: { type: string }
         thumbnailUrl: { type: string }
         previewUrl: { type: string }
@@ -6567,7 +7540,8 @@ components:
 
     BackupStatus:
       type: object
-      required: [tableCount, estimatedSize, sizeBytes, tables, databaseName, checkedAt]
+      required:
+        [tableCount, estimatedSize, sizeBytes, tables, databaseName, checkedAt]
       properties:
         tableCount: { type: integer }
         estimatedSize: { type: string }
@@ -6581,7 +7555,16 @@ components:
 
     BackupExport:
       type: object
-      required: [message, filename, pgDumpCommand, tarCommand, instructions, automationExample, generatedAt]
+      required:
+        [
+          message,
+          filename,
+          pgDumpCommand,
+          tarCommand,
+          instructions,
+          automationExample,
+          generatedAt,
+        ]
       properties:
         message: { type: string }
         filename: { type: string }
@@ -6604,7 +7587,12 @@ components:
         format: { type: string }
         scope: { type: string }
         fileCount: { type: integer, nullable: true }
-        recordCounts: { type: object, nullable: true, additionalProperties: { type: integer } }
+        recordCounts:
+          {
+            type: object,
+            nullable: true,
+            additionalProperties: { type: integer },
+          }
         createdAt: { type: string, format: date-time }
 
     CustomerSuggestion:

@@ -84,13 +84,14 @@ router.post("/admin/backup/export", requireAuth, async (req: Request, res: Respo
   if (!user) return;
 
   try {
-    const dbUrl = process.env.DATABASE_URL ?? "";
     const timestamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
     const filename = `halolight-backup-${timestamp}.sql`;
 
-    // Build the pg_dump command (safe to display — no secrets exposed beyond DATABASE_URL)
-    const pgDumpCommand = `pg_dump "${dbUrl}" --no-password --format=custom --compress=9 --file="${filename}"`;
-    const tarCommand = `pg_dump "${dbUrl}" | gzip > "${filename}.gz"`;
+    // Return commands that read DATABASE_URL in the execution environment
+    // instead of exposing the secret connection string in the API response.
+    const requireDatabaseUrl = `: "\${DATABASE_URL:?DATABASE_URL is required}"`;
+    const pgDumpCommand = `set -euo pipefail\n${requireDatabaseUrl}\npg_dump "$DATABASE_URL" --no-password --format=custom --compress=9 --file="${filename}"`;
+    const tarCommand = `set -euo pipefail\n${requireDatabaseUrl}\npg_dump "$DATABASE_URL" | gzip > "${filename}.gz"`;
 
     res.json({
       message: "Backup command generated. Run this on your server or in your CI/CD pipeline.",

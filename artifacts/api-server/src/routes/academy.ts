@@ -2,230 +2,240 @@ import { Router, type IRouter, type Request, type Response } from "express";
 import { eq, and, sql, inArray } from "drizzle-orm";
 import {
   db,
-  courses,
-  courseModules,
-  lessons,
   lessonResources,
   quizQuestions,
   userLessonProgress,
   quizAttempts,
 } from "@workspace/db";
 import { requireAuth } from "../middlewares/requireAuth";
+import { SubmitQuizBody, UpdateLessonProgressBody } from "@workspace/api-zod";
 import { getOrCreateUser } from "../lib/userSync";
+import { canAccessPublishedContent } from "../lib/academyAccess";
+import { getPublishedAcademyCatalog } from "../lib/academyCatalog";
+import {
+  LANG_NATIVE_NAMES,
+  detectModuleLang,
+  filterModulesForLang,
+  normalizeAcademyLang,
+  resolveLocale,
+  sortAcademyLessons,
+} from "../lib/academyLanguage";
+import {
+  BunnyPlaybackConfigurationError,
+  secureLessonPlayback,
+  isBunnyPlaybackUrl,
+  thumbnailOnlyVideoAssets,
+} from "../lib/bunnySecurity";
+import { localizedLessonPlayback } from "../lib/localizedPlayback";
+import { verifyBunnyPlaybackProtection } from "../lib/bunnyPlaybackVerification";
 
 const router: IRouter = Router();
+router.use("/academy", (_req, res, next) => {
+  res.setHeader("Cache-Control", "private, no-store");
+  next();
+});
 
-// ── Locale helper ─────────────────────────────────────────────────────────────
-function resolveLocale(lang: unknown, obj: unknown): string {
-  if (!obj || typeof obj !== "object") return "";
-  const map = obj as Record<string, string>;
-  const l = typeof lang === "string" ? lang : "en";
-  return map[l] ?? map["en"] ?? Object.values(map)[0] ?? "";
-}
+async function getLessonAccess(lessonId: string, lang: string) {
+  const catalog = await getPublishedAcademyCatalog();
+  const lesson = catalog.lessons.find((item) => item.id === lessonId);
+  if (!lesson) return null;
 
-// ── Language-module detection ─────────────────────────────────────────────────
-/**
- * BunnyStream imports create one module per language (e.g. "English Language",
- * "French Language", …). This map lets us detect those modules and filter by
- * the user's preferred language.
- */
-const LANG_MODULE_MAP: Record<string, string> = {
-  "english": "en",
-  "english language": "en",
-  "french": "fr",
-  "french language": "fr",
-  "spanish": "es",
-  "spanish language": "es",
-  "german": "de",
-  "german language": "de",
-  "dutch": "nl",
-  "dutch language": "nl",
-  "italian": "it",
-  "italian language": "it",
-  "portuguese": "pt",
-  "portuguese language": "pt",
-  "polish": "pl",
-  "polish language": "pl",
-};
+  const module = catalog.modules.find((item) => item.id === lesson.moduleId);
+  const course = module
+    ? catalog.courses.find((item) => item.id === module.courseId)
+    : undefined;
+  if (!module || !course) return null;
+  const courseModulesForCourse = catalog.modules
+    .filter((item) => item.courseId === course.id)
+    .sort((a, b) => a.order - b.order);
 
-const LANG_NATIVE_NAMES: Record<string, string> = {
-  en: "English",
-  fr: "Français",
-  de: "Deutsch",
-  es: "Español",
-  it: "Italiano",
-  nl: "Nederlands",
-  pl: "Polski",
-  pt: "Português",
-};
-
-/** Returns the language code if the module title marks it as a language track, otherwise null. */
-function detectModuleLang(title: unknown): string | null {
-  if (!title || typeof title !== "object") return null;
-  const enTitle = ((title as Record<string, string>)["en"] ?? "").toLowerCase().trim();
-  return LANG_MODULE_MAP[enTitle] ?? null;
-}
-
-/**
- * Keeps only the module(s) matching the user's language.
- * Always applied on public /academy routes — regardless of role.
- * Falls back to English if no module exists for that language.
- * Regular (non-language-track) modules are always included.
- */
-function filterModulesForLang<T extends { title: unknown }>(
-  mods: T[],
-  lang: string
-): T[] {
-  const hasLangModules = mods.some((m) => detectModuleLang(m.title) !== null);
-  if (!hasLangModules) return mods; // regular course structure – no filtering needed
-
-  const userLangMods = mods.filter((m) => detectModuleLang(m.title) === lang);
-  if (userLangMods.length > 0) return userLangMods;
-
-  // Fallback to English
-  const enMods = mods.filter((m) => detectModuleLang(m.title) === "en");
-  if (enMods.length > 0) return enMods;
-
-  return mods; // last resort
-}
-
-/**
- * Sorts lessons in logical order:
- *   Introduction / Intro  → first
- *   VIDEO 1.1, 1.2, 2.1  → numeric order (major.minor)
- *   Conclusion / Outro    → last
- * Unrecognised titles preserve their stored `order` field.
- */
-function sortLessons<T extends { title: unknown; order: number }>(rows: T[]): T[] {
-  const getSortKey = (l: T): number => {
-    const titleMap = l.title as Record<string, string> | null;
-    const t = (titleMap?.["en"] ?? "").toLowerCase().trim();
-    if (/\b(introduction|intro)\b/.test(t)) return 0;
-    if (/\b(conclusion|outro|final)\b/.test(t)) return 1_000_000;
-    const m = t.match(/(\d+)[.\-_](\d+)/);
-    if (m) return parseInt(m[1]) * 10_000 + parseInt(m[2]) * 100;
-    const s = t.match(/\b(\d+)\b/);
-    if (s) return parseInt(s[1]) * 10_000;
-    return (l.order + 1) * 100 + 500; // preserve relative order for unknowns
-  };
-  return [...rows].sort((a, b) => getSortKey(a) - getSortKey(b));
+  return filterModulesForLang(courseModulesForCourse, lang).some(
+    (item) => item.id === module.id,
+  ) ? { lesson, module, course } : null;
 }
 
 // ── GET /academy/courses ──────────────────────────────────────────────────────
-router.get("/academy/courses", requireAuth, async (req: Request, res: Response): Promise<void> => {
-  const user = await getOrCreateUser(req);
-  if (!user) { res.status(401).json({ error: "Unauthorized" }); return; }
+router.get(
+  "/academy/courses",
+  requireAuth,
+  async (req: Request, res: Response): Promise<void> => {
+    const user = await getOrCreateUser(req);
+    if (!user) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
 
-  const lang = (typeof req.query.lang === "string" ? req.query.lang : user.language) ?? "en";
+    const lang = normalizeAcademyLang(req.query.lang ?? user.language);
+    const category =
+      typeof req.query.category === "string" ? req.query.category : undefined;
+    const level =
+      typeof req.query.level === "string" ? req.query.level : undefined;
 
-  const allCourses = await db
-    .select()
-    .from(courses)
-    .where(eq(courses.isPublished, true))
-    .orderBy(courses.order);
+    const catalog = await getPublishedAcademyCatalog();
+    const allCourses = catalog.courses.filter((course) => {
+      if (category && course.category !== category) return false;
+      if (level && course.level !== level) return false;
+      return true;
+    });
 
-  if (allCourses.length === 0) { res.json({ items: [] }); return; }
+    if (allCourses.length === 0) {
+      res.json({ items: [] });
+      return;
+    }
 
-  const allModules = await db
-    .select()
-    .from(courseModules)
-    .where(inArray(courseModules.courseId, allCourses.map((c) => c.id)))
-    .orderBy(courseModules.order);
+    const courseIds = new Set(allCourses.map((course) => course.id));
+    const allModules = catalog.modules.filter((module) =>
+      courseIds.has(module.courseId),
+    );
 
-  const visibleModuleIds = new Set<string>();
-  const modulesByCourse = new Map<string, typeof allModules>();
-  for (const mod of allModules) {
-    const list = modulesByCourse.get(mod.courseId) ?? [];
-    list.push(mod);
-    modulesByCourse.set(mod.courseId, list);
-  }
-  for (const c of allCourses) {
-    const mods = modulesByCourse.get(c.id) ?? [];
-    filterModulesForLang(mods, lang).forEach((m) => visibleModuleIds.add(m.id));
-  }
+    const visibleModuleIds = new Set<string>();
+    const modulesByCourse = new Map<string, typeof allModules>();
+    for (const mod of allModules) {
+      const list = modulesByCourse.get(mod.courseId) ?? [];
+      list.push(mod);
+      modulesByCourse.set(mod.courseId, list);
+    }
+    for (const c of allCourses) {
+      const mods = modulesByCourse.get(c.id) ?? [];
+      filterModulesForLang(mods, lang).forEach((m) =>
+        visibleModuleIds.add(m.id),
+      );
+    }
 
-  const allLessonsForModules =
-    visibleModuleIds.size > 0
-      ? await db
-          .select({ id: lessons.id, moduleId: lessons.moduleId })
-          .from(lessons)
-          .where(and(inArray(lessons.moduleId, Array.from(visibleModuleIds)), eq(lessons.isPublished, true)))
-      : [];
+    const allLessonsForModules = catalog.lessons
+      .filter((lesson) => visibleModuleIds.has(lesson.moduleId))
+      .map((lesson) => ({
+        id: lesson.id,
+        moduleId: lesson.moduleId,
+        durationSeconds: lesson.durationSeconds,
+      }));
 
-  const lessonsByModule = new Map<string, string[]>();
-  for (const l of allLessonsForModules) {
-    const list = lessonsByModule.get(l.moduleId) ?? [];
-    list.push(l.id);
-    lessonsByModule.set(l.moduleId, list);
-  }
+    const lessonsByModule = new Map<
+      string,
+      Array<{ id: string; durationSeconds: number }>
+    >();
+    for (const l of allLessonsForModules) {
+      const list = lessonsByModule.get(l.moduleId) ?? [];
+      list.push({ id: l.id, durationSeconds: l.durationSeconds });
+      lessonsByModule.set(l.moduleId, list);
+    }
 
-  const progressRows = await db
-    .select({ lessonId: userLessonProgress.lessonId })
-    .from(userLessonProgress)
-    .where(and(eq(userLessonProgress.userId, user.id), sql`${userLessonProgress.completedAt} IS NOT NULL`));
+    const visibleLessonIds = allLessonsForModules.map((lesson) => lesson.id);
+    const progressRows =
+      visibleLessonIds.length > 0
+        ? await db
+            .select({ lessonId: userLessonProgress.lessonId })
+            .from(userLessonProgress)
+            .where(
+              and(
+                eq(userLessonProgress.userId, user.id),
+                inArray(userLessonProgress.lessonId, visibleLessonIds),
+                sql`${userLessonProgress.completedAt} IS NOT NULL`,
+              ),
+            )
+        : [];
 
-  const completedLessonIds = new Set(progressRows.map((p) => p.lessonId));
+    const completedLessonIds = new Set(progressRows.map((p) => p.lessonId));
 
-  const items = allCourses.map((c) => {
-    const mods = modulesByCourse.get(c.id) ?? [];
-    const visibleMods = filterModulesForLang(mods, lang);
-    const visibleLessonIds = visibleMods.flatMap((m) => lessonsByModule.get(m.id) ?? []);
-    const lessonCount = visibleLessonIds.length;
-    const completedLessons = visibleLessonIds.filter((id) => completedLessonIds.has(id)).length;
+    const items = allCourses.map((c) => {
+      const mods = modulesByCourse.get(c.id) ?? [];
+      const visibleMods = filterModulesForLang(mods, lang);
+      const visibleLessons = visibleMods.flatMap(
+        (m) => lessonsByModule.get(m.id) ?? [],
+      );
+      const courseVisibleLessonIds = visibleLessons.map((lesson) => lesson.id);
+      const lessonCount = courseVisibleLessonIds.length;
+      const completedLessons = courseVisibleLessonIds.filter((id) =>
+        completedLessonIds.has(id),
+      ).length;
+      const totalDurationSeconds = visibleLessons.reduce(
+        (sum, lesson) => sum + lesson.durationSeconds,
+        0,
+      );
 
-    return {
-      id: c.id,
-      slug: c.slug,
-      title: resolveLocale(lang, c.title),
-      description: resolveLocale(lang, c.description),
-      category: c.category,
-      level: c.level,
-      order: c.order,
-      thumbnailUrl: c.thumbnailUrl,
-      moduleCount: visibleMods.length,
-      lessonCount,
-      totalDurationSeconds: c.totalDurationSeconds,
-      completedLessons,
-    };
-  });
+      return {
+        id: c.id,
+        slug: c.slug,
+        title: resolveLocale(lang, c.title),
+        description: resolveLocale(lang, c.description),
+        category: c.category,
+        level: c.level,
+        order: c.order,
+        thumbnailUrl: c.thumbnailUrl,
+        moduleCount: visibleMods.length,
+        lessonCount,
+        totalDurationSeconds,
+        completedLessons,
+      };
+    });
 
-  res.json({ items });
-});
+    res.json({ items });
+  },
+);
 
 // ── GET /academy/courses/:id ──────────────────────────────────────────────────
-router.get("/academy/courses/:id", requireAuth, async (req: Request, res: Response): Promise<void> => {
-  const user = await getOrCreateUser(req);
-  if (!user) { res.status(401).json({ error: "Unauthorized" }); return; }
+router.get(
+  "/academy/courses/:id",
+  requireAuth,
+  async (req: Request, res: Response): Promise<void> => {
+    const user = await getOrCreateUser(req);
+    if (!user) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
 
-  const lang = (typeof req.query.lang === "string" ? req.query.lang : user.language) ?? "en";
-  const courseId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    const lang = normalizeAcademyLang(req.query.lang ?? user.language);
+    const courseId = Array.isArray(req.params.id)
+      ? req.params.id[0]
+      : req.params.id;
 
-  const [course] = await db.select().from(courses).where(eq(courses.id, courseId));
-  if (!course) { res.status(404).json({ error: "Course not found" }); return; }
+    const catalog = await getPublishedAcademyCatalog();
+    const course = catalog.courses.find((item) => item.id === courseId);
+    if (!course) {
+      res.status(404).json({ error: "Course not found" });
+      return;
+    }
+    if (!canAccessPublishedContent(user, { course })) {
+      res.status(404).json({ error: "Course not found" });
+      return;
+    }
 
-  const allModules = await db
-    .select()
-    .from(courseModules)
-    .where(eq(courseModules.courseId, courseId))
-    .orderBy(courseModules.order);
+    const allModules = catalog.modules
+      .filter((module) => module.courseId === courseId)
+      .sort((a, b) => a.order - b.order);
 
-  const visibleModules = filterModulesForLang(allModules, lang);
+    const visibleModules = filterModulesForLang(allModules, lang);
 
-  const progressRows = await db
-    .select()
-    .from(userLessonProgress)
-    .where(eq(userLessonProgress.userId, user.id));
+    const visibleModuleIds = visibleModules.map((mod) => mod.id);
+    const visibleModuleIdSet = new Set(visibleModuleIds);
+    const lessonRows = catalog.lessons.filter((lesson) =>
+      visibleModuleIdSet.has(lesson.moduleId),
+    );
+    const visibleLessonIds = lessonRows.map((lesson) => lesson.id);
+    const progressRows =
+      visibleLessonIds.length > 0
+        ? await db
+            .select()
+            .from(userLessonProgress)
+            .where(
+              and(
+                eq(userLessonProgress.userId, user.id),
+                inArray(userLessonProgress.lessonId, visibleLessonIds),
+              ),
+            )
+        : [];
 
-  const progressMap = new Map(progressRows.map((p) => [p.lessonId, p]));
+    const progressMap = new Map(progressRows.map((p) => [p.lessonId, p]));
 
-  const modulesWithLessons = await Promise.all(
-    visibleModules.map(async (mod) => {
-      const lessonRows = await db
-        .select()
-        .from(lessons)
-        .where(and(eq(lessons.moduleId, mod.id), eq(lessons.isPublished, true)));
+    const lessonsByModule = new Map<string, typeof lessonRows>();
+    for (const lesson of lessonRows) {
+      const list = lessonsByModule.get(lesson.moduleId) ?? [];
+      list.push(lesson);
+      lessonsByModule.set(lesson.moduleId, list);
+    }
 
-      const sortedLessons = sortLessons(lessonRows);
+    const modulesWithLessons = visibleModules.map((mod) => {
+      const sortedLessons = sortAcademyLessons(lessonsByModule.get(mod.id) ?? []);
 
       // For language-track modules, use the native language name as the title
       const moduleLangCode = detectModuleLang(mod.title);
@@ -248,367 +258,500 @@ router.get("/academy/courses/:id", requireAuth, async (req: Request, res: Respon
             order: l.order,
             isPublished: l.isPublished,
             thumbnailUrl: l.thumbnailUrl ?? null,
-            videoAssets: l.videoAssets ?? null,
+            videoAssets: thumbnailOnlyVideoAssets(l.videoAssets),
             completedAt: p?.completedAt?.toISOString() ?? null,
             watchPercent: p?.watchPercent ?? null,
           };
         }),
       };
-    })
-  );
+    });
 
-  const allLessons = modulesWithLessons.flatMap((m) => m.lessons);
-  const lessonCount = allLessons.length;
-  const completedLessons = allLessons.filter((l) => l.completedAt).length;
+    const allLessons = modulesWithLessons.flatMap((m) => m.lessons);
+    const lessonCount = allLessons.length;
+    const completedLessons = allLessons.filter((l) => l.completedAt).length;
+    const totalDurationSeconds = allLessons.reduce(
+      (sum, lesson) => sum + lesson.durationSeconds,
+      0,
+    );
 
-  res.json({
-    id: course.id,
-    slug: course.slug,
-    title: resolveLocale(lang, course.title),
-    description: resolveLocale(lang, course.description),
-    category: course.category,
-    level: course.level,
-    order: course.order,
-    thumbnailUrl: course.thumbnailUrl,
-    completedLessons,
-    lessonCount,
-    totalDurationSeconds: course.totalDurationSeconds,
-    modules: modulesWithLessons,
-  });
-});
+    res.json({
+      id: course.id,
+      slug: course.slug,
+      title: resolveLocale(lang, course.title),
+      description: resolveLocale(lang, course.description),
+      category: course.category,
+      level: course.level,
+      order: course.order,
+      thumbnailUrl: course.thumbnailUrl,
+      completedLessons,
+      lessonCount,
+      totalDurationSeconds,
+      modules: modulesWithLessons,
+    });
+  },
+);
 
 // ── GET /academy/lessons/:id ──────────────────────────────────────────────────
-router.get("/academy/lessons/:id", requireAuth, async (req: Request, res: Response): Promise<void> => {
-  const user = await getOrCreateUser(req);
-  if (!user) { res.status(401).json({ error: "Unauthorized" }); return; }
+router.get(
+  "/academy/lessons/:id",
+  requireAuth,
+  async (req: Request, res: Response): Promise<void> => {
+    const user = await getOrCreateUser(req);
+    if (!user) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
 
-  const lang = (typeof req.query.lang === "string" ? req.query.lang : user.language) ?? "en";
-  const lessonId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    const lang = normalizeAcademyLang(req.query.lang ?? user.language);
+    const lessonId = Array.isArray(req.params.id)
+      ? req.params.id[0]
+      : req.params.id;
 
-  const [lesson] = await db.select().from(lessons).where(eq(lessons.id, lessonId));
-  if (!lesson) { res.status(404).json({ error: "Lesson not found" }); return; }
+    const access = await getLessonAccess(lessonId, lang);
+    if (
+      !access ||
+      !canAccessPublishedContent(user, access)
+    ) {
+      res.status(404).json({ error: "Lesson not found" });
+      return;
+    }
+    const { lesson } = access;
+    let playback;
+    try {
+      playback = secureLessonPlayback(localizedLessonPlayback(lesson, lang));
+      const bunnyUrl = [playback.videoUrl, ...Object.values(playback.videoUrls ?? {}),
+        ...Object.values(playback.videoAssets ?? {}).map((asset) => asset.embedUrl)]
+        .find(isBunnyPlaybackUrl);
+      if (bunnyUrl) await verifyBunnyPlaybackProtection(bunnyUrl);
+    } catch (error) {
+      if (!(error instanceof BunnyPlaybackConfigurationError)) throw error;
+      req.log.warn({ lessonId }, "Bunny playback configuration is incomplete");
+      res.status(503).json({ error: error.message, code: "PLAYBACK_UNAVAILABLE" });
+      return;
+    }
 
-  const resources = await db
-    .select()
-    .from(lessonResources)
-    .where(eq(lessonResources.lessonId, lessonId));
+    const [resources, quizItems, progressRows] = await Promise.all([
+      db
+        .select()
+        .from(lessonResources)
+        .where(eq(lessonResources.lessonId, lessonId)),
+      db
+        .select()
+        .from(quizQuestions)
+        .where(eq(quizQuestions.lessonId, lessonId))
+        .orderBy(quizQuestions.order),
+      db
+        .select()
+        .from(userLessonProgress)
+        .where(
+          and(
+            eq(userLessonProgress.userId, user.id),
+            eq(userLessonProgress.lessonId, lessonId),
+          ),
+        ),
+    ]);
+    const [progress] = progressRows;
 
-  const quizItems = await db
-    .select()
-    .from(quizQuestions)
-    .where(eq(quizQuestions.lessonId, lessonId))
-    .orderBy(quizQuestions.order);
-
-  const [progress] = await db
-    .select()
-    .from(userLessonProgress)
-    .where(
-      and(
-        eq(userLessonProgress.userId, user.id),
-        eq(userLessonProgress.lessonId, lessonId)
-      )
-    );
-
-  res.json({
-    id: lesson.id,
-    moduleId: lesson.moduleId,
-    title: resolveLocale(lang, lesson.title),
-    videoUrl: lesson.videoUrl,
-    videoUrls: lesson.videoUrls ?? null,
-    thumbnailUrl: lesson.thumbnailUrl ?? null,
-    videoAssets: lesson.videoAssets ?? null,
-    durationSeconds: lesson.durationSeconds,
-    order: lesson.order,
-    resources: resources.map((r) => ({
-      id: r.id,
-      lessonId: r.lessonId,
-      title: resolveLocale(lang, r.title),
-      type: r.type,
-      url: r.url,
-    })),
-    quizQuestions: quizItems.map((q) => {
-      const options = Array.isArray(q.options)
-        ? (q.options as Array<Record<string, string>>).map((o) => resolveLocale(lang, o))
-        : [];
-      return {
-        id: q.id,
-        question: resolveLocale(lang, q.question),
-        options,
-        correctOption: q.correctOption,
-      };
-    }),
-    completedAt: progress?.completedAt?.toISOString() ?? null,
-    watchPercent: progress?.watchPercent ?? null,
-  });
-});
+    res.json({
+      id: lesson.id,
+      moduleId: lesson.moduleId,
+      title: resolveLocale(lang, lesson.title),
+      videoUrl: playback.videoUrl,
+      videoUrls: playback.videoUrls,
+      thumbnailUrl: lesson.thumbnailUrl ?? null,
+      videoAssets: playback.videoAssets,
+      durationSeconds: lesson.durationSeconds,
+      order: lesson.order,
+      resources: resources.map((r) => ({
+        id: r.id,
+        lessonId: r.lessonId,
+        title: resolveLocale(lang, r.title),
+        type: r.type,
+        url: r.url,
+      })),
+      quizQuestions: quizItems.map((q) => {
+        const options = Array.isArray(q.options)
+          ? (q.options as Array<Record<string, string>>).map((o) =>
+              resolveLocale(lang, o),
+            )
+          : [];
+        return {
+          id: q.id,
+          question: resolveLocale(lang, q.question),
+          options,
+        };
+      }),
+      completedAt: progress?.completedAt?.toISOString() ?? null,
+      watchPercent: progress?.watchPercent ?? null,
+    });
+  },
+);
 
 // ── PATCH /academy/lessons/:id/progress ──────────────────────────────────────
-router.patch("/academy/lessons/:id/progress", requireAuth, async (req: Request, res: Response): Promise<void> => {
-  const user = await getOrCreateUser(req);
-  if (!user) { res.status(401).json({ error: "Unauthorized" }); return; }
+router.patch(
+  "/academy/lessons/:id/progress",
+  requireAuth,
+  async (req: Request, res: Response): Promise<void> => {
+    const user = await getOrCreateUser(req);
+    if (!user) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
 
-  const lessonId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-  const { watchPercent, completed } = req.body as { watchPercent: number; completed?: boolean };
+    const lessonId = Array.isArray(req.params.id)
+      ? req.params.id[0]
+      : req.params.id;
+    const lang = normalizeAcademyLang(req.query.lang ?? user.language);
+    const parsed = UpdateLessonProgressBody.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: "Invalid lesson progress" });
+      return;
+    }
+    const { watchPercent: boundedWatchPercent, completed } = parsed.data;
 
-  const [existing] = await db
-    .select()
-    .from(userLessonProgress)
-    .where(
-      and(
-        eq(userLessonProgress.userId, user.id),
-        eq(userLessonProgress.lessonId, lessonId)
-      )
-    );
+    const access = await getLessonAccess(lessonId, lang);
+    if (
+      !access ||
+      !canAccessPublishedContent(user, access)
+    ) {
+      res.status(404).json({ error: "Lesson not found" });
+      return;
+    }
 
-  const completedAt = completed ? new Date() : (existing?.completedAt ?? null);
-  const now = new Date();
+    const now = new Date();
+    const completedAt = completed ? now : null;
+    const [saved] = await db
+      .insert(userLessonProgress)
+      .values({
+        userId: user.id,
+        lessonId,
+        watchPercent: boundedWatchPercent,
+        completedAt,
+      })
+      .onConflictDoUpdate({
+        target: [userLessonProgress.userId, userLessonProgress.lessonId],
+        set: {
+          watchPercent: sql`greatest(${userLessonProgress.watchPercent}, excluded.watch_percent)`,
+          completedAt: sql`coalesce(${userLessonProgress.completedAt}, excluded.completed_at)`,
+          updatedAt: now,
+        },
+      })
+      .returning();
 
-  if (!existing) {
-    await db.insert(userLessonProgress).values({
-      userId: user.id,
+    res.json({
       lessonId,
-      watchPercent,
-      completedAt,
+      watchPercent: saved?.watchPercent ?? boundedWatchPercent,
+      completedAt: saved?.completedAt?.toISOString() ?? null,
     });
-  } else {
-    await db
-      .update(userLessonProgress)
-      .set({ watchPercent, completedAt, updatedAt: now })
-      .where(
-        and(
-          eq(userLessonProgress.userId, user.id),
-          eq(userLessonProgress.lessonId, lessonId)
-        )
-      );
-  }
-
-  res.json({
-    lessonId,
-    watchPercent,
-    completedAt: completedAt?.toISOString() ?? null,
-  });
-});
+  },
+);
 
 // ── POST /academy/lessons/:id/quiz ────────────────────────────────────────────
-router.post("/academy/lessons/:id/quiz", requireAuth, async (req: Request, res: Response): Promise<void> => {
-  const user = await getOrCreateUser(req);
-  if (!user) { res.status(401).json({ error: "Unauthorized" }); return; }
+router.post(
+  "/academy/lessons/:id/quiz",
+  requireAuth,
+  async (req: Request, res: Response): Promise<void> => {
+    const user = await getOrCreateUser(req);
+    if (!user) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
 
-  const lessonId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-  const { answers } = req.body as { answers: number[] };
+    const lessonId = Array.isArray(req.params.id)
+      ? req.params.id[0]
+      : req.params.id;
+    const lang = normalizeAcademyLang(req.query.lang ?? user.language);
+    const parsed = SubmitQuizBody.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: "Invalid quiz answers" });
+      return;
+    }
+    const { answers } = parsed.data;
 
-  const quizItems = await db
-    .select()
-    .from(quizQuestions)
-    .where(eq(quizQuestions.lessonId, lessonId))
-    .orderBy(quizQuestions.order);
+    const access = await getLessonAccess(lessonId, lang);
+    if (
+      !access ||
+      !canAccessPublishedContent(user, access)
+    ) {
+      res.status(404).json({ error: "Lesson not found" });
+      return;
+    }
 
-  const total = quizItems.length;
-  const answerDetails = quizItems.map((q, i) => ({
-    questionId: q.id,
-    correct: answers[i] === q.correctOption,
-    selectedOption: answers[i] ?? -1,
-    correctOption: q.correctOption,
-  }));
+    const quizItems = await db
+      .select()
+      .from(quizQuestions)
+      .where(eq(quizQuestions.lessonId, lessonId))
+      .orderBy(quizQuestions.order);
 
-  const score = answerDetails.filter((a) => a.correct).length;
-  const passed = total > 0 && score / total >= 0.7;
+    const total = quizItems.length;
+    if (answers.length !== total || quizItems.some((question, index) =>
+      answers[index] >= (Array.isArray(question.options) ? question.options.length : 0),
+    )) {
+      res.status(400).json({ error: "Invalid quiz answers" });
+      return;
+    }
+    const answerDetails = quizItems.map((q, i) => ({
+      questionId: q.id,
+      correct: answers[i] === q.correctOption,
+      selectedOption: answers[i] ?? -1,
+      correctOption: q.correctOption,
+    }));
 
-  await db.insert(quizAttempts).values({
-    userId: user.id,
-    lessonId,
-    score,
-    total,
-    passed,
-    answers: answerDetails,
-  });
+    const score = answerDetails.filter((a) => a.correct).length;
+    const passed = total > 0 && score / total >= 0.7;
 
-  res.json({ score, total, passed, answers: answerDetails });
-});
+    await db.insert(quizAttempts).values({
+      userId: user.id,
+      lessonId,
+      score,
+      total,
+      passed,
+      answers: answerDetails,
+    });
+
+    res.json({ score, total, passed, answers: answerDetails });
+  },
+);
 
 // ── GET /academy/progress/summary ────────────────────────────────────────────
-router.get("/academy/progress/summary", requireAuth, async (req: Request, res: Response): Promise<void> => {
-  const user = await getOrCreateUser(req);
-  if (!user) { res.status(401).json({ error: "Unauthorized" }); return; }
-
-  const lang = (typeof req.query.lang === "string" ? req.query.lang : user.language) ?? "en";
-
-  const allCourses = await db.select().from(courses).where(eq(courses.isPublished, true));
-  const allModules = await db.select().from(courseModules);
-  const allLessonsRaw = await db.select().from(lessons).where(eq(lessons.isPublished, true));
-  const allProgress = await db
-    .select()
-    .from(userLessonProgress)
-    .where(eq(userLessonProgress.userId, user.id));
-
-  // Build course → module map
-  const courseModulesMap = new Map<string, typeof allModules>();
-  for (const mod of allModules) {
-    const list = courseModulesMap.get(mod.courseId) ?? [];
-    list.push(mod);
-    courseModulesMap.set(mod.courseId, list);
-  }
-
-  // Collect visible module IDs for this user
-  const visibleModuleIds = new Set<string>();
-  for (const c of allCourses) {
-    const mods = courseModulesMap.get(c.id) ?? [];
-    filterModulesForLang(mods, lang).forEach((m) => visibleModuleIds.add(m.id));
-  }
-
-  const visibleLessons = allLessonsRaw.filter((l) => visibleModuleIds.has(l.moduleId));
-  const visibleLessonIds = new Set(visibleLessons.map((l) => l.id));
-
-  const relevantProgress = allProgress.filter((p) => visibleLessonIds.has(p.lessonId));
-  const totalLessons = visibleLessons.length;
-  const completedLessons = relevantProgress.filter((p) => p.completedAt).length;
-  const totalDurationSeconds = visibleLessons.reduce((sum, l) => sum + l.durationSeconds, 0);
-  const watchedDurationSeconds = relevantProgress.reduce((sum, p) => {
-    const lesson = visibleLessons.find((l) => l.id === p.lessonId);
-    return sum + Math.round(((lesson?.durationSeconds ?? 0) * p.watchPercent) / 100);
-  }, 0);
-
-  // Build lesson sets per module for course-completion check
-  const lessonsByModule = new Map<string, string[]>();
-  for (const l of visibleLessons) {
-    const list = lessonsByModule.get(l.moduleId) ?? [];
-    list.push(l.id);
-    lessonsByModule.set(l.moduleId, list);
-  }
-  const progressMap = new Map(allProgress.map((p) => [p.lessonId, p]));
-
-  let completedCourses = 0;
-  for (const c of allCourses) {
-    const mods = courseModulesMap.get(c.id) ?? [];
-    const visible = filterModulesForLang(mods, lang);
-    const courseLessonIds = visible.flatMap((m) => lessonsByModule.get(m.id) ?? []);
-    if (courseLessonIds.length > 0 && courseLessonIds.every((lid) => progressMap.get(lid)?.completedAt)) {
-      completedCourses++;
+router.get(
+  "/academy/progress/summary",
+  requireAuth,
+  async (req: Request, res: Response): Promise<void> => {
+    const user = await getOrCreateUser(req);
+    if (!user) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
     }
-  }
 
-  const percentComplete = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
+    const lang = normalizeAcademyLang(req.query.lang ?? user.language);
 
-  res.json({
-    totalCourses: allCourses.length,
-    completedCourses,
-    totalLessons,
-    completedLessons,
-    totalDurationSeconds,
-    watchedDurationSeconds,
-    percentComplete,
-  });
-});
+    const catalog = await getPublishedAcademyCatalog();
+    const allCourses = catalog.courses;
+    const allModules = catalog.modules;
+    const allLessonsRaw = catalog.lessons;
+
+    // Build course → module map
+    const courseModulesMap = new Map<string, typeof allModules>();
+    for (const mod of allModules) {
+      const list = courseModulesMap.get(mod.courseId) ?? [];
+      list.push(mod);
+      courseModulesMap.set(mod.courseId, list);
+    }
+
+    // Collect visible module IDs for this user
+    const visibleModuleIds = new Set<string>();
+    for (const c of allCourses) {
+      const mods = courseModulesMap.get(c.id) ?? [];
+      filterModulesForLang(mods, lang).forEach((m) =>
+        visibleModuleIds.add(m.id),
+      );
+    }
+
+    const visibleLessons = allLessonsRaw.filter((l) =>
+      visibleModuleIds.has(l.moduleId),
+    );
+    const visibleLessonIds = new Set(visibleLessons.map((l) => l.id));
+    const allProgress =
+      visibleLessonIds.size > 0
+        ? await db
+            .select()
+            .from(userLessonProgress)
+            .where(
+              and(
+                eq(userLessonProgress.userId, user.id),
+                inArray(userLessonProgress.lessonId, Array.from(visibleLessonIds)),
+              ),
+            )
+        : [];
+
+    const relevantProgress = allProgress.filter((p) =>
+      visibleLessonIds.has(p.lessonId),
+    );
+    const totalLessons = visibleLessons.length;
+    const completedLessons = relevantProgress.filter(
+      (p) => p.completedAt,
+    ).length;
+    const totalDurationSeconds = visibleLessons.reduce(
+      (sum, l) => sum + l.durationSeconds,
+      0,
+    );
+    const visibleLessonDurationById = new Map(
+      visibleLessons.map((lesson) => [lesson.id, lesson.durationSeconds]),
+    );
+    const watchedDurationSeconds = relevantProgress.reduce((sum, p) => {
+      const lessonDuration = visibleLessonDurationById.get(p.lessonId) ?? 0;
+      return (
+        sum +
+        Math.round((lessonDuration * p.watchPercent) / 100)
+      );
+    }, 0);
+
+    // Build lesson sets per module for course-completion check
+    const lessonsByModule = new Map<string, string[]>();
+    for (const l of visibleLessons) {
+      const list = lessonsByModule.get(l.moduleId) ?? [];
+      list.push(l.id);
+      lessonsByModule.set(l.moduleId, list);
+    }
+    const progressMap = new Map(allProgress.map((p) => [p.lessonId, p]));
+
+    let completedCourses = 0;
+    for (const c of allCourses) {
+      const mods = courseModulesMap.get(c.id) ?? [];
+      const visible = filterModulesForLang(mods, lang);
+      const courseLessonIds = visible.flatMap(
+        (m) => lessonsByModule.get(m.id) ?? [],
+      );
+      if (
+        courseLessonIds.length > 0 &&
+        courseLessonIds.every((lid) => progressMap.get(lid)?.completedAt)
+      ) {
+        completedCourses++;
+      }
+    }
+
+    const percentComplete =
+      totalLessons > 0
+        ? Math.round((completedLessons / totalLessons) * 100)
+        : 0;
+
+    res.json({
+      totalCourses: allCourses.length,
+      completedCourses,
+      totalLessons,
+      completedLessons,
+      totalDurationSeconds,
+      watchedDurationSeconds,
+      percentComplete,
+    });
+  },
+);
 
 // ── GET /academy/progress/next-lesson ────────────────────────────────────────
-router.get("/academy/progress/next-lesson", requireAuth, async (req: Request, res: Response): Promise<void> => {
-  const user = await getOrCreateUser(req);
-  if (!user) { res.status(401).json({ error: "Unauthorized" }); return; }
-
-  const lang = (typeof req.query.lang === "string" ? req.query.lang : user.language) ?? "en";
-
-  const allCourses = await db
-    .select()
-    .from(courses)
-    .where(eq(courses.isPublished, true))
-    .orderBy(courses.order);
-
-  const allModules = await db.select().from(courseModules).orderBy(courseModules.order);
-
-  // Build course → module map and collect visible module IDs
-  const courseModulesMap = new Map<string, typeof allModules>();
-  for (const mod of allModules) {
-    const list = courseModulesMap.get(mod.courseId) ?? [];
-    list.push(mod);
-    courseModulesMap.set(mod.courseId, list);
-  }
-
-  const visibleModuleIds = new Set<string>();
-  for (const c of allCourses) {
-    const mods = courseModulesMap.get(c.id) ?? [];
-    filterModulesForLang(mods, lang).forEach((m) => visibleModuleIds.add(m.id));
-  }
-
-  if (visibleModuleIds.size === 0) {
-    res.status(404).json({ error: "No lessons available" });
-    return;
-  }
-
-  const allLessonsRaw = await db
-    .select()
-    .from(lessons)
-    .where(and(eq(lessons.isPublished, true), inArray(lessons.moduleId, Array.from(visibleModuleIds))));
-
-  // Group by module for smart sorting
-  const lessonsByModule = new Map<string, typeof allLessonsRaw>();
-  for (const l of allLessonsRaw) {
-    const list = lessonsByModule.get(l.moduleId) ?? [];
-    list.push(l);
-    lessonsByModule.set(l.moduleId, list);
-  }
-
-  // Build globally ordered list: course order → module order → sorted lessons
-  const orderedLessons: typeof allLessonsRaw = [];
-  for (const c of allCourses) {
-    const mods = courseModulesMap.get(c.id) ?? [];
-    const visibleMods = filterModulesForLang(mods, lang);
-    for (const mod of visibleMods) {
-      const modLessons = lessonsByModule.get(mod.id) ?? [];
-      orderedLessons.push(...sortLessons(modLessons));
+router.get(
+  "/academy/progress/next-lesson",
+  requireAuth,
+  async (req: Request, res: Response): Promise<void> => {
+    const user = await getOrCreateUser(req);
+    if (!user) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
     }
-  }
 
-  const allProgress = await db
-    .select()
-    .from(userLessonProgress)
-    .where(eq(userLessonProgress.userId, user.id));
+    const lang = normalizeAcademyLang(req.query.lang ?? user.language);
 
-  const completedIds = new Set(allProgress.filter((p) => p.completedAt).map((p) => p.lessonId));
-  const progressMap = new Map(allProgress.map((p) => [p.lessonId, p]));
-  const moduleMap = new Map(allModules.map((m) => [m.id, m]));
-  const courseMap = new Map(allCourses.map((c) => [c.id, c]));
+    const catalog = await getPublishedAcademyCatalog();
+    const allCourses = catalog.courses;
+    const allModules = catalog.modules;
 
-  for (const lesson of orderedLessons) {
-    if (!completedIds.has(lesson.id)) {
-      const mod = moduleMap.get(lesson.moduleId);
-      if (!mod) continue;
-      const course = courseMap.get(mod.courseId);
-      if (!course) continue;
-      const p = progressMap.get(lesson.id);
+    // Build course → module map and collect visible module IDs
+    const courseModulesMap = new Map<string, typeof allModules>();
+    for (const mod of allModules) {
+      const list = courseModulesMap.get(mod.courseId) ?? [];
+      list.push(mod);
+      courseModulesMap.set(mod.courseId, list);
+    }
 
+    const visibleModuleIds = new Set<string>();
+    for (const c of allCourses) {
+      const mods = courseModulesMap.get(c.id) ?? [];
+      filterModulesForLang(mods, lang).forEach((m) =>
+        visibleModuleIds.add(m.id),
+      );
+    }
+
+    if (visibleModuleIds.size === 0) {
+      res.status(404).json({ error: "No lessons available" });
+      return;
+    }
+
+    const allLessonsRaw = catalog.lessons.filter((lesson) =>
+      visibleModuleIds.has(lesson.moduleId),
+    );
+
+    // Group by module for smart sorting
+    const lessonsByModule = new Map<string, typeof allLessonsRaw>();
+    for (const l of allLessonsRaw) {
+      const list = lessonsByModule.get(l.moduleId) ?? [];
+      list.push(l);
+      lessonsByModule.set(l.moduleId, list);
+    }
+
+    // Build globally ordered list: course order → module order → sorted lessons
+    const orderedLessons: typeof allLessonsRaw = [];
+    for (const c of allCourses) {
+      const mods = courseModulesMap.get(c.id) ?? [];
+      const visibleMods = filterModulesForLang(mods, lang);
+      for (const mod of visibleMods) {
+        const modLessons = lessonsByModule.get(mod.id) ?? [];
+        orderedLessons.push(...sortAcademyLessons(modLessons));
+      }
+    }
+
+    const orderedLessonIds = orderedLessons.map((lesson) => lesson.id);
+    const allProgress =
+      orderedLessonIds.length > 0
+        ? await db
+            .select()
+            .from(userLessonProgress)
+            .where(
+              and(
+                eq(userLessonProgress.userId, user.id),
+                inArray(userLessonProgress.lessonId, orderedLessonIds),
+              ),
+            )
+        : [];
+
+    const completedIds = new Set(
+      allProgress.filter((p) => p.completedAt).map((p) => p.lessonId),
+    );
+    const progressMap = new Map(allProgress.map((p) => [p.lessonId, p]));
+    const moduleMap = new Map(allModules.map((m) => [m.id, m]));
+    const courseMap = new Map(allCourses.map((c) => [c.id, c]));
+
+    for (const lesson of orderedLessons) {
+      if (!completedIds.has(lesson.id)) {
+        const mod = moduleMap.get(lesson.moduleId);
+        if (!mod) continue;
+        const course = courseMap.get(mod.courseId);
+        if (!course) continue;
+        const p = progressMap.get(lesson.id);
+
+        res.json({
+          lessonId: lesson.id,
+          lessonTitle: resolveLocale(lang, lesson.title),
+          courseId: course.id,
+          courseTitle: resolveLocale(lang, course.title),
+          courseThumbnailUrl: course.thumbnailUrl,
+          moduleTitle: resolveLocale(lang, mod.title),
+          durationSeconds: lesson.durationSeconds,
+          watchPercent: p?.watchPercent ?? 0,
+        });
+        return;
+      }
+    }
+
+    // All complete — return first lesson as review prompt
+    const firstLesson = orderedLessons[0];
+    if (firstLesson) {
+      const mod = moduleMap.get(firstLesson.moduleId);
+      const course = mod ? courseMap.get(mod.courseId) : undefined;
       res.json({
-        lessonId: lesson.id,
-        lessonTitle: resolveLocale(lang, lesson.title),
-        courseId: course.id,
-        courseTitle: resolveLocale(lang, course.title),
-        courseThumbnailUrl: course.thumbnailUrl,
-        moduleTitle: resolveLocale(lang, mod.title),
-        durationSeconds: lesson.durationSeconds,
-        watchPercent: p?.watchPercent ?? 0,
+        lessonId: firstLesson.id,
+        lessonTitle: resolveLocale(lang, firstLesson.title),
+        courseId: course?.id ?? "",
+        courseTitle: resolveLocale(lang, course?.title ?? {}),
+        courseThumbnailUrl: course?.thumbnailUrl ?? "",
+        moduleTitle: resolveLocale(lang, mod?.title ?? {}),
+        durationSeconds: firstLesson.durationSeconds,
+        watchPercent: 100,
       });
       return;
     }
-  }
 
-  // All complete — return first lesson as review prompt
-  const firstLesson = orderedLessons[0];
-  if (firstLesson) {
-    const mod = moduleMap.get(firstLesson.moduleId);
-    const course = mod ? courseMap.get(mod.courseId) : undefined;
-    res.json({
-      lessonId: firstLesson.id,
-      lessonTitle: resolveLocale(lang, firstLesson.title),
-      courseId: course?.id ?? "",
-      courseTitle: resolveLocale(lang, course?.title ?? {}),
-      courseThumbnailUrl: course?.thumbnailUrl ?? "",
-      moduleTitle: resolveLocale(lang, mod?.title ?? {}),
-      durationSeconds: firstLesson.durationSeconds,
-      watchPercent: 100,
-    });
-    return;
-  }
-
-  res.status(404).json({ error: "No lessons available" });
-});
+    res.status(404).json({ error: "No lessons available" });
+  },
+);
 
 export default router;

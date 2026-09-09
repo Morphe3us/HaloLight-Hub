@@ -8,6 +8,10 @@ import {
 } from "./middlewares/clerkProxyMiddleware";
 import router from "./routes";
 import { logger } from "./lib/logger";
+import { getAllowedCorsOrigins, isCorsOriginAllowed } from "./lib/corsPolicy";
+import { createApiErrorHandler, serializeApiError } from "./lib/apiErrors";
+import healthRouter from "./routes/health";
+import { createFrontendHandler } from "./lib/frontend";
 
 const app: Express = express();
 
@@ -15,6 +19,7 @@ app.use(
   pinoHttp({
     logger,
     serializers: {
+      err: serializeApiError,
       req(req) {
         return {
           id: req.id,
@@ -34,12 +39,27 @@ app.use(
 // Clerk proxy must be mounted before body parsers (streams raw bytes)
 app.use(CLERK_PROXY_PATH, clerkProxyMiddleware());
 
-app.use(cors({ credentials: true, origin: true }));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+const allowedCorsOrigins = getAllowedCorsOrigins();
+app.use(
+  cors({
+    credentials: true,
+    origin(origin, callback) {
+      callback(null, isCorsOriginAllowed(origin, allowedCorsOrigins));
+    },
+  }),
+);
+// Probes must remain available without an authentication service round trip.
+app.use("/api", healthRouter);
+if (process.env.NODE_ENV === "production") {
+  app.use(createFrontendHandler(process.env.FRONTEND_DIST_PATH || "artifacts/halolight-os/dist/public"));
+}
+app.use(express.json({ limit: "25mb" }));
+app.use(express.urlencoded({ extended: true, limit: "25mb" }));
 
 app.use(clerkMiddleware());
 
 app.use("/api", router);
+
+app.use(createApiErrorHandler(logger));
 
 export default app;

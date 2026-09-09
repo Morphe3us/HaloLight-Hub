@@ -11,6 +11,10 @@ export interface UploadOptions {
 }
 
 export interface UploadResult {
+  /**
+   * Application-facing URL. For protected files this must route through the API
+   * authorization layer, for example /api/files/<key>, not a raw public bucket URL.
+   */
   url: string;
   key: string;
   size?: number;

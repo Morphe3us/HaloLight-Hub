@@ -9,8 +9,15 @@ async function seedContractTemplates() {
   let skipped = 0;
 
   for (const tpl of DEFAULT_CONTRACT_TEMPLATES) {
-    const [existing] = await db.select().from(contractTemplates)
-      .where(and(eq(contractTemplates.language, tpl.language), eq(contractTemplates.isDefault, true)));
+    const [existing] = await db
+      .select()
+      .from(contractTemplates)
+      .where(
+        and(
+          eq(contractTemplates.language, tpl.language),
+          eq(contractTemplates.isDefault, true),
+        ),
+      );
 
     if (existing) {
       console.log(`  ↳ [${tpl.language}] already exists — skipping`);
@@ -31,4 +38,9 @@ async function seedContractTemplates() {
   console.log(`\nDone — ${created} created, ${skipped} skipped.`);
 }
 
-seedContractTemplates().then(() => process.exit(0)).catch((e) => { console.error(e); process.exit(1); });
+seedContractTemplates()
+  .then(() => process.exit(0))
+  .catch((e) => {
+    console.error(e);
+    process.exit(1);
+  });

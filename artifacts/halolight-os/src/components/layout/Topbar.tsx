@@ -1,11 +1,20 @@
-import { useGetCurrentUser, useGetUnreadNotificationCount } from "@workspace/api-client-react";
+import {
+  useGetCurrentUser,
+  useGetUnreadNotificationCount,
+  useUpdateCurrentUser,
+  type UserUpdateLanguage,
+} from "@workspace/api-client-react";
+import { useUser } from "@clerk/react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Bell, Sun, Moon, Home, Globe, ChevronDown } from "lucide-react";
 import { Link } from "wouter";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/components/theme-provider";
 import { useTranslation } from "react-i18next";
-import i18n, { LANG_STORAGE_KEY } from "@/i18n";
+import { setAppLanguage } from "@/i18n";
+import { syncLanguageCaches } from "@/lib/languageQueries";
+import { resolveCurrentUserIdentity } from "@/lib/currentUserIdentity";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,7 +22,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-const LANGUAGES = [
+const LANGUAGES: Array<{ code: UserUpdateLanguage; label: string }> = [
   { code: "en", label: "English" },
   { code: "fr", label: "Français" },
   { code: "es", label: "Español" },
@@ -32,21 +41,31 @@ const ROLE_LABELS: Record<string, string> = {
 };
 
 export function Topbar() {
-  const { data: user } = useGetCurrentUser();
+  const { data: apiUser } = useGetCurrentUser();
+  const { user: clerkUser } = useUser();
+  const user = apiUser?.clerkId === clerkUser?.id ? apiUser : undefined;
   const { data: unreadData } = useGetUnreadNotificationCount();
+  const updateUser = useUpdateCurrentUser();
+  const queryClient = useQueryClient();
   const { theme, setTheme } = useTheme();
-  const { i18n: i18nInst } = useTranslation();
-
-  const initials = user?.fullName
-    ? user.fullName.split(" ").map(n => n[0]).join("").toUpperCase().substring(0, 2)
-    : user?.email.substring(0, 2).toUpperCase();
+  const { t, i18n: i18nInst } = useTranslation();
+  const identity = resolveCurrentUserIdentity(user, clerkUser);
 
   const isDark = theme === "dark";
   const currentLang = i18nInst.language?.split("-")[0] ?? "en";
 
   const handleLangChange = (code: string) => {
-    i18n.changeLanguage(code);
-    localStorage.setItem(LANG_STORAGE_KEY, code);
+    void setAppLanguage(code);
+    if (user && user.language !== code) {
+      updateUser.mutate(
+        { data: { language: code as UserUpdateLanguage } },
+        {
+          onSuccess: () => {
+            syncLanguageCaches(queryClient, code as UserUpdateLanguage);
+          },
+        },
+      );
+    }
   };
 
   return (
@@ -76,7 +95,7 @@ export function Topbar() {
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <Link href="/" className="text-muted-foreground hover:text-foreground transition-colors" aria-label="Dashboard">
+        <Link href="/dashboard" className="text-muted-foreground hover:text-foreground transition-colors" aria-label={t("nav.dashboard")}>
           <Home className="w-4 h-4" />
         </Link>
 
@@ -85,12 +104,12 @@ export function Topbar() {
           size="icon"
           className="h-8 w-8 text-muted-foreground hover:text-foreground"
           onClick={() => setTheme(isDark ? "light" : "dark")}
-          aria-label="Toggle dark mode"
+          aria-label={t("nav.toggle_theme")}
         >
           {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
         </Button>
 
-        <Link href="/notifications" className="relative text-muted-foreground hover:text-foreground transition-colors" data-testid="link-topbar-notifications">
+        <Link href="/notifications" className="relative text-muted-foreground hover:text-foreground transition-colors" data-testid="link-topbar-notifications" aria-label={t("nav.notifications")}>
           <Bell className="w-5 h-5" />
           {!!unreadData?.count && unreadData.count > 0 && (
             <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground border-2 border-background">
@@ -101,15 +120,18 @@ export function Topbar() {
 
         <div className="flex items-center gap-3 border-l border-border pl-5">
           <div className="text-right">
-            <div className="text-sm font-medium text-foreground">{user?.fullName || "User"}</div>
+            <div className="text-sm font-medium text-foreground">
+              {identity.displayName}
+            </div>
             <div className="text-xs text-muted-foreground">
               {ROLE_LABELS[user?.role ?? ""] ?? user?.role?.replace("_", " ") ?? ""}
             </div>
           </div>
           <Link href="/settings">
             <Avatar className="h-9 w-9 cursor-pointer hover:ring-2 hover:ring-accent transition-all" data-testid="avatar-topbar">
+              <AvatarImage src={clerkUser?.imageUrl} alt={identity.displayName} />
               <AvatarFallback className="bg-accent/20 text-foreground font-semibold text-sm">
-                {initials}
+                {identity.initials}
               </AvatarFallback>
             </Avatar>
           </Link>

@@ -23,9 +23,18 @@ type NavItem = {
   children?: NavItem[];
 };
 
-function NavLink({ item, location, onClose }: { item: NavItem; location: string; onClose?: () => void }) {
+function NavLink({
+  item,
+  location,
+  unreadCount,
+  onClose,
+}: {
+  item: NavItem;
+  location: string;
+  unreadCount: number;
+  onClose?: () => void;
+}) {
   const [open, setOpen] = useState(() => item.children?.some((c) => location.startsWith(c.href)) ?? false);
-  const { data: unreadData } = useGetUnreadNotificationCount();
 
   if (item.children) {
     const isGroupActive = item.children.some((c) => location.startsWith(c.href));
@@ -92,9 +101,9 @@ function NavLink({ item, location, onClose }: { item: NavItem; location: string;
           )} />
           <span>{item.title}</span>
         </div>
-        {item.badge && unreadData?.count ? (
+        {item.badge && unreadCount > 0 ? (
           <span className="bg-accent text-foreground text-xs font-bold px-2 py-0.5 rounded-full min-w-[20px] text-center">
-            {unreadData.count}
+            {unreadCount}
           </span>
         ) : (
           <ChevronRight className={cn(
@@ -116,6 +125,7 @@ export function Sidebar() {
 
   const isAdmin = user?.role === "admin";
   const { data: unreadMobile } = useGetUnreadNotificationCount();
+  const unreadCount = unreadMobile?.count ?? 0;
   const { theme, setTheme } = useTheme();
   const isDark = theme === "dark";
 
@@ -203,7 +213,7 @@ export function Sidebar() {
       {/* Navigation */}
       <div className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
         {allItems.map((item) => (
-          <NavLink key={item.href} item={item} location={location} onClose={onClose} />
+          <NavLink key={item.href} item={item} location={location} unreadCount={unreadCount} onClose={onClose} />
         ))}
       </div>
 
@@ -232,7 +242,13 @@ export function Sidebar() {
       <div className="md:hidden flex items-center px-3 py-3 border-b border-border bg-background gap-2">
         <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
           <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" className="shrink-0" data-testid="button-mobile-menu">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="shrink-0"
+              data-testid="button-mobile-menu"
+              aria-label={t("nav.open_menu")}
+            >
               <Menu className="h-5 w-5" />
             </Button>
           </SheetTrigger>
@@ -248,12 +264,17 @@ export function Sidebar() {
             size="icon"
             className="h-9 w-9 text-muted-foreground hover:text-foreground"
             onClick={() => setTheme(isDark ? "light" : "dark")}
-            aria-label="Toggle theme"
+            aria-label={t("nav.toggle_theme")}
           >
             {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </Button>
-          <Link href="/notifications">
-            <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-foreground relative">
+          <Link href="/notifications" aria-label={t("nav.notifications")}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 text-muted-foreground hover:text-foreground relative"
+              aria-label={t("nav.notifications")}
+            >
               <Bell className="h-4 w-4" />
               {!!unreadMobile?.count && unreadMobile.count > 0 && (
                 <span className="absolute top-1 right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-destructive text-[9px] font-bold text-destructive-foreground">

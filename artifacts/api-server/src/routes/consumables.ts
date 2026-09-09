@@ -244,8 +244,8 @@ router.post("/consumables/restock", requireAuth, async (req: Request, res: Respo
   });
 });
 
-// POST /consumables/order — place a reorder
-router.post("/consumables/order", requireAuth, async (req: Request, res: Response): Promise<void> => {
+// POST /consumables/orders — place a reorder
+router.post("/consumables/orders", requireAuth, async (req: Request, res: Response): Promise<void> => {
   const user = await getOrCreateUser(req);
   if (!user) { res.status(401).json({ error: "Unauthorized" }); return; }
 

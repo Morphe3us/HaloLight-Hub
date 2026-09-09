@@ -1,7 +1,13 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useParams, useLocation, Link } from "wouter";
+import { useQueryClient } from "@tanstack/react-query";
 import {
+  getGetAcademyProgressSummaryQueryKey,
+  getGetCourseQueryKey,
+  getGetDashboardSummaryQueryKey,
+  getGetLessonQueryKey,
+  getListCoursesQueryKey,
   useGetLesson,
   useGetCourse,
   useUpdateLessonProgress,
@@ -22,42 +28,69 @@ import {
   BookOpen,
   AlertCircle,
   Video,
+  RefreshCw,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { academyErrorMessage, apiErrorStatus } from "@/lib/apiErrorMessage";
 
-function getVideoEmbedUrl(url: string): string {
-  if (!url) return "";
+export function getVideoEmbedUrl(url: string): string {
+  if (typeof url !== "string" || !url.trim()) return "";
   try {
     const u = new URL(url);
+    if (!["https:", "http:"].includes(u.protocol) || u.username || u.password) return "";
     if (u.hostname === "youtu.be") {
       const videoId = u.pathname.slice(1);
       return videoId ? `https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1` : url;
     }
-    if (u.hostname.includes("youtube.com")) {
+    if (u.hostname === "youtube.com" || u.hostname.endsWith(".youtube.com")) {
       const videoId = u.searchParams.get("v") ?? "";
       return videoId ? `https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1` : url;
     }
     if (u.hostname === "video.bunnycdn.com" && u.pathname.startsWith("/play/")) {
       const parts = u.pathname.split("/").filter(Boolean);
-      if (parts.length >= 3) {
-        return `https://iframe.mediadelivery.net/embed/${parts[1]}/${parts[2]}?controls=true&autoplay=false&loop=false&muted=false&preload=true&responsive=true`;
+      if (parts.length === 3) {
+        u.protocol = "https:";
+        u.host = "iframe.mediadelivery.net";
+        u.pathname = `/embed/${parts[1]}/${parts[2]}`;
       }
     }
     if (u.hostname === "iframe.mediadelivery.net") {
-      if (!u.searchParams.has("controls")) {
-        u.searchParams.set("controls", "true");
-        u.searchParams.set("autoplay", "false");
-        u.searchParams.set("loop", "false");
-        u.searchParams.set("muted", "false");
-        u.searchParams.set("preload", "true");
-        u.searchParams.set("responsive", "true");
-        return u.toString();
+      if (/^\/play\/[^/]+\/[^/]+\/?$/.test(u.pathname)) {
+        u.pathname = u.pathname.replace(/^\/play\//, "/embed/");
       }
+      const defaults = new URLSearchParams({
+        controls: "true", autoplay: "false", loop: "false", muted: "false",
+        preload: "true", responsive: "true",
+      });
+      for (const key of [...defaults.keys()]) {
+        if (u.searchParams.has(key)) defaults.delete(key);
+      }
+      // Append defaults without reserializing or dropping signed token/expiry parameters.
+      if (defaults.size) u.search += `${u.search ? "&" : "?"}${defaults}`;
+      return u.toString();
     }
-    return url;
+    return u.toString();
   } catch {
-    return url;
+    return "";
   }
+}
+
+type VideoAsset = { embedUrl?: string | null; thumbnailUrl?: string | null };
+type LessonPlayback = {
+  videoUrl?: string | null;
+  videoUrls?: Record<string, string> | null;
+  videoAssets?: Record<string, VideoAsset> | null;
+};
+
+export function resolveLessonVideoUrl(lesson: LessonPlayback, lang: string): string {
+  const { videoAssets, videoUrls } = lesson;
+  const candidates = [videoAssets?.[lang]?.embedUrl, videoUrls?.[lang],
+    videoAssets?.en?.embedUrl, videoUrls?.en];
+  // A legacy default must not resurrect playback from an unrelated language.
+  if (!Object.keys(videoAssets ?? {}).length && !Object.keys(videoUrls ?? {}).length) {
+    candidates.push(lesson.videoUrl);
+  }
+  return candidates.map((url) => getVideoEmbedUrl(url ?? "")).find(Boolean) ?? "";
 }
 
 const RESOURCE_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -118,22 +151,72 @@ function filterModulesByLang<T extends { title: string; lessons: unknown[] }>(
 }
 
 export default function AcademyLesson() {
-  const { t, i18n } = useTranslation();
+  const { i18n } = useTranslation();
   const { courseId, lessonId } = useParams<{ courseId: string; lessonId: string }>();
+  const lang = i18n.language?.split("-")[0] ?? "en";
+  // Route/language changes must discard quiz state, player state and delayed navigation.
+  return <AcademyLessonContent key={`${courseId}:${lessonId}:${lang}`} courseId={courseId!} lessonId={lessonId!} lang={lang} />;
+}
+
+function AcademyLessonContent({ courseId, lessonId, lang }: { courseId: string; lessonId: string; lang: string }) {
+  const { t } = useTranslation();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-  const { data: lesson, isLoading: isLoadingLesson, refetch: refetchLesson } = useGetLesson(lessonId!);
-  const { data: course, isLoading: isLoadingCourse } = useGetCourse(courseId!);
+  const {
+    data: lesson,
+    error: lessonError,
+    isError: isLessonError,
+    isLoading: isLoadingLesson,
+    isFetching: isFetchingLesson,
+    isFetchedAfterMount,
+    refetch: refetchLesson,
+  } = useGetLesson(lessonId, { lang }, {
+    query: {
+      queryKey: getGetLessonQueryKey(lessonId, { lang }),
+      staleTime: 0,
+      refetchOnMount: "always",
+    },
+  });
+  const {
+    data: course,
+    error: courseError,
+    isError: isCourseError,
+    isLoading: isLoadingCourse,
+    isFetching: isFetchingCourse,
+    refetch: refetchCourse,
+  } = useGetCourse(courseId!, { lang });
   const { mutate: updateProgress } = useUpdateLessonProgress();
-  const { mutate: submitQuiz } = useSubmitQuiz();
+  const { mutate: submitQuiz, isPending: isSubmittingQuiz } = useSubmitQuiz();
 
   const [quizAnswers, setQuizAnswers] = useState<Record<string, number>>({});
   const [quizResult, setQuizResult] = useState<{ score: number; total: number; passed: boolean; answers: Array<{ questionId: string; correct: boolean; selectedOption: number; correctOption: number }> } | null>(null);
   const [quizSubmitted, setQuizSubmitted] = useState(false);
   const [isMarkingComplete, setIsMarkingComplete] = useState(false);
+  const [playbackAttempt, setPlaybackAttempt] = useState(0);
+  const [isRetryingPlayback, setIsRetryingPlayback] = useState(false);
+  const completionTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const isLoading = isLoadingLesson || isLoadingCourse;
+  useEffect(() => () => {
+    if (completionTimer.current !== null) clearTimeout(completionTimer.current);
+  }, []);
+
+  const isLoading = isLoadingLesson || isLoadingCourse || (!isFetchedAfterMount && isFetchingLesson);
+  const visibleModules = course
+    ? filterModulesByLang(
+        course.modules as Array<{
+          id: string;
+          title: string;
+          lessons: Array<{ id: string; moduleTitle?: string }>;
+        }>,
+        lang,
+      )
+    : [];
+  const allLessons = visibleModules.flatMap((m) =>
+    m.lessons.map((l) => ({ ...l, moduleTitle: m.title })),
+  );
+  const currentIdx = allLessons.findIndex((l) => l.id === lessonId);
 
   if (isLoading) {
     return (
@@ -145,10 +228,40 @@ export default function AcademyLesson() {
     );
   }
 
-  if (!lesson || !course) {
+  if (isLessonError || isCourseError) {
+    return (
+      <div role="alert" className="rounded-xl border border-destructive/20 bg-destructive/8 p-5 text-destructive break-words">
+        <div className="flex items-start gap-3">
+          <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
+          <div>
+            <p className="font-semibold">{t("academy.error_title")}</p>
+            <p className="mt-1 text-sm">
+              {isCourseError ? academyErrorMessage(courseError, t)
+                : apiErrorStatus(lessonError) === 404 ? t("academy.lesson_unavailable")
+                : academyErrorMessage(lessonError, t)}
+            </p>
+          </div>
+        </div>
+        <div className="mt-4 flex flex-wrap gap-2">
+          <Button variant="outline" disabled={isFetchingLesson || isFetchingCourse} onClick={() => {
+            void refetchLesson();
+            void refetchCourse();
+          }}>
+            <RefreshCw className={cn("mr-2 h-4 w-4", (isFetchingLesson || isFetchingCourse) && "animate-spin")} />
+            {t("academy.retry")}
+          </Button>
+          <Button variant="outline" asChild>
+            <Link href={`/academy/${courseId}`}>{t("academy.back_to_course")}</Link>
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!lesson || !course || currentIdx === -1 || lesson.id !== lessonId || course.id !== courseId) {
     return (
       <div className="text-center py-16 text-muted-foreground">
-        <p>Lesson not found.</p>
+        <p>{t("academy.lesson_unavailable")}</p>
         <Link href={`/academy/${courseId}`}>
           <Button variant="outline" className="mt-4">{t("academy.back_to_course")}</Button>
         </Link>
@@ -156,18 +269,6 @@ export default function AcademyLesson() {
     );
   }
 
-  const lang = i18n.language?.split("-")[0] ?? "en";
-
-  // Apply client-side language filter for prev/next navigation — same logic as AcademyCourse.tsx
-  const visibleModules = filterModulesByLang(
-    course.modules as Array<{ id: string; title: string; lessons: Array<{ id: string; moduleTitle?: string }> }>,
-    lang
-  );
-
-  const allLessons = visibleModules.flatMap((m) =>
-    m.lessons.map((l) => ({ ...l, moduleTitle: m.title }))
-  );
-  const currentIdx = allLessons.findIndex((l) => l.id === lessonId);
   const prevLesson = currentIdx > 0 ? allLessons[currentIdx - 1] : null;
   const nextLesson = currentIdx < allLessons.length - 1 ? allLessons[currentIdx + 1] : null;
 
@@ -177,14 +278,28 @@ export default function AcademyLesson() {
     if (isMarkingComplete) return;
     setIsMarkingComplete(true);
     updateProgress(
-      { id: lessonId!, data: { watchPercent: 100, completed: true } },
+      { id: lessonId!, params: { lang }, data: { watchPercent: 100, completed: true } },
       {
         onSuccess: () => {
-          refetchLesson();
+          queryClient.invalidateQueries({
+            queryKey: getGetLessonQueryKey(lessonId!, { lang }),
+          });
+          queryClient.invalidateQueries({
+            queryKey: getGetCourseQueryKey(courseId!, { lang }),
+          });
+          queryClient.invalidateQueries({
+            queryKey: getListCoursesQueryKey({ lang }),
+          });
+          queryClient.invalidateQueries({
+            queryKey: getGetAcademyProgressSummaryQueryKey({ lang }),
+          });
+          queryClient.invalidateQueries({
+            queryKey: getGetDashboardSummaryQueryKey({ lang }),
+          });
           toast({ title: t("academy_lesson.toast_completed"), description: t("academy_lesson.toast_completed_desc") });
           setIsMarkingComplete(false);
           if (nextLesson) {
-            setTimeout(() => setLocation(`/academy/${courseId}/${nextLesson.id}`), 800);
+            completionTimer.current = setTimeout(() => setLocation(`/academy/${courseId}/${nextLesson.id}`), 800);
           }
         },
         onError: () => {
@@ -196,9 +311,10 @@ export default function AcademyLesson() {
   };
 
   const handleQuizSubmit = () => {
+    if (isSubmittingQuiz || quizSubmitted) return;
     const answers = lesson.quizQuestions.map((q) => quizAnswers[q.id] ?? -1);
     submitQuiz(
-      { id: lessonId!, data: { answers } },
+      { id: lessonId!, params: { lang }, data: { answers } },
       {
         onSuccess: (result) => {
           setQuizResult(result);
@@ -214,16 +330,19 @@ export default function AcademyLesson() {
     );
   };
 
-  // ── Video resolution ───────────────────────────────────────────────────────
-  // Priority: user lang asset → EN asset → no video (never fallback to other languages)
-  type VideoAsset = { embedUrl?: string; thumbnailUrl?: string; previewUrl?: string; videoId?: string };
-  const videoAssets = (lesson as { videoAssets?: Record<string, VideoAsset> | null }).videoAssets;
-  const asset = videoAssets?.[lang] ?? videoAssets?.["en"] ?? undefined;
-  const videoUrls = lesson.videoUrls as Record<string, string> | null | undefined;
+  const videoAssets = lesson.videoAssets;
+  const embedUrl = resolveLessonVideoUrl(lesson, lang);
 
-  // Resolution chain: videoAssets[lang] → videoAssets.en → videoUrls[lang] → videoUrls.en → lesson.videoUrl
-  const resolvedVideoUrl = asset?.embedUrl ?? videoUrls?.[lang] ?? videoUrls?.["en"] ?? lesson.videoUrl ?? "";
-  const embedUrl = getVideoEmbedUrl(resolvedVideoUrl);
+  const retryPlayback = async () => {
+    if (isRetryingPlayback || isFetchingLesson) return;
+    setIsRetryingPlayback(true);
+    try {
+      const result = await refetchLesson();
+      if (!result.isError) setPlaybackAttempt((attempt) => attempt + 1);
+    } finally {
+      setIsRetryingPlayback(false);
+    }
+  };
 
   // Thumbnail: lang-specific → EN fallback only (no random language fallback)
   const thumbnailUrl =
@@ -257,12 +376,15 @@ export default function AcademyLesson() {
       </div>
 
       {/* Video Player */}
-      {embedUrl ? (
+      {isRetryingPlayback ? (
+        <Skeleton className="aspect-video rounded-2xl" aria-label={t("common.loading")} />
+      ) : embedUrl ? (
         <div
           className="relative bg-black rounded-2xl overflow-hidden shadow-lg aspect-video"
           style={thumbnailUrl ? { backgroundImage: `url(${thumbnailUrl})`, backgroundSize: "cover", backgroundPosition: "center" } : undefined}
         >
           <iframe
+            key={playbackAttempt}
             src={embedUrl}
             title={lesson.title}
             allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture; fullscreen"
@@ -287,8 +409,15 @@ export default function AcademyLesson() {
         </div>
       )}
 
+      <div className="flex justify-end">
+        <Button variant="outline" onClick={() => void retryPlayback()} disabled={isRetryingPlayback || isFetchingLesson}>
+          <RefreshCw className={cn("mr-2 h-4 w-4", (isRetryingPlayback || isFetchingLesson) && "animate-spin")} />
+          {t("academy.retry_video")}
+        </Button>
+      </div>
+
       {/* Mark Complete */}
-      {!isCompleted && lesson.quizQuestions.length === 0 && (
+      {!isCompleted && (lesson.quizQuestions.length === 0 || quizResult?.passed) && (
         <div className="flex justify-end">
           <Button
             onClick={handleMarkComplete}
@@ -329,7 +458,8 @@ export default function AcademyLesson() {
                             <button
                               key={oi}
                               onClick={() => !quizSubmitted && setQuizAnswers((prev) => ({ ...prev, [q.id]: oi }))}
-                              disabled={quizSubmitted}
+                              disabled={quizSubmitted || isSubmittingQuiz}
+                              aria-pressed={isSelected}
                               className={cn(
                                 "w-full text-left px-4 py-3 rounded-lg border text-sm transition-all",
                                 quizSubmitted
@@ -375,7 +505,7 @@ export default function AcademyLesson() {
                 {!quizSubmitted ? (
                   <Button
                     onClick={handleQuizSubmit}
-                    disabled={Object.keys(quizAnswers).length < lesson.quizQuestions.length}
+                    disabled={isSubmittingQuiz || lesson.quizQuestions.some((q) => quizAnswers[q.id] === undefined)}
                     className="w-full"
                   >
                     {t("academy.quiz_submit")}

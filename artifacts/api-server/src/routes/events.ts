@@ -2,174 +2,347 @@ import { Router, type IRouter, type Request, type Response } from "express";
 import { eq, and, asc, desc, count, gte, sql } from "drizzle-orm";
 import { db, events } from "@workspace/db";
 import { requireAuth } from "../middlewares/requireAuth";
+import { validateOwnedLinks } from "../lib/ownership";
 import { getOrCreateUser } from "../lib/userSync";
 
 const router: IRouter = Router();
 
 // GET /events
-router.get("/events", requireAuth, async (req: Request, res: Response): Promise<void> => {
-  const user = await getOrCreateUser(req);
-  if (!user) { res.status(401).json({ error: "Unauthorized" }); return; }
+router.get(
+  "/events",
+  requireAuth,
+  async (req: Request, res: Response): Promise<void> => {
+    const user = await getOrCreateUser(req);
+    if (!user) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
 
-  const limit = Number(req.query.limit ?? 20);
-  const offset = Number(req.query.offset ?? 0);
-  const status = req.query.status as string | undefined;
+    const limit = Number(req.query.limit ?? 20);
+    const offset = Number(req.query.offset ?? 0);
+    const status = req.query.status as string | undefined;
 
-  const now = new Date();
-  const items = await db
-    .select()
-    .from(events)
-    .where(
-      status
-        ? and(
-            eq(events.userId, user.id),
-            eq(events.status, status as "upcoming" | "active" | "completed" | "cancelled"),
-            status === "upcoming" ? gte(events.eventDate, now) : undefined
-          )
-        : eq(events.userId, user.id)
-    )
-    .orderBy(status === "upcoming" ? asc(events.eventDate) : desc(events.eventDate))
-    .limit(limit)
-    .offset(offset);
+    const now = new Date();
+    const items = await db
+      .select()
+      .from(events)
+      .where(
+        status
+          ? and(
+              eq(events.userId, user.id),
+              eq(
+                events.status,
+                status as "upcoming" | "active" | "completed" | "cancelled",
+              ),
+              status === "upcoming" ? gte(events.eventDate, now) : undefined,
+            )
+          : eq(events.userId, user.id),
+      )
+      .orderBy(
+        status === "upcoming" ? asc(events.eventDate) : desc(events.eventDate),
+      )
+      .limit(limit)
+      .offset(offset);
 
-  const [{ value: total }] = await db
-    .select({ value: count() })
-    .from(events)
-    .where(eq(events.userId, user.id));
+    const [{ value: total }] = await db
+      .select({ value: count() })
+      .from(events)
+      .where(eq(events.userId, user.id));
 
-  res.json({ items: items.map(formatEvent), total });
-});
+    res.json({ items: items.map(formatEvent), total });
+  },
+);
 
 // POST /events
-router.post("/events", requireAuth, async (req: Request, res: Response): Promise<void> => {
-  const user = await getOrCreateUser(req);
-  if (!user) { res.status(401).json({ error: "Unauthorized" }); return; }
+router.post(
+  "/events",
+  requireAuth,
+  async (req: Request, res: Response): Promise<void> => {
+    const user = await getOrCreateUser(req);
+    if (!user) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
 
-  const {
-    title, description, eventDate, location, type, notes,
-    clientName, clientEmail, clientPhone, clientCompany,
-    eventStartTime, eventEndTime, packageName, rentalDuration, includedPrints,
-    equipmentIds, equipmentDescription, optionsList,
-    revenue, currency, paymentStatus,
-  } = req.body as {
-    title: string; description?: string; eventDate: string;
-    location?: string; type?: string; notes?: string;
-    clientName?: string; clientEmail?: string; clientPhone?: string; clientCompany?: string;
-    eventStartTime?: string; eventEndTime?: string;
-    packageName?: string; rentalDuration?: string; includedPrints?: string;
-    equipmentIds?: string[]; equipmentDescription?: string; optionsList?: string;
-    revenue?: string; currency?: string; paymentStatus?: string;
-  };
+    const {
+      title,
+      description,
+      eventDate,
+      location,
+      type,
+      notes,
+      leadId,
+      quoteId,
+      contractId,
+      invoiceId,
+      clientName,
+      clientEmail,
+      clientPhone,
+      clientCompany,
+      eventStartTime,
+      eventEndTime,
+      packageName,
+      rentalDuration,
+      includedPrints,
+      equipmentIds,
+      equipmentDescription,
+      optionsList,
+      revenue,
+      currency,
+      paymentStatus,
+    } = req.body as {
+      title: string;
+      description?: string;
+      eventDate: string;
+      location?: string;
+      type?: string;
+      notes?: string;
+      leadId?: string | null;
+      quoteId?: string | null;
+      contractId?: string | null;
+      invoiceId?: string | null;
+      clientName?: string;
+      clientEmail?: string;
+      clientPhone?: string;
+      clientCompany?: string;
+      eventStartTime?: string;
+      eventEndTime?: string;
+      packageName?: string;
+      rentalDuration?: string;
+      includedPrints?: string;
+      equipmentIds?: string[] | null;
+      equipmentDescription?: string;
+      optionsList?: string;
+      revenue?: string;
+      currency?: string;
+      paymentStatus?: string;
+    };
 
-  const [event] = await db.insert(events).values({
-    userId: user.id,
-    title,
-    description,
-    eventDate: new Date(eventDate),
-    location,
-    type,
-    notes,
-    clientName: clientName ?? null,
-    clientEmail: clientEmail ?? null,
-    clientPhone: clientPhone ?? null,
-    clientCompany: clientCompany ?? null,
-    eventStartTime: eventStartTime ?? null,
-    eventEndTime: eventEndTime ?? null,
-    packageName: packageName ?? null,
-    rentalDuration: rentalDuration ?? null,
-    includedPrints: includedPrints ?? null,
-    equipmentIds: equipmentIds ?? null,
-    equipmentDescription: equipmentDescription ?? null,
-    optionsList: optionsList ?? null,
-    revenue: revenue ?? null,
-    currency: currency ?? null,
-    paymentStatus: paymentStatus ?? null,
-  }).returning();
+    const linkValidation = await validateOwnedLinks(user.id, {
+      leadId,
+      quoteId,
+      contractId,
+      invoiceId,
+      equipmentIds,
+    });
+    if (!linkValidation.ok) {
+      res.status(linkValidation.status).json({ error: linkValidation.error });
+      return;
+    }
 
-  res.status(201).json(formatEvent(event));
-});
+    const [event] = await db
+      .insert(events)
+      .values({
+        userId: user.id,
+        title,
+        description,
+        eventDate: new Date(eventDate),
+        location,
+        type,
+        notes,
+        leadId: leadId ?? null,
+        quoteId: quoteId ?? null,
+        contractId: contractId ?? null,
+        invoiceId: invoiceId ?? null,
+        clientName: clientName ?? null,
+        clientEmail: clientEmail ?? null,
+        clientPhone: clientPhone ?? null,
+        clientCompany: clientCompany ?? null,
+        eventStartTime: eventStartTime ?? null,
+        eventEndTime: eventEndTime ?? null,
+        packageName: packageName ?? null,
+        rentalDuration: rentalDuration ?? null,
+        includedPrints: includedPrints ?? null,
+        equipmentIds: equipmentIds ?? null,
+        equipmentDescription: equipmentDescription ?? null,
+        optionsList: optionsList ?? null,
+        revenue: revenue ?? null,
+        currency: currency ?? null,
+        paymentStatus: paymentStatus ?? null,
+      })
+      .returning();
+
+    res.status(201).json(formatEvent(event));
+  },
+);
 
 // GET /events/:id
-router.get("/events/:id", requireAuth, async (req: Request, res: Response): Promise<void> => {
-  const user = await getOrCreateUser(req);
-  if (!user) { res.status(401).json({ error: "Unauthorized" }); return; }
+router.get(
+  "/events/:id",
+  requireAuth,
+  async (req: Request, res: Response): Promise<void> => {
+    const user = await getOrCreateUser(req);
+    if (!user) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
 
-  const eventId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-  const [event] = await db.select().from(events)
-    .where(and(eq(events.id, eventId), eq(events.userId, user.id)));
+    const eventId = Array.isArray(req.params.id)
+      ? req.params.id[0]
+      : req.params.id;
+    const [event] = await db
+      .select()
+      .from(events)
+      .where(and(eq(events.id, eventId), eq(events.userId, user.id)));
 
-  if (!event) { res.status(404).json({ error: "Event not found" }); return; }
-  res.json(formatEvent(event));
-});
+    if (!event) {
+      res.status(404).json({ error: "Event not found" });
+      return;
+    }
+    res.json(formatEvent(event));
+  },
+);
 
 // PATCH /events/:id
-router.patch("/events/:id", requireAuth, async (req: Request, res: Response): Promise<void> => {
-  const user = await getOrCreateUser(req);
-  if (!user) { res.status(401).json({ error: "Unauthorized" }); return; }
+router.patch(
+  "/events/:id",
+  requireAuth,
+  async (req: Request, res: Response): Promise<void> => {
+    const user = await getOrCreateUser(req);
+    if (!user) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
 
-  const eventId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-  const [existing] = await db.select().from(events)
-    .where(and(eq(events.id, eventId), eq(events.userId, user.id)));
+    const eventId = Array.isArray(req.params.id)
+      ? req.params.id[0]
+      : req.params.id;
+    const [existing] = await db
+      .select()
+      .from(events)
+      .where(and(eq(events.id, eventId), eq(events.userId, user.id)));
 
-  if (!existing) { res.status(404).json({ error: "Event not found" }); return; }
+    if (!existing) {
+      res.status(404).json({ error: "Event not found" });
+      return;
+    }
 
-  const {
-    title, description, eventDate, location, type, status, notes,
-    clientName, clientEmail, clientPhone, clientCompany,
-    eventStartTime, eventEndTime, packageName, rentalDuration, includedPrints,
-    equipmentIds, equipmentDescription, optionsList,
-    revenue, currency, paymentStatus, invoiceId,
-  } = req.body as {
-    title?: string; description?: string; eventDate?: string;
-    location?: string; type?: string;
-    status?: "upcoming" | "active" | "completed" | "cancelled";
-    notes?: string;
-    clientName?: string; clientEmail?: string; clientPhone?: string; clientCompany?: string;
-    eventStartTime?: string; eventEndTime?: string;
-    packageName?: string; rentalDuration?: string; includedPrints?: string;
-    equipmentIds?: string[]; equipmentDescription?: string; optionsList?: string;
-    revenue?: string; currency?: string; paymentStatus?: string; invoiceId?: string;
-  };
+    const {
+      title,
+      description,
+      eventDate,
+      location,
+      type,
+      status,
+      notes,
+      leadId,
+      quoteId,
+      contractId,
+      clientName,
+      clientEmail,
+      clientPhone,
+      clientCompany,
+      eventStartTime,
+      eventEndTime,
+      packageName,
+      rentalDuration,
+      includedPrints,
+      equipmentIds,
+      equipmentDescription,
+      optionsList,
+      revenue,
+      currency,
+      paymentStatus,
+      invoiceId,
+    } = req.body as {
+      title?: string;
+      description?: string;
+      eventDate?: string;
+      location?: string;
+      type?: string;
+      status?: "upcoming" | "active" | "completed" | "cancelled";
+      notes?: string;
+      leadId?: string | null;
+      quoteId?: string | null;
+      contractId?: string | null;
+      clientName?: string;
+      clientEmail?: string;
+      clientPhone?: string;
+      clientCompany?: string;
+      eventStartTime?: string;
+      eventEndTime?: string;
+      packageName?: string;
+      rentalDuration?: string;
+      includedPrints?: string;
+      equipmentIds?: string[] | null;
+      equipmentDescription?: string;
+      optionsList?: string;
+      revenue?: string;
+      currency?: string;
+      paymentStatus?: string;
+      invoiceId?: string | null;
+    };
 
-  const [updated] = await db.update(events).set({
-    ...(title !== undefined && { title }),
-    ...(description !== undefined && { description }),
-    ...(eventDate !== undefined && { eventDate: new Date(eventDate) }),
-    ...(location !== undefined && { location }),
-    ...(type !== undefined && { type }),
-    ...(status !== undefined && { status }),
-    ...(notes !== undefined && { notes }),
-    ...(clientName !== undefined && { clientName }),
-    ...(clientEmail !== undefined && { clientEmail }),
-    ...(clientPhone !== undefined && { clientPhone }),
-    ...(clientCompany !== undefined && { clientCompany }),
-    ...(eventStartTime !== undefined && { eventStartTime }),
-    ...(eventEndTime !== undefined && { eventEndTime }),
-    ...(packageName !== undefined && { packageName }),
-    ...(rentalDuration !== undefined && { rentalDuration }),
-    ...(includedPrints !== undefined && { includedPrints }),
-    ...(equipmentIds !== undefined && { equipmentIds }),
-    ...(equipmentDescription !== undefined && { equipmentDescription }),
-    ...(optionsList !== undefined && { optionsList }),
-    ...(revenue !== undefined && { revenue }),
-    ...(currency !== undefined && { currency }),
-    ...(paymentStatus !== undefined && { paymentStatus }),
-    ...(invoiceId !== undefined && { invoiceId }),
-    updatedAt: new Date(),
-  }).where(and(eq(events.id, eventId), eq(events.userId, user.id))).returning();
+    const linkValidation = await validateOwnedLinks(user.id, {
+      leadId: leadId !== undefined ? leadId : undefined,
+      quoteId: quoteId !== undefined ? quoteId : undefined,
+      contractId: contractId !== undefined ? contractId : undefined,
+      invoiceId: invoiceId !== undefined ? invoiceId : undefined,
+      equipmentIds: equipmentIds !== undefined ? equipmentIds : undefined,
+    });
+    if (!linkValidation.ok) {
+      res.status(linkValidation.status).json({ error: linkValidation.error });
+      return;
+    }
 
-  res.json(formatEvent(updated));
-});
+    const [updated] = await db
+      .update(events)
+      .set({
+        ...(title !== undefined && { title }),
+        ...(description !== undefined && { description }),
+        ...(eventDate !== undefined && { eventDate: new Date(eventDate) }),
+        ...(location !== undefined && { location }),
+        ...(type !== undefined && { type }),
+        ...(status !== undefined && { status }),
+        ...(notes !== undefined && { notes }),
+        ...(leadId !== undefined && { leadId }),
+        ...(quoteId !== undefined && { quoteId }),
+        ...(contractId !== undefined && { contractId }),
+        ...(clientName !== undefined && { clientName }),
+        ...(clientEmail !== undefined && { clientEmail }),
+        ...(clientPhone !== undefined && { clientPhone }),
+        ...(clientCompany !== undefined && { clientCompany }),
+        ...(eventStartTime !== undefined && { eventStartTime }),
+        ...(eventEndTime !== undefined && { eventEndTime }),
+        ...(packageName !== undefined && { packageName }),
+        ...(rentalDuration !== undefined && { rentalDuration }),
+        ...(includedPrints !== undefined && { includedPrints }),
+        ...(equipmentIds !== undefined && { equipmentIds }),
+        ...(equipmentDescription !== undefined && { equipmentDescription }),
+        ...(optionsList !== undefined && { optionsList }),
+        ...(revenue !== undefined && { revenue }),
+        ...(currency !== undefined && { currency }),
+        ...(paymentStatus !== undefined && { paymentStatus }),
+        ...(invoiceId !== undefined && { invoiceId }),
+        updatedAt: new Date(),
+      })
+      .where(and(eq(events.id, eventId), eq(events.userId, user.id)))
+      .returning();
+
+    res.json(formatEvent(updated));
+  },
+);
 
 // DELETE /events/:id
-router.delete("/events/:id", requireAuth, async (req: Request, res: Response): Promise<void> => {
-  const user = await getOrCreateUser(req);
-  if (!user) { res.status(401).json({ error: "Unauthorized" }); return; }
+router.delete(
+  "/events/:id",
+  requireAuth,
+  async (req: Request, res: Response): Promise<void> => {
+    const user = await getOrCreateUser(req);
+    if (!user) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
 
-  const eventId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-  await db.delete(events).where(and(eq(events.id, eventId), eq(events.userId, user.id)));
-  res.status(204).end();
-});
+    const eventId = Array.isArray(req.params.id)
+      ? req.params.id[0]
+      : req.params.id;
+    await db
+      .delete(events)
+      .where(and(eq(events.id, eventId), eq(events.userId, user.id)));
+    res.status(204).end();
+  },
+);
 
 function formatEvent(e: typeof events.$inferSelect) {
   const now = new Date();

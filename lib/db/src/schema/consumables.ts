@@ -1,4 +1,4 @@
-import { pgTable, text, uuid, timestamp, pgEnum, numeric, integer, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, uuid, timestamp, pgEnum, numeric, integer, boolean, index } from "drizzle-orm/pg-core";
 import { usersTable } from "./users";
 
 export const consumableCategoryEnum = pgEnum("consumable_category", [
@@ -29,21 +29,25 @@ export const consumableCatalog = pgTable("consumable_catalog", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
-export const consumableStock = pgTable("consumable_stock", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  userId: text("user_id")
-    .notNull()
-    .references(() => usersTable.id, { onDelete: "cascade" }),
-  catalogItemId: uuid("catalog_item_id")
-    .notNull()
-    .references(() => consumableCatalog.id, { onDelete: "cascade" }),
-  currentQuantity: integer("current_quantity").notNull().default(0),
-  estimatedDailyUsage: numeric("estimated_daily_usage", { precision: 6, scale: 2 }),
-  lastRestockedAt: timestamp("last_restocked_at"),
-  lowStockAlertEnabled: boolean("low_stock_alert_enabled").notNull().default(true),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
-});
+export const consumableStock = pgTable(
+  "consumable_stock",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => usersTable.id, { onDelete: "cascade" }),
+    catalogItemId: uuid("catalog_item_id")
+      .notNull()
+      .references(() => consumableCatalog.id, { onDelete: "cascade" }),
+    currentQuantity: integer("current_quantity").notNull().default(0),
+    estimatedDailyUsage: numeric("estimated_daily_usage", { precision: 6, scale: 2 }),
+    lastRestockedAt: timestamp("last_restocked_at"),
+    lowStockAlertEnabled: boolean("low_stock_alert_enabled").notNull().default(true),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (t) => [index("consumable_stock_user_catalog_idx").on(t.userId, t.catalogItemId)],
+);
 
 export const consumableOrders = pgTable("consumable_orders", {
   id: uuid("id").primaryKey().defaultRandom(),

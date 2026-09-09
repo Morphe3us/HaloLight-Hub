@@ -5,10 +5,6 @@ import {
   useListNotifications,
   useGetDashboardSummary,
   useListEvents,
-  useListLeads,
-  useListQuotes,
-  useListContracts,
-  useListInvoices,
 } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -27,10 +23,6 @@ import {
 import { Link } from "wouter";
 import { format, parseISO } from "date-fns";
 import { cn } from "@/lib/utils";
-import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
-} from "recharts";
-
 const THUMB_FALLBACK = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='450' viewBox='0 0 800 450'%3E%3Crect width='800' height='450' fill='%23DDB398' opacity='0.25'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='48' fill='%23DDB398'%3E%E2%96%B6%3C/text%3E%3C/svg%3E";
 
 const DEFAULT_WIDGETS = {
@@ -84,15 +76,10 @@ export default function Dashboard() {
   const { i18n } = useTranslation();
   const dashLang = i18n.language?.split("-")[0] ?? "en";
   const { data: summary, isLoading: loadingSummary } = useGetDashboardSummary({
-    query: { queryKey: ["/api/dashboard/summary", dashLang] },
+    lang: dashLang,
   });
   const { data: notifications, isLoading: loadingNotifs } = useListNotifications({ limit: 3 });
   const { data: eventsData, isLoading: loadingEvents } = useListEvents({ status: "upcoming", limit: 4 });
-
-  const { data: leadsData } = useListLeads({ limit: 1 });
-  const { data: quotesData } = useListQuotes({ limit: 1 });
-  const { data: contractsData } = useListContracts({ limit: 1 });
-  const { data: invoicesData } = useListInvoices({ limit: 1 });
 
   const isLoading = loadingUser || loadingSummary;
 
@@ -125,10 +112,10 @@ export default function Dashboard() {
   const lowStockCount = (summary as Record<string, unknown> | undefined)?.lowStockCount as number ?? 0;
   const openTicketsCount = (summary as Record<string, unknown> | undefined)?.openTicketsCount as number ?? 0;
 
-  const leadsTotal = (leadsData as { total?: number } | undefined)?.total ?? 0;
-  const quotesTotal = (quotesData as { total?: number } | undefined)?.total ?? 0;
-  const contractsTotal = (contractsData as { total?: number } | undefined)?.total ?? 0;
-  const invoicesTotal = (invoicesData as { total?: number } | undefined)?.total ?? 0;
+  const leadsTotal = summary?.leadsCount ?? 0;
+  const quotesTotal = summary?.quotesCount ?? 0;
+  const contractsTotal = summary?.contractsCount ?? 0;
+  const invoicesTotal = summary?.invoicesCount ?? 0;
 
   const salesChartData = [
     { name: t("nav.leads"), value: leadsTotal, fill: "#4B96FF" },
@@ -136,6 +123,7 @@ export default function Dashboard() {
     { name: t("nav.contracts"), value: contractsTotal, fill: "#22C55E" },
     { name: t("nav.invoices"), value: invoicesTotal, fill: "#DDB398" },
   ];
+  const maxSalesTotal = Math.max(...salesChartData.map((entry) => entry.value), 1);
 
   return (
     <div className="space-y-8" data-testid="page-dashboard">
@@ -340,22 +328,22 @@ export default function Dashboard() {
               </Link>
             </div>
             {(leadsTotal + quotesTotal + contractsTotal + invoicesTotal) > 0 && (
-              <div className="h-[120px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={salesChartData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
-                    <XAxis dataKey="name" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
-                    <YAxis tick={{ fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
-                    <Tooltip
-                      contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid hsl(var(--border))", background: "hsl(var(--card))", color: "hsl(var(--foreground))" }}
-                      cursor={{ fill: "hsl(var(--muted))" }}
-                    />
-                    <Bar dataKey="value" radius={[4, 4, 0, 0]}>
-                      {salesChartData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.fill} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
+              <div className="space-y-2">
+                {salesChartData.map((entry) => (
+                  <div key={entry.name} className="grid grid-cols-[86px_1fr_34px] items-center gap-3 text-xs">
+                    <span className="truncate text-muted-foreground">{entry.name}</span>
+                    <div className="h-2 rounded-full bg-muted overflow-hidden">
+                      <div
+                        className="h-full rounded-full"
+                        style={{
+                          width: `${Math.max((entry.value / maxSalesTotal) * 100, 4)}%`,
+                          backgroundColor: entry.fill,
+                        }}
+                      />
+                    </div>
+                    <span className="text-right font-medium text-foreground">{entry.value}</span>
+                  </div>
+                ))}
               </div>
             )}
           </CardContent>

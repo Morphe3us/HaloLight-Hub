@@ -12,6 +12,17 @@ import { retrieveContext, buildSuggestedActions } from "../lib/ai/rag";
 import type { RAGSource, SuggestedAction } from "../lib/ai/provider";
 
 const router: IRouter = Router();
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function readConversationId(req: Request, res: Response): string | null {
+  const id = String(req.params.id);
+  if (!UUID_PATTERN.test(id)) {
+    res.status(404).json({ error: "Not found" });
+    return null;
+  }
+  return id;
+}
 
 // ─── Conversations ────────────────────────────────────────────────────────────
 
@@ -47,7 +58,8 @@ router.post("/ai/conversations", requireAuth, async (req: Request, res: Response
 router.get("/ai/conversations/:id", requireAuth, async (req: Request, res: Response): Promise<void> => {
   const user = await getOrCreateUser(req);
   if (!user) { res.status(401).json({ error: "Unauthorized" }); return; }
-  const id = String(req.params.id);
+  const id = readConversationId(req, res);
+  if (!id) return;
 
   const [conv] = await db.select().from(aiConversations).where(eq(aiConversations.id, id));
   if (!conv || conv.userId !== user.id) { res.status(404).json({ error: "Not found" }); return; }
@@ -63,7 +75,8 @@ router.get("/ai/conversations/:id", requireAuth, async (req: Request, res: Respo
 router.delete("/ai/conversations/:id", requireAuth, async (req: Request, res: Response): Promise<void> => {
   const user = await getOrCreateUser(req);
   if (!user) { res.status(401).json({ error: "Unauthorized" }); return; }
-  const id = String(req.params.id);
+  const id = readConversationId(req, res);
+  if (!id) return;
 
   const [conv] = await db.select().from(aiConversations).where(eq(aiConversations.id, id));
   if (!conv || conv.userId !== user.id) { res.status(404).json({ error: "Not found" }); return; }
@@ -78,7 +91,8 @@ router.delete("/ai/conversations/:id", requireAuth, async (req: Request, res: Re
 router.post("/ai/conversations/:id/stream", requireAuth, async (req: Request, res: Response): Promise<void> => {
   const user = await getOrCreateUser(req);
   if (!user) { res.status(401).json({ error: "Unauthorized" }); return; }
-  const id = String(req.params.id);
+  const id = readConversationId(req, res);
+  if (!id) return;
 
   const [conv] = await db.select().from(aiConversations).where(eq(aiConversations.id, id));
   if (!conv || conv.userId !== user.id) { res.status(404).json({ error: "Not found" }); return; }
@@ -184,7 +198,8 @@ router.post("/ai/conversations/:id/stream", requireAuth, async (req: Request, re
 router.post("/ai/conversations/:id/messages", requireAuth, async (req: Request, res: Response): Promise<void> => {
   const user = await getOrCreateUser(req);
   if (!user) { res.status(401).json({ error: "Unauthorized" }); return; }
-  const id = String(req.params.id);
+  const id = readConversationId(req, res);
+  if (!id) return;
 
   const [conv] = await db.select().from(aiConversations).where(eq(aiConversations.id, id));
   if (!conv || conv.userId !== user.id) { res.status(404).json({ error: "Not found" }); return; }
@@ -249,7 +264,8 @@ router.post("/ai/conversations/:id/messages", requireAuth, async (req: Request, 
 router.post("/ai/conversations/:id/escalate", requireAuth, async (req: Request, res: Response): Promise<void> => {
   const user = await getOrCreateUser(req);
   if (!user) { res.status(401).json({ error: "Unauthorized" }); return; }
-  const id = String(req.params.id);
+  const id = readConversationId(req, res);
+  if (!id) return;
 
   const [conv] = await db.select().from(aiConversations).where(eq(aiConversations.id, id));
   if (!conv || conv.userId !== user.id) { res.status(404).json({ error: "Not found" }); return; }

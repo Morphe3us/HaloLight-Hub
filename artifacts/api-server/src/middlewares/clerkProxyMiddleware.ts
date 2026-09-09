@@ -11,7 +11,7 @@
  * dashboard — all auth configuration is done through the Auth pane.
  *
  * IMPORTANT:
- * - Only active in production (Clerk proxying doesn't work for dev instances)
+ * - Active for Clerk production instances only (live keys)
  * - Must be mounted BEFORE express.json() middleware
  *
  * Usage in app.ts:
@@ -53,13 +53,9 @@ export function getClerkProxyHost(req: {
 }
 
 export function clerkProxyMiddleware(): RequestHandler {
-  // Only run proxy in production — Clerk proxying doesn't work for dev instances
-  if (process.env.NODE_ENV !== "production") {
-    return (_req, _res, next) => next();
-  }
-
   const secretKey = process.env.CLERK_SECRET_KEY;
-  if (!secretKey) {
+  const publishableKey = process.env.CLERK_PUBLISHABLE_KEY;
+  if (!secretKey?.startsWith("sk_live_") || !publishableKey?.startsWith("pk_live_")) {
     return (_req, _res, next) => next();
   }
 
@@ -70,12 +66,21 @@ export function clerkProxyMiddleware(): RequestHandler {
       path.replace(new RegExp(`^${CLERK_PROXY_PATH}`), ""),
     on: {
       proxyReq: (proxyReq, req) => {
-        const protocol = req.headers["x-forwarded-proto"] || "https";
+        const forwardedProto = req.headers["x-forwarded-proto"];
+        const socket = req.socket as typeof req.socket & { encrypted?: boolean };
+        const requestedProtocol =
+          (Array.isArray(forwardedProto)
+            ? forwardedProto[0]
+            : forwardedProto
+          )?.split(",")[0]?.trim() ||
+          (socket.encrypted ? "https" : "http");
+        const protocol = requestedProtocol === "http" ? "http" : "https";
         const host = getClerkProxyHost(req) || "";
         const proxyUrl = `${protocol}://${host}${CLERK_PROXY_PATH}`;
 
         proxyReq.setHeader("Clerk-Proxy-Url", proxyUrl);
         proxyReq.setHeader("Clerk-Secret-Key", secretKey);
+        proxyReq.setHeader("Clerk-Publishable-Key", publishableKey);
 
         const xff = req.headers["x-forwarded-for"];
         const clientIp =

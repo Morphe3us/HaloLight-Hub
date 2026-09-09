@@ -1,16 +1,47 @@
 import { useState } from "react";
 import { useRoute, Link, useLocation } from "wouter";
 import { useTranslation } from "react-i18next";
-import { useGetQuote, useUpdateQuoteStatus, useDeleteQuote, useGetCurrentUser, useCreateContract, useCreateInvoice } from "@workspace/api-client-react";
+import {
+  useGetQuote,
+  useUpdateQuoteStatus,
+  useDeleteQuote,
+  useGetCurrentUser,
+  useCreateContract,
+  useCreateInvoice,
+  useSendQuote,
+} from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Printer, Building2, Mail, Phone, CheckCircle2, XCircle, FileSignature, ReceiptText } from "lucide-react";
+import {
+  ArrowLeft,
+  Printer,
+  Building2,
+  Mail,
+  Phone,
+  CheckCircle2,
+  XCircle,
+  FileSignature,
+  ReceiptText,
+  Send,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCurrency } from "@/lib/currency";
 
@@ -26,14 +57,28 @@ const STATUS_KEYS = ["draft", "sent", "accepted", "declined", "expired"];
 
 function formatDate(d: string | null | undefined, locale = "en") {
   if (!d) return "—";
-  return new Date(d).toLocaleDateString(locale, { year: "numeric", month: "long", day: "numeric" });
+  return new Date(d).toLocaleDateString(locale, {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
 }
 
-function serviceDetailsHtml(quote: any, formatCurrency: (v: any) => string, t: (k: string, opts?: any) => string, lang: string): string {
+function serviceDetailsHtml(
+  quote: any,
+  formatCurrency: (v: any) => string,
+  t: (k: string, opts?: any) => string,
+  lang: string,
+): string {
   const fields: string[] = [];
 
   const eventDate = quote.eventDate
-    ? new Date(quote.eventDate).toLocaleDateString(lang, { weekday: "long", year: "numeric", month: "long", day: "numeric" })
+    ? new Date(quote.eventDate).toLocaleDateString(lang, {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      })
     : null;
 
   if (quote.eventType || eventDate || quote.eventLocation) {
@@ -49,14 +94,29 @@ function serviceDetailsHtml(quote: any, formatCurrency: (v: any) => string, t: (
       </div>`);
   }
 
-  const hasPackage = quote.packageName || quote.rentalDuration || quote.includedPrints || quote.equipmentDescription;
+  const hasPackage =
+    quote.packageName ||
+    quote.rentalDuration ||
+    quote.includedPrints ||
+    quote.equipmentDescription;
   if (hasPackage) {
     const options: string[] = [];
-    if (quote.digitalGallery) options.push(t("quotes.option_digital_gallery", { defaultValue: "Digital Gallery" }));
-    if (quote.customTemplate) options.push(t("quotes.option_custom_template", { defaultValue: "Custom Template" }));
-    if (quote.deliveryIncluded) options.push(t("quotes.option_delivery", { defaultValue: "Delivery" }));
-    if (quote.setupIncluded) options.push(t("quotes.option_setup", { defaultValue: "Setup & Pickup" }));
-    if (quote.operatorIncluded) options.push(t("quotes.option_operator", { defaultValue: "Operator" }));
+    if (quote.digitalGallery)
+      options.push(
+        t("quotes.option_digital_gallery", { defaultValue: "Digital Gallery" }),
+      );
+    if (quote.customTemplate)
+      options.push(
+        t("quotes.option_custom_template", { defaultValue: "Custom Template" }),
+      );
+    if (quote.deliveryIncluded)
+      options.push(t("quotes.option_delivery", { defaultValue: "Delivery" }));
+    if (quote.setupIncluded)
+      options.push(
+        t("quotes.option_setup", { defaultValue: "Setup & Pickup" }),
+      );
+    if (quote.operatorIncluded)
+      options.push(t("quotes.option_operator", { defaultValue: "Operator" }));
 
     fields.push(`
       <div class="detail-section">
@@ -72,7 +132,11 @@ function serviceDetailsHtml(quote: any, formatCurrency: (v: any) => string, t: (
       </div>`);
   }
 
-  const hasCustomPricing = Number(quote.rentalPrice) > 0 || Number(quote.optionsPrice) > 0 || Number(quote.deliveryFees) > 0 || Number(quote.discountAmount) > 0;
+  const hasCustomPricing =
+    Number(quote.rentalPrice) > 0 ||
+    Number(quote.optionsPrice) > 0 ||
+    Number(quote.deliveryFees) > 0 ||
+    Number(quote.discountAmount) > 0;
   if (hasCustomPricing) {
     fields.push(`
       <div class="detail-section">
@@ -99,15 +163,33 @@ function PrintPreview({ quote, lang }: { quote: any; lang: string }) {
   const { format: formatCurrency } = useCurrency();
   const { data: me } = useGetCurrentUser();
   const handlePrint = () => {
-    const today = new Date().toLocaleDateString(lang, { year: "numeric", month: "long", day: "numeric" });
+    const today = new Date().toLocaleDateString(lang, {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
     const validUntilStr = quote.validUntil
-      ? new Date(quote.validUntil).toLocaleDateString(lang, { year: "numeric", month: "long", day: "numeric" })
+      ? new Date(quote.validUntil).toLocaleDateString(lang, {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        })
       : null;
     const logoUrl = (me as any)?.logoUrl ?? "";
     const companyName = (me as any)?.companyName ?? (me as any)?.fullName ?? "";
     const rawEmail = (me as any)?.email ?? "";
-    const providerEmail = (!rawEmail || rawEmail.includes("placeholder.com") || /^user_[a-f0-9]+@/.test(rawEmail)) ? "" : rawEmail;
-    const items: Array<{ description: string; quantity: string; unitPrice: string; total: string }> = quote.items ?? [];
+    const providerEmail =
+      !rawEmail ||
+      rawEmail.includes("placeholder.com") ||
+      /^user_[a-f0-9]+@/.test(rawEmail)
+        ? ""
+        : rawEmail;
+    const items: Array<{
+      description: string;
+      quantity: string;
+      unitPrice: string;
+      total: string;
+    }> = quote.items ?? [];
 
     const detailsHtml = serviceDetailsHtml(quote, formatCurrency, t, lang);
 
@@ -188,7 +270,13 @@ function PrintPreview({ quote, lang }: { quote: any; lang: string }) {
     ${quote.terms ? `<div class="section"><div class="label">${t("quotes.terms_section")}</div><div class="notes">${quote.terms}</div></div>` : ""}
     </body></html>`;
     const w = window.open("", "_blank");
-    if (w) { w.document.write(html); w.document.close(); w.document.title = quote.quoteNumber; w.focus(); w.print(); }
+    if (w) {
+      w.document.write(html);
+      w.document.close();
+      w.document.title = quote.quoteNumber;
+      w.focus();
+      w.print();
+    }
   };
 
   return (
@@ -210,8 +298,22 @@ export default function QuoteDetail() {
 
   const [showCreateContract, setShowCreateContract] = useState(false);
   const [showCreateInvoice, setShowCreateInvoice] = useState(false);
-  const [contractForm, setContractForm] = useState({ title: "", clientName: "", clientEmail: "", clientPhone: "", value: "" });
-  const [invoiceForm, setInvoiceForm] = useState({ title: "", clientName: "", clientEmail: "", clientPhone: "", description: "", unitPrice: "", quantity: "1" });
+  const [contractForm, setContractForm] = useState({
+    title: "",
+    clientName: "",
+    clientEmail: "",
+    clientPhone: "",
+    value: "",
+  });
+  const [invoiceForm, setInvoiceForm] = useState({
+    title: "",
+    clientName: "",
+    clientEmail: "",
+    clientPhone: "",
+    description: "",
+    unitPrice: "",
+    quantity: "1",
+  });
 
   const { data: quote, isLoading } = useGetQuote(id, {
     query: { queryKey: ["quote", id], enabled: !!id },
@@ -219,13 +321,37 @@ export default function QuoteDetail() {
 
   const statusMutation = useUpdateQuoteStatus({
     mutation: {
-      onSuccess: () => { qc.invalidateQueries({ queryKey: ["quote", id] }); qc.invalidateQueries({ queryKey: ["quotes"] }); toast({ title: t("quotes.status_updated") }); },
+      onSuccess: () => {
+        qc.invalidateQueries({ queryKey: ["quote", id] });
+        qc.invalidateQueries({ queryKey: ["quotes"] });
+        toast({ title: t("quotes.status_updated") });
+      },
+    },
+  });
+
+  const sendMutation = useSendQuote({
+    mutation: {
+      onSuccess: (result) => {
+        qc.invalidateQueries({ queryKey: ["quote", id] });
+        qc.invalidateQueries({ queryKey: ["quotes"] });
+        toast({ title: t("quotes.quote_sent") });
+        window.location.href = result.mailtoUrl;
+      },
+      onError: () =>
+        toast({
+          title: t("quotes.quote_send_failed"),
+          variant: "destructive",
+        }),
     },
   });
 
   const deleteMutation = useDeleteQuote({
     mutation: {
-      onSuccess: () => { qc.invalidateQueries({ queryKey: ["quotes"] }); navigate("/quotes"); toast({ title: t("quotes.quote_deleted") }); },
+      onSuccess: () => {
+        qc.invalidateQueries({ queryKey: ["quotes"] });
+        navigate("/quotes");
+        toast({ title: t("quotes.quote_deleted") });
+      },
     },
   });
 
@@ -335,13 +461,28 @@ export default function QuoteDetail() {
         discountAmount: (quote as any).discountAmount ?? undefined,
         equipmentIds: (quote as any).equipmentIds ?? undefined,
         equipmentDescription: (quote as any).equipmentDescription ?? undefined,
-        items: [{ description: invoiceForm.description || "Service", quantity: qty, unitPrice: price, order: 1 }],
+        items: [
+          {
+            description: invoiceForm.description || "Service",
+            quantity: qty,
+            unitPrice: price,
+            order: 1,
+          },
+        ],
       },
     });
   };
 
-  if (isLoading) return <div className="flex items-center justify-center h-40 text-muted-foreground">{t("quotes.loading")}</div>;
-  if (!quote) return <div className="p-8 text-muted-foreground">{t("quotes.not_found")}</div>;
+  if (isLoading)
+    return (
+      <div className="flex items-center justify-center h-40 text-muted-foreground">
+        {t("quotes.loading")}
+      </div>
+    );
+  if (!quote)
+    return (
+      <div className="p-8 text-muted-foreground">{t("quotes.not_found")}</div>
+    );
 
   const color = STATUS_COLORS[quote.status];
   const q = quote as any;
@@ -350,37 +491,99 @@ export default function QuoteDetail() {
     <div className="space-y-6 max-w-4xl">
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-3">
-          <Link href="/quotes"><Button variant="ghost" size="sm" className="gap-1.5"><ArrowLeft className="w-4 h-4" />{t("common.back")}</Button></Link>
+          <Link href="/quotes">
+            <Button variant="ghost" size="sm" className="gap-1.5">
+              <ArrowLeft className="w-4 h-4" />
+              {t("common.back")}
+            </Button>
+          </Link>
           <div>
             <div className="flex items-center gap-2.5 flex-wrap">
-              <span className="font-mono text-lg font-bold">{quote.quoteNumber}</span>
-              {color && <Badge variant="outline" className={cn("text-xs", color)}>{t(`quotes.status_${quote.status}`)}</Badge>}
+              <span className="font-mono text-lg font-bold">
+                {quote.quoteNumber}
+              </span>
+              {color && (
+                <Badge variant="outline" className={cn("text-xs", color)}>
+                  {t(`quotes.status_${quote.status}`)}
+                </Badge>
+              )}
             </div>
-            <p className="text-muted-foreground text-sm mt-0.5">{quote.title}</p>
+            <p className="text-muted-foreground text-sm mt-0.5">
+              {quote.title}
+            </p>
           </div>
         </div>
         <div className="flex gap-2 flex-wrap">
           <PrintPreview quote={quote} lang={lang} />
-          {(quote.status === "draft" || quote.status === "sent") && (
-            <Button size="sm" variant="outline" onClick={() => statusMutation.mutate({ id, data: { status: "accepted" } })} className="gap-1.5 border-success/40 text-success hover:bg-success/5">
-              <CheckCircle2 className="w-3.5 h-3.5" /> {t("pipeline.accept_quote")}
+          {quote.status !== "accepted" && quote.status !== "declined" && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => sendMutation.mutate({ id })}
+              disabled={sendMutation.isPending || !quote.clientEmail}
+              className="gap-1.5"
+            >
+              <Send className="w-3.5 h-3.5" /> {t("quotes.send_quote")}
             </Button>
           )}
           {(quote.status === "draft" || quote.status === "sent") && (
-            <Button size="sm" variant="outline" onClick={() => statusMutation.mutate({ id, data: { status: "declined" } })} className="gap-1.5 border-destructive/40 text-destructive hover:bg-destructive/5">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() =>
+                statusMutation.mutate({ id, data: { status: "accepted" } })
+              }
+              className="gap-1.5 border-success/40 text-success hover:bg-success/5"
+            >
+              <CheckCircle2 className="w-3.5 h-3.5" />{" "}
+              {t("pipeline.accept_quote")}
+            </Button>
+          )}
+          {(quote.status === "draft" || quote.status === "sent") && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() =>
+                statusMutation.mutate({ id, data: { status: "declined" } })
+              }
+              className="gap-1.5 border-destructive/40 text-destructive hover:bg-destructive/5"
+            >
               <XCircle className="w-3.5 h-3.5" /> {t("pipeline.reject_quote")}
             </Button>
           )}
-          <Button size="sm" variant="outline" onClick={openCreateContract} className="gap-1.5">
-            <FileSignature className="w-3.5 h-3.5" /> {t("pipeline.create_contract")}
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={openCreateContract}
+            className="gap-1.5"
+          >
+            <FileSignature className="w-3.5 h-3.5" />{" "}
+            {t("pipeline.create_contract")}
           </Button>
-          <Button size="sm" variant="outline" onClick={openCreateInvoice} className="gap-1.5">
-            <ReceiptText className="w-3.5 h-3.5" /> {t("pipeline.create_invoice")}
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={openCreateInvoice}
+            className="gap-1.5"
+          >
+            <ReceiptText className="w-3.5 h-3.5" />{" "}
+            {t("pipeline.create_invoice")}
           </Button>
-          <Select value={quote.status} onValueChange={(s) => statusMutation.mutate({ id, data: { status: s as any } })}>
-            <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
+          <Select
+            value={quote.status}
+            onValueChange={(s) =>
+              statusMutation.mutate({ id, data: { status: s as any } })
+            }
+          >
+            <SelectTrigger className="w-36">
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
-              {STATUS_KEYS.map((k) => <SelectItem key={k} value={k}>{t(`quotes.status_${k}`)}</SelectItem>)}
+              {STATUS_KEYS.map((k) => (
+                <SelectItem key={k} value={k}>
+                  {t(`quotes.status_${k}`)}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
@@ -388,51 +591,229 @@ export default function QuoteDetail() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="rounded-xl border bg-card p-5 space-y-3">
-          <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">{t("quotes.client_section")}</h3>
+          <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
+            {t("quotes.client_section")}
+          </h3>
           <div className="space-y-2 text-sm">
-            <div className="flex items-center gap-2"><Building2 className="w-4 h-4 text-muted-foreground" /><span className="font-medium">{quote.clientName}</span></div>
-            {quote.clientEmail && <div className="flex items-center gap-2"><Mail className="w-4 h-4 text-muted-foreground" /><a href={`mailto:${quote.clientEmail}`} className="hover:text-primary">{quote.clientEmail}</a></div>}
-            {(quote as any).clientPhone && <div className="flex items-center gap-2"><Phone className="w-4 h-4 text-muted-foreground" /><span>{(quote as any).clientPhone}</span></div>}
+            <div className="flex items-center gap-2">
+              <Building2 className="w-4 h-4 text-muted-foreground" />
+              <span className="font-medium">{quote.clientName}</span>
+            </div>
+            {quote.clientEmail && (
+              <div className="flex items-center gap-2">
+                <Mail className="w-4 h-4 text-muted-foreground" />
+                <a
+                  href={`mailto:${quote.clientEmail}`}
+                  className="hover:text-primary"
+                >
+                  {quote.clientEmail}
+                </a>
+              </div>
+            )}
+            {(quote as any).clientPhone && (
+              <div className="flex items-center gap-2">
+                <Phone className="w-4 h-4 text-muted-foreground" />
+                <span>{(quote as any).clientPhone}</span>
+              </div>
+            )}
           </div>
         </div>
 
         <div className="rounded-xl border bg-card p-5 space-y-3">
-          <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">{t("quotes.dates_section")}</h3>
+          <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
+            {t("quotes.dates_section")}
+          </h3>
           <div className="space-y-2 text-sm">
-            <div className="flex justify-between"><span className="text-muted-foreground">{t("common.created")}</span><span>{formatDate(quote.createdAt, lang)}</span></div>
-            <div className="flex justify-between"><span className="text-muted-foreground">{t("quotes.valid_until_label")}</span><span>{formatDate(quote.validUntil, lang)}</span></div>
-            {quote.sentAt && <div className="flex justify-between"><span className="text-muted-foreground">{t("quotes.sent_label")}</span><span>{formatDate(quote.sentAt, lang)}</span></div>}
-            {quote.acceptedAt && <div className="flex justify-between"><span className="text-muted-foreground">{t("quotes.accepted_at_label")}</span><span>{formatDate(quote.acceptedAt, lang)}</span></div>}
-            {q.eventDate && <div className="flex justify-between"><span className="text-muted-foreground">{t("quotes.event_date_label", { defaultValue: "Event Date" })}</span><span className="font-medium">{formatDate(q.eventDate, lang)}</span></div>}
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">
+                {t("common.created")}
+              </span>
+              <span>{formatDate(quote.createdAt, lang)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">
+                {t("quotes.valid_until_label")}
+              </span>
+              <span>{formatDate(quote.validUntil, lang)}</span>
+            </div>
+            {quote.sentAt && (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">
+                  {t("quotes.sent_label")}
+                </span>
+                <span>{formatDate(quote.sentAt, lang)}</span>
+              </div>
+            )}
+            {quote.acceptedAt && (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">
+                  {t("quotes.accepted_at_label")}
+                </span>
+                <span>{formatDate(quote.acceptedAt, lang)}</span>
+              </div>
+            )}
+            {q.eventDate && (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">
+                  {t("quotes.event_date_label", { defaultValue: "Event Date" })}
+                </span>
+                <span className="font-medium">
+                  {formatDate(q.eventDate, lang)}
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
         <div className="rounded-xl border bg-card p-5 space-y-3">
-          <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">{t("quotes.summary_section")}</h3>
+          <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
+            {t("quotes.summary_section")}
+          </h3>
           <div className="space-y-2 text-sm">
-            {q.rentalPrice && Number(q.rentalPrice) > 0 && <div className="flex justify-between"><span className="text-muted-foreground">{t("quotes.rental_price_label", { defaultValue: "Rental" })}</span><span>{formatCurrency(q.rentalPrice)}</span></div>}
-            {q.optionsPrice && Number(q.optionsPrice) > 0 && <div className="flex justify-between"><span className="text-muted-foreground">{t("quotes.options_price_label", { defaultValue: "Options" })}</span><span>{formatCurrency(q.optionsPrice)}</span></div>}
-            {q.deliveryFees && Number(q.deliveryFees) > 0 && <div className="flex justify-between"><span className="text-muted-foreground">{t("quotes.delivery_fees_label", { defaultValue: "Delivery" })}</span><span>{formatCurrency(q.deliveryFees)}</span></div>}
-            {q.discountAmount && Number(q.discountAmount) > 0 && <div className="flex justify-between"><span className="text-muted-foreground">{t("quotes.discount_label", { defaultValue: "Discount" })}</span><span className="text-destructive">-{formatCurrency(q.discountAmount)}</span></div>}
-            <div className="flex justify-between"><span className="text-muted-foreground">{t("quotes.subtotal")}</span><span>{formatCurrency(quote.subtotal)}</span></div>
-            <div className="flex justify-between"><span className="text-muted-foreground">{t("quotes.tax_label", { rate: quote.taxRate })}</span><span>{formatCurrency(quote.taxAmount)}</span></div>
-            <div className="flex justify-between border-t pt-2 mt-2"><span className="font-bold">{t("quotes.total_col")}</span><span className="font-bold text-lg">{formatCurrency(quote.total)}</span></div>
+            {q.rentalPrice && Number(q.rentalPrice) > 0 && (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">
+                  {t("quotes.rental_price_label", { defaultValue: "Rental" })}
+                </span>
+                <span>{formatCurrency(q.rentalPrice)}</span>
+              </div>
+            )}
+            {q.optionsPrice && Number(q.optionsPrice) > 0 && (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">
+                  {t("quotes.options_price_label", { defaultValue: "Options" })}
+                </span>
+                <span>{formatCurrency(q.optionsPrice)}</span>
+              </div>
+            )}
+            {q.deliveryFees && Number(q.deliveryFees) > 0 && (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">
+                  {t("quotes.delivery_fees_label", {
+                    defaultValue: "Delivery",
+                  })}
+                </span>
+                <span>{formatCurrency(q.deliveryFees)}</span>
+              </div>
+            )}
+            {q.discountAmount && Number(q.discountAmount) > 0 && (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">
+                  {t("quotes.discount_label", { defaultValue: "Discount" })}
+                </span>
+                <span className="text-destructive">
+                  -{formatCurrency(q.discountAmount)}
+                </span>
+              </div>
+            )}
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">
+                {t("quotes.subtotal")}
+              </span>
+              <span>{formatCurrency(quote.subtotal)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">
+                {t("quotes.tax_label", { rate: quote.taxRate })}
+              </span>
+              <span>{formatCurrency(quote.taxAmount)}</span>
+            </div>
+            <div className="flex justify-between border-t pt-2 mt-2">
+              <span className="font-bold">{t("quotes.total_col")}</span>
+              <span className="font-bold text-lg">
+                {formatCurrency(quote.total)}
+              </span>
+            </div>
           </div>
         </div>
       </div>
 
-      {(q.eventType || q.eventDate || q.eventLocation || q.packageName || q.rentalDuration || q.includedPrints) && (
+      {(q.eventType ||
+        q.eventDate ||
+        q.eventLocation ||
+        q.packageName ||
+        q.rentalDuration ||
+        q.includedPrints) && (
         <div className="rounded-xl border bg-card p-5 space-y-4">
-          <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">{t("quotes.event_section", { defaultValue: "Event & Service Details" })}</h3>
+          <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
+            {t("quotes.event_section", {
+              defaultValue: "Event & Service Details",
+            })}
+          </h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-            {q.eventType && <div><p className="text-xs text-muted-foreground mb-0.5">{t("quotes.event_type_label", { defaultValue: "Event Type" })}</p><p className="font-medium">{q.eventType}</p></div>}
-            {q.eventDate && <div><p className="text-xs text-muted-foreground mb-0.5">{t("quotes.event_date_label", { defaultValue: "Event Date" })}</p><p className="font-medium">{formatDate(q.eventDate, lang)}</p></div>}
-            {q.eventStartTime && <div><p className="text-xs text-muted-foreground mb-0.5">{t("quotes.event_start_label", { defaultValue: "Start Time" })}</p><p className="font-medium">{q.eventStartTime}{q.eventEndTime ? ` – ${q.eventEndTime}` : ""}</p></div>}
-            {q.eventLocation && <div><p className="text-xs text-muted-foreground mb-0.5">{t("quotes.location_label", { defaultValue: "Location" })}</p><p className="font-medium">{q.eventLocation}</p></div>}
-            {q.packageName && <div><p className="text-xs text-muted-foreground mb-0.5">{t("quotes.package_name_label", { defaultValue: "Package" })}</p><p className="font-medium">{q.packageName}</p></div>}
-            {q.rentalDuration && <div><p className="text-xs text-muted-foreground mb-0.5">{t("quotes.rental_duration_label", { defaultValue: "Duration" })}</p><p className="font-medium">{q.rentalDuration}h</p></div>}
-            {q.includedPrints && <div><p className="text-xs text-muted-foreground mb-0.5">{t("quotes.included_prints_label", { defaultValue: "Prints" })}</p><p className="font-medium">{q.includedPrints}</p></div>}
-            {q.equipmentDescription && <div className="col-span-2"><p className="text-xs text-muted-foreground mb-0.5">{t("quotes.equipment_label", { defaultValue: "Equipment" })}</p><p className="font-medium">{q.equipmentDescription}</p></div>}
+            {q.eventType && (
+              <div>
+                <p className="text-xs text-muted-foreground mb-0.5">
+                  {t("quotes.event_type_label", { defaultValue: "Event Type" })}
+                </p>
+                <p className="font-medium">{q.eventType}</p>
+              </div>
+            )}
+            {q.eventDate && (
+              <div>
+                <p className="text-xs text-muted-foreground mb-0.5">
+                  {t("quotes.event_date_label", { defaultValue: "Event Date" })}
+                </p>
+                <p className="font-medium">{formatDate(q.eventDate, lang)}</p>
+              </div>
+            )}
+            {q.eventStartTime && (
+              <div>
+                <p className="text-xs text-muted-foreground mb-0.5">
+                  {t("quotes.event_start_label", {
+                    defaultValue: "Start Time",
+                  })}
+                </p>
+                <p className="font-medium">
+                  {q.eventStartTime}
+                  {q.eventEndTime ? ` – ${q.eventEndTime}` : ""}
+                </p>
+              </div>
+            )}
+            {q.eventLocation && (
+              <div>
+                <p className="text-xs text-muted-foreground mb-0.5">
+                  {t("quotes.location_label", { defaultValue: "Location" })}
+                </p>
+                <p className="font-medium">{q.eventLocation}</p>
+              </div>
+            )}
+            {q.packageName && (
+              <div>
+                <p className="text-xs text-muted-foreground mb-0.5">
+                  {t("quotes.package_name_label", { defaultValue: "Package" })}
+                </p>
+                <p className="font-medium">{q.packageName}</p>
+              </div>
+            )}
+            {q.rentalDuration && (
+              <div>
+                <p className="text-xs text-muted-foreground mb-0.5">
+                  {t("quotes.rental_duration_label", {
+                    defaultValue: "Duration",
+                  })}
+                </p>
+                <p className="font-medium">{q.rentalDuration}h</p>
+              </div>
+            )}
+            {q.includedPrints && (
+              <div>
+                <p className="text-xs text-muted-foreground mb-0.5">
+                  {t("quotes.included_prints_label", {
+                    defaultValue: "Prints",
+                  })}
+                </p>
+                <p className="font-medium">{q.includedPrints}</p>
+              </div>
+            )}
+            {q.equipmentDescription && (
+              <div className="col-span-2">
+                <p className="text-xs text-muted-foreground mb-0.5">
+                  {t("quotes.equipment_label", { defaultValue: "Equipment" })}
+                </p>
+                <p className="font-medium">{q.equipmentDescription}</p>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -444,26 +825,73 @@ export default function QuoteDetail() {
         <table className="w-full text-sm">
           <thead className="bg-muted/20 border-b">
             <tr>
-              <th className="text-left px-5 py-3 font-medium text-muted-foreground">{t("quotes.description_col")}</th>
-              <th className="text-right px-4 py-3 font-medium text-muted-foreground">{t("quotes.qty_col")}</th>
-              <th className="text-right px-4 py-3 font-medium text-muted-foreground">{t("quotes.unit_price_col")}</th>
-              <th className="text-right px-5 py-3 font-medium text-muted-foreground">{t("quotes.total_col")}</th>
+              <th className="text-left px-5 py-3 font-medium text-muted-foreground">
+                {t("quotes.description_col")}
+              </th>
+              <th className="text-right px-4 py-3 font-medium text-muted-foreground">
+                {t("quotes.qty_col")}
+              </th>
+              <th className="text-right px-4 py-3 font-medium text-muted-foreground">
+                {t("quotes.unit_price_col")}
+              </th>
+              <th className="text-right px-5 py-3 font-medium text-muted-foreground">
+                {t("quotes.total_col")}
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y">
             {((quote.items ?? []) as any[]).map((item: any) => (
-              <tr key={item.id} className={cn(Number(item.total) < 0 ? "text-destructive" : "")}>
+              <tr
+                key={item.id}
+                className={cn(Number(item.total) < 0 ? "text-destructive" : "")}
+              >
                 <td className="px-5 py-3">{item.description}</td>
-                <td className="px-4 py-3 text-right text-muted-foreground">{item.quantity}</td>
-                <td className="px-4 py-3 text-right text-muted-foreground">{formatCurrency(item.unitPrice)}</td>
-                <td className="px-5 py-3 text-right font-medium">{formatCurrency(item.total)}</td>
+                <td className="px-4 py-3 text-right text-muted-foreground">
+                  {item.quantity}
+                </td>
+                <td className="px-4 py-3 text-right text-muted-foreground">
+                  {formatCurrency(item.unitPrice)}
+                </td>
+                <td className="px-5 py-3 text-right font-medium">
+                  {formatCurrency(item.total)}
+                </td>
               </tr>
             ))}
           </tbody>
           <tfoot className="border-t bg-muted/20">
-            <tr><td colSpan={3} className="px-5 py-3 text-right text-muted-foreground">{t("quotes.subtotal")}</td><td className="px-5 py-3 text-right font-medium">{formatCurrency(quote.subtotal)}</td></tr>
-            <tr><td colSpan={3} className="px-5 py-2 text-right text-muted-foreground">{t("quotes.tax_label", { rate: quote.taxRate })}</td><td className="px-5 py-2 text-right">{formatCurrency(quote.taxAmount)}</td></tr>
-            <tr className="border-t"><td colSpan={3} className="px-5 py-3 text-right font-bold text-base">{t("quotes.total_col")}</td><td className="px-5 py-3 text-right font-bold text-lg">{formatCurrency(quote.total)}</td></tr>
+            <tr>
+              <td
+                colSpan={3}
+                className="px-5 py-3 text-right text-muted-foreground"
+              >
+                {t("quotes.subtotal")}
+              </td>
+              <td className="px-5 py-3 text-right font-medium">
+                {formatCurrency(quote.subtotal)}
+              </td>
+            </tr>
+            <tr>
+              <td
+                colSpan={3}
+                className="px-5 py-2 text-right text-muted-foreground"
+              >
+                {t("quotes.tax_label", { rate: quote.taxRate })}
+              </td>
+              <td className="px-5 py-2 text-right">
+                {formatCurrency(quote.taxAmount)}
+              </td>
+            </tr>
+            <tr className="border-t">
+              <td
+                colSpan={3}
+                className="px-5 py-3 text-right font-bold text-base"
+              >
+                {t("quotes.total_col")}
+              </td>
+              <td className="px-5 py-3 text-right font-bold text-lg">
+                {formatCurrency(quote.total)}
+              </td>
+            </tr>
           </tfoot>
         </table>
       </div>
@@ -472,14 +900,22 @@ export default function QuoteDetail() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {quote.notes && (
             <div className="rounded-xl border bg-card p-5">
-              <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide mb-2">{t("quotes.notes_section")}</h4>
-              <p className="text-sm text-muted-foreground whitespace-pre-wrap">{quote.notes}</p>
+              <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide mb-2">
+                {t("quotes.notes_section")}
+              </h4>
+              <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                {quote.notes}
+              </p>
             </div>
           )}
           {quote.terms && (
             <div className="rounded-xl border bg-card p-5">
-              <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide mb-2">{t("quotes.terms_section")}</h4>
-              <p className="text-sm text-muted-foreground whitespace-pre-wrap">{quote.terms}</p>
+              <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide mb-2">
+                {t("quotes.terms_section")}
+              </h4>
+              <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                {quote.terms}
+              </p>
             </div>
           )}
         </div>
@@ -487,18 +923,86 @@ export default function QuoteDetail() {
 
       <Dialog open={showCreateContract} onOpenChange={setShowCreateContract}>
         <DialogContent className="max-w-lg">
-          <DialogHeader><DialogTitle>{t("pipeline.create_contract_from_quote")}</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>
+              {t("pipeline.create_contract_from_quote")}
+            </DialogTitle>
+          </DialogHeader>
           <div className="grid grid-cols-2 gap-4 py-2">
-            <div className="col-span-2 space-y-1.5"><Label>{t("contracts.title_label")} *</Label><Input value={contractForm.title} onChange={(e) => setContractForm({ ...contractForm, title: e.target.value })} /></div>
-            <div className="space-y-1.5"><Label>{t("contracts.client_name_label")} *</Label><Input value={contractForm.clientName} onChange={(e) => setContractForm({ ...contractForm, clientName: e.target.value })} /></div>
-            <div className="space-y-1.5"><Label>{t("contracts.client_email_label")}</Label><Input value={contractForm.clientEmail} onChange={(e) => setContractForm({ ...contractForm, clientEmail: e.target.value })} /></div>
-            <div className="space-y-1.5"><Label>{t("leads.phone_label")}</Label><Input value={contractForm.clientPhone} onChange={(e) => setContractForm({ ...contractForm, clientPhone: e.target.value })} /></div>
-            <div className="space-y-1.5"><Label>{t("contracts.value_dollar_label")}</Label><Input type="number" value={contractForm.value} onChange={(e) => setContractForm({ ...contractForm, value: e.target.value })} /></div>
+            <div className="col-span-2 space-y-1.5">
+              <Label>{t("contracts.title_label")} *</Label>
+              <Input
+                value={contractForm.title}
+                onChange={(e) =>
+                  setContractForm({ ...contractForm, title: e.target.value })
+                }
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>{t("contracts.client_name_label")} *</Label>
+              <Input
+                value={contractForm.clientName}
+                onChange={(e) =>
+                  setContractForm({
+                    ...contractForm,
+                    clientName: e.target.value,
+                  })
+                }
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>{t("contracts.client_email_label")}</Label>
+              <Input
+                value={contractForm.clientEmail}
+                onChange={(e) =>
+                  setContractForm({
+                    ...contractForm,
+                    clientEmail: e.target.value,
+                  })
+                }
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>{t("leads.phone_label")}</Label>
+              <Input
+                value={contractForm.clientPhone}
+                onChange={(e) =>
+                  setContractForm({
+                    ...contractForm,
+                    clientPhone: e.target.value,
+                  })
+                }
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>{t("contracts.value_dollar_label")}</Label>
+              <Input
+                type="number"
+                value={contractForm.value}
+                onChange={(e) =>
+                  setContractForm({ ...contractForm, value: e.target.value })
+                }
+              />
+            </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowCreateContract(false)}>{t("common.cancel")}</Button>
-            <Button onClick={submitCreateContract} disabled={createContractMutation.isPending || !contractForm.title || !contractForm.clientName}>
-              {createContractMutation.isPending ? t("leads.saving") : t("pipeline.create_contract")}
+            <Button
+              variant="outline"
+              onClick={() => setShowCreateContract(false)}
+            >
+              {t("common.cancel")}
+            </Button>
+            <Button
+              onClick={submitCreateContract}
+              disabled={
+                createContractMutation.isPending ||
+                !contractForm.title ||
+                !contractForm.clientName
+              }
+            >
+              {createContractMutation.isPending
+                ? t("leads.saving")
+                : t("pipeline.create_contract")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -506,20 +1010,103 @@ export default function QuoteDetail() {
 
       <Dialog open={showCreateInvoice} onOpenChange={setShowCreateInvoice}>
         <DialogContent className="max-w-lg">
-          <DialogHeader><DialogTitle>{t("pipeline.create_invoice_from_quote")}</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>{t("pipeline.create_invoice_from_quote")}</DialogTitle>
+          </DialogHeader>
           <div className="grid grid-cols-2 gap-4 py-2">
-            <div className="col-span-2 space-y-1.5"><Label>{t("invoices.title_label")} *</Label><Input value={invoiceForm.title} onChange={(e) => setInvoiceForm({ ...invoiceForm, title: e.target.value })} /></div>
-            <div className="space-y-1.5"><Label>{t("invoices.client_name_label")} *</Label><Input value={invoiceForm.clientName} onChange={(e) => setInvoiceForm({ ...invoiceForm, clientName: e.target.value })} /></div>
-            <div className="space-y-1.5"><Label>{t("invoices.client_email_label")}</Label><Input value={invoiceForm.clientEmail} onChange={(e) => setInvoiceForm({ ...invoiceForm, clientEmail: e.target.value })} /></div>
-            <div className="space-y-1.5"><Label>{t("leads.phone_label")}</Label><Input value={invoiceForm.clientPhone} onChange={(e) => setInvoiceForm({ ...invoiceForm, clientPhone: e.target.value })} /></div>
-            <div className="col-span-2 space-y-1.5"><Label>{t("pipeline.item_description")}</Label><Input value={invoiceForm.description} onChange={(e) => setInvoiceForm({ ...invoiceForm, description: e.target.value })} /></div>
-            <div className="space-y-1.5"><Label>{t("pipeline.unit_price")}</Label><Input type="number" value={invoiceForm.unitPrice} onChange={(e) => setInvoiceForm({ ...invoiceForm, unitPrice: e.target.value })} /></div>
-            <div className="space-y-1.5"><Label>{t("pipeline.quantity")}</Label><Input type="number" value={invoiceForm.quantity} onChange={(e) => setInvoiceForm({ ...invoiceForm, quantity: e.target.value })} /></div>
+            <div className="col-span-2 space-y-1.5">
+              <Label>{t("invoices.title_label")} *</Label>
+              <Input
+                value={invoiceForm.title}
+                onChange={(e) =>
+                  setInvoiceForm({ ...invoiceForm, title: e.target.value })
+                }
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>{t("invoices.client_name_label")} *</Label>
+              <Input
+                value={invoiceForm.clientName}
+                onChange={(e) =>
+                  setInvoiceForm({ ...invoiceForm, clientName: e.target.value })
+                }
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>{t("invoices.client_email_label")}</Label>
+              <Input
+                value={invoiceForm.clientEmail}
+                onChange={(e) =>
+                  setInvoiceForm({
+                    ...invoiceForm,
+                    clientEmail: e.target.value,
+                  })
+                }
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>{t("leads.phone_label")}</Label>
+              <Input
+                value={invoiceForm.clientPhone}
+                onChange={(e) =>
+                  setInvoiceForm({
+                    ...invoiceForm,
+                    clientPhone: e.target.value,
+                  })
+                }
+              />
+            </div>
+            <div className="col-span-2 space-y-1.5">
+              <Label>{t("pipeline.item_description")}</Label>
+              <Input
+                value={invoiceForm.description}
+                onChange={(e) =>
+                  setInvoiceForm({
+                    ...invoiceForm,
+                    description: e.target.value,
+                  })
+                }
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>{t("pipeline.unit_price")}</Label>
+              <Input
+                type="number"
+                value={invoiceForm.unitPrice}
+                onChange={(e) =>
+                  setInvoiceForm({ ...invoiceForm, unitPrice: e.target.value })
+                }
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>{t("pipeline.quantity")}</Label>
+              <Input
+                type="number"
+                value={invoiceForm.quantity}
+                onChange={(e) =>
+                  setInvoiceForm({ ...invoiceForm, quantity: e.target.value })
+                }
+              />
+            </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowCreateInvoice(false)}>{t("common.cancel")}</Button>
-            <Button onClick={submitCreateInvoice} disabled={createInvoiceMutation.isPending || !invoiceForm.title || !invoiceForm.clientName}>
-              {createInvoiceMutation.isPending ? t("leads.saving") : t("pipeline.create_invoice")}
+            <Button
+              variant="outline"
+              onClick={() => setShowCreateInvoice(false)}
+            >
+              {t("common.cancel")}
+            </Button>
+            <Button
+              onClick={submitCreateInvoice}
+              disabled={
+                createInvoiceMutation.isPending ||
+                !invoiceForm.title ||
+                !invoiceForm.clientName
+              }
+            >
+              {createInvoiceMutation.isPending
+                ? t("leads.saving")
+                : t("pipeline.create_invoice")}
             </Button>
           </DialogFooter>
         </DialogContent>

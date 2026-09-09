@@ -5,6 +5,8 @@
     "events": "Wydarzenia",
     "onboarding": "Konfiguracja",
     "notifications": "Powiadomienia",
+    "open_menu": "Otwórz menu",
+    "toggle_theme": "Zmień motyw",
     "settings": "Ustawienia",
     "admin": "Admin",
     "sales": "Sprzedaż",
@@ -119,7 +121,19 @@
     "courses_completed": "Ukończone kursy",
     "course_overview": "Przegląd kursu",
     "watch_video": "Oglądaj wideo",
-    "watch_time": "Czas oglądania"
+    "watch_time": "Czas oglądania",
+    "no_filtered_courses": "Żaden kurs nie pasuje do filtrów.",
+    "search_placeholder": "Szukaj kursów...",
+    "filter_category": "Kategoria",
+    "all_categories": "Wszystkie kategorie",
+    "error_title": "Akademia niedostępna",
+    "error_message": "Nie udało się wczytać treści akademii. Spróbuj ponownie.",
+    "retry": "Spróbuj ponownie",
+    "retry_video": "Wczytaj wideo ponownie",
+    "playback_unavailable": "Odtwarzanie wideo jest tymczasowo niedostępne. Spróbuj ponownie.",
+    "database_unavailable": "Akademia jest tymczasowo niedostępna. Spróbuj ponownie.",
+    "course_unavailable": "Ten kurs jest niedostępny.",
+    "lesson_unavailable": "Ta lekcja nie jest dostępna w wybranym kursie lub języku."
   },
   "events": {
     "title": "Wydarzenia",
@@ -127,6 +141,8 @@
     "add_event": "Dodaj wydarzenie",
     "no_events": "Brak wydarzeń. Dodaj pierwsze wydarzenie, aby zacząć.",
     "event_date": "Data wydarzenia",
+    "event_start_time": "Godzina rozpoczęcia",
+    "event_end_time": "Godzina zakończenia",
     "event_location": "Lokalizacja",
     "event_type": "Typ wydarzenia",
     "event_status": "Status",
@@ -565,6 +581,8 @@
     "saved": "Zapisano!",
     "full_name": "Pełne imię i nazwisko",
     "company_name": "Nazwa firmy",
+    "company_address": "Adres firmy",
+    "company_address_placeholder": "Ulica, kod pocztowy, miasto, kraj",
     "phone": "Telefon",
     "email": "Email",
     "email_notifications": "Powiadomienia email",
@@ -597,14 +615,28 @@
     "business_info_desc": "Help us tailor the platform to your business.",
     "business_type": "Business type",
     "main_market": "Main market",
+    "tax_id": "NIP / numer VAT",
+    "tax_id_placeholder": "Numer VAT, GST lub rejestracji podatkowej",
     "photobooths": "Number of photobooths",
     "business_goal": "Business goal",
+    "logo_title": "Logo firmy",
+    "logo_desc": "Wyświetlane na ofertach, umowach i fakturach. Jeśli nie zostanie ustawione, logo nie pojawi się na dokumentach.",
+    "logo_empty": "Nie przesłano jeszcze logo.",
+    "logo_upload_btn": "Prześlij plik",
+    "logo_saved": "Logo zapisane",
+    "logo_too_large": "Plik logo jest zbyt duży (maks. 2 MB)",
     "profile_complete_title": "Profile incomplete",
     "profile_complete_desc": "Please complete your required profile fields (first name, last name, company, phone).",
     "export_data": "Eksportuj moje dane",
     "export_data_desc": "Pobierz wszystkie swoje dane osobowe w formacie JSON (RODO Art. 20 — Prawo do przenoszenia danych).",
     "export_data_btn": "Pobierz dane osobowe",
-    "export_data_downloading": "Przygotowywanie eksportu…"
+    "export_data_downloading": "Przygotowywanie eksportu…",
+    "appearance": "Wygląd",
+    "appearance_desc": "Dostosuj wygląd HaloLight Hub na tym urządzeniu.",
+    "theme": "Motyw",
+    "theme_light": "Jasny",
+    "theme_dark": "Ciemny",
+    "theme_system": "Systemowy"
   },
   "common": {
     "loading": "Ładowanie...",
@@ -630,7 +662,8 @@
     "created": "Utworzono",
     "updated": "Zaktualizowano",
     "today": "Dzisiaj",
-    "yesterday": "Wczoraj"
+    "yesterday": "Wczoraj",
+    "remove": "Usuń"
   },
   "admin": {
     "console_title": "Admin Console",
@@ -645,7 +678,37 @@
     "unset_name": "Unset",
     "intelligence": "Intelligence",
     "management": "Management",
-    "operations_section": "Operations"
+    "operations_section": "Operations",
+    "create_user": "Utwórz użytkownika",
+    "active_users": "Aktywni użytkownicy",
+    "inactive_users": "Nieaktywni użytkownicy",
+    "admin_users": "Administratorzy",
+    "search_users": "Szukaj użytkowników...",
+    "filter_all_roles": "Wszystkie role",
+    "filter_all_statuses": "Wszystkie statusy",
+    "status_active": "Aktywny",
+    "status_inactive": "Nieaktywny",
+    "col_status": "Status",
+    "col_actions": "Akcje",
+    "no_users": "Nie znaleziono użytkowników.",
+    "edit_user": "Edytuj użytkownika",
+    "label_email": "Email",
+    "label_full_name": "Imię i nazwisko",
+    "label_first_name": "Imię",
+    "label_last_name": "Nazwisko",
+    "label_company": "Firma",
+    "label_phone": "Telefon",
+    "label_language": "Język",
+    "label_currency": "Waluta",
+    "role_admin": "Admin",
+    "role_client": "Klient",
+    "role_coach": "Coach",
+    "role_sales_rep": "Sprzedaż",
+    "toast_user_created": "Użytkownik utworzony",
+    "toast_user_updated": "Użytkownik zaktualizowany",
+    "toast_user_save_failed": "Nie można zapisać użytkownika",
+    "toast_user_required": "Email i imię i nazwisko są wymagane",
+    "saving_user": "Zapisywanie..."
   },
   "leads": {
     "title": "CRM — Leady",
@@ -833,7 +896,10 @@
     "equipment_label": "Sprzęt",
     "options_label": "Opcje",
     "options_detail_label": "Szczegóły opcji",
-    "discount_label": "Rabat"
+    "discount_label": "Rabat",
+    "send_quote": "Przygotuj email",
+    "quote_sent": "Szkic emaila przygotowany",
+    "quote_send_failed": "Nie można wysłać oferty"
   },
   "contracts": {
     "title": "Umowy",
@@ -950,7 +1016,8 @@
     "provider_signer_title_label": "Tytuł podpisującego (opcjonalnie)",
     "provider_signature_section": "Podpis dostawcy dla umów",
     "provider_signature_desc": "Jeśli ustawiony, ten podpis pojawia się w generowanych umowach.",
-    "provider_signature_saved": "Podpis zapisany"
+    "provider_signature_saved": "Podpis zapisany",
+    "no_content_message": "Brak treści umowy. Użyj Edytuj, aby dodać treść, albo wygeneruj umowę z szablonu."
   },
   "invoices": {
     "title": "Faktury",
@@ -1413,7 +1480,9 @@
     "toast_updated": "Zasób zaktualizowany",
     "toast_deleted": "Zasób usunięty",
     "toast_create_failed": "Nie udało się utworzyć zasobu",
-    "toast_update_failed": "Nie udało się zaktualizować zasobu"
+    "toast_update_failed": "Nie udało się zaktualizować zasobu",
+    "upload_file": "Prześlij plik",
+    "toast_open_failed": "Nie można otworzyć zasobu"
   },
   "admin_revenue": {
     "title": "Analiza przychodów",
@@ -1454,8 +1523,12 @@
     "clear": "Wyczyść",
     "no_uploads": "Jeszcze brak plików",
     "no_uploads_hint": "Dodaj swój pierwszy plik używając przycisku powyżej",
+    "error_loading": "Nie można załadować plików",
+    "retry": "Spróbuj ponownie",
     "dialog_add": "Dodaj plik",
     "dialog_edit": "Edytuj plik",
+    "url_only_title": "Dodaj plik z adresu URL",
+    "url_only_hint": "Bezpośrednie przesyłanie plików jest wyłączone w tym środowisku. Wklej poniżej adres HTTPS pliku.",
     "dropzone_title": "Upuść plik tutaj lub kliknij, aby przeglądać",
     "dropzone_hint": "Przechwytuje metadane pliku — wprowadź URL poniżej",
     "label_title": "Tytuł",
@@ -1501,7 +1574,8 @@
     "cat_contracts": "Kontrakty",
     "cat_product_manuals": "Instrukcje produktu",
     "cat_ai_knowledge_base": "Baza wiedzy AI",
-    "cat_support_documentation": "Dokumentacja wsparcia"
+    "cat_support_documentation": "Dokumentacja wsparcia",
+    "toast_open_failed": "Nie można otworzyć pliku"
   },
   "admin_academy": {
     "title": "Menedżer Akademii",
@@ -1578,7 +1652,13 @@
     "toast_module_deleted": "Moduł usunięty",
     "toast_module_add_fail": "Nie udało się dodać modułu",
     "type_module": "moduł",
-    "type_lesson": "lekcja"
+    "type_lesson": "lekcja",
+    "filter_archived": "Zarchiwizowane",
+    "stat_archived": "Zarchiwizowane",
+    "archived_badge": "Zarchiwizowany",
+    "archive": "Archiwizuj",
+    "restore": "Przywróć",
+    "toast_course_status_updated": "Status kursu zaktualizowany"
   },
   "admin_automation": {
     "title": "Silnik automatyzacji",
@@ -1762,6 +1842,7 @@
     "footer_copy": "© {{year}} HaloLight Inc. Wszelkie prawa zastrzeżone."
   },
   "academy_lesson": {
+    "no_video": "Wideo nie jest jeszcze dostępne w tym języku.",
     "toast_completed": "Lekcja ukończona!",
     "toast_completed_desc": "Dobra robota. Kontynuuj!",
     "toast_error": "Błąd",

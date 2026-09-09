@@ -1,14 +1,9 @@
 import app from "./app";
 import { logger } from "./lib/logger";
-import { startAutomationScheduler } from "./lib/automation/scheduler";
+import { startAutomationScheduler, stopAutomationScheduler } from "./lib/automation/scheduler";
+import { pool } from "@workspace/db";
 
-const rawPort = process.env["PORT"];
-
-if (!rawPort) {
-  throw new Error(
-    "PORT environment variable is required but was not provided.",
-  );
-}
+const rawPort = process.env["PORT"] ?? "8080";
 
 const port = Number(rawPort);
 
@@ -16,7 +11,7 @@ if (Number.isNaN(port) || port <= 0) {
   throw new Error(`Invalid PORT value: "${rawPort}"`);
 }
 
-app.listen(port, (err) => {
+const server = app.listen(port, (err) => {
   if (err) {
     logger.error({ err }, "Error listening on port");
     process.exit(1);
@@ -25,3 +20,21 @@ app.listen(port, (err) => {
   logger.info({ port }, "Server listening");
   startAutomationScheduler();
 });
+
+let stopping = false;
+function shutdown() {
+  if (stopping) return;
+  stopping = true;
+  stopAutomationScheduler();
+  const deadline = setTimeout(() => process.exit(1), 10_000);
+  deadline.unref();
+  server.close(() => {
+    void pool.end().then(() => {
+      clearTimeout(deadline);
+      process.exit(0);
+    }).catch(() => process.exit(1));
+  });
+}
+
+process.once("SIGINT", shutdown);
+process.once("SIGTERM", shutdown);

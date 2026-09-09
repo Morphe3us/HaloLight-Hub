@@ -2,25 +2,57 @@ import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
 
 import en from "./locales/en.json";
-import fr from "./locales/fr.json";
-import es from "./locales/es.json";
-import de from "./locales/de.json";
-import it from "./locales/it.json";
-import pl from "./locales/pl.json";
-import pt from "./locales/pt.json";
-import nl from "./locales/nl.json";
 
-const resources = { en: { translation: en }, fr: { translation: fr }, es: { translation: es }, de: { translation: de }, it: { translation: it }, pl: { translation: pl }, pt: { translation: pt }, nl: { translation: nl } };
+const SUPPORTED_LANGS = ["en", "fr", "es", "de", "it", "pl", "pt", "nl"] as const;
+type SupportedLang = (typeof SUPPORTED_LANGS)[number];
+
+const localeLoaders = import.meta.glob<{ default: Record<string, unknown> }>([
+  "./locales/*.json",
+  "!./locales/en.json",
+]);
 
 const LANG_KEY = "halolight-lang";
-const storedLang = localStorage.getItem(LANG_KEY) || "en";
+const storedLang = normalizeLang(localStorage.getItem(LANG_KEY));
+
+function normalizeLang(lang: string | null | undefined): SupportedLang {
+  const normalized = lang?.split("-")[0];
+  return SUPPORTED_LANGS.includes(normalized as SupportedLang)
+    ? (normalized as SupportedLang)
+    : "en";
+}
+
+export async function loadLocale(lang: string) {
+  const normalized = normalizeLang(lang);
+  if (normalized === "en" || i18n.hasResourceBundle(normalized, "translation")) {
+    return normalized;
+  }
+
+  const loader = localeLoaders[`./locales/${normalized}.json`];
+  if (!loader) return "en";
+
+  const mod = await loader();
+  i18n.addResourceBundle(normalized, "translation", mod.default, true, true);
+  return normalized;
+}
+
+export async function setAppLanguage(lang: string) {
+  const normalized = await loadLocale(lang);
+  await i18n.changeLanguage(normalized);
+  localStorage.setItem(LANG_KEY, normalized);
+  return normalized;
+}
 
 i18n.use(initReactI18next).init({
-  resources,
-  lng: storedLang,
+  resources: { en: { translation: en } },
+  lng: "en",
   fallbackLng: "en",
   interpolation: { escapeValue: false },
+  react: { useSuspense: false },
 });
+
+if (storedLang !== "en") {
+  void setAppLanguage(storedLang);
+}
 
 export const LANG_STORAGE_KEY = LANG_KEY;
 export default i18n;

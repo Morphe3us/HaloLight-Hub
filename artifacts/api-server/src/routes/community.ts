@@ -1,17 +1,39 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { eq, and, desc, asc, sql } from "drizzle-orm";
+import { eq, and, desc, asc, sql, or } from "drizzle-orm";
 import { db, communityChannels, communityPosts, communityReplies, communityReactions, usersTable } from "@workspace/db";
 import { requireAuth } from "../middlewares/requireAuth";
 import { getOrCreateUser } from "../lib/userSync";
+import { isExplicitDevelopment, parseBooleanEnv } from "../lib/env";
 
 const router: IRouter = Router();
+
+type CommunityUser = typeof usersTable.$inferSelect;
+type CommunityChannel = typeof communityChannels.$inferSelect;
+
+function communityEnabledFor(user: CommunityUser): boolean {
+  if (user.role === "admin") return true;
+  const configured = parseBooleanEnv(process.env.ENABLE_COMMUNITY);
+  if (configured !== null) return configured;
+  return isExplicitDevelopment();
+}
+
+function canReadChannel(user: CommunityUser, channel: CommunityChannel): boolean {
+  if (!communityEnabledFor(user)) return false;
+  if (user.role === "admin") return true;
+  return channel.type === "public" || channel.type === "announcement";
+}
 
 // GET /community/channels
 router.get("/community/channels", requireAuth, async (req: Request, res: Response): Promise<void> => {
   const user = await getOrCreateUser(req);
   if (!user) { res.status(401).json({ error: "Unauthorized" }); return; }
 
-  const items = await db.select({
+  if (!communityEnabledFor(user)) {
+    res.json({ items: [] });
+    return;
+  }
+
+  const query = db.select({
     id: communityChannels.id,
     createdBy: communityChannels.createdBy,
     name: communityChannels.name,
@@ -22,7 +44,15 @@ router.get("/community/channels", requireAuth, async (req: Request, res: Respons
     order: communityChannels.order,
     createdAt: communityChannels.createdAt,
     postCount: sql<number>`(select count(*) from community_posts where channel_id = ${communityChannels.id})::int`,
-  }).from(communityChannels).orderBy(asc(communityChannels.order));
+  }).from(communityChannels);
+  const items = user.role === "admin"
+    ? await query.orderBy(asc(communityChannels.order))
+    : await query
+        .where(or(
+          eq(communityChannels.type, "public"),
+          eq(communityChannels.type, "announcement"),
+        ))
+        .orderBy(asc(communityChannels.order));
 
   res.json({ items });
 });
@@ -62,6 +92,7 @@ router.get("/community/channels/:id/posts", requireAuth, async (req: Request, re
 
   const [channel] = await db.select().from(communityChannels).where(eq(communityChannels.id, channelId));
   if (!channel) { res.status(404).json({ error: "Channel not found" }); return; }
+  if (!canReadChannel(user, channel)) { res.status(404).json({ error: "Channel not found" }); return; }
 
   const [rows, countRow] = await Promise.all([
     db.select({
@@ -99,6 +130,7 @@ router.post("/community/channels/:id/posts", requireAuth, async (req: Request, r
 
   const [channel] = await db.select().from(communityChannels).where(eq(communityChannels.id, channelId));
   if (!channel) { res.status(404).json({ error: "Channel not found" }); return; }
+  if (!canReadChannel(user, channel)) { res.status(404).json({ error: "Channel not found" }); return; }
 
   if (channel.type === "announcement" && user.role !== "admin") {
     res.status(403).json({ error: "Only admins can post in announcement channels" }); return;
@@ -141,6 +173,8 @@ router.get("/community/posts/:id", requireAuth, async (req: Request, res: Respon
     .where(eq(communityPosts.id, id));
 
   if (!post) { res.status(404).json({ error: "Not found" }); return; }
+  const [channel] = await db.select().from(communityChannels).where(eq(communityChannels.id, post.channelId));
+  if (!channel || !canReadChannel(user, channel)) { res.status(404).json({ error: "Not found" }); return; }
 
   await db.update(communityPosts).set({ views: post.views + 1 }).where(eq(communityPosts.id, id));
 
@@ -171,6 +205,8 @@ router.delete("/community/posts/:id", requireAuth, async (req: Request, res: Res
 
   const [post] = await db.select().from(communityPosts).where(eq(communityPosts.id, id));
   if (!post) { res.status(404).json({ error: "Not found" }); return; }
+  const [channel] = await db.select().from(communityChannels).where(eq(communityChannels.id, post.channelId));
+  if (!channel || !canReadChannel(user, channel)) { res.status(404).json({ error: "Not found" }); return; }
 
   if (post.userId !== user.id && user.role !== "admin") {
     res.status(403).json({ error: "Forbidden" }); return;
@@ -188,6 +224,8 @@ router.post("/community/posts/:id/replies", requireAuth, async (req: Request, re
 
   const [post] = await db.select().from(communityPosts).where(eq(communityPosts.id, id));
   if (!post) { res.status(404).json({ error: "Not found" }); return; }
+  const [channel] = await db.select().from(communityChannels).where(eq(communityChannels.id, post.channelId));
+  if (!channel || !canReadChannel(user, channel)) { res.status(404).json({ error: "Not found" }); return; }
   if (post.isLocked && user.role !== "admin") { res.status(403).json({ error: "Post is locked" }); return; }
 
   const { content } = req.body as { content: string };
@@ -210,6 +248,11 @@ router.post("/community/posts/:id/reactions", requireAuth, async (req: Request, 
 
   const { emoji } = req.body as { emoji: string };
   if (!emoji) { res.status(400).json({ error: "emoji required" }); return; }
+
+  const [post] = await db.select().from(communityPosts).where(eq(communityPosts.id, id));
+  if (!post) { res.status(404).json({ error: "Not found" }); return; }
+  const [channel] = await db.select().from(communityChannels).where(eq(communityChannels.id, post.channelId));
+  if (!channel || !canReadChannel(user, channel)) { res.status(404).json({ error: "Not found" }); return; }
 
   const [existing] = await db.select().from(communityReactions).where(
     and(
@@ -254,6 +297,10 @@ router.delete("/community/replies/:id", requireAuth, async (req: Request, res: R
 
   const [reply] = await db.select().from(communityReplies).where(eq(communityReplies.id, id));
   if (!reply) { res.status(404).json({ error: "Not found" }); return; }
+  const [post] = await db.select().from(communityPosts).where(eq(communityPosts.id, reply.postId));
+  if (!post) { res.status(404).json({ error: "Not found" }); return; }
+  const [channel] = await db.select().from(communityChannels).where(eq(communityChannels.id, post.channelId));
+  if (!channel || !canReadChannel(user, channel)) { res.status(404).json({ error: "Not found" }); return; }
 
   if (reply.userId !== user.id && user.role !== "admin") {
     res.status(403).json({ error: "Forbidden" }); return;

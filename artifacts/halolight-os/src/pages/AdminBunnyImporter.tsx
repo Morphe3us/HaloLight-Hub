@@ -283,6 +283,10 @@ export default function AdminBunnyImporter({ onBack }: { onBack: () => void }) {
 
   const handleImportClick = () => {
     if (!selectedRows.length) return;
+    if (selectedRows.some((row) => !row.video.isReady)) {
+      toast({ title: "Only ready Bunny videos can be imported.", variant: "destructive" });
+      return;
+    }
     if (!selectedLang) {
       toast({ title: "This collection's ID is not in the fixed language mapping. Import blocked.", variant: "destructive" });
       return;
@@ -535,7 +539,6 @@ export default function AdminBunnyImporter({ onBack }: { onBack: () => void }) {
                       </p>
                       <div className="flex gap-2">
                         <Button variant="ghost" size="sm" className="text-xs h-7 px-2" onClick={() => setImportRows(r => r.map(row => ({ ...row, selected: row.video.isReady })))}>Select ready</Button>
-                        <Button variant="ghost" size="sm" className="text-xs h-7 px-2" onClick={() => setImportRows(r => r.map(row => ({ ...row, selected: true })))}>Select all</Button>
                         <Button variant="ghost" size="sm" className="text-xs h-7 px-2" onClick={() => setImportRows(r => r.map(row => ({ ...row, selected: false })))}>Deselect all</Button>
                       </div>
                     </div>
@@ -546,8 +549,8 @@ export default function AdminBunnyImporter({ onBack }: { onBack: () => void }) {
                       return (
                         <div key={row.video.guid} className={`rounded-xl border p-3 transition-colors ${row.selected ? "border-primary/30 bg-primary/3" : "border-border bg-muted/10"}`}>
                           <div className="flex items-start gap-3">
-                            <input type="checkbox" checked={row.selected} onChange={e => updateRow(idx, { selected: e.target.checked })}
-                              className="mt-1 rounded shrink-0 w-4 h-4 accent-primary cursor-pointer" />
+                            <input type="checkbox" checked={row.selected} disabled={!row.video.isReady} onChange={e => updateRow(idx, { selected: e.target.checked })}
+                              className="mt-1 rounded shrink-0 w-4 h-4 accent-primary cursor-pointer disabled:cursor-not-allowed disabled:opacity-40" />
                             {row.video.thumbnailUrl ? (
                               <img src={row.video.thumbnailUrl} alt="" className="h-14 w-24 rounded-lg object-cover shrink-0 bg-muted"
                                 onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />

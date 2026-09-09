@@ -4,6 +4,7 @@ import { logger } from "../logger";
 const INTERVAL_MS = 60 * 60 * 1000; // 1 hour
 
 let schedulerHandle: ReturnType<typeof setInterval> | null = null;
+let initialDelay: ReturnType<typeof setTimeout> | null = null;
 
 export function startAutomationScheduler(): void {
   if (schedulerHandle) return;
@@ -11,7 +12,8 @@ export function startAutomationScheduler(): void {
   logger.info("Automation scheduler started (interval: 1h)");
 
   // Run once shortly after startup (5 min delay to let server warm up)
-  const initialDelay = setTimeout(() => {
+  initialDelay = setTimeout(() => {
+    initialDelay = null;
     void runAutomation("scheduled").catch((err) => {
       logger.error({ err }, "Initial automation run failed");
     });
@@ -24,12 +26,13 @@ export function startAutomationScheduler(): void {
     });
   }, INTERVAL_MS);
 
-  // Cleanup on process exit
-  process.once("SIGTERM", stopAutomationScheduler);
-  process.once("SIGINT", stopAutomationScheduler);
 }
 
 export function stopAutomationScheduler(): void {
+  if (initialDelay) {
+    clearTimeout(initialDelay);
+    initialDelay = null;
+  }
   if (schedulerHandle) {
     clearInterval(schedulerHandle);
     schedulerHandle = null;

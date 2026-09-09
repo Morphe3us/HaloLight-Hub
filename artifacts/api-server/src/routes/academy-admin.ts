@@ -1,10 +1,11 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { eq, sql, desc } from "drizzle-orm";
+import { eq, sql, desc, inArray } from "drizzle-orm";
 import {
   db, courses, courseModules, lessons,
 } from "@workspace/db";
 import { requireAuth } from "../middlewares/requireAuth";
 import { getOrCreateUser } from "../lib/userSync";
+import { clearAcademyCatalogCache } from "../lib/academyCatalog";
 
 const router: IRouter = Router();
 
@@ -14,40 +15,54 @@ function requireAdmin(user: { role: string } | null | undefined, res: Response):
   return true;
 }
 
-async function buildAdminCourse(course: typeof courses.$inferSelect) {
-  const modulesWithLessons = await db
-    .select({
-      moduleId: courseModules.id,
-      moduleTitle: courseModules.title,
-      moduleOrder: courseModules.order,
-      lessonId: lessons.id,
-      lessonTitle: lessons.title,
-      lessonOrder: lessons.order,
-      lessonDuration: lessons.durationSeconds,
-      lessonPublished: lessons.isPublished,
-      lessonVideoUrl: lessons.videoUrl,
-      lessonVideoUrls: lessons.videoUrls,
-      lessonThumbnailUrl: lessons.thumbnailUrl,
-      lessonVideoAssets: lessons.videoAssets,
-      lessonDescription: lessons.description,
-      lessonNotes: lessons.notes,
-    })
-    .from(courseModules)
-    .leftJoin(lessons, eq(lessons.moduleId, courseModules.id))
-    .where(eq(courseModules.courseId, course.id))
-    .orderBy(courseModules.order, lessons.order);
+type VideoAssetMap = Record<string, { embedUrl?: string; thumbnailUrl?: string; previewUrl?: string; videoId?: string }>;
+type AdminModule = {
+  id: string;
+  courseId: string;
+  title: unknown;
+  order: number;
+  lessons: Array<{
+    id: string;
+    moduleId: string;
+    title: unknown;
+    description: unknown;
+    videoUrl: string;
+    videoUrls: Record<string, string> | null;
+    thumbnailUrl: string | null;
+    videoAssets: VideoAssetMap | null;
+    durationSeconds: number;
+    order: number;
+    isPublished: boolean;
+    notes: string | null;
+  }>;
+};
 
-  type VideoAssetMap = Record<string, { embedUrl?: string; thumbnailUrl?: string; previewUrl?: string; videoId?: string }>;
-  const moduleMap = new Map<string, {
-    id: string; courseId: string; title: unknown; order: number;
-    lessons: Array<{ id: string; moduleId: string; title: unknown; description: unknown; videoUrl: string; videoUrls: Record<string, string> | null; thumbnailUrl: string | null; videoAssets: VideoAssetMap | null; durationSeconds: number; order: number; isPublished: boolean; notes: string | null }>;
-  }>();
+type ModuleLessonRow = {
+  moduleId: string;
+  moduleCourseId: string;
+  moduleTitle: unknown;
+  moduleOrder: number;
+  lessonId: string | null;
+  lessonTitle: unknown;
+  lessonOrder: number | null;
+  lessonDuration: number | null;
+  lessonPublished: boolean | null;
+  lessonVideoUrl: string | null;
+  lessonVideoUrls: unknown;
+  lessonThumbnailUrl: string | null;
+  lessonVideoAssets: unknown;
+  lessonDescription: unknown;
+  lessonNotes: string | null;
+};
 
-  for (const row of modulesWithLessons) {
+function buildAdminModules(rows: ModuleLessonRow[]): AdminModule[] {
+  const moduleMap = new Map<string, AdminModule>();
+
+  for (const row of rows) {
     if (!moduleMap.has(row.moduleId)) {
       moduleMap.set(row.moduleId, {
         id: row.moduleId,
-        courseId: course.id,
+        courseId: row.moduleCourseId,
         title: row.moduleTitle,
         order: row.moduleOrder,
         lessons: [],
@@ -61,7 +76,7 @@ async function buildAdminCourse(course: typeof courses.$inferSelect) {
         description: row.lessonDescription,
         videoUrl: row.lessonVideoUrl ?? "",
         videoUrls: (row.lessonVideoUrls as Record<string, string> | null) ?? null,
-        thumbnailUrl: (row.lessonThumbnailUrl as string | null) ?? null,
+        thumbnailUrl: row.lessonThumbnailUrl,
         videoAssets: (row.lessonVideoAssets as VideoAssetMap | null) ?? null,
         durationSeconds: row.lessonDuration ?? 0,
         order: row.lessonOrder ?? 0,
@@ -71,7 +86,13 @@ async function buildAdminCourse(course: typeof courses.$inferSelect) {
     }
   }
 
-  const moduleList = Array.from(moduleMap.values());
+  return Array.from(moduleMap.values());
+}
+
+function buildAdminCoursePayload(
+  course: typeof courses.$inferSelect,
+  moduleList: AdminModule[],
+) {
   const lessonCount = moduleList.reduce((s, m) => s + m.lessons.length, 0);
 
   return {
@@ -96,6 +117,71 @@ async function buildAdminCourse(course: typeof courses.$inferSelect) {
   };
 }
 
+async function buildAdminCourse(course: typeof courses.$inferSelect) {
+  const modulesWithLessons = await db
+    .select({
+      moduleCourseId: courseModules.courseId,
+      moduleId: courseModules.id,
+      moduleTitle: courseModules.title,
+      moduleOrder: courseModules.order,
+      lessonId: lessons.id,
+      lessonTitle: lessons.title,
+      lessonOrder: lessons.order,
+      lessonDuration: lessons.durationSeconds,
+      lessonPublished: lessons.isPublished,
+      lessonVideoUrl: lessons.videoUrl,
+      lessonVideoUrls: lessons.videoUrls,
+      lessonThumbnailUrl: lessons.thumbnailUrl,
+      lessonVideoAssets: lessons.videoAssets,
+      lessonDescription: lessons.description,
+      lessonNotes: lessons.notes,
+    })
+    .from(courseModules)
+    .leftJoin(lessons, eq(lessons.moduleId, courseModules.id))
+    .where(eq(courseModules.courseId, course.id))
+    .orderBy(courseModules.order, lessons.order);
+
+  return buildAdminCoursePayload(course, buildAdminModules(modulesWithLessons));
+}
+
+async function buildAdminCourses(courseRows: Array<typeof courses.$inferSelect>) {
+  if (courseRows.length === 0) return [];
+
+  const modulesWithLessons = await db
+    .select({
+      moduleCourseId: courseModules.courseId,
+      moduleId: courseModules.id,
+      moduleTitle: courseModules.title,
+      moduleOrder: courseModules.order,
+      lessonId: lessons.id,
+      lessonTitle: lessons.title,
+      lessonOrder: lessons.order,
+      lessonDuration: lessons.durationSeconds,
+      lessonPublished: lessons.isPublished,
+      lessonVideoUrl: lessons.videoUrl,
+      lessonVideoUrls: lessons.videoUrls,
+      lessonThumbnailUrl: lessons.thumbnailUrl,
+      lessonVideoAssets: lessons.videoAssets,
+      lessonDescription: lessons.description,
+      lessonNotes: lessons.notes,
+    })
+    .from(courseModules)
+    .leftJoin(lessons, eq(lessons.moduleId, courseModules.id))
+    .where(inArray(courseModules.courseId, courseRows.map((course) => course.id)))
+    .orderBy(courseModules.courseId, courseModules.order, lessons.order);
+
+  const rowsByCourse = new Map<string, ModuleLessonRow[]>();
+  for (const row of modulesWithLessons) {
+    const list = rowsByCourse.get(row.moduleCourseId) ?? [];
+    list.push(row);
+    rowsByCourse.set(row.moduleCourseId, list);
+  }
+
+  return courseRows.map((course) =>
+    buildAdminCoursePayload(course, buildAdminModules(rowsByCourse.get(course.id) ?? [])),
+  );
+}
+
 // GET /admin/academy/courses
 router.get("/admin/academy/courses", requireAuth, async (req: Request, res: Response): Promise<void> => {
   const user = await getOrCreateUser(req);
@@ -115,7 +201,7 @@ router.get("/admin/academy/courses", requireAuth, async (req: Request, res: Resp
     });
   }
 
-  const items = await Promise.all(allCourses.map(buildAdminCourse));
+  const items = await buildAdminCourses(allCourses);
   res.json({ items, total: items.length });
 });
 
@@ -159,6 +245,7 @@ router.post("/admin/academy/courses", requireAuth, async (req: Request, res: Res
     order: nextOrder,
   }).returning();
 
+  clearAcademyCatalogCache();
   res.status(201).json(await buildAdminCourse(course!));
 });
 
@@ -206,6 +293,7 @@ router.put("/admin/academy/courses/:id", requireAuth, async (req: Request, res: 
   const [updated] = await db.update(courses).set(updates).where(eq(courses.id, String(req.params.id))).returning();
   if (!updated) { res.status(404).json({ error: "Course not found" }); return; }
 
+  clearAcademyCatalogCache();
   res.json(await buildAdminCourse(updated));
 });
 
@@ -215,6 +303,7 @@ router.delete("/admin/academy/courses/:id", requireAuth, async (req: Request, re
   if (!requireAdmin(user, res)) return;
 
   await db.delete(courses).where(eq(courses.id, String(req.params.id)));
+  clearAcademyCatalogCache();
   res.status(204).send();
 });
 
@@ -271,6 +360,7 @@ router.post("/admin/academy/courses/:id/duplicate", requireAuth, async (req: Req
     }
   }
 
+  clearAcademyCatalogCache();
   res.status(201).json(await buildAdminCourse(dupCourse!));
 });
 
@@ -289,6 +379,7 @@ router.post("/admin/academy/modules", requireAuth, async (req: Request, res: Res
     order: order ?? (maxRow?.max ?? 0) + 1,
   }).returning();
 
+  clearAcademyCatalogCache();
   res.status(201).json({ id: mod!.id, courseId: mod!.courseId, title: mod!.title, order: mod!.order, lessons: [] });
 });
 
@@ -305,6 +396,7 @@ router.put("/admin/academy/modules/:id", requireAuth, async (req: Request, res: 
   const [updated] = await db.update(courseModules).set(updates).where(eq(courseModules.id, String(req.params.id))).returning();
   if (!updated) { res.status(404).json({ error: "Module not found" }); return; }
 
+  clearAcademyCatalogCache();
   const moduleLessons = await db.select().from(lessons).where(eq(lessons.moduleId, updated.id)).orderBy(lessons.order);
   res.json({ id: updated.id, courseId: updated.courseId, title: updated.title, order: updated.order, lessons: moduleLessons });
 });
@@ -315,6 +407,7 @@ router.delete("/admin/academy/modules/:id", requireAuth, async (req: Request, re
   if (!requireAdmin(user, res)) return;
 
   await db.delete(courseModules).where(eq(courseModules.id, String(req.params.id)));
+  clearAcademyCatalogCache();
   res.status(204).send();
 });
 
@@ -344,6 +437,7 @@ router.post("/admin/academy/lessons", requireAuth, async (req: Request, res: Res
     notes: notes ?? null,
   }).returning();
 
+  clearAcademyCatalogCache();
   res.status(201).json({
     id: lesson!.id, moduleId: lesson!.moduleId, title: lesson!.title, description: lesson!.description,
     videoUrl: lesson!.videoUrl, videoUrls: lesson!.videoUrls ?? null, thumbnailUrl: lesson!.thumbnailUrl ?? null,
@@ -378,6 +472,7 @@ router.put("/admin/academy/lessons/:id", requireAuth, async (req: Request, res: 
   const [updated] = await db.update(lessons).set(updates).where(eq(lessons.id, String(req.params.id))).returning();
   if (!updated) { res.status(404).json({ error: "Lesson not found" }); return; }
 
+  clearAcademyCatalogCache();
   res.json({
     id: updated.id, moduleId: updated.moduleId, title: updated.title, description: updated.description,
     videoUrl: updated.videoUrl, videoUrls: updated.videoUrls ?? null, thumbnailUrl: updated.thumbnailUrl ?? null,
@@ -393,6 +488,7 @@ router.delete("/admin/academy/lessons/:id", requireAuth, async (req: Request, re
   if (!requireAdmin(user, res)) return;
 
   await db.delete(lessons).where(eq(lessons.id, String(req.params.id)));
+  clearAcademyCatalogCache();
   res.status(204).send();
 });
 

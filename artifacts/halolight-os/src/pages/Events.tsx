@@ -14,9 +14,30 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO } from "date-fns";
 import {
@@ -63,6 +84,8 @@ interface EventFormData {
   title: string;
   description: string;
   eventDate: string;
+  eventStartTime: string;
+  eventEndTime: string;
   location: string;
   type: string;
   status: EventStatus;
@@ -73,6 +96,8 @@ const EMPTY_FORM: EventFormData = {
   title: "",
   description: "",
   eventDate: "",
+  eventStartTime: "",
+  eventEndTime: "",
   location: "",
   type: "",
   status: "upcoming",
@@ -89,7 +114,11 @@ export default function Events() {
   const [form, setForm] = useState<EventFormData>(EMPTY_FORM);
   const [prepOpenId, setPrepOpenId] = useState<string | null>(null);
 
-  const { data: eventsData, isLoading, refetch } = useListEvents({
+  const {
+    data: eventsData,
+    isLoading,
+    refetch,
+  } = useListEvents({
     ...(statusFilter !== "all" ? { status: statusFilter } : {}),
     limit: 50,
   });
@@ -99,7 +128,7 @@ export default function Events() {
 
   const now = new Date();
   const events = [...(eventsData?.items ?? [])].sort(
-    (a, b) => new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime()
+    (a, b) => new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime(),
   );
 
   const openCreate = () => {
@@ -113,7 +142,15 @@ export default function Events() {
     setForm({
       title: ev.title,
       description: ev.description ?? "",
-      eventDate: ev.eventDate ? new Date(ev.eventDate).toISOString().slice(0, 16) : "",
+      eventDate: ev.eventDate
+        ? new Date(ev.eventDate).toISOString().slice(0, 10)
+        : "",
+      eventStartTime:
+        (ev as any).eventStartTime ??
+        (ev.eventDate
+          ? new Date(ev.eventDate).toISOString().slice(11, 16)
+          : ""),
+      eventEndTime: (ev as any).eventEndTime ?? "",
       location: ev.location ?? "",
       type: ev.type ?? "",
       status: ev.status as EventStatus,
@@ -124,10 +161,13 @@ export default function Events() {
 
   const handleSubmit = () => {
     if (!form.title || !form.eventDate) return;
+    const eventDateTime = `${form.eventDate}T${form.eventStartTime || "12:00"}`;
     const payload = {
       title: form.title,
       description: form.description || undefined,
-      eventDate: new Date(form.eventDate).toISOString(),
+      eventDate: new Date(eventDateTime).toISOString(),
+      eventStartTime: form.eventStartTime || undefined,
+      eventEndTime: form.eventEndTime || undefined,
       location: form.location || undefined,
       type: form.type || undefined,
       notes: form.notes || undefined,
@@ -142,8 +182,9 @@ export default function Events() {
             setIsDialogOpen(false);
             refetch();
           },
-          onError: () => toast({ title: t("events.toast_error"), variant: "destructive" }),
-        }
+          onError: () =>
+            toast({ title: t("events.toast_error"), variant: "destructive" }),
+        },
       );
     } else {
       createEvent(
@@ -154,8 +195,9 @@ export default function Events() {
             setIsDialogOpen(false);
             refetch();
           },
-          onError: () => toast({ title: t("events.toast_error"), variant: "destructive" }),
-        }
+          onError: () =>
+            toast({ title: t("events.toast_error"), variant: "destructive" }),
+        },
       );
     }
   };
@@ -170,8 +212,9 @@ export default function Events() {
           setDeleteId(null);
           refetch();
         },
-        onError: () => toast({ title: t("events.toast_error"), variant: "destructive" }),
-      }
+        onError: () =>
+          toast({ title: t("events.toast_error"), variant: "destructive" }),
+      },
     );
   };
 
@@ -179,9 +222,13 @@ export default function Events() {
     updateEvent(
       { id, data: { status: "cancelled" } },
       {
-        onSuccess: () => { toast({ title: t("events.toast_cancelled") }); refetch(); },
-        onError: () => toast({ title: t("events.toast_error"), variant: "destructive" }),
-      }
+        onSuccess: () => {
+          toast({ title: t("events.toast_cancelled") });
+          refetch();
+        },
+        onError: () =>
+          toast({ title: t("events.toast_error"), variant: "destructive" }),
+      },
     );
   };
 
@@ -192,7 +239,9 @@ export default function Events() {
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">{t("events.title")}</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">
+            {t("events.title")}
+          </h1>
           <p className="text-muted-foreground mt-1">{t("events.subtitle")}</p>
         </div>
         <Button onClick={openCreate} className="shrink-0 shadow-sm">
@@ -211,7 +260,7 @@ export default function Events() {
               "px-4 py-1.5 rounded-full text-sm font-medium transition-all border",
               statusFilter === s
                 ? "bg-primary text-primary-foreground border-primary shadow-sm"
-                : "bg-card text-muted-foreground border-border hover:border-border"
+                : "bg-card text-muted-foreground border-border hover:border-border",
             )}
           >
             {s === "all" ? t("events.all_statuses") : t(`events.status_${s}`)}
@@ -222,7 +271,9 @@ export default function Events() {
       {/* Event List */}
       {isLoading ? (
         <div className="space-y-4">
-          {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-28 rounded-xl" />)}
+          {[...Array(3)].map((_, i) => (
+            <Skeleton key={i} className="h-28 rounded-xl" />
+          ))}
         </div>
       ) : events.length === 0 ? (
         <div className="text-center py-20 text-muted-foreground">
@@ -237,15 +288,34 @@ export default function Events() {
         <div className="space-y-4">
           {events.map((ev) => {
             const eany = ev_any(ev);
-            const isPast = new Date(ev.eventDate) < now && ev.status === "upcoming";
+            const isPast =
+              new Date(ev.eventDate) < now && ev.status === "upcoming";
             const isPrepOpen = prepOpenId === ev.id;
             const paymentStatus = eany.paymentStatus as string | null;
-            const hasClientInfo = !!(eany.clientName || eany.clientPhone || eany.clientEmail);
-            const hasServiceInfo = !!(eany.packageName || eany.includedPrints || eany.rentalDuration);
-            const hasDocLinks = !!(eany.quoteId || eany.contractId || eany.invoiceId);
+            const hasClientInfo = !!(
+              eany.clientName ||
+              eany.clientPhone ||
+              eany.clientEmail
+            );
+            const hasServiceInfo = !!(
+              eany.packageName ||
+              eany.includedPrints ||
+              eany.rentalDuration
+            );
+            const hasDocLinks = !!(
+              eany.quoteId ||
+              eany.contractId ||
+              eany.invoiceId
+            );
 
             return (
-              <Card key={ev.id} className={cn("border border-border shadow-sm hover:shadow-md transition-all", isPast && "opacity-60")}>
+              <Card
+                key={ev.id}
+                className={cn(
+                  "border border-border shadow-sm hover:shadow-md transition-all",
+                  isPast && "opacity-60",
+                )}
+              >
                 <CardContent className="p-5">
                   {isPast && (
                     <div className="text-xs text-warning font-medium mb-2 flex items-center gap-1">
@@ -257,11 +327,26 @@ export default function Events() {
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex gap-4 flex-1 min-w-0">
                       {/* Date box */}
-                      <div className={cn("flex-shrink-0 h-14 w-14 rounded-xl flex flex-col items-center justify-center", isPast ? "bg-muted" : "bg-primary/10")}>
-                        <span className={cn("text-xs font-medium uppercase", isPast ? "text-muted-foreground" : "text-primary")}>
+                      <div
+                        className={cn(
+                          "flex-shrink-0 h-14 w-14 rounded-xl flex flex-col items-center justify-center",
+                          isPast ? "bg-muted" : "bg-primary/10",
+                        )}
+                      >
+                        <span
+                          className={cn(
+                            "text-xs font-medium uppercase",
+                            isPast ? "text-muted-foreground" : "text-primary",
+                          )}
+                        >
                           {format(parseISO(ev.eventDate), "MMM")}
                         </span>
-                        <span className={cn("text-2xl font-bold leading-none", isPast ? "text-muted-foreground" : "text-primary")}>
+                        <span
+                          className={cn(
+                            "text-2xl font-bold leading-none",
+                            isPast ? "text-muted-foreground" : "text-primary",
+                          )}
+                        >
                           {format(parseISO(ev.eventDate), "d")}
                         </span>
                       </div>
@@ -269,16 +354,36 @@ export default function Events() {
                       <div className="flex-1 min-w-0">
                         {/* Title + badges */}
                         <div className="flex items-center gap-2 flex-wrap mb-1">
-                          <h3 className="font-semibold text-foreground truncate">{ev.title}</h3>
-                          <Badge variant="outline" className={cn("text-xs shrink-0", STATUS_STYLES[ev.status as EventStatus])}>
+                          <h3 className="font-semibold text-foreground truncate">
+                            {ev.title}
+                          </h3>
+                          <Badge
+                            variant="outline"
+                            className={cn(
+                              "text-xs shrink-0",
+                              STATUS_STYLES[ev.status as EventStatus],
+                            )}
+                          >
                             {t(`events.status_${ev.status}`)}
                           </Badge>
                           {paymentStatus && PAYMENT_STYLES[paymentStatus] && (
-                            <Badge variant="outline" className={cn("text-xs shrink-0", PAYMENT_STYLES[paymentStatus])}>
+                            <Badge
+                              variant="outline"
+                              className={cn(
+                                "text-xs shrink-0",
+                                PAYMENT_STYLES[paymentStatus],
+                              )}
+                            >
                               {paymentStatus === "paid" ? (
-                                <><CheckCircle2 className="w-3 h-3 mr-1" />{t("events.payment_status_paid")}</>
+                                <>
+                                  <CheckCircle2 className="w-3 h-3 mr-1" />
+                                  {t("events.payment_status_paid")}
+                                </>
                               ) : (
-                                <><AlertCircle className="w-3 h-3 mr-1" />{t("events.payment_status_unpaid")}</>
+                                <>
+                                  <AlertCircle className="w-3 h-3 mr-1" />
+                                  {t("events.payment_status_unpaid")}
+                                </>
                               )}
                             </Badge>
                           )}
@@ -291,7 +396,11 @@ export default function Events() {
                             {format(parseISO(ev.eventDate), "PPP")}
                             {(eany.eventStartTime || eany.eventEndTime) && (
                               <span className="text-xs ml-1">
-                                {eany.eventStartTime}{eany.eventStartTime && eany.eventEndTime ? "–" : ""}{eany.eventEndTime}
+                                {eany.eventStartTime}
+                                {eany.eventStartTime && eany.eventEndTime
+                                  ? "–"
+                                  : ""}
+                                {eany.eventEndTime}
                               </span>
                             )}
                           </span>
@@ -313,13 +422,23 @@ export default function Events() {
                         {hasServiceInfo && (
                           <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1.5 text-xs text-muted-foreground">
                             {eany.packageName && (
-                              <span className="flex items-center gap-1"><Package className="w-3 h-3" />{eany.packageName}</span>
+                              <span className="flex items-center gap-1">
+                                <Package className="w-3 h-3" />
+                                {eany.packageName}
+                              </span>
                             )}
                             {eany.includedPrints && (
-                              <span className="flex items-center gap-1"><Printer className="w-3 h-3" />{eany.includedPrints} {t("events.prints_required")}</span>
+                              <span className="flex items-center gap-1">
+                                <Printer className="w-3 h-3" />
+                                {eany.includedPrints}{" "}
+                                {t("events.prints_required")}
+                              </span>
                             )}
                             {eany.rentalDuration && (
-                              <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{eany.rentalDuration}</span>
+                              <span className="flex items-center gap-1">
+                                <Clock className="w-3 h-3" />
+                                {eany.rentalDuration}
+                              </span>
                             )}
                           </div>
                         )}
@@ -328,10 +447,16 @@ export default function Events() {
                         {hasClientInfo && !isPrepOpen && (
                           <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1 text-xs text-muted-foreground">
                             {eany.clientName && (
-                              <span className="flex items-center gap-1"><User className="w-3 h-3" />{eany.clientName}</span>
+                              <span className="flex items-center gap-1">
+                                <User className="w-3 h-3" />
+                                {eany.clientName}
+                              </span>
                             )}
                             {eany.clientPhone && (
-                              <span className="flex items-center gap-1"><Phone className="w-3 h-3" />{eany.clientPhone}</span>
+                              <span className="flex items-center gap-1">
+                                <Phone className="w-3 h-3" />
+                                {eany.clientPhone}
+                              </span>
                             )}
                           </div>
                         )}
@@ -339,12 +464,18 @@ export default function Events() {
                         {/* Prep Sheet toggle */}
                         {(hasClientInfo || hasServiceInfo || hasDocLinks) && (
                           <button
-                            onClick={() => setPrepOpenId(isPrepOpen ? null : ev.id)}
+                            onClick={() =>
+                              setPrepOpenId(isPrepOpen ? null : ev.id)
+                            }
                             className="mt-2 flex items-center gap-1 text-xs font-medium text-primary/70 hover:text-primary transition-colors"
                           >
                             <ClipboardList className="w-3.5 h-3.5" />
                             {t("events.prep_sheet_btn")}
-                            {isPrepOpen ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                            {isPrepOpen ? (
+                              <ChevronUp className="w-3 h-3" />
+                            ) : (
+                              <ChevronDown className="w-3 h-3" />
+                            )}
                           </button>
                         )}
                       </div>
@@ -388,11 +519,12 @@ export default function Events() {
                   {isPrepOpen && (
                     <div className="mt-4 pt-4 border-t border-border space-y-4">
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-
                         {/* Client section */}
                         {hasClientInfo && (
                           <div className="space-y-1.5">
-                            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t("events.client_info")}</p>
+                            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                              {t("events.client_info")}
+                            </p>
                             {eany.clientName && (
                               <div className="flex items-center gap-2 text-sm">
                                 <User className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
@@ -408,13 +540,23 @@ export default function Events() {
                             {eany.clientPhone && (
                               <div className="flex items-center gap-2 text-sm">
                                 <Phone className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                                <a href={`tel:${eany.clientPhone}`} className="hover:text-primary">{eany.clientPhone}</a>
+                                <a
+                                  href={`tel:${eany.clientPhone}`}
+                                  className="hover:text-primary"
+                                >
+                                  {eany.clientPhone}
+                                </a>
                               </div>
                             )}
                             {eany.clientEmail && (
                               <div className="flex items-center gap-2 text-sm">
                                 <Mail className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                                <a href={`mailto:${eany.clientEmail}`} className="hover:text-primary truncate">{eany.clientEmail}</a>
+                                <a
+                                  href={`mailto:${eany.clientEmail}`}
+                                  className="hover:text-primary truncate"
+                                >
+                                  {eany.clientEmail}
+                                </a>
                               </div>
                             )}
                           </div>
@@ -423,7 +565,9 @@ export default function Events() {
                         {/* Service section */}
                         {hasServiceInfo && (
                           <div className="space-y-1.5">
-                            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t("events.service_section")}</p>
+                            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                              {t("events.service_section")}
+                            </p>
                             {eany.packageName && (
                               <div className="flex items-center gap-2 text-sm">
                                 <Package className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
@@ -439,19 +583,26 @@ export default function Events() {
                             {eany.includedPrints && (
                               <div className="flex items-center gap-2 text-sm">
                                 <Printer className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                                <span>{eany.includedPrints} {t("events.prints_required")}</span>
+                                <span>
+                                  {eany.includedPrints}{" "}
+                                  {t("events.prints_required")}
+                                </span>
                               </div>
                             )}
                             {eany.equipmentDescription && (
                               <div className="flex items-start gap-2 text-sm">
                                 <Wrench className="w-3.5 h-3.5 text-muted-foreground shrink-0 mt-0.5" />
-                                <span className="text-muted-foreground">{eany.equipmentDescription}</span>
+                                <span className="text-muted-foreground">
+                                  {eany.equipmentDescription}
+                                </span>
                               </div>
                             )}
                             {eany.optionsList && (
                               <div className="flex items-start gap-2 text-sm">
                                 <ClipboardList className="w-3.5 h-3.5 text-muted-foreground shrink-0 mt-0.5" />
-                                <span className="text-muted-foreground">{eany.optionsList}</span>
+                                <span className="text-muted-foreground">
+                                  {eany.optionsList}
+                                </span>
                               </div>
                             )}
                           </div>
@@ -461,41 +612,56 @@ export default function Events() {
                         <div className="space-y-1.5">
                           {paymentStatus && (
                             <>
-                              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t("events.payment_section")}</p>
+                              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                                {t("events.payment_section")}
+                              </p>
                               <div className="flex items-center gap-2 text-sm">
                                 {paymentStatus === "paid" ? (
                                   <CheckCircle2 className="w-3.5 h-3.5 text-success shrink-0" />
                                 ) : (
                                   <AlertCircle className="w-3.5 h-3.5 text-warning shrink-0" />
                                 )}
-                                <span className={paymentStatus === "paid" ? "text-success" : "text-warning"}>
-                                  {paymentStatus === "paid" ? t("events.payment_status_paid") : t("events.payment_status_unpaid")}
+                                <span
+                                  className={
+                                    paymentStatus === "paid"
+                                      ? "text-success"
+                                      : "text-warning"
+                                  }
+                                >
+                                  {paymentStatus === "paid"
+                                    ? t("events.payment_status_paid")
+                                    : t("events.payment_status_unpaid")}
                                 </span>
                               </div>
                             </>
                           )}
                           {hasDocLinks && (
                             <>
-                              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mt-2">{t("events.documents_label")}</p>
+                              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mt-2">
+                                {t("events.documents_label")}
+                              </p>
                               <div className="flex flex-wrap gap-2">
                                 {eany.quoteId && (
                                   <Link href={`/quotes/${eany.quoteId}`}>
                                     <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-muted text-xs font-medium hover:bg-muted/70 transition-colors cursor-pointer">
-                                      <FileText className="w-3 h-3" />{t("events.view_quote")}
+                                      <FileText className="w-3 h-3" />
+                                      {t("events.view_quote")}
                                     </span>
                                   </Link>
                                 )}
                                 {eany.contractId && (
                                   <Link href={`/contracts/${eany.contractId}`}>
                                     <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-muted text-xs font-medium hover:bg-muted/70 transition-colors cursor-pointer">
-                                      <ClipboardList className="w-3 h-3" />{t("events.view_contract")}
+                                      <ClipboardList className="w-3 h-3" />
+                                      {t("events.view_contract")}
                                     </span>
                                   </Link>
                                 )}
                                 {eany.invoiceId && (
                                   <Link href={`/invoices/${eany.invoiceId}`}>
                                     <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-muted text-xs font-medium hover:bg-muted/70 transition-colors cursor-pointer">
-                                      <ReceiptText className="w-3 h-3" />{t("events.view_invoice")}
+                                      <ReceiptText className="w-3 h-3" />
+                                      {t("events.view_invoice")}
                                     </span>
                                   </Link>
                                 )}
@@ -517,31 +683,61 @@ export default function Events() {
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>{editingId ? t("events.edit_event") : t("events.create_event")}</DialogTitle>
+            <DialogTitle>
+              {editingId ? t("events.edit_event") : t("events.create_event")}
+            </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-1">
               <Label>{t("events.event_title")} *</Label>
               <Input
                 value={form.title}
-                onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))}
+                onChange={(e) =>
+                  setForm((p) => ({ ...p, title: e.target.value }))
+                }
                 placeholder={t("events.placeholder_title")}
               />
             </div>
             <div className="space-y-1">
               <Label>{t("events.event_date")} *</Label>
               <Input
-                type="datetime-local"
+                type="date"
                 value={form.eventDate}
-                onChange={(e) => setForm((p) => ({ ...p, eventDate: e.target.value }))}
+                onChange={(e) =>
+                  setForm((p) => ({ ...p, eventDate: e.target.value }))
+                }
               />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label>{t("events.event_start_time")}</Label>
+                <Input
+                  type="time"
+                  value={form.eventStartTime}
+                  onChange={(e) =>
+                    setForm((p) => ({ ...p, eventStartTime: e.target.value }))
+                  }
+                />
+              </div>
+              <div className="space-y-1">
+                <Label>{t("events.event_end_time")}</Label>
+                <Input
+                  type="time"
+                  value={form.eventEndTime}
+                  onChange={(e) =>
+                    setForm((p) => ({ ...p, eventEndTime: e.target.value }))
+                  }
+                />
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
                 <Label>{t("events.event_location")}</Label>
                 <Input
                   value={form.location}
-                  onChange={(e) => setForm((p) => ({ ...p, location: e.target.value }))}
+                  onChange={(e) =>
+                    setForm((p) => ({ ...p, location: e.target.value }))
+                  }
                   placeholder={t("events.placeholder_location")}
                 />
               </div>
@@ -549,7 +745,9 @@ export default function Events() {
                 <Label>{t("events.event_type")}</Label>
                 <Input
                   value={form.type}
-                  onChange={(e) => setForm((p) => ({ ...p, type: e.target.value }))}
+                  onChange={(e) =>
+                    setForm((p) => ({ ...p, type: e.target.value }))
+                  }
                   placeholder={t("events.placeholder_type")}
                 />
               </div>
@@ -557,13 +755,27 @@ export default function Events() {
             {editingId && (
               <div className="space-y-1">
                 <Label>{t("events.event_status")}</Label>
-                <Select value={form.status} onValueChange={(v) => setForm((p) => ({ ...p, status: v as EventStatus }))}>
+                <Select
+                  value={form.status}
+                  onValueChange={(v) =>
+                    setForm((p) => ({ ...p, status: v as EventStatus }))
+                  }
+                >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {(["upcoming", "active", "completed", "cancelled"] as EventStatus[]).map((s) => (
-                      <SelectItem key={s} value={s}>{t(`events.status_${s}`)}</SelectItem>
+                    {(
+                      [
+                        "upcoming",
+                        "active",
+                        "completed",
+                        "cancelled",
+                      ] as EventStatus[]
+                    ).map((s) => (
+                      <SelectItem key={s} value={s}>
+                        {t(`events.status_${s}`)}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -573,7 +785,9 @@ export default function Events() {
               <Label>{t("events.event_description")}</Label>
               <Textarea
                 value={form.description}
-                onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))}
+                onChange={(e) =>
+                  setForm((p) => ({ ...p, description: e.target.value }))
+                }
                 rows={2}
                 placeholder={t("events.placeholder_notes")}
               />
@@ -582,17 +796,23 @@ export default function Events() {
               <Label>{t("events.event_notes")}</Label>
               <Textarea
                 value={form.notes}
-                onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))}
+                onChange={(e) =>
+                  setForm((p) => ({ ...p, notes: e.target.value }))
+                }
                 rows={2}
                 placeholder={t("events.placeholder_private_notes")}
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>{t("common.cancel")}</Button>
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+              {t("common.cancel")}
+            </Button>
             <Button
               onClick={handleSubmit}
-              disabled={!form.title || !form.eventDate || isCreating || isUpdating}
+              disabled={
+                !form.title || !form.eventDate || isCreating || isUpdating
+              }
             >
               {t("common.save")}
             </Button>
@@ -601,11 +821,16 @@ export default function Events() {
       </Dialog>
 
       {/* Delete Confirm */}
-      <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+      <AlertDialog
+        open={!!deleteId}
+        onOpenChange={(open) => !open && setDeleteId(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>{t("events.delete_event")}</AlertDialogTitle>
-            <AlertDialogDescription>{t("events.confirm_delete")}</AlertDialogDescription>
+            <AlertDialogDescription>
+              {t("events.confirm_delete")}
+            </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>

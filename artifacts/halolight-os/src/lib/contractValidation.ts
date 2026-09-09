@@ -1,8 +1,14 @@
 const HIDE = "\x00HIDE_LINE\x00";
 
 const INCLUDED_TEXT: Record<string, string> = {
-  en: "Included", fr: "Inclus", de: "Inbegriffen", es: "Incluido",
-  it: "Incluso", nl: "Inbegrepen", pl: "Wliczone", pt: "Incluído",
+  en: "Included",
+  fr: "Inclus",
+  de: "Inbegriffen",
+  es: "Incluido",
+  it: "Incluso",
+  nl: "Inbegrepen",
+  pl: "Wliczone",
+  pt: "Incluído",
 };
 
 const ADDITIONAL_OPTIONS_PAID: Record<string, string> = {
@@ -42,7 +48,8 @@ function isPlaceholderEmail(email: string | null | undefined): boolean {
 
 function sanitizeEmail(email: string | null | undefined, lang: string): string {
   if (!email) return "";
-  if (isPlaceholderEmail(email)) return EMAIL_NOT_PROVIDED[lang] ?? "Email not provided";
+  if (isPlaceholderEmail(email))
+    return EMAIL_NOT_PROVIDED[lang] ?? "Email not provided";
   return email;
 }
 
@@ -108,16 +115,21 @@ export interface ContractFormData {
   templateId: string;
   leadId: string;
   quoteId: string;
+  invoiceId: string;
   // Equipment linking
   equipmentIds: string[];
 }
 
 export interface ProviderData {
   companyName?: string | null;
+  companyAddress?: string | null;
   firstName?: string | null;
   lastName?: string | null;
   email?: string | null;
   phone?: string | null;
+  website?: string | null;
+  logoUrl?: string | null;
+  taxId?: string | null;
   signature?: string | null;
   signerTitle?: string | null;
 }
@@ -151,18 +163,58 @@ function splitName(fullName: string): { first: string; last: string } {
   return { first: parts[0], last: parts.slice(1).join(" ") };
 }
 
-export function computeReadiness(form: ContractFormData, provider: ProviderData): ReadinessSection[] {
-  const providerName = [provider.firstName, provider.lastName].filter(Boolean).join(" ");
+export function computeReadiness(
+  form: ContractFormData,
+  provider: ProviderData,
+): ReadinessSection[] {
+  const providerName = [provider.firstName, provider.lastName]
+    .filter(Boolean)
+    .join(" ");
+  const sourceLinked = Boolean(form.quoteId || form.invoiceId);
 
-  const sections: Array<{ key: string; fields: (string | null | undefined)[] }> = [
-    { key: "provider", fields: [provider.companyName, providerName || null, provider.email, provider.phone] },
-    { key: "client", fields: [form.clientName, form.clientEmail, form.clientPhone, form.clientAddress] },
-    { key: "event", fields: [form.eventType, form.eventDate, form.eventLocation] },
-    { key: "service", fields: [form.serviceName, form.rentalDuration, form.includedPrints, form.equipmentDescription] },
+  const sections: Array<{
+    key: string;
+    fields: (string | null | undefined)[];
+  }> = [
+    {
+      key: "provider",
+      fields: [
+        provider.companyName,
+        providerName || null,
+        provider.email,
+        provider.phone,
+      ],
+    },
+    {
+      key: "client",
+      fields: [
+        form.clientName,
+        form.clientEmail,
+        form.clientPhone,
+        form.clientAddress,
+      ],
+    },
+    {
+      key: "event",
+      fields: [form.eventType, form.eventDate, form.eventLocation],
+    },
+    {
+      key: "service",
+      fields: [
+        form.serviceName,
+        form.rentalDuration,
+        form.includedPrints,
+        form.equipmentDescription,
+      ],
+    },
     {
       key: "pricing",
       fields: [
-        form.value && Number(form.value) > 0 ? form.value : null,
+        sourceLinked
+          ? "source"
+          : form.value && Number(form.value) > 0
+            ? form.value
+            : null,
         form.currency,
         form.depositAmount,
         form.paymentTerms,
@@ -180,24 +232,58 @@ export function computeReadiness(form: ContractFormData, provider: ProviderData)
   });
 }
 
-export function validateContract(form: ContractFormData, provider: ProviderData): ValidationResult {
+export function validateContract(
+  form: ContractFormData,
+  provider: ProviderData,
+): ValidationResult {
   const blocking: string[] = [];
   const optional: OptionalIssue[] = [];
 
-  const providerName = [provider.firstName, provider.lastName].filter(Boolean).join(" ");
+  const providerName = [provider.firstName, provider.lastName]
+    .filter(Boolean)
+    .join(" ");
   if (!provider.companyName) blocking.push("field_provider_company");
   if (!providerName) blocking.push("field_provider_name");
   if (!form.clientName.trim()) blocking.push("field_client_name");
   if (!form.clientEmail.trim()) blocking.push("field_client_email");
-  if (!form.value || Number(form.value) <= 0) blocking.push("field_total_amount");
+  if (
+    !form.quoteId &&
+    !form.invoiceId &&
+    (!form.value || Number(form.value) <= 0)
+  )
+    blocking.push("field_total_amount");
   if (!form.currency.trim()) blocking.push("field_currency");
 
-  if (!form.clientPhone.trim()) optional.push({ field: "field_client_phone", placeholderKey: "placeholder_not_provided" });
-  if (!form.clientAddress.trim()) optional.push({ field: "field_client_address", placeholderKey: "placeholder_not_provided" });
-  if (!form.eventType.trim()) optional.push({ field: "field_event_type", placeholderKey: "placeholder_to_be_specified" });
-  if (!form.eventDate.trim()) optional.push({ field: "field_event_date", placeholderKey: "placeholder_to_be_specified" });
-  if (!form.serviceName.trim()) optional.push({ field: "field_service_name", placeholderKey: "placeholder_to_be_specified" });
-  if (!form.depositAmount.trim()) optional.push({ field: "field_deposit_amount", placeholderKey: "placeholder_no_deposit" });
+  if (!form.clientPhone.trim())
+    optional.push({
+      field: "field_client_phone",
+      placeholderKey: "placeholder_not_provided",
+    });
+  if (!form.clientAddress.trim())
+    optional.push({
+      field: "field_client_address",
+      placeholderKey: "placeholder_not_provided",
+    });
+  if (!form.eventType.trim())
+    optional.push({
+      field: "field_event_type",
+      placeholderKey: "placeholder_to_be_specified",
+    });
+  if (!form.eventDate.trim())
+    optional.push({
+      field: "field_event_date",
+      placeholderKey: "placeholder_to_be_specified",
+    });
+  if (!form.serviceName.trim())
+    optional.push({
+      field: "field_service_name",
+      placeholderKey: "placeholder_to_be_specified",
+    });
+  if (!form.depositAmount.trim())
+    optional.push({
+      field: "field_deposit_amount",
+      placeholderKey: "placeholder_no_deposit",
+    });
 
   return { blocking, optional };
 }
@@ -221,10 +307,20 @@ export function computePricing(form: ContractFormData) {
   const deliveryVal = Math.max(0, Number(form.deliveryFees) || 0);
   const discountVal = Math.max(0, Number(form.discountAmount) || 0);
   const taxR = Math.max(0, Number(form.taxRate) || 0);
-  const subtotal = rentalVal + optionsVal + deliveryVal - discountVal;
+  // Clamped to 0 to match the server-side computation in fillContractVariables
+  const subtotal = Math.max(0, rentalVal + optionsVal + deliveryVal - discountVal);
   const taxAmt = subtotal * (taxR / 100);
   const total = subtotal + taxAmt;
-  return { rentalVal, optionsVal, deliveryVal, discountVal, taxR, subtotal, taxAmt, total };
+  return {
+    rentalVal,
+    optionsVal,
+    deliveryVal,
+    discountVal,
+    taxR,
+    subtotal,
+    taxAmt,
+    total,
+  };
 }
 
 /**
@@ -241,18 +337,37 @@ export function fillAllVariables(
   placeholders: PlaceholderSet,
 ): string {
   const localeTag = lang === "en" ? "en-GB" : lang;
-  const today = new Date().toLocaleDateString(localeTag, { year: "numeric", month: "long", day: "numeric" });
-  const providerName = [provider.firstName, provider.lastName].filter(Boolean).join(" ");
+  const today = new Date().toLocaleDateString(localeTag, {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+  const providerName = [provider.firstName, provider.lastName]
+    .filter(Boolean)
+    .join(" ");
   const { first: clientFirst, last: clientLast } = splitName(form.clientName);
 
   const eventDate = form.eventDate
-    ? new Date(form.eventDate + "T12:00:00").toLocaleDateString(localeTag, { year: "numeric", month: "long", day: "numeric" })
+    ? new Date(form.eventDate + "T12:00:00").toLocaleDateString(localeTag, {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      })
     : "";
 
   const cur = form.currency || "";
   const fmtP = (n: number) => formatPrice(n, cur, lang);
 
-  const { rentalVal, optionsVal, deliveryVal, discountVal, taxR, subtotal, taxAmt, total } = computePricing(form);
+  const {
+    rentalVal,
+    optionsVal,
+    deliveryVal,
+    discountVal,
+    taxR,
+    subtotal,
+    taxAmt,
+    total,
+  } = computePricing(form);
   const dep = Math.max(0, Number(form.depositAmount) || 0);
   const included = getIncludedText(lang);
 
@@ -269,15 +384,19 @@ export function fillAllVariables(
     // Provider
     rental_company_name: provider.companyName || "",
     rental_company_representative: providerName || "",
-    rental_company_address: HIDE,
+    rental_company_address: provider.companyAddress?.trim() || HIDE,
     rental_company_email: sanitizeEmail(provider.email, lang),
     rental_company_phone: provider.phone || "",
-    rental_company_website: HIDE,
-    rental_company_vat: HIDE,
+    rental_company_website: provider.website?.trim() || HIDE,
+    rental_company_logo: provider.logoUrl?.trim() || HIDE,
+    company_logo_url: provider.logoUrl?.trim() || HIDE,
+    rental_company_vat: provider.taxId?.trim() || HIDE,
 
     // Provider signature block
     provider_signature: providerSig,
-    provider_signer_title: provider.signerTitle?.trim() ? provider.signerTitle.trim() : HIDE,
+    provider_signer_title: provider.signerTitle?.trim()
+      ? provider.signerTitle.trim()
+      : HIDE,
 
     // Client
     client_first_name: clientFirst || form.clientName,
@@ -302,7 +421,8 @@ export function fillAllVariables(
 
     // Equipment & package — guard against "undefined" string from bad auto-fill
     equipment_list:
-      form.equipmentDescription?.trim() && form.equipmentDescription.trim() !== "undefined"
+      form.equipmentDescription?.trim() &&
+      form.equipmentDescription.trim() !== "undefined"
         ? form.equipmentDescription.trim()
         : placeholders.to_be_specified,
     package_name: form.serviceName || placeholders.to_be_specified,
@@ -354,7 +474,10 @@ export function fillAllVariables(
 
   // Final safety net: replace any remaining {{...}} with generic fallback.
   // Negative lookahead preserves {{contract_number}} for server-side injection.
-  result = result.replace(/\{\{(?!contract_number\}\})[a-zA-Z_]+\}\}/g, placeholders.to_be_specified);
+  result = result.replace(
+    /\{\{(?!contract_number\}\})[a-zA-Z_]+\}\}/g,
+    placeholders.to_be_specified,
+  );
 
   // Post-processing:
   // 1. Remove any line that contains the HIDE sentinel

@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { ArrowLeft, Clock, BookOpen, CheckCircle2, PlayCircle, Video } from "lucide-react";
+import { AlertCircle, ArrowLeft, Clock, BookOpen, CheckCircle2, PlayCircle, RefreshCw, Video } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { academyErrorMessage } from "@/lib/apiErrorMessage";
 
 function formatDuration(seconds: number): string {
   const h = Math.floor(seconds / 3600);
@@ -79,7 +80,6 @@ type CourseModule = {
  * Client-side safety filter — mirrors server-side filterModulesForLang().
  * Always filters by language on public Academy pages — no role bypass.
  * Falls back to English if the user's language has no module.
- * Non-language-track modules are always included.
  */
 function filterModulesByLang(mods: CourseModule[], lang: string): CourseModule[] {
   const hasLangMods = mods.some((m) => getModuleLang(m.title) !== null);
@@ -101,7 +101,14 @@ export default function AcademyCourse() {
   const { courseId } = useParams<{ courseId: string }>();
   // Pass lang so the server returns only this language's modules, and React Query
   // creates a per-language cache slot (different cache key per language).
-  const { data: course, isLoading: isLoadingCourse } = useGetCourse(courseId!, { lang });
+  const {
+    data: course,
+    error: courseError,
+    isError: isCourseError,
+    isLoading: isLoadingCourse,
+    isFetching: isFetchingCourse,
+    refetch: refetchCourse,
+  } = useGetCourse(courseId!, { lang });
   if (isLoadingCourse) {
     return (
       <div className="space-y-8">
@@ -114,10 +121,35 @@ export default function AcademyCourse() {
     );
   }
 
+  if (isCourseError) {
+    return (
+      <div role="alert" className="rounded-xl border border-destructive/20 bg-destructive/8 p-5 text-destructive break-words">
+        <div className="flex items-start gap-3">
+          <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
+          <div>
+            <p className="font-semibold">{t("academy.error_title")}</p>
+            <p className="mt-1 text-sm">
+              {academyErrorMessage(courseError, t)}
+            </p>
+          </div>
+        </div>
+        <div className="mt-4 flex flex-wrap gap-2">
+          <Button variant="outline" disabled={isFetchingCourse} onClick={() => void refetchCourse()}>
+            <RefreshCw className={cn("mr-2 h-4 w-4", isFetchingCourse && "animate-spin")} />
+            {t("academy.retry")}
+          </Button>
+          <Button variant="outline" asChild>
+            <Link href="/academy">{t("academy.back_to_academy")}</Link>
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   if (!course) {
     return (
       <div className="text-center py-16 text-muted-foreground">
-        <p>Course not found.</p>
+        <p>{t("academy.course_unavailable")}</p>
         <Link href="/academy">
           <Button variant="outline" className="mt-4">{t("academy.back_to_academy")}</Button>
         </Link>
@@ -233,7 +265,7 @@ export default function AcademyCourse() {
             <p className="text-xs opacity-60">{t("academy.no_content_hint", { defaultValue: "Content will appear here once lessons are added to this course." })}</p>
           </div>
         ) : (
-          <Accordion type="multiple" defaultValue={visibleModules.map((m) => m.id)} className="space-y-3">
+          <Accordion key={`${courseId}:${lang}`} type="multiple" defaultValue={visibleModules.map((m) => m.id)} className="space-y-3">
             {visibleModules.map((mod) => {
               const modCompleted = mod.lessons.filter((l) => l.completedAt).length;
               return (

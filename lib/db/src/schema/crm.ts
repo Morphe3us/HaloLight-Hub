@@ -1,4 +1,4 @@
-import { pgTable, text, uuid, timestamp, pgEnum, numeric, integer } from "drizzle-orm/pg-core";
+import { pgTable, text, uuid, timestamp, pgEnum, numeric, integer, index } from "drizzle-orm/pg-core";
 import { usersTable } from "./users";
 
 export const leadStatusEnum = pgEnum("lead_status", [
@@ -32,27 +32,31 @@ export const activityTypeEnum = pgEnum("activity_type", [
   "invoice_sent",
 ]);
 
-export const leads = pgTable("leads", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  userId: text("user_id")
-    .notNull()
-    .references(() => usersTable.id, { onDelete: "cascade" }),
-  companyName: text("company_name").notNull(),
-  contactName: text("contact_name").notNull(),
-  email: text("email"),
-  phone: text("phone"),
-  source: leadSourceEnum("source").notNull().default("other"),
-  status: leadStatusEnum("status").notNull().default("new"),
-  value: numeric("value", { precision: 12, scale: 2 }).notNull().default("0"),
-  notes: text("notes"),
-  address: text("address"),
-  eventType: text("event_type"),
-  expectedEventDate: timestamp("expected_event_date"),
-  assignedTo: text("assigned_to"),
-  pipelineStage: text("pipeline_stage").notNull().default("lead"),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
-});
+export const leads = pgTable(
+  "leads",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => usersTable.id, { onDelete: "cascade" }),
+    companyName: text("company_name").notNull(),
+    contactName: text("contact_name").notNull(),
+    email: text("email"),
+    phone: text("phone"),
+    source: leadSourceEnum("source").notNull().default("other"),
+    status: leadStatusEnum("status").notNull().default("new"),
+    value: numeric("value", { precision: 12, scale: 2 }).notNull().default("0"),
+    notes: text("notes"),
+    address: text("address"),
+    eventType: text("event_type"),
+    expectedEventDate: timestamp("expected_event_date"),
+    assignedTo: text("assigned_to"),
+    pipelineStage: text("pipeline_stage").notNull().default("lead"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (t) => [index("leads_user_idx").on(t.userId)],
+);
 
 export const leadActivities = pgTable("lead_activities", {
   id: uuid("id").primaryKey().defaultRandom(),

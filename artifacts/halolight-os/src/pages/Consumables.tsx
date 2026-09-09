@@ -2,9 +2,9 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   useGetConsumables, useGetConsumableOrders,
-  useCreateConsumableStock, useRestockConsumable,
+  useCreateConsumableStock, useRestockConsumable, useGetConsumableForecast,
 } from "@workspace/api-client-react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -531,25 +531,16 @@ export default function Consumables() {
 
   const { data: stockData = [], isLoading: stockLoading } = useGetConsumables();
   const { data: ordersData = [], isLoading: ordersLoading } = useGetConsumableOrders();
-
-  const { data: forecastData } = useQuery({
-    queryKey: ["/api/consumables/forecast"],
-    queryFn: async () => {
-      const { getAuthToken } = await import("@workspace/api-client-react");
-      const token = await getAuthToken();
-      const res = await fetch("/api/consumables/forecast", {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
-      if (!res.ok) return null;
-      return res.json() as Promise<{
-        totalRequired: number;
-        totalAvailable: number;
-        shortage: number;
-        events: Array<{ id: string; title: string; eventDate: string; clientName?: string | null; includedPrints: number }>;
-      }>;
+  const { data: forecastData } = useGetConsumableForecast({
+    query: {
+      queryKey: ["/api/consumables/forecast"],
+      staleTime: 5 * 60 * 1000,
     },
-    staleTime: 5 * 60 * 1000,
   });
+  const forecastEvents = forecastData?.events ?? [];
+  const forecastShortage = forecastData?.shortage ?? 0;
+  const forecastTotalRequired = forecastData?.totalRequired ?? 0;
+  const forecastTotalAvailable = forecastData?.totalAvailable ?? 0;
 
   const stock = stockData as StockItem[];
   const orders = ordersData as Order[];
@@ -643,28 +634,28 @@ export default function Consumables() {
       )}
 
       {/* Forecast Card */}
-      {forecastData && forecastData.events.length > 0 && (
-        <Card className={forecastData.shortage > 0 ? "border-destructive/30 bg-destructive/5" : "border-success/30 bg-success/5"}>
+      {forecastEvents.length > 0 && (
+        <Card className={forecastShortage > 0 ? "border-destructive/30 bg-destructive/5" : "border-success/30 bg-success/5"}>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2">
-              <Calendar className={`w-4 h-4 ${forecastData.shortage > 0 ? "text-destructive" : "text-success"}`} />
+              <Calendar className={`w-4 h-4 ${forecastShortage > 0 ? "text-destructive" : "text-success"}`} />
               {t("consumables.forecast_title", { defaultValue: "Print Forecast — Upcoming Events" })}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="grid grid-cols-3 gap-3 text-sm">
               <div className="text-center">
-                <p className="text-lg font-bold text-foreground">{forecastData.totalRequired.toLocaleString()}</p>
+                <p className="text-lg font-bold text-foreground">{forecastTotalRequired.toLocaleString()}</p>
                 <p className="text-xs text-muted-foreground">{t("consumables.forecast_required", { defaultValue: "Prints Required" })}</p>
               </div>
               <div className="text-center">
-                <p className="text-lg font-bold text-foreground">{forecastData.totalAvailable.toLocaleString()}</p>
+                <p className="text-lg font-bold text-foreground">{forecastTotalAvailable.toLocaleString()}</p>
                 <p className="text-xs text-muted-foreground">{t("consumables.forecast_available", { defaultValue: "Prints Available" })}</p>
               </div>
               <div className="text-center">
-                {forecastData.shortage > 0 ? (
+                {forecastShortage > 0 ? (
                   <>
-                    <p className="text-lg font-bold text-destructive">-{forecastData.shortage.toLocaleString()}</p>
+                    <p className="text-lg font-bold text-destructive">-{forecastShortage.toLocaleString()}</p>
                     <p className="text-xs text-destructive">{t("consumables.forecast_shortage", { defaultValue: "Shortage" })}</p>
                   </>
                 ) : (
@@ -675,7 +666,7 @@ export default function Consumables() {
                 )}
               </div>
             </div>
-            {forecastData.shortage > 0 && (
+            {forecastShortage > 0 && (
               <div className="flex items-center gap-2">
                 <Zap className="w-3.5 h-3.5 text-destructive shrink-0" />
                 <p className="text-xs text-destructive font-medium">
@@ -688,14 +679,14 @@ export default function Consumables() {
               </div>
             )}
             <div className="space-y-1.5 pt-1 border-t">
-              {forecastData.events.slice(0, 5).map(ev => (
+              {forecastEvents.slice(0, 5).map(ev => (
                 <div key={ev.id} className="flex items-center justify-between text-xs text-muted-foreground">
                   <span className="truncate max-w-[60%]">{ev.title}{ev.clientName ? ` — ${ev.clientName}` : ""}</span>
-                  <span className="shrink-0 ml-2">{new Date(ev.eventDate).toLocaleDateString(undefined, { month: "short", day: "numeric" })} · {ev.includedPrints} {t("consumables.forecast_prints_label", { defaultValue: "prints" })}</span>
+                  <span className="shrink-0 ml-2">{ev.eventDate ? new Date(ev.eventDate).toLocaleDateString(undefined, { month: "short", day: "numeric" }) : "—"} · {ev.includedPrints} {t("consumables.forecast_prints_label", { defaultValue: "prints" })}</span>
                 </div>
               ))}
-              {forecastData.events.length > 5 && (
-                <p className="text-xs text-muted-foreground text-center">+{forecastData.events.length - 5} {t("consumables.forecast_more_events", { defaultValue: "more events" })}</p>
+              {forecastEvents.length > 5 && (
+                <p className="text-xs text-muted-foreground text-center">+{forecastEvents.length - 5} {t("consumables.forecast_more_events", { defaultValue: "more events" })}</p>
               )}
             </div>
           </CardContent>
