@@ -38,4 +38,14 @@ The importer refuses to overwrite locally edited, unpublished or differently app
 
 ## Current Release State
 
-Local integration and isolated import are verified. Production was inspected read-only at baseline `5023e07`; publication is pending the private transfer, backup and deployment checks above. No production content import is claimed by this report.
+Deployed on Infomaniak on 2026-09-10, application revision `bc253c3` (integration `f0c10fd`). The managed hosting build succeeded and restarted the server on port 3000; public health returned HTTP 200.
+
+- Retained the full previous site archive at baseline `5023e07`, including its private environment and built assets, outside the served site. Verified gzip integrity and mode 0600.
+- Captured a consistent, hash-verified backup of the six affected database tables before migration. This is a targeted backup, not a full database backup. A private copy is retained on the Mac and hosting account. The restore helper was tested only on disposable PostgreSQL.
+- Transferred the allowlisted source archive privately; remote SHA-256 matched `7db9eab36acdcea487610801111636f8430f6d25d3f4f1eca976563568489aa5`.
+- Applied the additive migration and imported 91 new records. Subsequent production dry-run reported 91 unchanged, no inserts, updates or deletions. Compared all pre-existing rows against their backup: unchanged.
+- Configured `STORAGE_PROVIDER=filesystem`, with `PRIVATE_STORAGE_DIR=/srv/customer/.local/share/halohub-private-files`. Prior provider was URL-only and there were no existing internal file records to migrate. External links are unchanged.
+- Verified all 15 PDF hashes, regular-file ownership structure and private permissions after the managed restart.
+- Live anonymous requests to all 15 PDF endpoints and the KB article list returned HTTP 401.
+
+Authenticated production browsing and video playback still require a real Hub session. The integrated browser was left at Clerk sign-in; an Infomaniak session does not authenticate to the Hub. Do not interpret local authenticated fixtures as a completed production login test. The displayed Clerk sign-in remains in Development mode; changing that configuration is outside this documentation deployment.
