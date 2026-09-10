@@ -2,6 +2,8 @@
 // Abstraction layer for file storage. Swap in Cloudflare R2, AWS S3, or
 // Supabase Storage by implementing this interface and updating the factory.
 
+import type { Readable } from "node:stream";
+
 export interface UploadOptions {
   contentType?: string;
   filename?: string;
@@ -55,6 +57,9 @@ export interface DeleteResult {
  */
 export interface StorageProvider {
   readonly name: string;
+
+  /** Open private bytes only after the caller has authorized the metadata. */
+  openReadStream?(key: string): Promise<Readable>;
 
   /**
    * Upload a file buffer and return the result with a public URL.

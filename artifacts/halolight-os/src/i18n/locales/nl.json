@@ -1,5 +1,7 @@
 {
   "nav": {
+    "profile": "Profiel",
+    "navigation": "Hoofdnavigatie",
     "dashboard": "Dashboard",
     "academy": "Academie",
     "events": "Evenementen",
@@ -391,6 +393,17 @@
     "ticket_created_desc": "Your support ticket has been submitted."
   },
   "kb": {
+    "content_language": "Taal van de inhoud",
+    "french_fallback": "Er is Franse documentatie beschikbaar; kies Frans om deze te raadplegen.",
+    "load_error": "De documentatie kon niet worden geladen.",
+    "retry": "Opnieuw proberen",
+    "previous_page": "Vorige pagina",
+    "next_page": "Volgende pagina",
+    "page_status": "{{from}}-{{to}} van {{total}}",
+    "source": "Bron",
+    "revision": "Revisie",
+    "download_error": "Download mislukt. Probeer het opnieuw.",
+    "downloading": "Downloaden...",
     "title": "Kennisbank",
     "subtitle": "Blader door artikelen en handleidingen voor uw HaloLight-systeem.",
     "search_placeholder": "Artikelen zoeken...",
@@ -1759,6 +1772,9 @@
     "no_upcoming_events": "Geen komende evenementen toegewezen aan dit apparaat."
   },
   "kb_admin": {
+    "conflict": "Het artikel is gewijzigd. Sluit het en open het opnieuw om de nieuwste versie te bekijken.",
+    "ai_eligible": "Goedkeuren voor AI-antwoorden",
+    "ai_review_required": "Inhoudswijzigingen trekken de AI-goedkeuring in. Sla de wijzigingen op en open het artikel opnieuw om de herziene versie goed te keuren.",
     "back": "Kennisbank",
     "title": "Artikelen beheren",
     "new_article": "Nieuw artikel",

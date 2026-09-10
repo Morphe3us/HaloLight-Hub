@@ -2963,8 +2963,14 @@ export const UpdateTicketStatusResponse = zod.object({
 /**
  * @summary List knowledge base categories
  */
+export const ListKbCategoriesQueryParams = zod.object({
+  "language": zod.enum(['en', 'fr', 'es', 'de', 'it', 'pl', 'pt', 'nl']).optional()
+})
+
 export const ListKbCategoriesResponse = zod.object({
   "items": zod.array(zod.object({
+  "language": zod.string().optional(),
+  "articleCount": zod.number().optional(),
   "id": zod.string().optional(),
   "name": zod.string().optional(),
   "slug": zod.string().optional(),
@@ -2982,6 +2988,7 @@ export const ListKbCategoriesResponse = zod.object({
 export const CreateKbCategoryBody = zod.object({
   "name": zod.string(),
   "slug": zod.string(),
+  "language": zod.enum(['en', 'fr', 'es', 'de', 'it', 'pl', 'pt', 'nl']).optional(),
   "description": zod.string().optional(),
   "icon": zod.string().optional(),
   "order": zod.number().optional()
@@ -2992,6 +2999,7 @@ export const CreateKbCategoryBody = zod.object({
  * @summary List knowledge base articles
  */
 export const ListKbArticlesQueryParams = zod.object({
+  "language": zod.enum(['en', 'fr', 'es', 'de', 'it', 'pl', 'pt', 'nl']).optional(),
   "categoryId": zod.coerce.string().optional(),
   "status": zod.coerce.string().optional(),
   "search": zod.coerce.string().optional(),
@@ -3001,6 +3009,17 @@ export const ListKbArticlesQueryParams = zod.object({
 
 export const ListKbArticlesResponse = zod.object({
   "items": zod.array(zod.object({
+  "language": zod.string().optional(),
+  "sourceKey": zod.string().nullish(),
+  "sourceRevision": zod.string().nullish(),
+  "sourceHash": zod.string().nullish(),
+  "aiEligible": zod.boolean().optional(),
+  "related": zod.array(zod.object({
+  "id": zod.string().optional(),
+  "title": zod.string().optional(),
+  "slug": zod.string().optional(),
+  "excerpt": zod.string().nullish()
+})).optional(),
   "id": zod.string().optional(),
   "categoryId": zod.string().optional(),
   "authorId": zod.string().optional(),
@@ -3024,6 +3043,9 @@ export const ListKbArticlesResponse = zod.object({
  * @summary Create a KB article (admin)
  */
 export const CreateKbArticleBody = zod.object({
+  "expectedUpdatedAt": zod.coerce.date().optional().describe('Required for PUT; the updatedAt of the version being edited or approved. Omit for POST.'),
+  "language": zod.enum(['en', 'fr', 'es', 'de', 'it', 'pl', 'pt', 'nl']).optional(),
+  "aiEligible": zod.boolean().optional(),
   "categoryId": zod.string(),
   "title": zod.string(),
   "content": zod.string(),
@@ -3041,6 +3063,17 @@ export const GetKbArticleParams = zod.object({
 })
 
 export const GetKbArticleResponse = zod.object({
+  "language": zod.string().optional(),
+  "sourceKey": zod.string().nullish(),
+  "sourceRevision": zod.string().nullish(),
+  "sourceHash": zod.string().nullish(),
+  "aiEligible": zod.boolean().optional(),
+  "related": zod.array(zod.object({
+  "id": zod.string().optional(),
+  "title": zod.string().optional(),
+  "slug": zod.string().optional(),
+  "excerpt": zod.string().nullish()
+})).optional(),
   "id": zod.string().optional(),
   "categoryId": zod.string().optional(),
   "authorId": zod.string().optional(),
@@ -3059,6 +3092,7 @@ export const GetKbArticleResponse = zod.object({
 
 
 /**
+ * expectedUpdatedAt must match the version reviewed by the administrator. Stale updates return 409.
  * @summary Update a KB article (admin)
  */
 export const UpdateKbArticleParams = zod.object({
@@ -3066,15 +3100,31 @@ export const UpdateKbArticleParams = zod.object({
 })
 
 export const UpdateKbArticleBody = zod.object({
+  "expectedUpdatedAt": zod.coerce.date().optional().describe('Required for PUT; the updatedAt of the version being edited or approved. Omit for POST.'),
+  "language": zod.enum(['en', 'fr', 'es', 'de', 'it', 'pl', 'pt', 'nl']).optional(),
+  "aiEligible": zod.boolean().optional(),
   "categoryId": zod.string(),
   "title": zod.string(),
   "content": zod.string(),
   "excerpt": zod.string().optional(),
   "status": zod.enum(['draft', 'published', 'archived']).optional(),
   "tags": zod.array(zod.string()).optional()
-})
+}).and(zod.object({
+  "expectedUpdatedAt": zod.coerce.date()
+}))
 
 export const UpdateKbArticleResponse = zod.object({
+  "language": zod.string().optional(),
+  "sourceKey": zod.string().nullish(),
+  "sourceRevision": zod.string().nullish(),
+  "sourceHash": zod.string().nullish(),
+  "aiEligible": zod.boolean().optional(),
+  "related": zod.array(zod.object({
+  "id": zod.string().optional(),
+  "title": zod.string().optional(),
+  "slug": zod.string().optional(),
+  "excerpt": zod.string().nullish()
+})).optional(),
   "id": zod.string().optional(),
   "categoryId": zod.string().optional(),
   "authorId": zod.string().optional(),

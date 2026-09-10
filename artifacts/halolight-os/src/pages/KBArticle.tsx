@@ -5,70 +5,18 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowLeft, Eye, Clock, FileText, ChevronRight } from "lucide-react";
+import { KBMarkdown } from "./KBMarkdown";
 
-function formatDate(d: string | Date | null | undefined) {
+function formatDate(d: string | Date | null | undefined, language: string) {
   if (!d) return "";
-  return new Date(d).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+  return new Date(d).toLocaleDateString(language, { month: "long", day: "numeric", year: "numeric" });
 }
 
-function renderContent(content: string) {
-  const lines = content.split("\n");
-  const elements: React.ReactNode[] = [];
-  let i = 0;
-  while (i < lines.length) {
-    const line = lines[i]!;
-    if (line.startsWith("## ")) {
-      elements.push(<h2 key={i} className="text-xl font-semibold text-foreground mt-6 mb-2">{line.slice(3)}</h2>);
-    } else if (line.startsWith("# ")) {
-      elements.push(<h1 key={i} className="text-2xl font-bold text-foreground mt-6 mb-3">{line.slice(2)}</h1>);
-    } else if (line.startsWith("### ")) {
-      elements.push(<h3 key={i} className="text-lg font-semibold text-foreground mt-4 mb-2">{line.slice(4)}</h3>);
-    } else if (line.startsWith("- ") || line.startsWith("* ")) {
-      const items: string[] = [];
-      while (i < lines.length && (lines[i]!.startsWith("- ") || lines[i]!.startsWith("* "))) {
-        items.push(lines[i]!.slice(2));
-        i++;
-      }
-      elements.push(
-        <ul key={`ul-${i}`} className="list-disc list-inside space-y-1 my-3 text-foreground">
-          {items.map((item, idx) => <li key={idx}>{item}</li>)}
-        </ul>
-      );
-      continue;
-    } else if (line.match(/^\d+\. /)) {
-      const items: string[] = [];
-      while (i < lines.length && lines[i]!.match(/^\d+\. /)) {
-        items.push(lines[i]!.replace(/^\d+\. /, ""));
-        i++;
-      }
-      elements.push(
-        <ol key={`ol-${i}`} className="list-decimal list-inside space-y-1 my-3 text-foreground">
-          {items.map((item, idx) => <li key={idx}>{item}</li>)}
-        </ol>
-      );
-      continue;
-    } else if (line.startsWith("> ")) {
-      elements.push(
-        <blockquote key={i} className="border-l-4 border-primary/40 pl-4 py-1 my-3 bg-info/10 rounded-r-lg text-foreground italic">
-          {line.slice(2)}
-        </blockquote>
-      );
-    } else if (line === "---" || line === "***") {
-      elements.push(<hr key={i} className="my-4 border-border" />);
-    } else if (line === "") {
-      elements.push(<div key={i} className="h-2" />);
-    } else {
-      elements.push(<p key={i} className="text-foreground leading-relaxed my-1">{line}</p>);
-    }
-    i++;
-  }
-  return elements;
-}
 
 export default function KBArticle() {
   const { id } = useParams<{ id: string }>();
-  const { t } = useTranslation();
-  const { data: article, isLoading } = useGetKbArticle(id!);
+  const { t, i18n } = useTranslation();
+  const { data: article, isLoading, isError, error, refetch } = useGetKbArticle(id!);
 
   if (isLoading) {
     return (
@@ -80,10 +28,11 @@ export default function KBArticle() {
     );
   }
 
-  if (!article) {
+  if (isError || !article) {
     return (
       <div className="max-w-3xl mx-auto text-center py-16">
-        <p className="text-muted-foreground">{t("kb.article_not_found")}</p>
+        <p role="alert" className="text-muted-foreground">{(error as { status?: number })?.status === 404 || !isError ? t("kb.article_not_found") : t("kb.load_error", { defaultValue: "Unable to load documentation." })}</p>
+        {isError && <Button variant="outline" className="mt-4 mr-2" onClick={() => void refetch()}>{t("kb.retry", { defaultValue: "Retry" })}</Button>}
         <Link href="/kb"><Button variant="outline" className="mt-4">{t("kb.back_to_kb")}</Button></Link>
       </div>
     );
@@ -102,20 +51,25 @@ export default function KBArticle() {
         </Link>
       </div>
 
-      <article className="bg-card rounded-2xl border p-8">
+      <article lang={article.language} className="py-4 min-w-0 break-words">
         <div className="mb-6">
           {article.tags?.map((tag) => (
             <Badge key={tag} variant="secondary" className="mr-1.5 mb-1.5 text-xs">{tag}</Badge>
           ))}
-          <h1 className="text-3xl font-bold text-foreground mt-2 mb-3">{article.title}</h1>
+          <Badge variant="outline">{article.language?.toUpperCase()}</Badge>
+          <h1 className="text-2xl font-bold text-foreground mt-2 mb-3">{article.title}</h1>
+          {(article.sourceKey || article.sourceRevision) && <div className="text-xs text-muted-foreground space-y-1 mb-3 break-all">
+            {article.sourceKey && <p>{t("kb.source", { defaultValue: "Source" })}: {article.sourceKey}</p>}
+            {article.sourceRevision && <p>{t("kb.revision", { defaultValue: "Revision" })}: {article.sourceRevision}</p>}
+          </div>}
           {article.excerpt && <p className="text-lg text-muted-foreground mb-4">{article.excerpt}</p>}
-          <div className="flex items-center gap-4 text-sm text-muted-foreground border-b pb-4">
-            <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" /> {formatDate(article.publishedAt ?? article.createdAt)}</span>
+          <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground border-b pb-4">
+            <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" /> {formatDate(article.publishedAt ?? article.createdAt, i18n.language)}</span>
             <span className="flex items-center gap-1"><Eye className="w-3.5 h-3.5" /> {article.views} {t("kb.views")}</span>
           </div>
         </div>
         <div className="prose-sm max-w-none">
-          {renderContent(article.content ?? "")}
+          <KBMarkdown content={article.content ?? ""} />
         </div>
       </article>
 

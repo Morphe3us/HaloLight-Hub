@@ -2,26 +2,18 @@ import { Link, useLocation } from "wouter";
 import { useGetCurrentUser, useGetUnreadNotificationCount } from "@workspace/api-client-react";
 import { useTranslation } from "react-i18next";
 import {
-  LayoutDashboard, Bell, Settings as SettingsIcon, Shield, CheckCircle2,
-  ChevronRight, LogOut, Menu, GraduationCap, Calendar, TrendingUp,
-  FileText, FileSignature, ReceiptText, ChevronDown, LifeBuoy, BookOpen,
-  Sparkles, Users, Hash, BarChart3, UserCheck, DollarSign, Monitor, Package, Zap,
+  Bell, Shield, ChevronRight, LogOut, Menu, GraduationCap,
+  FileSignature, ChevronDown,
+  Users, BarChart3, UserCheck, DollarSign, Monitor, Zap,
   LibraryBig, Search, Languages, FolderUp, Brain, HardDrive, Sun, Moon, DownloadCloud,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useClerk } from "@clerk/react";
-import { useState } from "react";
+import { useId, useState } from "react";
 import { useTheme } from "@/components/theme-provider";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-
-type NavItem = {
-  title: string;
-  href: string;
-  icon: React.ComponentType<{ className?: string }>;
-  badge?: boolean;
-  children?: NavItem[];
-};
+import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { createClientNavigation, hasNotificationBadge, isNavItemActive, type NavItem } from "./sidebarNavigation";
 
 function NavLink({
   item,
@@ -34,84 +26,76 @@ function NavLink({
   unreadCount: number;
   onClose?: () => void;
 }) {
-  const [open, setOpen] = useState(() => item.children?.some((c) => location.startsWith(c.href)) ?? false);
+  const submenuId = useId();
+  const isActive = isNavItemActive(item, location);
+  const [disclosure, setDisclosure] = useState({ location, open: isActive });
+  // A new route reveals its ancestors, while manual toggles survive data/theme rerenders.
+  const open = disclosure.location === location ? disclosure.open : isActive;
+  if (disclosure.location !== location) setDisclosure({ location, open: isActive });
+  const setOpen = (value: boolean) => setDisclosure({ location, open: value });
+  const badge = hasNotificationBadge(item) && unreadCount > 0 ? (
+    <span className="bg-accent text-foreground text-xs font-bold px-2 py-0.5 rounded-full min-w-[20px] text-center shrink-0">
+      {unreadCount}
+    </span>
+  ) : null;
 
   if (item.children) {
-    const isGroupActive = item.children.some((c) => location.startsWith(c.href));
     return (
       <div>
         <button
+          type="button"
+          aria-expanded={open}
+          aria-controls={submenuId}
           onClick={() => setOpen(!open)}
           className={cn(
-            "flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 cursor-pointer w-full group",
-            isGroupActive
+            "flex items-center justify-between gap-2 px-3 py-2 min-h-10 rounded-lg text-sm font-medium transition-all duration-150 cursor-pointer w-full group text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+            isActive
               ? "text-foreground"
               : "text-muted-foreground hover:bg-accent/10 hover:text-foreground"
           )}
         >
-          <div className="flex items-center gap-3">
+          <span className="flex items-center gap-3 min-w-0">
             <item.icon className={cn(
               "w-4 h-4 shrink-0",
-              isGroupActive ? "text-accent-foreground" : "text-muted-foreground group-hover:text-foreground"
+              isActive ? "text-foreground" : "text-muted-foreground group-hover:text-foreground"
             )} />
-            <span>{item.title}</span>
-          </div>
-          <ChevronDown className={cn("w-3.5 h-3.5 transition-transform text-muted-foreground", open ? "rotate-180" : "")} />
+            <span className="min-w-0 break-words [overflow-wrap:anywhere]">{item.title}</span>
+          </span>
+          {badge}
+          <ChevronDown aria-hidden="true" className={cn("w-3.5 h-3.5 shrink-0 transition-transform text-muted-foreground", open ? "rotate-180" : "")} />
         </button>
-        {open && (
-          <div className="ml-4 mt-0.5 space-y-0.5 border-l border-border pl-3">
-            {item.children.map((child) => {
-              const isActive = location === child.href;
-              return (
-                <Link key={child.href} href={child.href} onClick={onClose}>
-                  <div className={cn(
-                    "flex items-center gap-2.5 px-2 py-2 rounded-lg text-sm font-medium transition-all duration-150 cursor-pointer",
-                    isActive
-                      ? "bg-accent/15 text-foreground"
-                      : "text-muted-foreground hover:text-foreground hover:bg-accent/8"
-                  )}>
-                    <child.icon className={cn("w-3.5 h-3.5 shrink-0", isActive ? "text-foreground" : "text-muted-foreground")} />
-                    {child.title}
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-        )}
+        <div id={submenuId} hidden={!open} className="ml-2 mt-0.5 space-y-0.5 border-l border-border pl-1">
+          {item.children.map((child) => (
+            <NavLink key={child.href} item={child} location={location} unreadCount={unreadCount} onClose={onClose} />
+          ))}
+        </div>
       </div>
     );
   }
 
-  const isActive = location === item.href;
   return (
-    <Link href={item.href} onClick={onClose}>
-      <div
+    <Link href={item.href} onClick={onClose} aria-current={isActive ? "page" : undefined}
         className={cn(
-          "flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 cursor-pointer group",
+          "flex items-center justify-between gap-2 px-3 py-2 min-h-10 rounded-lg text-sm font-medium transition-all duration-150 cursor-pointer group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
           isActive
             ? "bg-accent/15 text-foreground shadow-sm"
             : "text-muted-foreground hover:bg-accent/10 hover:text-foreground"
         )}
         data-testid={`link-sidebar-${item.title.toLowerCase().replace(/\s+/g, "-")}`}
       >
-        <div className="flex items-center gap-3">
+        <span className="flex items-center gap-3 min-w-0">
           <item.icon className={cn(
             "w-4 h-4 shrink-0",
             isActive ? "text-foreground" : "text-muted-foreground group-hover:text-foreground"
           )} />
-          <span>{item.title}</span>
-        </div>
-        {item.badge && unreadCount > 0 ? (
-          <span className="bg-accent text-foreground text-xs font-bold px-2 py-0.5 rounded-full min-w-[20px] text-center">
-            {unreadCount}
-          </span>
-        ) : (
+          <span className="min-w-0 break-words [overflow-wrap:anywhere]">{item.title}</span>
+        </span>
+        {badge ?? (
           <ChevronRight className={cn(
-            "w-3.5 h-3.5 opacity-0 transition-opacity",
+            "w-3.5 h-3.5 shrink-0 opacity-0 transition-opacity",
             isActive ? "opacity-60" : "group-hover:opacity-40"
           )} />
         )}
-      </div>
     </Link>
   );
 }
@@ -129,45 +113,7 @@ export function Sidebar() {
   const { theme, setTheme } = useTheme();
   const isDark = theme === "dark";
 
-  const navItems: NavItem[] = [
-    { title: t("nav.dashboard"), href: "/dashboard", icon: LayoutDashboard },
-    { title: t("nav.academy"), href: "/academy", icon: GraduationCap },
-    { title: t("nav.events"), href: "/events", icon: Calendar },
-    {
-      title: t("nav.sales"),
-      href: "/crm",
-      icon: TrendingUp,
-      children: [
-        { title: t("nav.leads"), href: "/crm/leads", icon: TrendingUp },
-        { title: t("nav.quotes"), href: "/quotes", icon: FileText },
-        { title: t("nav.contracts"), href: "/contracts", icon: FileSignature },
-        { title: t("nav.invoices"), href: "/invoices", icon: ReceiptText },
-      ],
-    },
-    {
-      title: t("nav.support"),
-      href: "/support",
-      icon: LifeBuoy,
-      children: [
-        { title: t("nav.tickets"), href: "/support", icon: LifeBuoy },
-        { title: t("nav.kb"), href: "/kb", icon: BookOpen },
-      ],
-    },
-    { title: t("nav.ai_assistant"), href: "/ai", icon: Sparkles },
-    { title: t("nav.community"), href: "/community", icon: Users },
-    {
-      title: t("nav.hardware"),
-      href: "/equipment",
-      icon: Monitor,
-      children: [
-        { title: t("nav.equipment"), href: "/equipment", icon: Monitor },
-        { title: t("nav.consumables"), href: "/consumables", icon: Package },
-      ],
-    },
-    { title: t("nav.onboarding"), href: "/onboarding", icon: CheckCircle2 },
-    { title: t("nav.notifications"), href: "/notifications", icon: Bell, badge: true },
-    { title: t("nav.settings"), href: "/settings", icon: SettingsIcon },
-  ];
+  const navItems = createClientNavigation(t);
 
   const adminItems: NavItem[] = isAdmin
     ? [
@@ -202,20 +148,20 @@ export function Sidebar() {
     signOut({ redirectUrl: "/" });
   };
 
-  const SidebarContent = ({ onClose }: { onClose?: () => void }) => (
-    <div className="flex flex-col h-full bg-background border-r border-border">
+  const renderSidebarContent = (onClose?: () => void) => (
+    <div className="flex flex-col h-full min-h-0 bg-background border-r border-border">
       {/* Logo */}
       <div className="px-5 py-5 border-b border-border">
         <img src="/logo-hub-light-orig.png" alt="HaloLight Hub" className="w-[110px] h-auto object-contain dark:hidden" style={{ mixBlendMode: "multiply" }} />
-        <img src="/logo-white.png" alt="HaloLight Hub" className="w-[110px] h-auto object-contain hidden dark:block" style={{ filter: "brightness(0.95)" }} />
+        <img src="/logo-halolight-hub-dark-mode.png" alt="HaloLight Hub" width={1920} height={1080} className="w-[146px] h-auto object-contain hidden dark:block" />
       </div>
 
       {/* Navigation */}
-      <div className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
+      <nav aria-label={t("nav.navigation")} className="flex-1 min-h-0 px-3 py-4 space-y-0.5 overflow-y-auto">
         {allItems.map((item) => (
           <NavLink key={item.href} item={item} location={location} unreadCount={unreadCount} onClose={onClose} />
         ))}
-      </div>
+      </nav>
 
       {/* Sign Out */}
       <div className="px-3 py-4 border-t border-border">
@@ -235,7 +181,7 @@ export function Sidebar() {
     <>
       {/* Desktop sidebar */}
       <div className="hidden md:flex w-[240px] flex-col h-screen sticky top-0 shrink-0">
-        <SidebarContent />
+        {renderSidebarContent()}
       </div>
 
       {/* Mobile header */}
@@ -252,12 +198,13 @@ export function Sidebar() {
               <Menu className="h-5 w-5" />
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="p-0 w-[240px] bg-background border-border">
-            <SidebarContent onClose={() => setMobileOpen(false)} />
+          <SheetContent side="left" className="p-0 w-[240px] max-w-[calc(100vw-2rem)] bg-background border-border" aria-describedby={undefined}>
+            <SheetTitle className="sr-only">{t("nav.navigation")}</SheetTitle>
+            {renderSidebarContent(() => setMobileOpen(false))}
           </SheetContent>
         </Sheet>
         <img src="/logo-hub-light-orig.png" alt="HaloLight Hub" className="w-[90px] h-auto object-contain dark:hidden" style={{ mixBlendMode: "multiply" }} />
-        <img src="/logo-white.png" alt="HaloLight Hub" className="w-[90px] h-auto object-contain hidden dark:block" style={{ filter: "brightness(0.95)" }} />
+        <img src="/logo-halolight-hub-dark-mode.png" alt="HaloLight Hub" width={1920} height={1080} className="w-[120px] h-auto object-contain hidden dark:block" />
         <div className="flex items-center gap-1 shrink-0">
           <Button
             variant="ghost"
@@ -268,21 +215,20 @@ export function Sidebar() {
           >
             {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </Button>
-          <Link href="/notifications" aria-label={t("nav.notifications")}>
-            <Button
+            <Button asChild
               variant="ghost"
               size="icon"
               className="h-9 w-9 text-muted-foreground hover:text-foreground relative"
-              aria-label={t("nav.notifications")}
             >
+              <Link href="/notifications" aria-label={t("nav.notifications")}>
               <Bell className="h-4 w-4" />
               {!!unreadMobile?.count && unreadMobile.count > 0 && (
                 <span className="absolute top-1 right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-destructive text-[9px] font-bold text-destructive-foreground">
                   {unreadMobile.count > 9 ? "9+" : unreadMobile.count}
                 </span>
               )}
+              </Link>
             </Button>
-          </Link>
         </div>
       </div>
     </>

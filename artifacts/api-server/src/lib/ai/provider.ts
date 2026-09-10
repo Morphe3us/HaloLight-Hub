@@ -2,6 +2,8 @@
 // Swap provider implementations without touching application code.
 // All providers implement AIProvider and stream AIStreamChunk events.
 
+import { SUPPORT_POLICY, redactSensitiveText } from "./supportPolicy";
+
 export interface AIMessage {
   role: "user" | "assistant" | "system";
   content: string;
@@ -13,6 +15,14 @@ export interface RAGSource {
   title: string;
   url?: string;
   excerpt: string;
+  meta?: {
+    language?: string;
+    sourceKey?: string | null;
+    sourceRevision?: string | null;
+    sourceHash?: string | null;
+    category?: string;
+    productModel?: string;
+  };
 }
 
 export interface SuggestedAction {
@@ -32,6 +42,7 @@ export interface AIStreamChunk {
 export interface AIProviderOptions {
   maxTokens?: number;
   temperature?: number;
+  language?: string;
 }
 
 export interface AIProvider {
@@ -46,7 +57,7 @@ export interface AIProvider {
     messages: AIMessage[],
     systemPrompt: string,
     sources: RAGSource[],
-    options?: AIProviderOptions
+    options?: AIProviderOptions,
   ): AsyncGenerator<AIStreamChunk>;
 }
 
@@ -54,14 +65,15 @@ export interface AIProvider {
 
 export function buildSystemPrompt(
   sources: RAGSource[],
-  userName?: string
+  userName?: string,
+  language = "en",
 ): string {
   const contextBlock =
     sources.length > 0
       ? sources
           .map(
             (s, i) =>
-              `[SOURCE ${i + 1}] ${s.type.toUpperCase()}: ${s.title}\n${s.excerpt}`
+              `[SOURCE ${i + 1}] ${JSON.stringify({ id: s.id, type: s.type, title: redactSensitiveText(s.title), meta: s.meta, excerpt: redactSensitiveText(s.excerpt) })}`,
           )
           .join("\n\n")
       : "No specific documentation retrieved for this query.";
@@ -74,6 +86,10 @@ You help clients with:
 - Business growth: bookings, quotes, events, CRM
 - Academy learning content and onboarding
 - Support issue resolution
+
+${SUPPORT_POLICY}
+
+User language preference: ${JSON.stringify(language)}.
 
 RETRIEVED CONTEXT (use these to answer accurately):
 ${contextBlock}
@@ -88,7 +104,7 @@ RESPONSE GUIDELINES:
 - Never fabricate product details or pricing not in the context
 - If context is insufficient, say so honestly and offer to escalate
 
-CITATION FORMAT: When referencing a source, write it naturally (e.g., "According to the [Article Title] guide...") — do not use numbered citations.
+CITATION FORMAT: Mention the source title and exact ID, language and revision when supplied. Never manufacture citations.
 
 LANGUAGE: Always respond in the same language as the user's most recent message. If the user writes in French, respond in French. If in Spanish, respond in Spanish. Match the user's language exactly, regardless of the language of the retrieved context.`;
 }

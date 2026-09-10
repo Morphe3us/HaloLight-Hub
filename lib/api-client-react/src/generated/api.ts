@@ -123,6 +123,7 @@ import type {
   KbArticle,
   KbArticleInput,
   KbArticleList,
+  KbArticleUpdateInput,
   KbCategory,
   KbCategoryList,
   Lead,
@@ -145,6 +146,7 @@ import type {
   ListEventsParams,
   ListInvoicesParams,
   ListKbArticlesParams,
+  ListKbCategoriesParams,
   ListLeadsParams,
   ListNotificationsParams,
   ListQuotesParams,
@@ -5861,20 +5863,27 @@ export const useUpdateTicketStatus = <TError = ErrorType<unknown>,
       return useMutation(getUpdateTicketStatusMutationOptions(options));
     }
 
-export const getListKbCategoriesUrl = () => {
+export const getListKbCategoriesUrl = (params?: ListKbCategoriesParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
 
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/kb/categories`
+  return stringifiedParams.length > 0 ? `/api/kb/categories?${stringifiedParams}` : `/api/kb/categories`
 }
 
 /**
  * @summary List knowledge base categories
  */
-export const listKbCategories = async ( options?: RequestInit): Promise<KbCategoryList> => {
+export const listKbCategories = async (params?: ListKbCategoriesParams, options?: RequestInit): Promise<KbCategoryList> => {
 
-  return customFetch<KbCategoryList>(getListKbCategoriesUrl(),
+  return customFetch<KbCategoryList>(getListKbCategoriesUrl(params),
   {
     ...options,
     method: 'GET'
@@ -5887,23 +5896,23 @@ export const listKbCategories = async ( options?: RequestInit): Promise<KbCatego
 
 
 
-export const getListKbCategoriesQueryKey = () => {
+export const getListKbCategoriesQueryKey = (params?: ListKbCategoriesParams,) => {
     return [
-    `/api/kb/categories`
+    `/api/kb/categories`, ...(params ? [params] : [])
     ] as const;
     }
 
 
-export const getListKbCategoriesQueryOptions = <TData = Awaited<ReturnType<typeof listKbCategories>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listKbCategories>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getListKbCategoriesQueryOptions = <TData = Awaited<ReturnType<typeof listKbCategories>>, TError = ErrorType<unknown>>(params?: ListKbCategoriesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listKbCategories>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getListKbCategoriesQueryKey();
+  const queryKey =  queryOptions?.queryKey ?? getListKbCategoriesQueryKey(params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof listKbCategories>>> = ({ signal }) => listKbCategories({ signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listKbCategories>>> = ({ signal }) => listKbCategories(params, { signal, ...requestOptions });
 
 
 
@@ -5921,11 +5930,11 @@ export type ListKbCategoriesQueryError = ErrorType<unknown>
  */
 
 export function useListKbCategories<TData = Awaited<ReturnType<typeof listKbCategories>>, TError = ErrorType<unknown>>(
-  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listKbCategories>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+ params?: ListKbCategoriesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listKbCategories>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
-  const queryOptions = getListKbCategoriesQueryOptions(options)
+  const queryOptions = getListKbCategoriesQueryOptions(params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
@@ -6250,10 +6259,11 @@ export const getUpdateKbArticleUrl = (id: string,) => {
 }
 
 /**
+ * expectedUpdatedAt must match the version reviewed by the administrator. Stale updates return 409.
  * @summary Update a KB article (admin)
  */
 export const updateKbArticle = async (id: string,
-    kbArticleInput: KbArticleInput, options?: RequestInit): Promise<KbArticle> => {
+    kbArticleUpdateInput: KbArticleUpdateInput, options?: RequestInit): Promise<KbArticle> => {
 
   return customFetch<KbArticle>(getUpdateKbArticleUrl(id),
   {
@@ -6261,7 +6271,7 @@ export const updateKbArticle = async (id: string,
     method: 'PUT',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      kbArticleInput,)
+      kbArticleUpdateInput,)
   }
 );}
 
@@ -6269,8 +6279,8 @@ export const updateKbArticle = async (id: string,
 
 
 export const getUpdateKbArticleMutationOptions = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateKbArticle>>, TError,{id: string;data: BodyType<KbArticleInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof updateKbArticle>>, TError,{id: string;data: BodyType<KbArticleInput>}, TContext> => {
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateKbArticle>>, TError,{id: string;data: BodyType<KbArticleUpdateInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateKbArticle>>, TError,{id: string;data: BodyType<KbArticleUpdateInput>}, TContext> => {
 
 const mutationKey = ['updateKbArticle'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
@@ -6282,7 +6292,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateKbArticle>>, {id: string;data: BodyType<KbArticleInput>}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateKbArticle>>, {id: string;data: BodyType<KbArticleUpdateInput>}> = (props) => {
           const {id,data} = props ?? {};
 
           return  updateKbArticle(id,data,requestOptions)
@@ -6296,18 +6306,18 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type UpdateKbArticleMutationResult = NonNullable<Awaited<ReturnType<typeof updateKbArticle>>>
-    export type UpdateKbArticleMutationBody = BodyType<KbArticleInput>
+    export type UpdateKbArticleMutationBody = BodyType<KbArticleUpdateInput>
     export type UpdateKbArticleMutationError = ErrorType<unknown>
 
     /**
  * @summary Update a KB article (admin)
  */
 export const useUpdateKbArticle = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateKbArticle>>, TError,{id: string;data: BodyType<KbArticleInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateKbArticle>>, TError,{id: string;data: BodyType<KbArticleUpdateInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof updateKbArticle>>,
         TError,
-        {id: string;data: BodyType<KbArticleInput>},
+        {id: string;data: BodyType<KbArticleUpdateInput>},
         TContext
       > => {
       return useMutation(getUpdateKbArticleMutationOptions(options));

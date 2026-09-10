@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "wouter";
 import {
@@ -20,6 +20,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { Plus, Pencil, Trash2, Eye, ArrowLeft, ExternalLink, FileText } from "lucide-react";
+import { kbLanguages, type KbLanguage } from "@/lib/kbLanguage";
 
 const statusColors: Record<string, string> = {
   draft:     "bg-warning/15 text-yellow-700",
@@ -27,8 +28,8 @@ const statusColors: Record<string, string> = {
   archived:  "bg-muted text-muted-foreground",
 };
 
-type ArticleForm = { categoryId: string; title: string; content: string; excerpt: string; status: string; tags: string };
-const emptyForm: ArticleForm = { categoryId: "", title: "", content: "", excerpt: "", status: "draft", tags: "" };
+type ArticleForm = { categoryId: string; title: string; content: string; excerpt: string; status: string; tags: string; language: KbLanguage; aiEligible: boolean };
+const emptyForm: ArticleForm = { categoryId: "", title: "", content: "", excerpt: "", status: "draft", tags: "", language: "fr", aiEligible: false };
 
 export default function KBAdmin() {
   const { t } = useTranslation();
@@ -39,10 +40,13 @@ export default function KBAdmin() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [form, setForm] = useState<ArticleForm>(emptyForm);
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [offset, setOffset] = useState(0);
+  const [reviewedUpdatedAt, setReviewedUpdatedAt] = useState<string | undefined>();
 
   const { data: categoriesData } = useListKbCategories();
   const { data: articlesData, isLoading } = useListKbArticles({
     categoryId: categoryFilter === "all" ? undefined : categoryFilter,
+    limit: 50, offset,
   });
 
   const { mutate: createArticle, isPending: isCreating } = useCreateKbArticle({
@@ -57,6 +61,12 @@ export default function KBAdmin() {
 
   const { mutate: updateArticle, isPending: isUpdating } = useUpdateKbArticle({
     mutation: {
+      onError: (error) => {
+        toast({ title: (error as { status?: number }).status === 409
+          ? t("kb_admin.conflict", { defaultValue: "Article changed. Close and reopen it to review the latest version." })
+          : t("kb.load_error", { defaultValue: "Unable to load documentation." }), variant: "destructive" });
+        queryClient.invalidateQueries({ queryKey: ["/api/kb/articles"] });
+      },
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: ["/api/kb/articles"] });
         setShowForm(false); setEditId(null); setForm(emptyForm);
@@ -77,9 +87,18 @@ export default function KBAdmin() {
 
   const categories = categoriesData?.items ?? [];
   const articles = articlesData?.items ?? [];
+  useEffect(() => {
+    const total = articlesData?.total;
+    if (total !== undefined && offset >= total && offset > 0) setOffset(Math.max(0, Math.ceil(total / 50) - 1) * 50);
+  }, [articlesData?.total, offset]);
+  const editing = articles.find(article => article.id === editId);
+  const needsReview = !!editing && (form.title !== editing.title || form.content !== editing.content
+    || form.excerpt !== (editing.excerpt ?? "") || form.categoryId !== editing.categoryId
+    || form.language !== (editing.language ?? "en") || form.tags !== (editing.tags?.join(", ") ?? ""));
 
   const handleEdit = (article: typeof articles[0]) => {
     setEditId(article.id ?? null);
+    setReviewedUpdatedAt(article.updatedAt);
     setForm({
       categoryId: article.categoryId ?? "",
       title: article.title ?? "",
@@ -87,6 +106,8 @@ export default function KBAdmin() {
       excerpt: article.excerpt ?? "",
       status: article.status ?? "draft",
       tags: article.tags?.join(", ") ?? "",
+      language: (article.language ?? "en") as KbLanguage,
+      aiEligible: article.aiEligible ?? false,
     });
     setShowForm(true);
   };
@@ -95,12 +116,22 @@ export default function KBAdmin() {
     const payload = {
       categoryId: form.categoryId,
       title: form.title,
+      language: form.language,
+      aiEligible: needsReview ? false : form.aiEligible,
+      expectedUpdatedAt: editId ? reviewedUpdatedAt : undefined,
       content: form.content,
-      excerpt: form.excerpt || undefined,
+      excerpt: editing && form.excerpt === (editing.excerpt ?? "") ? undefined : form.excerpt || undefined,
       status: form.status as "draft",
-      tags: form.tags ? form.tags.split(",").map((s) => s.trim()).filter(Boolean) : [],
+      tags: editing && form.tags === (editing.tags?.join(", ") ?? "") ? undefined
+        : form.tags ? form.tags.split(",").map((s) => s.trim()).filter(Boolean) : [],
     };
-    if (editId) updateArticle({ id: editId, data: payload });
+    if (editId) {
+      if (!reviewedUpdatedAt) {
+        toast({ title: t("kb_admin.conflict", { defaultValue: "Article changed. Close and reopen it to review the latest version." }), variant: "destructive" });
+        return;
+      }
+      updateArticle({ id: editId, data: { ...payload, expectedUpdatedAt: reviewedUpdatedAt } });
+    }
     else createArticle({ data: payload });
   };
 
@@ -122,7 +153,7 @@ export default function KBAdmin() {
       </div>
 
       <div className="flex gap-3">
-        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+        <Select value={categoryFilter} onValueChange={value => { setCategoryFilter(value); setOffset(0); }}>
           <SelectTrigger className="w-52">
             <SelectValue placeholder={t("kb_admin.all_categories")} />
           </SelectTrigger>
@@ -192,7 +223,7 @@ export default function KBAdmin() {
                     <SelectValue placeholder={t("kb_admin.placeholder_select_cat")} />
                   </SelectTrigger>
                   <SelectContent>
-                    {categories.map((c) => <SelectItem key={c.id} value={c.id!}>{c.name}</SelectItem>)}
+                    {categories.map((c) => <SelectItem key={c.id} value={c.id!}>{c.name} ({c.language?.toUpperCase()})</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
@@ -208,6 +239,17 @@ export default function KBAdmin() {
                 </Select>
               </div>
             </div>
+            <label className="block text-sm space-y-1">
+              <span>{t("kb.content_language", { defaultValue: "Content language" })}</span>
+              <select value={form.language} onChange={e => setForm({ ...form, language: e.target.value as KbLanguage, aiEligible: false })} className="block border rounded-md bg-background h-10 px-3">
+                {Object.entries(kbLanguages).map(([code, name]) => <option value={code} key={code}>{name}</option>)}
+              </select>
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" disabled={needsReview} checked={!needsReview && form.aiEligible} onChange={e => setForm({ ...form, aiEligible: e.target.checked })} />
+              {t("kb_admin.ai_eligible", { defaultValue: "Approve for AI answers" })}
+            </label>
+            <p className="text-xs text-muted-foreground">{t("kb_admin.ai_review_required", { defaultValue: "Content changes revoke AI approval. Save changes, then reopen to approve the revised article." })}</p>
             <div>
               <Label>{t("kb_admin.label_title")}</Label>
               <Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="mt-1" />
@@ -237,6 +279,11 @@ export default function KBAdmin() {
         </DialogContent>
       </Dialog>
 
+      {(articlesData?.total ?? 0) > 50 && <div className="flex items-center gap-3">
+        <Button variant="outline" disabled={offset === 0 || isLoading} onClick={() => setOffset(value => Math.max(0, value - 50))}>{t("kb.previous_page", { defaultValue: "Previous page" })}</Button>
+        <span className="text-sm">{t("kb.page_status", { defaultValue: "{{from}}–{{to}} of {{total}}", from: offset + 1, to: Math.min(offset + 50, articlesData?.total ?? 0), total: articlesData?.total ?? 0 })}</span>
+        <Button variant="outline" disabled={offset + 50 >= (articlesData?.total ?? 0) || isLoading} onClick={() => setOffset(value => value + 50)}>{t("kb.next_page", { defaultValue: "Next page" })}</Button>
+      </div>}
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>

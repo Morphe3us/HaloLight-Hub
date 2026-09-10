@@ -81,6 +81,8 @@
     "@clerk/themes": "^2.4.57",
     "i18next": "^26.2.0",
     "internal": "link:@clerk/react/internal",
-    "react-i18next": "^17.0.8"
+    "react-i18next": "^17.0.8",
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1"
   }
 }

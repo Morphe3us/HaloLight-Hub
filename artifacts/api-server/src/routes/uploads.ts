@@ -1,6 +1,8 @@
 import { Router, type IRouter, type Request, type Response } from "express";
+import { pipeline } from "node:stream/promises";
+import type { Readable } from "node:stream";
 import { eq, ilike, and } from "drizzle-orm";
-import { db, resources, uploads } from "@workspace/db";
+import { db, kbArticles, resources, uploads } from "@workspace/db";
 import { requireAuth } from "../middlewares/requireAuth";
 import { getOrCreateUser } from "../lib/userSync";
 import { getStorageProvider } from "../lib/storage";
@@ -14,6 +16,11 @@ import {
 } from "../lib/uploadSecurity";
 
 const router: IRouter = Router();
+
+router.use(["/files", "/admin/uploads"], (_req, res, next) => {
+  res.setHeader("Cache-Control", "private, no-store");
+  next();
+});
 
 function requireAdmin(
   user: { role: string } | null | undefined,
@@ -45,6 +52,41 @@ type UploadVisibility =
   | "ai_only"
   | "public_resource";
 type UploadStatus = "pending" | "processing" | "ready" | "failed";
+
+const importedPdfPrefix = "corrected-2026-09-10/";
+const importedSourceMarker = "[sourceKey=halolight:corrected-content:fr:";
+
+function importedSourceKey(description: string | null): string | null {
+  if (!description || description.split("[sourceKey=").length !== 2)
+    return null;
+  return (
+    /^\[sourceKey=(halolight:corrected-content:fr:[a-z0-9-]+)\](?:\s|$)/.exec(
+      description,
+    )?.[1] ?? null
+  );
+}
+
+async function isImportedPdfPublished(
+  upload: typeof uploads.$inferSelect,
+  fileUrl: string,
+): Promise<boolean> {
+  const sourceKey = importedSourceKey(upload.description);
+  if (!sourceKey) return false;
+  const [article] = await db
+    .select({ status: kbArticles.status })
+    .from(kbArticles)
+    .where(eq(kbArticles.sourceKey, sourceKey));
+  if (article?.status !== "published") return false;
+  const linkedResources = await db
+    .select()
+    .from(resources)
+    .where(eq(resources.fileUrl, fileUrl));
+  return linkedResources.some(
+    (resource) =>
+      resource.status === "published" &&
+      importedSourceKey(resource.description) === sourceKey,
+  );
+}
 
 function fmt(u: typeof uploads.$inferSelect) {
   return {
@@ -93,9 +135,25 @@ router.get(
         res.status(403).json({ error: "Forbidden" });
         return;
       }
+      // Import publication is authoritative on each download, including copied URLs.
+      const imported =
+        rawKey.startsWith(importedPdfPrefix) ||
+        uploadRecord.description?.includes(importedSourceMarker);
+      if (
+        user.role !== "admin" &&
+        imported &&
+        !(await isImportedPdfPublished(uploadRecord, fileUrl))
+      ) {
+        res.status(403).json({ error: "Forbidden" });
+        return;
+      }
       fileName = uploadRecord.fileName;
       mimeType = uploadRecord.mimeType;
     } else {
+      if (user.role !== "admin" && rawKey.startsWith(importedPdfPrefix)) {
+        res.status(404).json({ error: "File not found" });
+        return;
+      }
       const [resource] = await db
         .select()
         .from(resources)
@@ -112,11 +170,21 @@ router.get(
       mimeType = null;
     }
 
-    let filePath: string;
+    let filePath: string | undefined;
+    let stream: Readable | undefined;
     try {
-      filePath = getLocalStorageFilePath(decodeURIComponent(rawKey));
+      // Express has already decoded route parameters; never decode a key twice.
+      const provider = getStorageProvider();
+      if (provider.openReadStream) {
+        stream = await provider.openReadStream(rawKey);
+      } else if (provider.name === "local") {
+        filePath = getLocalStorageFilePath(rawKey);
+      } else {
+        res.status(404).json({ error: "File not found" });
+        return;
+      }
     } catch {
-      res.status(400).json({ error: "Invalid file path" });
+      res.status(404).json({ error: "File not found" });
       return;
     }
 
@@ -130,7 +198,18 @@ router.get(
       `${disposition}; filename="${downloadName}"; filename*=UTF-8''${encodedDownloadName}`,
     );
 
-    res.sendFile(filePath, (error) => {
+    if (stream) {
+      try {
+        await pipeline(stream, res);
+      } catch {
+        if (!res.headersSent && !res.destroyed) {
+          res.status(404).json({ error: "File not found" });
+        }
+      }
+      return;
+    }
+
+    res.sendFile(filePath!, { cacheControl: false }, (error) => {
       if (error && !res.headersSent) {
         res.status(404).json({ error: "File not found" });
       }
@@ -287,7 +366,9 @@ router.post(
       return;
     }
 
-    let result: Awaited<ReturnType<ReturnType<typeof getStorageProvider>["upload"]>>;
+    let result: Awaited<
+      ReturnType<ReturnType<typeof getStorageProvider>["upload"]>
+    >;
     try {
       result = await getStorageProvider().upload(buffer, {
         filename: fileName,
@@ -295,12 +376,9 @@ router.post(
         folder: folder || "uploads",
         isPublic: false,
       });
-    } catch (error) {
+    } catch {
       res.status(400).json({
-        error:
-          error instanceof Error
-            ? error.message
-            : "Direct file upload is not available for the configured storage provider",
+        error: "Direct file upload is not available",
       });
       return;
     }

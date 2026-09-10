@@ -2,6 +2,7 @@
 // Auto-selects a storage provider from environment variables.
 //
 // Priority:
+//   STORAGE_PROVIDER=filesystem -> private, externally persisted filesystem root
 //   STORAGE_PROVIDER=r2   → CloudflareR2Provider  (add R2 credentials)
 //   STORAGE_PROVIDER=s3   → AWSS3Provider          (add S3 credentials)
 //   STORAGE_PROVIDER=supabase → SupabaseStorageProvider
@@ -14,6 +15,7 @@
 import type { StorageProvider } from "./provider";
 import { LocalStorageProvider } from "./local-provider";
 import { UrlOnlyProvider } from "./url-provider";
+import { FilesystemStorageProvider } from "./filesystem-provider";
 import { isExplicitDevelopment, isExplicitTest } from "../env";
 
 export type {
@@ -31,6 +33,11 @@ export function getStorageProvider(): StorageProvider {
   if (_provider) return _provider;
 
   const config = process.env.STORAGE_PROVIDER?.toLowerCase();
+
+  if (config === "filesystem") {
+    _provider = new FilesystemStorageProvider();
+    return _provider;
+  }
 
   if (!config || config === "local") {
     if (!isExplicitDevelopment() && !isExplicitTest()) {

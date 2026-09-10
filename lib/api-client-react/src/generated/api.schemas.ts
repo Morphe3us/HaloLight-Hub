@@ -1421,6 +1421,8 @@ export interface SupportTicketList {
 }
 
 export interface KbCategory {
+  language?: string;
+  articleCount?: number;
   id?: string;
   name?: string;
   slug?: string;
@@ -1429,6 +1431,13 @@ export interface KbCategory {
   order?: number;
   createdAt?: string;
 }
+
+export type KbArticleRelatedItem = {
+  id?: string;
+  title?: string;
+  slug?: string;
+  excerpt?: string | null;
+};
 
 export type KbArticleStatus = typeof KbArticleStatus[keyof typeof KbArticleStatus];
 
@@ -1440,6 +1449,12 @@ export const KbArticleStatus = {
 } as const;
 
 export interface KbArticle {
+  language?: string;
+  sourceKey?: string | null;
+  sourceRevision?: string | null;
+  sourceHash?: string | null;
+  aiEligible?: boolean;
+  related?: KbArticleRelatedItem[];
   id?: string;
   categoryId?: string;
   authorId?: string;
@@ -1456,6 +1471,20 @@ export interface KbArticle {
   updatedAt?: string;
 }
 
+export type KbArticleInputLanguage = typeof KbArticleInputLanguage[keyof typeof KbArticleInputLanguage];
+
+
+export const KbArticleInputLanguage = {
+  en: 'en',
+  fr: 'fr',
+  es: 'es',
+  de: 'de',
+  it: 'it',
+  pl: 'pl',
+  pt: 'pt',
+  nl: 'nl',
+} as const;
+
 export type KbArticleInputStatus = typeof KbArticleInputStatus[keyof typeof KbArticleInputStatus];
 
 
@@ -1466,6 +1495,10 @@ export const KbArticleInputStatus = {
 } as const;
 
 export interface KbArticleInput {
+  /** Required for PUT; the updatedAt of the version being edited or approved. Omit for POST. */
+  expectedUpdatedAt?: string;
+  language?: KbArticleInputLanguage;
+  aiEligible?: boolean;
   categoryId: string;
   title: string;
   content: string;
@@ -1473,6 +1506,10 @@ export interface KbArticleInput {
   status?: KbArticleInputStatus;
   tags?: string[];
 }
+
+export type KbArticleUpdateInput = KbArticleInput & {
+  expectedUpdatedAt: string;
+};
 
 export interface KbArticleList {
   items?: KbArticle[];
@@ -3333,21 +3370,69 @@ limit?: number;
 offset?: number;
 };
 
+export type ListKbCategoriesParams = {
+language?: ListKbCategoriesLanguage;
+};
+
+export type ListKbCategoriesLanguage = typeof ListKbCategoriesLanguage[keyof typeof ListKbCategoriesLanguage];
+
+
+export const ListKbCategoriesLanguage = {
+  en: 'en',
+  fr: 'fr',
+  es: 'es',
+  de: 'de',
+  it: 'it',
+  pl: 'pl',
+  pt: 'pt',
+  nl: 'nl',
+} as const;
+
+export type CreateKbCategoryBodyLanguage = typeof CreateKbCategoryBodyLanguage[keyof typeof CreateKbCategoryBodyLanguage];
+
+
+export const CreateKbCategoryBodyLanguage = {
+  en: 'en',
+  fr: 'fr',
+  es: 'es',
+  de: 'de',
+  it: 'it',
+  pl: 'pl',
+  pt: 'pt',
+  nl: 'nl',
+} as const;
+
 export type CreateKbCategoryBody = {
   name: string;
   slug: string;
+  language?: CreateKbCategoryBodyLanguage;
   description?: string;
   icon?: string;
   order?: number;
 };
 
 export type ListKbArticlesParams = {
+language?: ListKbArticlesLanguage;
 categoryId?: string;
 status?: string;
 search?: string;
 limit?: number;
 offset?: number;
 };
+
+export type ListKbArticlesLanguage = typeof ListKbArticlesLanguage[keyof typeof ListKbArticlesLanguage];
+
+
+export const ListKbArticlesLanguage = {
+  en: 'en',
+  fr: 'fr',
+  es: 'es',
+  de: 'de',
+  it: 'it',
+  pl: 'pl',
+  pt: 'pt',
+  nl: 'nl',
+} as const;
 
 export type EscalateAiConversationBodyPriority = typeof EscalateAiConversationBodyPriority[keyof typeof EscalateAiConversationBodyPriority];
 

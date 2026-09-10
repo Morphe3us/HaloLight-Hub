@@ -8,6 +8,7 @@ import {
 } from "@workspace/db";
 import { requireAuth } from "../middlewares/requireAuth";
 import { getOrCreateUser } from "../lib/userSync";
+import { documentUpdatePolicy } from "../lib/ai/documentUpdatePolicy";
 
 const router: IRouter = Router();
 
@@ -283,45 +284,54 @@ router.put(
       status?: string;
     };
 
-    const u: Partial<typeof aiKnowledgeDocuments.$inferInsert> = {
-      updatedAt: new Date(),
-    };
-    if (title !== undefined) u.title = title;
-    if (language !== undefined) u.language = language;
-    if (category !== undefined) u.category = category as AIDocCategory;
-    if (productModel !== undefined) u.productModel = productModel;
-    if (sourceUrl !== undefined) u.sourceUrl = sourceUrl;
-    if (content !== undefined) u.content = content;
-    if (aiActive !== undefined) u.aiActive = aiActive;
-    if (status !== undefined) u.status = status as AIDocStatus;
+    const result = await db.transaction(async (tx) => {
+      // Lock the persisted identity before validating either editable field.
+      // Tags and the document row must commit together to prevent a two-step
+      // detachment through separate sourceUrl and tag updates.
+      const [existing] = await tx
+        .select()
+        .from(aiKnowledgeDocuments)
+        .where(eq(aiKnowledgeDocuments.id, id))
+        .for("update");
+      if (!existing) return { status: 404, body: { error: "Not found" } };
+      const policy = documentUpdatePolicy(existing, req.body);
+      if (!policy.ok)
+        return { status: policy.status, body: { error: policy.error } };
 
-    const [updated] = await db
-      .update(aiKnowledgeDocuments)
-      .set(u)
-      .where(eq(aiKnowledgeDocuments.id, id))
-      .returning();
-    if (!updated) {
-      res.status(404).json({ error: "Not found" });
-      return;
-    }
-
-    // Update tags if provided
-    if (tags !== undefined) {
-      await db
-        .delete(aiKnowledgeTags)
-        .where(eq(aiKnowledgeTags.documentId, id));
-      if (tags.length > 0) {
-        await db
-          .insert(aiKnowledgeTags)
-          .values(tags.map((tag) => ({ documentId: id, tag })));
+      const u: Partial<typeof aiKnowledgeDocuments.$inferInsert> = {
+        updatedAt: new Date(),
+      };
+      if (title !== undefined) u.title = title;
+      if (language !== undefined) u.language = language;
+      if (category !== undefined) u.category = category as AIDocCategory;
+      if (productModel !== undefined) u.productModel = productModel;
+      if (sourceUrl !== undefined) u.sourceUrl = sourceUrl;
+      if (content !== undefined) u.content = content;
+      if (aiActive !== undefined) u.aiActive = aiActive;
+      if (status !== undefined) u.status = status as AIDocStatus;
+      if (tags !== undefined) u.tags = tags;
+      if (policy.resetApproval) {
+        u.aiActive = false;
+        u.status = "needs_review";
       }
-      await db
+      const [updated] = await tx
         .update(aiKnowledgeDocuments)
-        .set({ tags })
-        .where(eq(aiKnowledgeDocuments.id, id));
-    }
+        .set(u)
+        .where(eq(aiKnowledgeDocuments.id, id))
+        .returning();
 
-    res.json(fmt(updated));
+      if (tags !== undefined) {
+        await tx
+          .delete(aiKnowledgeTags)
+          .where(eq(aiKnowledgeTags.documentId, id));
+        if (tags.length > 0)
+          await tx
+            .insert(aiKnowledgeTags)
+            .values(tags.map((tag) => ({ documentId: id, tag })));
+      }
+      return { status: 200, body: fmt(updated!) };
+    });
+    res.status(result.status).json(result.body);
   },
 );
 

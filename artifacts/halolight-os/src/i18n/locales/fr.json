@@ -1,5 +1,7 @@
 {
   "nav": {
+    "profile": "Profil",
+    "navigation": "Navigation principale",
     "dashboard": "Tableau de bord",
     "academy": "Académie",
     "events": "Événements",
@@ -391,6 +393,17 @@
     "ticket_created_desc": "Votre ticket d'assistance a été soumis."
   },
   "kb": {
+    "content_language": "Langue du contenu",
+    "french_fallback": "La documentation en français est disponible ; sélectionnez le français pour la consulter.",
+    "load_error": "Impossible de charger la documentation.",
+    "retry": "Réessayer",
+    "previous_page": "Page précédente",
+    "next_page": "Page suivante",
+    "page_status": "{{from}}-{{to}} sur {{total}}",
+    "source": "Source",
+    "revision": "Révision",
+    "download_error": "Échec du téléchargement. Veuillez réessayer.",
+    "downloading": "Téléchargement...",
     "title": "Base de connaissances",
     "subtitle": "Parcourez des articles et des guides pour votre système HaloLight.",
     "search_placeholder": "Rechercher des articles...",
@@ -1759,6 +1772,9 @@
     "no_upcoming_events": "Aucun événement à venir assigné à cet équipement."
   },
   "kb_admin": {
+    "conflict": "L’article a été modifié. Fermez-le puis rouvrez-le pour consulter la dernière version.",
+    "ai_eligible": "Approuver pour les réponses IA",
+    "ai_review_required": "Toute modification du contenu révoque l’approbation IA. Enregistrez les modifications, puis rouvrez l’article pour approuver sa version révisée.",
     "back": "Base de connaissances",
     "title": "Gérer les articles",
     "new_article": "Nouvel article",

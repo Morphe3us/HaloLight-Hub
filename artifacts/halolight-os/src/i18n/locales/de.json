@@ -1,5 +1,7 @@
 {
   "nav": {
+    "profile": "Profil",
+    "navigation": "Hauptnavigation",
     "dashboard": "Dashboard",
     "academy": "Akademie",
     "events": "Veranstaltungen",
@@ -391,6 +393,17 @@
     "ticket_created_desc": "Your support ticket has been submitted."
   },
   "kb": {
+    "content_language": "Inhaltssprache",
+    "french_fallback": "Französische Dokumentation ist verfügbar; wählen Sie Französisch, um sie zu lesen.",
+    "load_error": "Die Dokumentation konnte nicht geladen werden.",
+    "retry": "Erneut versuchen",
+    "previous_page": "Vorherige Seite",
+    "next_page": "Nächste Seite",
+    "page_status": "{{from}}-{{to}} von {{total}}",
+    "source": "Quelle",
+    "revision": "Revision",
+    "download_error": "Download fehlgeschlagen. Bitte versuchen Sie es erneut.",
+    "downloading": "Wird heruntergeladen...",
     "title": "Wissensdatenbank",
     "subtitle": "Durchsuchen Sie Artikel und Anleitungen für Ihr HaloLight-System.",
     "search_placeholder": "Artikel suchen...",
@@ -1759,6 +1772,9 @@
     "no_upcoming_events": "Keine bevorstehenden Events für dieses Gerät."
   },
   "kb_admin": {
+    "conflict": "Der Artikel wurde geändert. Schließen Sie ihn und öffnen Sie ihn erneut, um die neueste Version zu prüfen.",
+    "ai_eligible": "Für KI-Antworten freigeben",
+    "ai_review_required": "Inhaltsänderungen heben die KI-Freigabe auf. Speichern Sie die Änderungen und öffnen Sie den Artikel erneut, um die überarbeitete Fassung freizugeben.",
     "back": "Wissensdatenbank",
     "title": "Artikel verwalten",
     "new_article": "Neuer Artikel",

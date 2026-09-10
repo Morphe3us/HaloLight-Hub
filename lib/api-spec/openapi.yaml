@@ -1660,6 +1660,10 @@ paths:
       operationId: listKbCategories
       tags: [kb]
       summary: List knowledge base categories
+      parameters:
+        - name: language
+          in: query
+          schema: { type: string, enum: [en, fr, es, de, it, pl, pt, nl] }
       responses:
         "200":
           description: Category list
@@ -1681,6 +1685,7 @@ paths:
               properties:
                 name: { type: string }
                 slug: { type: string }
+                language: { type: string, enum: [en, fr, es, de, it, pl, pt, nl] }
                 description: { type: string }
                 icon: { type: string }
                 order: { type: integer }
@@ -1698,6 +1703,9 @@ paths:
       tags: [kb]
       summary: List knowledge base articles
       parameters:
+        - name: language
+          in: query
+          schema: { type: string, enum: [en, fr, es, de, it, pl, pt, nl] }
         - name: categoryId
           in: query
           schema: { type: string }
@@ -1759,6 +1767,7 @@ paths:
       operationId: updateKbArticle
       tags: [kb]
       summary: Update a KB article (admin)
+      description: expectedUpdatedAt must match the version reviewed by the administrator. Stale updates return 409.
       parameters:
         - name: id
           in: path
@@ -1769,7 +1778,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/KbArticleInput"
+              $ref: "#/components/schemas/KbArticleUpdateInput"
       responses:
         "200":
           description: Updated article
@@ -5565,6 +5574,10 @@ components:
     KbCategory:
       type: object
       properties:
+        language:
+          type: string
+        articleCount:
+          type: integer
         id:
           type: string
         name:
@@ -5585,6 +5598,28 @@ components:
     KbArticle:
       type: object
       properties:
+        language:
+          type: string
+        sourceKey:
+          type: string
+          nullable: true
+        sourceRevision:
+          type: string
+          nullable: true
+        sourceHash:
+          type: string
+          nullable: true
+        aiEligible:
+          type: boolean
+        related:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: string }
+              title: { type: string }
+              slug: { type: string }
+              excerpt: { type: string, nullable: true }
         id:
           type: string
         categoryId:
@@ -5627,6 +5662,15 @@ components:
       type: object
       required: [title, content, categoryId]
       properties:
+        expectedUpdatedAt:
+          type: string
+          format: date-time
+          description: Required for PUT; the updatedAt of the version being edited or approved. Omit for POST.
+        language:
+          type: string
+          enum: [en, fr, es, de, it, pl, pt, nl]
+        aiEligible:
+          type: boolean
         categoryId:
           type: string
         title:
@@ -5642,6 +5686,16 @@ components:
           type: array
           items:
             type: string
+
+    KbArticleUpdateInput:
+      allOf:
+        - $ref: "#/components/schemas/KbArticleInput"
+        - type: object
+          required: [expectedUpdatedAt]
+          properties:
+            expectedUpdatedAt:
+              type: string
+              format: date-time
 
     KbArticleList:
       type: object

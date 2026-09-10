@@ -43,3 +43,16 @@ test("LocalStorageProvider rejects storage keys outside the root", async () => {
     await rm(root, { recursive: true, force: true });
   }
 });
+
+test("local storage retains its development URL override", async (t) => {
+  const original = process.env.LOCAL_STORAGE_PUBLIC_PATH;
+  process.env.LOCAL_STORAGE_PUBLIC_PATH = "/development/files";
+  t.after(() => {
+    if (original === undefined) delete process.env.LOCAL_STORAGE_PUBLIC_PATH;
+    else process.env.LOCAL_STORAGE_PUBLIC_PATH = original;
+  });
+  assert.equal(
+    new LocalStorageProvider().getPublicUrl("a/file name.pdf"),
+    "/development/files/a/file%20name.pdf",
+  );
+});

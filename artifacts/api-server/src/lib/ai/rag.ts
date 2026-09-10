@@ -1,225 +1,167 @@
-// ─── RAG Retrieval Layer ───────────────────────────────────────────────────────
-// Keyword / ILIKE search across KB articles, Academy courses, and AI Knowledge
-// documents + chunks. Swap the ILIKE calls for pgvector similarity in production.
-
-import { ilike, or, eq, and } from "drizzle-orm";
+import { and, eq, or, desc, asc, notInArray, sql } from "drizzle-orm";
 import {
   db,
   kbArticles,
   courses,
-  aiKnowledgeDocuments,
-  aiKnowledgeChunks,
+  aiKnowledgeDocuments as docs,
+  aiKnowledgeChunks as chunks,
 } from "@workspace/db";
-import type { RAGSource } from "./provider";
-import { filterPublishedAcademyCourseRows } from "./ragFilters";
+import type { RAGSource, SuggestedAction } from "./provider";
+import {
+  extractKeywords,
+  lexicalMatch,
+  relevance,
+  languagePreference,
+  kbCitation,
+  safeSourceUrl,
+  matchingPassage,
+  localizedText,
+  linkedKbEligibility,
+} from "./retrievalPolicy";
+import {
+  classifySupport,
+  normalizeText,
+  redactSensitiveText,
+  supportAction,
+} from "./supportPolicy";
 
-// ─── Stop-word list for keyword extraction ────────────────────────────────────
+export { extractKeywords } from "./retrievalPolicy";
 
-const STOP_WORDS = new Set([
-  "a",
-  "an",
-  "the",
-  "and",
-  "or",
-  "but",
-  "in",
-  "on",
-  "at",
-  "to",
-  "for",
-  "of",
-  "with",
-  "by",
-  "from",
-  "up",
-  "about",
-  "into",
-  "through",
-  "is",
-  "are",
-  "was",
-  "were",
-  "be",
-  "been",
-  "being",
-  "have",
-  "has",
-  "had",
-  "do",
-  "does",
-  "did",
-  "will",
-  "would",
-  "could",
-  "should",
-  "may",
-  "might",
-  "can",
-  "i",
-  "me",
-  "my",
-  "we",
-  "our",
-  "you",
-  "your",
-  "it",
-  "its",
-  "this",
-  "that",
-  "these",
-  "those",
-  "what",
-  "how",
-  "when",
-  "where",
-  "why",
-  "who",
-  "help",
-  "need",
-  "want",
-  "like",
-  "get",
-  "make",
-  "use",
-  "using",
-  "used",
-  "please",
-]);
-
-export function extractKeywords(query: string): string[] {
-  return query
-    .toLowerCase()
-    .replace(/[^\w\s]/g, " ")
-    .split(/\s+/)
-    .filter((w) => w.length > 2 && !STOP_WORDS.has(w))
-    .slice(0, 8);
-}
-
-// ─── KB articles ──────────────────────────────────────────────────────────────
-
-async function searchKBArticles(keywords: string[]): Promise<RAGSource[]> {
-  if (keywords.length === 0) return [];
-
-  const conditions = keywords.flatMap((kw) => [
-    ilike(kbArticles.title, `%${kw}%`),
-    ilike(kbArticles.content, `%${kw}%`),
-  ]);
-
+async function searchKBArticles(
+  keywords: string[],
+  language?: string,
+): Promise<RAGSource[]> {
+  const locale = kbArticles.language;
   const results = await db
     .select({
       id: kbArticles.id,
       title: kbArticles.title,
-      slug: kbArticles.slug,
-      excerpt: kbArticles.excerpt,
       content: kbArticles.content,
+      excerpt: kbArticles.excerpt,
+      language: locale,
+      sourceKey: kbArticles.sourceKey,
+      sourceRevision: kbArticles.sourceRevision,
+      sourceHash: kbArticles.sourceHash,
     })
     .from(kbArticles)
-    .where(and(eq(kbArticles.status, "published"), or(...conditions)))
+    .where(
+      and(
+        eq(kbArticles.status, "published"),
+        eq(kbArticles.aiEligible, true),
+        or(
+          ...keywords.flatMap((word) => [
+            lexicalMatch(kbArticles.title, word),
+            lexicalMatch(kbArticles.content, word),
+          ]),
+        ),
+      ),
+    )
+    .orderBy(
+      desc(languagePreference(locale, language)),
+      desc(relevance([kbArticles.title, kbArticles.content], keywords)),
+      asc(kbArticles.id),
+    )
     .limit(3);
-
-  return results.map((a) => ({
-    id: a.id,
-    type: "kb" as const,
-    title: a.title,
-    url: `/kb/articles/${a.slug}`,
-    excerpt: a.excerpt ?? a.content.slice(0, 200) + "...",
+  return results.map((article) => ({
+    id: article.id,
+    type: "kb",
+    title: article.title,
+    url: kbCitation(article.id),
+    excerpt: matchingPassage(article.content, keywords),
+    meta: {
+      language: article.language,
+      sourceKey: article.sourceKey,
+      sourceRevision: article.sourceRevision,
+      sourceHash: article.sourceHash,
+    },
   }));
 }
 
-// ─── Academy courses ──────────────────────────────────────────────────────────
-
-async function searchAcademyContent(keywords: string[]): Promise<RAGSource[]> {
-  if (keywords.length === 0) return [];
-
-  const courseResults = await db
+async function searchAcademyContent(
+  keywords: string[],
+  language = "en",
+): Promise<RAGSource[]> {
+  const title = localizedText(courses.title, language).text;
+  const localizedDescription = localizedText(courses.description, language);
+  const description = localizedDescription.text;
+  const results = await db
     .select({
       id: courses.id,
-      slug: courses.slug,
-      title: courses.title,
-      description: courses.description,
-      isPublished: courses.isPublished,
+      title,
+      description,
+      language: localizedDescription.language,
     })
     .from(courses)
     .where(
       and(
         eq(courses.isPublished, true),
-        or(...keywords.map((kw) => ilike(courses.slug, `%${kw}%`))),
+        or(
+          ...keywords.flatMap((word) => [
+            lexicalMatch(title, word),
+            lexicalMatch(description, word),
+            lexicalMatch(courses.slug, word),
+          ]),
+        ),
       ),
     )
+    .orderBy(desc(relevance([title, description], keywords)), asc(courses.id))
     .limit(2);
-
-  return filterPublishedAcademyCourseRows(courseResults).map((course) => {
-    const titleText =
-      typeof course.title === "string"
-        ? course.title
-        : ((course.title as { en?: string })?.en ?? "Academy Course");
-    const descText =
-      typeof course.description === "string"
-        ? course.description
-        : ((course.description as { en?: string })?.en ?? "");
-    return {
-      id: course.id,
-      type: "academy" as const,
-      title: titleText,
-      url: `/academy`,
-      excerpt: descText.slice(0, 200),
-    };
-  });
+  return results.map((course) => ({
+    id: course.id,
+    type: "academy",
+    title: course.title,
+    url: "/academy",
+    excerpt: course.description.slice(0, 600),
+    meta: { language: course.language },
+  }));
 }
-
-// ─── AI Knowledge documents ───────────────────────────────────────────────────
-// Respects: aiActive = true, status = indexed, language preference,
-//           productModel keyword scoring.
 
 async function searchAIKnowledgeDocs(
   keywords: string[],
   language?: string,
 ): Promise<RAGSource[]> {
-  if (keywords.length === 0) return [];
-
-  const contentConditions = keywords.flatMap((kw) => [
-    ilike(aiKnowledgeDocuments.title, `%${kw}%`),
-    ilike(aiKnowledgeDocuments.content, `%${kw}%`),
-  ]);
-
   const results = await db
     .select({
-      id: aiKnowledgeDocuments.id,
-      title: aiKnowledgeDocuments.title,
-      content: aiKnowledgeDocuments.content,
-      category: aiKnowledgeDocuments.category,
-      productModel: aiKnowledgeDocuments.productModel,
-      language: aiKnowledgeDocuments.language,
-      sourceUrl: aiKnowledgeDocuments.sourceUrl,
+      id: docs.id,
+      title: docs.title,
+      content: docs.content,
+      category: docs.category,
+      productModel: docs.productModel,
+      language: docs.language,
+      sourceUrl: docs.sourceUrl,
     })
-    .from(aiKnowledgeDocuments)
+    .from(docs)
     .where(
       and(
-        eq(aiKnowledgeDocuments.aiActive, true),
-        eq(aiKnowledgeDocuments.status, "indexed"),
-        or(...contentConditions),
+        eq(docs.aiActive, true),
+        eq(docs.status, "indexed"),
+        linkedKbEligibility(
+          docs.sourceUrl,
+          docs.content,
+          docs.language,
+          docs.title,
+          docs.tags,
+        ),
+        or(
+          ...keywords.flatMap((word) => [
+            lexicalMatch(docs.title, word),
+            lexicalMatch(docs.content, word),
+          ]),
+        ),
       ),
     )
+    .orderBy(
+      desc(languagePreference(docs.language, language)),
+      desc(relevance([docs.title, docs.content, docs.productModel], keywords)),
+      asc(docs.id),
+    )
     .limit(5);
-
-  // Score: prefer language match + product model keyword match
-  const queryLower = keywords.join(" ");
-  const scored = results.map((doc) => {
-    let score = 0;
-    if (language && doc.language === language) score += 2;
-    if (doc.productModel && queryLower.includes(doc.productModel.toLowerCase()))
-      score += 3;
-    return { doc, score };
-  });
-  scored.sort((a, b) => b.score - a.score);
-
-  return scored.map(({ doc }) => ({
+  return results.map((doc) => ({
     id: doc.id,
-    type: "knowledge" as const,
+    type: "knowledge",
     title: doc.title,
-    url: doc.sourceUrl ?? undefined,
-    excerpt:
-      doc.content.slice(0, 250) + (doc.content.length > 250 ? "..." : ""),
+    url: safeSourceUrl(doc.sourceUrl),
+    excerpt: matchingPassage(doc.content, keywords),
     meta: {
       category: doc.category,
       productModel: doc.productModel ?? undefined,
@@ -228,245 +170,185 @@ async function searchAIKnowledgeDocs(
   }));
 }
 
-// ─── AI Knowledge chunks (paragraph-level fallback) ───────────────────────────
-
 async function searchAIKnowledgeChunks(
   keywords: string[],
-  excludeDocIds: Set<string>,
+  excluded: string[],
+  language?: string,
 ): Promise<RAGSource[]> {
-  if (keywords.length === 0) return [];
-
-  const chunkConditions = keywords.map((kw) =>
-    ilike(aiKnowledgeChunks.content, `%${kw}%`),
-  );
-
-  const chunkResults = await db
-    .select({
-      id: aiKnowledgeChunks.id,
-      documentId: aiKnowledgeChunks.documentId,
-      content: aiKnowledgeChunks.content,
+  // Filter eligible parents and excluded documents BEFORE selecting/limiting
+  // chunks, and choose one best paragraph per parent before the global limit.
+  const candidates = db
+    .selectDistinctOn([docs.id], {
+      id: docs.id,
+      title: docs.title,
+      content: chunks.content,
+      language: docs.language,
+      sourceUrl: docs.sourceUrl,
+      score: relevance([chunks.content], keywords).as("score"),
     })
-    .from(aiKnowledgeChunks)
-    .where(or(...chunkConditions))
-    .limit(8);
-
-  const uniqueDocIds = [
-    ...new Set(chunkResults.map((c) => c.documentId)),
-  ].filter((id) => !excludeDocIds.has(id));
-  if (uniqueDocIds.length === 0) return [];
-
-  const parentDocs = await db
-    .select({
-      id: aiKnowledgeDocuments.id,
-      title: aiKnowledgeDocuments.title,
-      sourceUrl: aiKnowledgeDocuments.sourceUrl,
-    })
-    .from(aiKnowledgeDocuments)
+    .from(chunks)
+    .innerJoin(docs, eq(docs.id, chunks.documentId))
     .where(
       and(
-        eq(aiKnowledgeDocuments.aiActive, true),
-        eq(aiKnowledgeDocuments.status, "indexed"),
+        eq(docs.aiActive, true),
+        eq(docs.status, "indexed"),
+        linkedKbEligibility(
+          docs.sourceUrl,
+          docs.content,
+          docs.language,
+          docs.title,
+          docs.tags,
+        ),
+        sql`length(${chunks.content}) > 0 and strpos(${docs.content}, ${chunks.content}) > 0`,
+        excluded.length ? notInArray(docs.id, excluded) : undefined,
+        or(...keywords.map((word) => lexicalMatch(chunks.content, word))),
       ),
-    );
-
-  const activeDocMap = new Map(parentDocs.map((d) => [d.id, d]));
-  const seenDocs = new Set<string>();
-  const sources: RAGSource[] = [];
-
-  for (const chunk of chunkResults) {
-    const parent = activeDocMap.get(chunk.documentId);
-    if (!parent || seenDocs.has(chunk.documentId)) continue;
-    seenDocs.add(chunk.documentId);
-    sources.push({
-      id: `chunk:${chunk.id}`,
-      type: "knowledge" as const,
-      title: parent.title,
-      url: parent.sourceUrl ?? undefined,
-      excerpt:
-        chunk.content.slice(0, 250) + (chunk.content.length > 250 ? "..." : ""),
-    });
-    if (sources.length >= 2) break;
-  }
-
-  return sources;
+    )
+    .orderBy(
+      asc(docs.id),
+      desc(relevance([chunks.content], keywords)),
+      asc(chunks.chunkIndex),
+      asc(chunks.id),
+    )
+    .as("eligible_chunks");
+  const results = await db
+    .select()
+    .from(candidates)
+    .orderBy(
+      desc(languagePreference(candidates.language, language)),
+      desc(candidates.score),
+      asc(candidates.id),
+    )
+    .limit(2);
+  return results.map((doc) => ({
+    id: doc.id,
+    type: "knowledge",
+    title: doc.title,
+    url: safeSourceUrl(doc.sourceUrl),
+    excerpt: matchingPassage(doc.content, keywords),
+    meta: { language: doc.language },
+  }));
 }
-
-// ─── Public types ─────────────────────────────────────────────────────────────
 
 export interface RetrievalLogEntry {
   source: string;
   count: number;
   keywords: string[];
 }
-
 export interface RAGResult {
   sources: RAGSource[];
   contextText: string;
   retrievalLog: RetrievalLogEntry[];
 }
 
-// ─── Main retrieval function ──────────────────────────────────────────────────
-
 export async function retrieveContext(
   query: string,
-  language?: string,
+  language = "en",
 ): Promise<RAGResult> {
-  const keywords = extractKeywords(query);
-  const retrievalLog: RetrievalLogEntry[] = [];
-
-  // Run all three primary searches in parallel
-  const [kbSources, academySources, knowledgeSources] = await Promise.all([
-    searchKBArticles(keywords),
-    searchAcademyContent(keywords),
+  const keywords = extractKeywords(redactSensitiveText(query));
+  if (!keywords.length)
+    return { sources: [], contextText: "", retrievalLog: [] };
+  const [kb, academy, knowledge] = await Promise.all([
+    searchKBArticles(keywords, language),
+    searchAcademyContent(keywords, language),
     searchAIKnowledgeDocs(keywords, language),
   ]);
-
-  retrievalLog.push(
-    { source: "kb_articles", count: kbSources.length, keywords },
-    { source: "academy_courses", count: academySources.length, keywords },
-    {
-      source: "ai_knowledge_documents",
-      count: knowledgeSources.length,
+  const retrievalLog = [
+    { source: "kb_articles", count: kb.length, keywords },
+    { source: "academy_courses", count: academy.length, keywords },
+    { source: "ai_knowledge_documents", count: knowledge.length, keywords },
+  ];
+  const candidates = [...knowledge, ...kb, ...academy];
+  if (candidates.length < 6) {
+    const fallback = await searchAIKnowledgeChunks(
       keywords,
-    },
-  );
-
-  // Merge — AI Knowledge docs get priority, then KB, then Academy
-  const seen = new Set<string>();
-  const sources: RAGSource[] = [];
-  const seenDocIds = new Set<string>();
-
-  for (const s of [...knowledgeSources, ...kbSources, ...academySources]) {
-    if (seen.has(s.id)) continue;
-    seen.add(s.id);
-    sources.push(s);
-    if (s.type === "knowledge") {
-      seenDocIds.add(s.id.startsWith("chunk:") ? s.id.slice(6) : s.id);
-    }
-    if (sources.length >= 6) break;
-  }
-
-  // Chunk fallback — fill remaining slots with paragraph-level matches
-  if (sources.length < 6 && keywords.length > 0) {
-    const chunkSources = await searchAIKnowledgeChunks(keywords, seenDocIds);
+      knowledge.map((source) => source.id),
+      language,
+    );
+    candidates.push(...fallback);
     retrievalLog.push({
       source: "ai_knowledge_chunks",
-      count: chunkSources.length,
+      count: fallback.length,
       keywords,
     });
-    for (const s of chunkSources) {
-      if (!seen.has(s.id) && sources.length < 6) {
-        seen.add(s.id);
-        sources.push(s);
-      }
-    }
   }
-
-  const contextText =
-    sources.length > 0
-      ? sources
-          .map((s) => `[${s.type.toUpperCase()}] ${s.title}\n${s.excerpt}`)
-          .join("\n\n")
-      : "";
-
-  return { sources, contextText, retrievalLog };
+  const preferred = language.toLowerCase().split("-")[0];
+  candidates.sort(
+    (a, b) =>
+      Number(b.meta?.language?.split("-")[0] === preferred) -
+      Number(a.meta?.language?.split("-")[0] === preferred),
+  );
+  const seen = new Set<string>();
+  const sources = candidates
+    .filter((source) => {
+      const key = `${source.type}:${source.id}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .slice(0, 6)
+    .map((source) => ({
+      ...source,
+      title: redactSensitiveText(source.title),
+      excerpt: redactSensitiveText(source.excerpt),
+    }));
+  return {
+    sources,
+    contextText: sources.map((source) => JSON.stringify(source)).join("\n\n"),
+    retrievalLog,
+  };
 }
-
-// ─── Suggested actions ────────────────────────────────────────────────────────
 
 export function buildSuggestedActions(
   query: string,
   sources: RAGSource[],
-): Array<{ type: string; label: string; data?: Record<string, unknown> }> {
-  const lower = query.toLowerCase();
-  const actions: Array<{
-    type: string;
-    label: string;
-    data?: Record<string, unknown>;
-  }> = [];
-
-  const isTechnical =
-    lower.includes("not working") ||
-    lower.includes("broken") ||
-    lower.includes("error") ||
-    lower.includes("problem") ||
-    lower.includes("issue") ||
-    lower.includes("fail") ||
-    lower.includes("jam") ||
-    lower.includes("stuck");
-
-  const isConsumable =
-    lower.includes("paper") ||
-    lower.includes("ribbon") ||
-    lower.includes("stock") ||
-    lower.includes("order") ||
-    lower.includes("reorder");
-
-  const isEquipment =
-    lower.includes("booth") ||
-    lower.includes("equipment") ||
-    lower.includes("unit") ||
-    lower.includes("maintenance") ||
-    lower.includes("warranty") ||
-    lower.includes("service");
-
-  const isLearning =
-    lower.includes("learn") ||
-    lower.includes("tutorial") ||
-    lower.includes("course") ||
-    lower.includes("train") ||
-    lower.includes("how to") ||
-    lower.includes("guide");
-
-  for (const s of sources.filter((s) => s.type === "kb").slice(0, 2)) {
-    actions.push({
-      type: "navigate",
-      label: `Read: ${s.title.slice(0, 40)}${s.title.length > 40 ? "…" : ""}`,
-      data: { url: s.url },
-    });
-  }
-
-  for (const s of sources
-    .filter((s) => s.type === "knowledge" && s.url && !s.url.includes("admin"))
-    .slice(0, 1)) {
-    actions.push({
-      type: "navigate",
-      label: `View: ${s.title.slice(0, 40)}${s.title.length > 40 ? "…" : ""}`,
-      data: { url: s.url },
-    });
-  }
-
-  if (sources.some((s) => s.type === "academy") || isLearning) {
-    actions.push({
-      type: "navigate",
-      label: "Go to Academy",
-      data: { url: "/academy" },
-    });
-  }
-  if (isConsumable) {
+  language = "en",
+): SuggestedAction[] {
+  if (classifySupport(query).danger) return [];
+  const action = supportAction(query, language);
+  const actions: SuggestedAction[] = action ? [action] : [];
+  const lower = normalizeText(query);
+  if (/\b(paper|ribbon|stock|reorder|papier|ruban|consommables)\b/.test(lower))
     actions.push({
       type: "reorder",
       label: "Check Consumables Stock",
       data: { url: "/consumables" },
     });
-  }
-  if (isEquipment) {
+  if (
+    /\b(booth|equipment|maintenance|warranty|borne|equipement|garantie)\b/.test(
+      lower,
+    )
+  )
     actions.push({
       type: "navigate",
       label: "View My Equipment",
       data: { url: "/equipment" },
     });
+  if (
+    /\b(learn|tutorial|course|guide|academy|formation|apprendre)\b/.test(lower)
+  )
+    actions.push({
+      type: "navigate",
+      label: "Go to Academy",
+      data: { url: "/academy" },
+    });
+  for (const source of sources) {
+    const url = safeSourceUrl(source.url);
+    if (url && !actions.some((item) => item.data?.url === url)) {
+      actions.push({
+        type: "navigate",
+        label: source.title.slice(0, 40),
+        data: { url },
+      });
+    }
   }
-  if (isTechnical) {
-    actions.push({ type: "escalate", label: "Open Support Ticket", data: {} });
-  }
-
-  const seen = new Set<string>();
-  return actions
-    .filter((a) => {
-      if (seen.has(a.label)) return false;
-      seen.add(a.label);
-      return true;
-    })
-    .slice(0, 4);
+  if (!sources.length && !action)
+    actions.push({
+      type: "escalate",
+      label: language.startsWith("fr")
+        ? "Preparer un ticket de support"
+        : "Prepare Support Ticket",
+      data: {},
+    });
+  return actions.slice(0, 4);
 }

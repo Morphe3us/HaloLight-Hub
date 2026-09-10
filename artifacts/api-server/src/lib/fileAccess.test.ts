@@ -92,3 +92,22 @@ test("canAccessResourceFile restricts draft resources to admins", () => {
     true,
   );
 });
+
+test("shared imports allow unscoped clients but every entity scope remains denied", () => {
+  const upload = { visibility: "client_visible" as const, status: "ready" };
+  assert.equal(canAccessUploadFile({ role: "client" }, upload), true);
+  for (const field of [
+    "relatedCourseId",
+    "relatedLessonId",
+    "relatedProduct",
+  ]) {
+    assert.equal(
+      canAccessUploadFile({ role: "client" }, { ...upload, [field]: "scope" }),
+      false,
+    );
+    assert.equal(
+      canAccessUploadFile({ role: "admin" }, { ...upload, [field]: "scope" }),
+      true,
+    );
+  }
+});

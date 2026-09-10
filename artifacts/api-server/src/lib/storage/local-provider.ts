@@ -37,6 +37,14 @@ function cleanFolder(folder?: string): string {
     .join("/");
 }
 
+export function createStorageKey(options: UploadOptions): string {
+  const folder = cleanFolder(options.folder);
+  const originalName = cleanSegment(options.filename ?? "file");
+  const extension = path.extname(originalName);
+  const baseName = path.basename(originalName, extension) || "file";
+  return `${folder}/${new Date().toISOString().slice(0, 10)}/${baseName}-${randomUUID()}${extension}`;
+}
+
 function publicPathFor(key: string): string {
   const base = process.env.LOCAL_STORAGE_PUBLIC_PATH ?? "/api/files";
   const encodedKey = key.split("/").map(encodeURIComponent).join("/");
@@ -61,11 +69,7 @@ export class LocalStorageProvider implements StorageProvider {
   constructor(private readonly root = getLocalStorageRoot()) {}
 
   async upload(buffer: Buffer, options: UploadOptions): Promise<UploadResult> {
-    const folder = cleanFolder(options.folder);
-    const originalName = cleanSegment(options.filename ?? "file");
-    const extension = path.extname(originalName);
-    const baseName = path.basename(originalName, extension) || "file";
-    const key = `${folder}/${new Date().toISOString().slice(0, 10)}/${baseName}-${randomUUID()}${extension}`;
+    const key = createStorageKey(options);
     const filePath = safePath(this.root, key);
 
     await mkdir(path.dirname(filePath), { recursive: true });
