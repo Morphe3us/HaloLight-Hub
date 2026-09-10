@@ -3,6 +3,7 @@ import test from "node:test";
 import { mkdtemp, rm, symlink, lstat } from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
+import { createRequire } from "node:module";
 import { PgDialect } from "drizzle-orm/pg-core";
 import { readOfficialIndex } from "../../artifacts/api-server/src/lib/ai/officialOriginals";
 import { readRegular, sha256 } from "../content/private-files";
@@ -26,6 +27,40 @@ test("production guard binds approved host/port/database/user without password o
   }
   assert.throws(() => validateProductionTarget(env, fingerprint, "/other-app"));
   for (const value of [`${url}?options=-csearch_path=other`, `${url}?host=other.invalid`, `${url}#fragment`, `${url}?sslmode=disable`]) assert.throws(() => targetFingerprint(value));
+});
+
+test("strict libpq compatibility options inherit approved runtime TLS semantics without changing target or URL", () => {
+  const require = createRequire(new URL("../../lib/db/package.json", import.meta.url));
+  const pgRequire = createRequire(require.resolve("pg"));
+  const { parse } = pgRequire("pg-connection-string");
+  const url = "postgres://synthetic:inactive-fixture@db.invalid:5432/hub";
+  const fingerprint = targetFingerprint(url);
+  const env = { NODE_ENV: "production", STORAGE_PROVIDER: "filesystem", PRIVATE_STORAGE_DIR: PRODUCTION_STORAGE };
+  for (const options of ["sslmode=verify-full&uselibpqcompat=true", "uselibpqcompat=false&sslmode=verify-full", "sslmode=require&uselibpqcompat=false", "sslmode=verify-ca&uselibpqcompat=false"]) {
+    const value = `${url}?${options}`;
+    assert.equal(targetFingerprint(value), fingerprint);
+    assert.equal(validateProductionTarget({ ...env, DATABASE_URL: value }, fingerprint, PRODUCTION_APP).href, value);
+    const parsed = parse(value);
+    assert.ok(parsed.ssl && parsed.ssl.rejectUnauthorized !== false);
+    assert.equal(parsed.ssl.checkServerIdentity, undefined);
+  }
+  assert.equal(parse(`${url}?sslmode=require&uselibpqcompat=true`).ssl.rejectUnauthorized, false);
+  for (const mode of ["require", "verify-ca", "verify-full"]) {
+    const value = `${url}?sslmode=${mode}&uselibpqcompat=true`;
+    assert.equal(targetFingerprint(value), fingerprint);
+    assert.equal(validateProductionTarget({ ...env, DATABASE_URL: value }, fingerprint, PRODUCTION_APP).href, value);
+  }
+  // The wrapper leaves parser behavior intact: verify-ca without a CA fails
+  // in the runtime parser; the allowlist does not add certificate-file access.
+  assert.throws(() => parse(`${url}?sslmode=verify-ca&uselibpqcompat=true`));
+  for (const options of [
+    "uselibpqcompat=true", "uselibpqcompat=false", "sslmode=disable&uselibpqcompat=false",
+    "sslmode=prefer&uselibpqcompat=true", "sslmode=allow&uselibpqcompat=true", "sslmode=no-verify&uselibpqcompat=false",
+    "sslmode=verify-full&uselibpqcompat=TRUE", "sslmode=verify-full&uselibpqcompat=1",
+    "sslmode=verify-full&uselibpqcompat=", "sslmode=verify-full&uselibpqcompat=false&uselibpqcompat=true",
+    "sslmode=require&sslmode=verify-full", "sslmode=verify-full&host=other.invalid",
+    "sslmode=verify-full&options=-csearch_path=other", "sslmode=verify-full&sslrootcert=/private/file",
+  ]) assert.throws(() => targetFingerprint(`${url}?${options}`));
 });
 
 test("fresh private backup is exclusive, synced, hash-verifiable and rejects symlinks/aliases", async () => {

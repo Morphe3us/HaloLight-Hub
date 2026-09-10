@@ -17,11 +17,22 @@ export const PRODUCTION_STORAGE = "/srv/customer/.local/share/halohub-private-fi
 export const PRODUCTION_WORK = "/srv/customer/.HaloHub";
 const TABLES = ["uploads", "resources", "kb_articles", "ai_knowledge_documents", "ai_knowledge_chunks", "ai_knowledge_tags"] as const;
 
+function validateDatabaseOptions(url: URL): void {
+  const entries = [...url.searchParams];
+  requireImport(new Set(entries.map(([key]) => key)).size === entries.length && entries.every(([key, value]) =>
+    key === "sslmode" ? ["require", "verify-ca", "verify-full"].includes(value) :
+      key === "uselibpqcompat" && ["true", "false"].includes(value)), "DATABASE_URL_OPTIONS_REJECTED");
+  // Inherit the approved runtime transport unchanged. In the installed parser,
+  // require + compatibility=true uses TLS without certificate verification;
+  // this allowlist does not claim stronger verification or alter pool options.
+  requireImport(!url.searchParams.has("uselibpqcompat") || url.searchParams.has("sslmode"), "DATABASE_TLS_MODE_REQUIRED");
+}
+
 export function targetFingerprint(value: string | undefined): string {
   requireImport(value, "DATABASE_TARGET_REQUIRED");
   const url = new URL(value);
   requireImport(["postgres:", "postgresql:"].includes(url.protocol) && url.hostname && url.username && url.pathname.length > 1 && !url.hash, "INVALID_PRODUCTION_DATABASE_URL");
-  requireImport([...url.searchParams].length <= 1 && [...url.searchParams].every(([key, value]) => key === "sslmode" && ["require", "verify-ca", "verify-full"].includes(value)), "DATABASE_URL_OPTIONS_REJECTED");
+  validateDatabaseOptions(url);
   // Match the lead's already-compared local/remote target fingerprint exactly.
   // URL parsing normalizes hostname; password and query credentials are absent.
   return sha256(`${url.hostname}:${url.port}/${url.pathname}/${url.username}`);
@@ -33,7 +44,7 @@ export function validateProductionTarget(env: NodeJS.ProcessEnv, approvedHash: s
   requireImport(env.DATABASE_URL && /^[a-f0-9]{64}$/.test(approvedHash) && targetFingerprint(env.DATABASE_URL) === approvedHash, "PRODUCTION_DATABASE_FINGERPRINT_GUARD");
   const url = new URL(env.DATABASE_URL);
   requireImport(["postgres:", "postgresql:"].includes(url.protocol) && url.hostname && url.username && url.pathname.length > 1 && !url.hash, "INVALID_PRODUCTION_DATABASE_URL");
-  requireImport([...url.searchParams].every(([key, value]) => key === "sslmode" && ["require", "verify-ca", "verify-full"].includes(value)), "DATABASE_URL_OPTIONS_REJECTED");
+  validateDatabaseOptions(url);
   return url;
 }
 
