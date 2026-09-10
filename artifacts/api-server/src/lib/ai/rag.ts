@@ -305,7 +305,13 @@ export function buildSuggestedActions(
   language = "en",
 ): SuggestedAction[] {
   if (classifySupport(query).danger) return [];
-  const action = supportAction(query, language);
+  const action = supportAction(
+    query,
+    language,
+    sources.some(
+      (source) => source.type !== "academy" && source.excerpt.trim().length > 0,
+    ),
+  );
   const actions: SuggestedAction[] = action ? [action] : [];
   const lower = normalizeText(query);
   if (/\b(paper|ribbon|stock|reorder|papier|ruban|consommables)\b/.test(lower))

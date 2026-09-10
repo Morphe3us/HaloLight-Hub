@@ -3,6 +3,8 @@ import {
   LayoutDashboard, GraduationCap, Calendar, Users, TrendingUp, FileText,
   FileSignature, ReceiptText, LifeBuoy, BookOpen, Sparkles, Settings,
   UserRound, Bell, CheckCircle2, Monitor, Package,
+  Shield, BarChart3, DollarSign, UserCheck, Zap, LibraryBig, Search,
+  Languages, FolderUp, Brain, HardDrive, DownloadCloud,
 } from "lucide-react";
 
 export type NavItem = {
@@ -21,6 +23,36 @@ export function isNavItemActive(item: NavItem, location: string): boolean {
 
 export function hasNotificationBadge(item: NavItem): boolean {
   return !!item.badge || !!item.children?.some(hasNotificationBadge);
+}
+
+export function createAdminNavigation(t: (key: string) => string): NavItem[] {
+  return [{ title: t("nav.admin_section"), href: "/admin", icon: Shield, children: [
+    { title: t("nav.admin_pilotage"), href: "/admin/group/pilotage", icon: BarChart3, children: [
+      { title: t("nav.analytics"), href: "/admin/analytics", icon: BarChart3 },
+      { title: t("nav.revenue"), href: "/admin/revenue", icon: DollarSign },
+    ] },
+    { title: t("nav.admin_operations"), href: "/admin/group/operations", icon: UserCheck, children: [
+      { title: t("nav.clients"), href: "/admin/clients", icon: UserCheck },
+      { title: t("nav.equipment"), href: "/admin/equipment", icon: Monitor },
+      { title: t("nav.automation"), href: "/admin/automation", icon: Zap },
+      { title: t("nav.contract_templates"), href: "/admin/contract-templates", icon: FileSignature },
+    ] },
+    { title: t("nav.admin_content_ai"), href: "/admin/group/content", icon: LibraryBig, children: [
+      { title: t("nav.academy"), href: "/admin/academy", icon: GraduationCap },
+      { title: t("nav.resources"), href: "/admin/resources", icon: LibraryBig },
+      { title: t("nav.ai_knowledge"), href: "/admin/ai-knowledge", icon: Brain },
+      { title: t("nav.uploads"), href: "/admin/uploads", icon: FolderUp },
+      { title: t("nav.translations"), href: "/admin/translations", icon: Languages },
+    ] },
+    { title: t("nav.admin_data_system"), href: "/admin/group/data", icon: HardDrive, children: [
+      { title: t("nav.backup"), href: "/admin/backup", icon: HardDrive },
+      { title: t("nav.exports"), href: "/admin/exports", icon: DownloadCloud },
+    ] },
+    { title: t("nav.settings"), href: "/admin/group/settings", icon: Settings, children: [
+      { title: t("nav.users"), href: "/admin", icon: Users },
+      { title: t("nav.search_admin"), href: "/admin/search", icon: Search },
+    ] },
+  ] }];
 }
 
 export function createClientNavigation(t: (key: string) => string): NavItem[] {

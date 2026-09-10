@@ -12,6 +12,7 @@ import { getAllowedCorsOrigins, isCorsOriginAllowed } from "./lib/corsPolicy";
 import { createApiErrorHandler, serializeApiError } from "./lib/apiErrors";
 import healthRouter from "./routes/health";
 import { createFrontendHandler } from "./lib/frontend";
+import { consentGate } from "./middlewares/consentGate";
 
 const app: Express = express();
 
@@ -58,6 +59,7 @@ app.use(express.urlencoded({ extended: true, limit: "25mb" }));
 
 app.use(clerkMiddleware());
 
+app.use("/api", consentGate);
 app.use("/api", router);
 
 app.use(createApiErrorHandler(logger));

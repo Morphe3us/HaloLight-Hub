@@ -2,10 +2,7 @@ import { Link, useLocation } from "wouter";
 import { useGetCurrentUser, useGetUnreadNotificationCount } from "@workspace/api-client-react";
 import { useTranslation } from "react-i18next";
 import {
-  Bell, Shield, ChevronRight, LogOut, Menu, GraduationCap,
-  FileSignature, ChevronDown,
-  Users, BarChart3, UserCheck, DollarSign, Monitor, Zap,
-  LibraryBig, Search, Languages, FolderUp, Brain, HardDrive, Sun, Moon, DownloadCloud,
+  Bell, ChevronRight, LogOut, Menu, ChevronDown, Sun, Moon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useClerk } from "@clerk/react";
@@ -13,7 +10,7 @@ import { useId, useState } from "react";
 import { useTheme } from "@/components/theme-provider";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { createClientNavigation, hasNotificationBadge, isNavItemActive, type NavItem } from "./sidebarNavigation";
+import { createAdminNavigation, createClientNavigation, hasNotificationBadge, isNavItemActive, type NavItem } from "./sidebarNavigation";
 
 function NavLink({
   item,
@@ -115,32 +112,7 @@ export function Sidebar() {
 
   const navItems = createClientNavigation(t);
 
-  const adminItems: NavItem[] = isAdmin
-    ? [
-        {
-          title: t("nav.admin_section"),
-          href: "/admin",
-          icon: Shield,
-          children: [
-            { title: t("nav.analytics"), href: "/admin/analytics", icon: BarChart3 },
-            { title: t("nav.revenue"), href: "/admin/revenue", icon: DollarSign },
-            { title: t("nav.clients"), href: "/admin/clients", icon: UserCheck },
-            { title: t("nav.equipment"), href: "/admin/equipment", icon: Monitor },
-            { title: t("nav.automation"), href: "/admin/automation", icon: Zap },
-            { title: t("nav.academy"), href: "/admin/academy", icon: GraduationCap },
-            { title: t("nav.resources"), href: "/admin/resources", icon: LibraryBig },
-            { title: t("nav.search_admin"), href: "/admin/search", icon: Search },
-            { title: t("nav.translations"), href: "/admin/translations", icon: Languages },
-            { title: t("nav.uploads"), href: "/admin/uploads", icon: FolderUp },
-            { title: t("nav.ai_knowledge"), href: "/admin/ai-knowledge", icon: Brain },
-            { title: t("nav.backup"), href: "/admin/backup", icon: HardDrive },
-            { title: t("nav.exports"), href: "/admin/exports", icon: DownloadCloud },
-            { title: t("nav.contract_templates"), href: "/admin/contract-templates", icon: FileSignature },
-            { title: t("nav.users"), href: "/admin", icon: Users },
-          ],
-        },
-      ]
-    : [];
+  const adminItems: NavItem[] = isAdmin ? createAdminNavigation(t) : [];
 
   const allItems: NavItem[] = [...navItems, ...adminItems];
 

@@ -7,10 +7,34 @@ const STOP_WORDS = new Set(
   ),
 );
 
+// Closed EN/FR retrieval glossary approved for the official documentation.
+// These are search aliases only, never additional answer content.
+const DOMAIN_GLOSSARY = [
+  ["printer", "imprimante"],
+  ["paper", "papier"],
+  ["consumables", "consommables"],
+  ["troubleshooting", "depannage"],
+  ["assembly", "montage"],
+  ["camera", "appareil photo"],
+] as const;
+
 export function extractKeywords(query: string): string[] {
-  return [...new Set(normalizeText(query).match(/[\p{L}\p{N}]+/gu) ?? [])]
+  const normalized = normalizeText(query).replace(
+    /\bappareil\s+photo\b/g,
+    "appareilphoto",
+  );
+  const keywords = [...new Set(normalized.match(/[\p{L}\p{N}]+/gu) ?? [])]
     .filter((word) => word.length > 2 && !STOP_WORDS.has(word))
-    .slice(0, 8);
+    .slice(0, 8)
+    .map((word) => (word === "appareilphoto" ? "appareil photo" : word));
+  const expanded = new Set(keywords);
+  for (const word of keywords) {
+    const pair = DOMAIN_GLOSSARY.find((terms) =>
+      terms.some((term) => term === word),
+    );
+    if (pair) for (const term of pair) expanded.add(term);
+  }
+  return [...expanded].slice(0, 16);
 }
 
 export function lexicalMatch(column: SQLWrapper, keyword: string) {

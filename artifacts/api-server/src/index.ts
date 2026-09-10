@@ -2,6 +2,7 @@ import app from "./app";
 import { logger } from "./lib/logger";
 import { startAutomationScheduler, stopAutomationScheduler } from "./lib/automation/scheduler";
 import { pool } from "@workspace/db";
+import { startTicketMailWorker, stopTicketMailWorker } from "./lib/mail/ticketOutbox";
 
 const rawPort = process.env["PORT"] ?? "8080";
 
@@ -19,6 +20,7 @@ const server = app.listen(port, (err) => {
 
   logger.info({ port }, "Server listening");
   startAutomationScheduler();
+  startTicketMailWorker();
 });
 
 let stopping = false;
@@ -26,6 +28,7 @@ function shutdown() {
   if (stopping) return;
   stopping = true;
   stopAutomationScheduler();
+  stopTicketMailWorker();
   const deadline = setTimeout(() => process.exit(1), 10_000);
   deadline.unref();
   server.close(() => {

@@ -46,7 +46,10 @@
     "exports": "Esportazioni",
     "users": "Utenti",
     "resources": "Risorse",
-    "contract_templates": "Modelli contratto"
+    "contract_templates": "Modelli contratto",
+    "admin_pilotage": "Gestione",
+    "admin_content_ai": "Contenuti e IA",
+    "admin_data_system": "Dati e sistema"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -88,7 +91,8 @@
     "widget_notifications": "Notifiche recenti",
     "widget_upcoming_events": "Prossimi eventi",
     "widget_academy_stats": "Avanzamento academy",
-    "widget_sales_overview": "Pipeline vendite"
+    "widget_sales_overview": "Pipeline vendite",
+    "preferences_error": "Impossibile caricare o salvare le preferenze della dashboard. Le scelte precedenti sono state mantenute."
   },
   "academy": {
     "title": "Accademia",
@@ -337,7 +341,19 @@
     "forecast_reorder_hint": "Rifornire la carta prima del prossimo evento per evitare carenze.",
     "forecast_prints_label": "stampe",
     "forecast_more_events": "altri eventi",
-    "forecast_no_prints_warning": "Quantità di stampe non specificata"
+    "forecast_no_prints_warning": "Quantità di stampe non specificata",
+    "average_prints_event": "Stampe medie per evento",
+    "average_events_month": "Eventi medi al mese (facoltativo)",
+    "monthly_consumption": "Stampe mensili stimate",
+    "events_remaining": "Eventi rimanenti",
+    "months_remaining": "Mesi rimanenti",
+    "edit_usage": "Modifica consumo per evento",
+    "usage_save_failed": "Impossibile salvare il consumo per evento",
+    "usage_unknown": "Non stimato",
+    "stock_prints": "Scorte attuali (stampe)",
+    "print_units_required": "Le stime e il rifornimento in stampe non sono disponibili per questa unità. Le quantità esistenti restano invariate.",
+    "verified_print_quantity": "Stampe rimanenti verificate",
+    "confirm_print_conversion": "Confermo che questa è la capacità totale di stampa rimanente. Sostituire solo la quantità e l’unità delle mie scorte, senza modificare il catalogo condiviso."
   },
   "support": {
     "title": "Supporto",
@@ -390,7 +406,13 @@
     "stat_in_progress": "In Progress",
     "stat_resolved": "Risolto",
     "ticket_created_msg": "Ticket created",
-    "ticket_created_desc": "Your support ticket has been submitted."
+    "ticket_created_desc": "Your support ticket has been submitted.",
+    "equipment_model": "Attrezzatura/modello (facoltativo)",
+    "serial_number": "Numero di serie (facoltativo)",
+    "attachments": "Allegati",
+    "attachments_limit": "Fino a 3 PDF o immagini, 10 MiB totali",
+    "attachments_invalid": "Scegli fino a 3 PDF o immagini, per un totale massimo di 10 MiB",
+    "create_failed": "Creazione del ticket non riuscita. Controlla i campi e gli allegati, poi riprova."
   },
   "kb": {
     "content_language": "Lingua del contenuto",
@@ -509,7 +531,8 @@
     "voice_input_error": "Errore input vocale",
     "new_chat": "Nuova conversazione",
     "send_get_started": "Invia un messaggio per iniziare",
-    "escalate_dialog_desc": "Verrà creato un ticket di supporto con la trascrizione di questa conversazione. Potrai tracciarlo nei tuoi Ticket di Supporto."
+    "escalate_dialog_desc": "Verrà creato un ticket di supporto con la trascrizione di questa conversazione. Potrai tracciarlo nei tuoi Ticket di Supporto.",
+    "provider_unavailable": "Il servizio IA non è disponibile perché il suo fornitore non è configurato correttamente. Un amministratore di HaloLight Hub deve configurarlo prima che tu possa ricevere risposte generate dall’IA."
   },
   "notifications": {
     "title": "Notifiche",
@@ -913,7 +936,8 @@
     "discount_label": "Sconto",
     "send_quote": "Prepara email",
     "quote_sent": "Bozza email preparata",
-    "quote_send_failed": "Impossibile inviare il preventivo"
+    "quote_send_failed": "Impossibile inviare il preventivo",
+    "payment_method": "Metodo di pagamento"
   },
   "contracts": {
     "title": "Contratti",
@@ -1031,7 +1055,19 @@
     "provider_signature_section": "Firma del fornitore per i contratti",
     "provider_signature_desc": "Se impostata, questa firma appare nei contratti generati.",
     "provider_signature_saved": "Firma salvata",
-    "no_content_message": "Nessun contenuto del contratto ancora presente. Usa Modifica per aggiungere contenuto o genera un contratto da un modello."
+    "no_content_message": "Nessun contenuto del contratto ancora presente. Usa Modifica per aggiungere contenuto o genera un contratto da un modello.",
+    "advanceAmount": "Acconto",
+    "paymentMethod": "Metodo di pagamento",
+    "responsibilityTerms": "Responsabilità",
+    "breakdownTerms": "Guasto e assistenza",
+    "postponementTerms": "Rinvio",
+    "forceMajeureTerms": "Forza maggiore",
+    "privacyTerms": "Protezione dei dati personali",
+    "specialConditions": "Condizioni particolari",
+    "language_label": "Lingua del contratto",
+    "balanceAmount": "Saldo",
+    "invalid_advance": "Verificare l'acconto e le condizioni inserite.",
+    "legal_review_required": "L'approvazione legale di questo modello non è attestata. Far verificare le condizioni prima della firma."
   },
   "invoices": {
     "title": "Fatture",
@@ -1147,7 +1183,8 @@
     "equipment_label": "Attrezzatura",
     "options_label": "Opzioni",
     "discount_label": "Sconto",
-    "status_updated": "Stato aggiornato"
+    "status_updated": "Stato aggiornato",
+    "payment_method": "Metodo di pagamento"
   },
   "admin_analytics": {
     "title": "Dashboard di analisi",
@@ -1249,7 +1286,18 @@
     "priority_urgent": "Urgente",
     "priority_suffix": "priorità {{level}}",
     "toast_reply_sent": "Risposta inviata",
-    "toast_status_updated": "Stato aggiornato"
+    "toast_status_updated": "Stato aggiornato",
+    "download_failed": "Download dell’allegato non riuscito",
+    "email_history": "Cronologia invio email",
+    "email_pending": "Email in coda",
+    "email_sending": "Invio email in corso",
+    "email_sent": "Accettata dal fornitore email",
+    "email_failed": "Invio email non riuscito",
+    "email_unknown": "Invio da verificare",
+    "email_disabled": "L’invio email non è configurato",
+    "email_retry": "Riprova l’invio",
+    "email_retry_failed": "Nuovo tentativo di invio non riuscito",
+    "email_none": "Nessun invio email registrato"
   },
   "post_detail": {
     "back": "Indietro",
@@ -1524,7 +1572,12 @@
     "col_avg_booking": "Prenotazione media",
     "col_tier": "Livello",
     "no_revenue": "Nessun dato di ricavo ancora",
-    "top_performers": "Migliori performer"
+    "top_performers": "Migliori performer",
+    "currency": "Valuta",
+    "undated_paid": "{{count}} fatture pagate non hanno una data di pagamento e sono escluse dal grafico mensile.",
+    "stat_invoiced": "Fatturato",
+    "stat_unpaid": "Non pagato",
+    "excluded_currency": "{{count}} fatture hanno una valuta mancante o non valida e sono escluse dai totali finanziari."
   },
   "admin_uploads": {
     "title": "Gestione upload",
@@ -1979,5 +2032,22 @@
     "placeholder_not_applicable": "Non applicabile",
     "optional_summary": "Alcune informazioni opzionali mancano e saranno sostituite da testo predefinito.",
     "field_currency": "Valuta"
+  },
+  "consent": {
+    "not_configured": "I documenti legali approvati non sono ancora stati pubblicati nell’Hub. Non viene registrata alcuna accettazione.",
+    "terms": "Condizioni d’uso",
+    "privacy": "Informativa sulla privacy e trattamento dei dati personali",
+    "accept": "Ho letto e accetto queste versioni delle condizioni d’uso e dell’informativa sulla privacy.",
+    "marketing": "Comunicazioni di marketing (facoltativo)",
+    "analytics": "Analisi facoltative dell’utilizzo",
+    "ai_improvement": "Utilizzo dei miei dati per migliorare l’IA (facoltativo)",
+    "optional": "Scelte facoltative",
+    "save_error": "L’accettazione non è stata salvata. Consulta i documenti attuali e riprova.",
+    "save": "Salva le mie scelte",
+    "title": "Condizioni e privacy",
+    "proof": "Cronologia delle accettazioni (ultime 100)",
+    "no_proof": "Nessuna accettazione registrata.",
+    "proof_choices": "Consensi facoltativi: marketing {{marketing}}, analisi {{analytics}}, miglioramento IA {{ai}}",
+    "manage": "Scelte sulla privacy"
   }
 }

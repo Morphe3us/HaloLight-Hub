@@ -46,6 +46,7 @@ export const quotes = pgTable(
     deliveryFees: numeric("delivery_fees", { precision: 12, scale: 2 }),
     discountAmount: numeric("discount_amount", { precision: 12, scale: 2 }),
     currency: text("currency"),
+    paymentMethod: text("payment_method"),
     language: text("language"),
     status: quoteStatusEnum("status").notNull().default("draft"),
     subtotal: numeric("subtotal", { precision: 12, scale: 2 }).notNull().default("0"),

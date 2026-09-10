@@ -53,7 +53,8 @@ type UploadVisibility =
   | "public_resource";
 type UploadStatus = "pending" | "processing" | "ready" | "failed";
 
-const importedPdfPrefix = "corrected-2026-09-10/";
+const importedPdfPrefixes = ["corrected-2026-09-10/", "original-2026-09-10/"];
+const isImportedKey = (key: string) => importedPdfPrefixes.some(prefix => key.startsWith(prefix));
 const importedSourceMarker = "[sourceKey=halolight:corrected-content:fr:";
 
 function importedSourceKey(description: string | null): string | null {
@@ -66,6 +67,29 @@ function importedSourceKey(description: string | null): string | null {
   );
 }
 
+export function protectImportedFileUpdate(
+  current: { fileUrl: string; description: string | null; mimeType?: string | null; fileSize?: number | null },
+  body: Record<string, unknown>,
+): { ok: true; description?: string } | { ok: false } {
+  const imported = isImportedKey(current.fileUrl.replace(/^\/api\/files\//, "")) ||
+    current.description?.includes(importedSourceMarker);
+  if (!imported) return { ok: true };
+  const sourceKey = importedSourceKey(current.description);
+  if (!sourceKey) return { ok: false };
+  for (const field of ["fileUrl", "mimeType", "fileSize"] as const) {
+    if (Object.hasOwn(body, field) && body[field] !== current[field]) return { ok: false };
+  }
+  if (!Object.hasOwn(body, "description")) return { ok: true };
+  if (body.description !== null && typeof body.description !== "string") return { ok: false };
+  const text = (body.description as string | null) ?? "";
+  if (text.includes("[sourceKey=") && importedSourceKey(text) !== sourceKey) return { ok: false };
+  // Provenance is server-owned even when an admin clears the editable description.
+  const headerPattern = /^\[sourceKey=[^\]]+\](?:\s+revision=\S+)?(?:\s+sha256=[a-f0-9]{64})?/;
+  const header = current.description!.match(headerPattern)![0];
+  const editable = text.replace(headerPattern, "").trim();
+  return { ok: true, description: editable ? `${header}\n${editable}` : header };
+}
+
 async function isImportedPdfPublished(
   upload: typeof uploads.$inferSelect,
   fileUrl: string,
@@ -73,10 +97,12 @@ async function isImportedPdfPublished(
   const sourceKey = importedSourceKey(upload.description);
   if (!sourceKey) return false;
   const [article] = await db
-    .select({ status: kbArticles.status })
+    .select({ status: kbArticles.status, sourceHash: kbArticles.sourceHash })
     .from(kbArticles)
     .where(eq(kbArticles.sourceKey, sourceKey));
   if (article?.status !== "published") return false;
+  if (fileUrl.startsWith("/api/files/original-2026-09-10/") &&
+    fileUrl !== `/api/files/original-2026-09-10/${article.sourceHash}.pdf`) return false;
   const linkedResources = await db
     .select()
     .from(resources)
@@ -137,7 +163,7 @@ router.get(
       }
       // Import publication is authoritative on each download, including copied URLs.
       const imported =
-        rawKey.startsWith(importedPdfPrefix) ||
+        isImportedKey(rawKey) ||
         uploadRecord.description?.includes(importedSourceMarker);
       if (
         user.role !== "admin" &&
@@ -150,7 +176,7 @@ router.get(
       fileName = uploadRecord.fileName;
       mimeType = uploadRecord.mimeType;
     } else {
-      if (user.role !== "admin" && rawKey.startsWith(importedPdfPrefix)) {
+      if (user.role !== "admin" && isImportedKey(rawKey)) {
         res.status(404).json({ error: "File not found" });
         return;
       }
@@ -403,6 +429,16 @@ router.put(
     if (!requireAdmin(user, res)) return;
 
     const id = String(req.params.id);
+    const [current] = await db.select().from(uploads).where(eq(uploads.id, id));
+    if (!current) {
+      res.status(404).json({ error: "Upload not found" });
+      return;
+    }
+    const protectedUpdate = protectImportedFileUpdate(current, req.body);
+    if (!protectedUpdate.ok) {
+      res.status(400).json({ error: "Imported file provenance cannot be changed" });
+      return;
+    }
     const {
       title,
       language,
@@ -443,6 +479,7 @@ router.put(
     if (relatedProduct !== undefined)
       u.relatedProduct = relatedProduct as string;
     if (description !== undefined) u.description = description as string;
+    if (protectedUpdate.description !== undefined) u.description = protectedUpdate.description;
 
     const [updated] = await db
       .update(uploads)

@@ -46,7 +46,10 @@
     "users": "Utilisateurs",
     "resources": "Ressources",
     "contract_templates": "Modèles de contrats",
-    "exports": "Exportations"
+    "exports": "Exportations",
+    "admin_pilotage": "Pilotage",
+    "admin_content_ai": "Contenus & IA",
+    "admin_data_system": "Données & système"
   },
   "dashboard": {
     "title": "Tableau de bord",
@@ -88,7 +91,8 @@
     "widget_notifications": "Notifications récentes",
     "widget_upcoming_events": "Événements à venir",
     "widget_academy_stats": "Progression académie",
-    "widget_sales_overview": "Pipeline commercial"
+    "widget_sales_overview": "Pipeline commercial",
+    "preferences_error": "Impossible de charger ou d’enregistrer les préférences du tableau de bord. Vos choix précédents ont été conservés."
   },
   "academy": {
     "title": "Académie",
@@ -337,7 +341,19 @@
     "forecast_reorder_hint": "Réapprovisionnez le papier avant votre prochain événement pour éviter la pénurie.",
     "forecast_prints_label": "impressions",
     "forecast_more_events": "événements supplémentaires",
-    "forecast_no_prints_warning": "Quantité d'impressions non spécifiée"
+    "forecast_no_prints_warning": "Quantité d'impressions non spécifiée",
+    "average_prints_event": "Nombre moyen de tirages par événement",
+    "average_events_month": "Nombre moyen d’événements par mois (facultatif)",
+    "monthly_consumption": "Tirages mensuels estimés",
+    "events_remaining": "Événements restants",
+    "months_remaining": "Mois restants",
+    "edit_usage": "Modifier les moyennes par événement",
+    "usage_save_failed": "Impossible d’enregistrer les moyennes par événement",
+    "usage_unknown": "Non estimé",
+    "stock_prints": "Stock actuel (tirages)",
+    "print_units_required": "Les estimations et le réapprovisionnement en tirages sont indisponibles pour cette unité. Les quantités existantes restent inchangées.",
+    "verified_print_quantity": "Nombre de tirages restants vérifié",
+    "confirm_print_conversion": "Je confirme qu’il s’agit de la capacité totale restante en tirages. Remplacer uniquement la quantité et l’unité de mon stock, sans modifier le catalogue partagé."
   },
   "support": {
     "title": "Support",
@@ -390,7 +406,13 @@
     "stat_in_progress": "En cours",
     "stat_resolved": "Résolu",
     "ticket_created_msg": "Ticket créé",
-    "ticket_created_desc": "Votre ticket d'assistance a été soumis."
+    "ticket_created_desc": "Votre ticket d'assistance a été soumis.",
+    "equipment_model": "Équipement/modèle (facultatif)",
+    "serial_number": "Numéro de série (facultatif)",
+    "attachments": "Pièces jointes",
+    "attachments_limit": "3 PDF ou images maximum, 10 Mio au total",
+    "attachments_invalid": "Choisissez au maximum 3 PDF ou images, pour un total de 10 Mio",
+    "create_failed": "Échec de création du ticket. Vérifiez les champs et les pièces jointes, puis réessayez."
   },
   "kb": {
     "content_language": "Langue du contenu",
@@ -509,7 +531,8 @@
     "voice_input_error": "Erreur de saisie vocale",
     "new_chat": "Nouvelle conversation",
     "send_get_started": "Envoyez un message pour commencer",
-    "escalate_dialog_desc": "Un ticket de support sera créé avec la transcription de cette conversation afin que notre équipe puisse faire un suivi. Vous pourrez le suivre dans vos Tickets de Support."
+    "escalate_dialog_desc": "Un ticket de support sera créé avec la transcription de cette conversation afin que notre équipe puisse faire un suivi. Vous pourrez le suivre dans vos Tickets de Support.",
+    "provider_unavailable": "Le service IA est indisponible car son fournisseur n’est pas correctement configuré. Un administrateur HaloLight Hub doit le configurer avant que vous puissiez recevoir des réponses générées par l’IA."
   },
   "notifications": {
     "title": "Notifications",
@@ -913,7 +936,8 @@
     "discount_label": "Remise",
     "send_quote": "Préparer l’email",
     "quote_sent": "Brouillon email préparé",
-    "quote_send_failed": "Impossible d’envoyer le devis"
+    "quote_send_failed": "Impossible d’envoyer le devis",
+    "payment_method": "Mode de paiement"
   },
   "contracts": {
     "title": "Contrats",
@@ -1031,7 +1055,19 @@
     "provider_signature_section": "Signature prestataire pour les contrats",
     "provider_signature_desc": "Si renseignée, cette signature apparaît dans les contrats générés.",
     "provider_signature_saved": "Signature enregistrée",
-    "no_content_message": "Aucun contenu de contrat pour le moment. Utilisez Modifier pour ajouter du contenu ou générez un contrat depuis un modèle."
+    "no_content_message": "Aucun contenu de contrat pour le moment. Utilisez Modifier pour ajouter du contenu ou générez un contrat depuis un modèle.",
+    "advanceAmount": "Acompte",
+    "paymentMethod": "Mode de paiement",
+    "responsibilityTerms": "Responsabilités",
+    "breakdownTerms": "Panne et assistance",
+    "postponementTerms": "Report",
+    "forceMajeureTerms": "Force majeure",
+    "privacyTerms": "Protection des données personnelles",
+    "specialConditions": "Conditions particulières",
+    "language_label": "Langue du contrat",
+    "balanceAmount": "Solde",
+    "invalid_advance": "Vérifiez l'acompte et les conditions saisis.",
+    "legal_review_required": "Validation juridique du modèle non attestée. Faites approuver les clauses avant signature."
   },
   "invoices": {
     "title": "Factures",
@@ -1147,7 +1183,8 @@
     "equipment_label": "Équipement",
     "options_label": "Options",
     "discount_label": "Remise",
-    "status_updated": "Statut mis à jour"
+    "status_updated": "Statut mis à jour",
+    "payment_method": "Mode de paiement"
   },
   "admin_analytics": {
     "title": "Tableau de bord analytique",
@@ -1249,7 +1286,18 @@
     "priority_urgent": "Urgent",
     "priority_suffix": "priorité {{level}}",
     "toast_reply_sent": "Réponse envoyée",
-    "toast_status_updated": "Statut mis à jour"
+    "toast_status_updated": "Statut mis à jour",
+    "download_failed": "Échec du téléchargement de la pièce jointe",
+    "email_history": "Historique des envois d’email",
+    "email_pending": "Email en attente",
+    "email_sending": "Envoi de l’email",
+    "email_sent": "Accepté par le fournisseur d’email",
+    "email_failed": "Échec de l’envoi de l’email",
+    "email_unknown": "Envoi à vérifier",
+    "email_disabled": "L’envoi d’email n’est pas configuré",
+    "email_retry": "Réessayer l’envoi",
+    "email_retry_failed": "Échec de la nouvelle tentative d’envoi",
+    "email_none": "Aucun envoi d’email enregistré"
   },
   "post_detail": {
     "back": "Retour",
@@ -1524,7 +1572,12 @@
     "col_avg_booking": "Réservation moy.",
     "col_tier": "Niveau",
     "no_revenue": "Aucune donnée de revenu encore",
-    "top_performers": "Meilleurs performeurs"
+    "top_performers": "Meilleurs performeurs",
+    "currency": "Devise",
+    "undated_paid": "{{count}} factures payées n’ont pas de date de paiement et sont exclues du graphique mensuel.",
+    "stat_invoiced": "Facturé",
+    "stat_unpaid": "Impayé",
+    "excluded_currency": "{{count}} factures ont une devise absente ou invalide et sont exclues des totaux financiers."
   },
   "admin_uploads": {
     "title": "Gestionnaire de fichiers",
@@ -1979,5 +2032,22 @@
     "placeholder_not_applicable": "Non applicable",
     "optional_summary": "Certaines informations optionnelles sont manquantes et seront remplacées par du texte par défaut.",
     "field_currency": "Devise"
+  },
+  "consent": {
+    "not_configured": "Les documents juridiques approuvés ne sont pas encore publiés dans le Hub. Aucune acceptation n’est enregistrée.",
+    "terms": "Conditions générales d’utilisation",
+    "privacy": "Politique de confidentialité et traitement des données personnelles",
+    "accept": "J’ai lu et j’accepte ces versions des conditions générales d’utilisation et de la politique de confidentialité.",
+    "marketing": "Communications marketing (facultatif)",
+    "analytics": "Statistiques d’utilisation facultatives",
+    "ai_improvement": "Utilisation de mes données pour améliorer l’IA (facultatif)",
+    "optional": "Choix facultatifs",
+    "save_error": "L’acceptation n’a pas été enregistrée. Consultez les documents actuels et réessayez.",
+    "save": "Enregistrer mes choix",
+    "title": "Conditions et confidentialité",
+    "proof": "Historique des acceptations (100 dernières)",
+    "no_proof": "Aucune acceptation enregistrée.",
+    "proof_choices": "Consentements facultatifs : marketing {{marketing}}, statistiques {{analytics}}, amélioration IA {{ai}}",
+    "manage": "Choix de confidentialité"
   }
 }

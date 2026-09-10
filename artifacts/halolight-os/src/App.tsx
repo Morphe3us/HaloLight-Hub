@@ -5,6 +5,7 @@ import { shadcn } from '@clerk/themes';
 import { Switch, Route, useLocation, useRouter, matchRoute, Router as WouterRouter, Redirect } from 'wouter';
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
+import { ConsentGate } from "./components/ConsentGate";
 import { apiErrorStatus } from "./lib/apiErrorMessage";
 import { ThemeProvider } from "./components/theme-provider";
 import { useTranslation } from "react-i18next";
@@ -332,6 +333,7 @@ function ProtectedRoutes() {
     <>
       <Show when="signed-in">
         <LocalUserGate>
+        <ConsentGate>
         <AppShell>
           <Switch>
             {protectedPages.map(({ path, component, admin }) =>
@@ -348,6 +350,7 @@ function ProtectedRoutes() {
             </Route>
           </Switch>
         </AppShell>
+        </ConsentGate>
         </LocalUserGate>
       </Show>
       <Show when="signed-out">

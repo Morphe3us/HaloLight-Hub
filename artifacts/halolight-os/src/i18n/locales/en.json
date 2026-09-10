@@ -46,7 +46,10 @@
     "exports": "Exports",
     "users": "Users",
     "resources": "Resources",
-    "contract_templates": "Contract Templates"
+    "contract_templates": "Contract Templates",
+    "admin_pilotage": "Management",
+    "admin_content_ai": "Content & AI",
+    "admin_data_system": "Data & System"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -88,7 +91,8 @@
     "widget_notifications": "Recent Notifications",
     "widget_upcoming_events": "Upcoming Events",
     "widget_academy_stats": "Academy Progress",
-    "widget_sales_overview": "Sales Pipeline"
+    "widget_sales_overview": "Sales Pipeline",
+    "preferences_error": "Dashboard preferences could not be loaded or saved. Your previous choices have been kept."
   },
   "academy": {
     "title": "Academy",
@@ -337,7 +341,19 @@
     "forecast_reorder_hint": "Reorder paper before your next event to avoid running short.",
     "forecast_prints_label": "prints",
     "forecast_more_events": "more events",
-    "forecast_no_prints_warning": "Print quantity not specified"
+    "forecast_no_prints_warning": "Print quantity not specified",
+    "average_prints_event": "Average prints per event",
+    "average_events_month": "Average events per month (optional)",
+    "monthly_consumption": "Estimated prints per month",
+    "events_remaining": "Events remaining",
+    "months_remaining": "Months remaining",
+    "edit_usage": "Edit event usage",
+    "usage_save_failed": "Unable to save event usage",
+    "usage_unknown": "Not estimated",
+    "stock_prints": "Current stock (prints)",
+    "print_units_required": "Estimates and print restocking are unavailable for this unit. Existing quantities are unchanged.",
+    "verified_print_quantity": "Verified remaining prints",
+    "confirm_print_conversion": "I confirm this is the total remaining print capacity. Replace only my stock quantity and unit; do not change the shared catalog."
   },
   "support": {
     "title": "Support",
@@ -390,7 +406,13 @@
     "stat_in_progress": "In Progress",
     "stat_resolved": "Resolved",
     "ticket_created_msg": "Ticket created",
-    "ticket_created_desc": "Your support ticket has been submitted."
+    "ticket_created_desc": "Your support ticket has been submitted.",
+    "equipment_model": "Equipment/model (optional)",
+    "serial_number": "Serial number (optional)",
+    "attachments": "Attachments",
+    "attachments_limit": "Up to 3 PDF or image files, 10 MiB total",
+    "attachments_invalid": "Choose up to 3 PDF or image files, up to 10 MiB total",
+    "create_failed": "Ticket creation failed. Check the fields and attachments, then try again."
   },
   "kb": {
     "content_language": "Content language",
@@ -509,7 +531,8 @@
     "voice_input_error": "Voice input error",
     "new_chat": "New chat",
     "send_get_started": "Send a message to get started",
-    "escalate_dialog_desc": "A support ticket will be created with a transcript of this conversation so our team can follow up directly. You'll be able to track it in your Support Tickets."
+    "escalate_dialog_desc": "A support ticket will be created with a transcript of this conversation so our team can follow up directly. You'll be able to track it in your Support Tickets.",
+    "provider_unavailable": "The AI service is unavailable because its provider is not configured correctly. A HaloLight Hub administrator must configure it before you can receive AI-generated answers."
   },
   "notifications": {
     "title": "Notifications",
@@ -853,7 +876,7 @@
     "not_found": "Quote not found.",
     "client_section": "Client",
     "dates_section": "Dates",
-    "valid_until_label": "Valid Until",
+    "valid_until_label": "Valid until",
     "sent_label": "Sent",
     "accepted_at_label": "Accepted",
     "summary_section": "Summary",
@@ -913,7 +936,8 @@
     "discount_label": "Discount",
     "send_quote": "Prepare email",
     "quote_sent": "Email draft prepared",
-    "quote_send_failed": "Unable to send quote"
+    "quote_send_failed": "Unable to send quote",
+    "payment_method": "Payment method"
   },
   "contracts": {
     "title": "Contracts",
@@ -1031,7 +1055,19 @@
     "provider_signature_section": "Provider Signature for Contracts",
     "provider_signature_desc": "When set, this text appears as the provider signature in generated contracts.",
     "provider_signature_saved": "Signature saved",
-    "no_content_message": "No contract body yet. Use the Edit button to add content, or generate a contract from a template."
+    "no_content_message": "No contract body yet. Use the Edit button to add content, or generate a contract from a template.",
+    "advanceAmount": "Advance payment",
+    "paymentMethod": "Payment method",
+    "responsibilityTerms": "Responsibilities",
+    "breakdownTerms": "Breakdown and assistance",
+    "postponementTerms": "Postponement",
+    "forceMajeureTerms": "Force majeure",
+    "privacyTerms": "Personal data protection",
+    "specialConditions": "Special conditions",
+    "language_label": "Contract language",
+    "balanceAmount": "Balance due",
+    "invalid_advance": "Check the advance payment and entered terms.",
+    "legal_review_required": "Legal approval of this template is not verified. Have the terms reviewed before signature."
   },
   "invoices": {
     "title": "Invoices",
@@ -1147,7 +1183,8 @@
     "equipment_label": "Equipment",
     "options_label": "Options",
     "discount_label": "Discount",
-    "status_updated": "Status updated"
+    "status_updated": "Status updated",
+    "payment_method": "Payment method"
   },
   "admin_analytics": {
     "title": "Analytics Dashboard",
@@ -1249,7 +1286,18 @@
     "priority_urgent": "Urgent",
     "priority_suffix": "{{level}} priority",
     "toast_reply_sent": "Reply sent",
-    "toast_status_updated": "Status updated"
+    "toast_status_updated": "Status updated",
+    "download_failed": "Attachment download failed",
+    "email_history": "Email delivery history",
+    "email_pending": "Email queued",
+    "email_sending": "Sending email",
+    "email_sent": "Accepted by email provider",
+    "email_failed": "Email delivery failed",
+    "email_unknown": "Delivery needs verification",
+    "email_disabled": "Email delivery is not configured",
+    "email_retry": "Retry email",
+    "email_retry_failed": "Email retry failed",
+    "email_none": "No email delivery record"
   },
   "post_detail": {
     "back": "Back",
@@ -1524,7 +1572,12 @@
     "col_avg_booking": "Avg Booking",
     "col_tier": "Tier",
     "no_revenue": "No revenue data yet",
-    "top_performers": "Top Performers"
+    "top_performers": "Top Performers",
+    "currency": "Currency",
+    "undated_paid": "{{count}} paid invoices have no payment date and are excluded from the monthly chart.",
+    "stat_invoiced": "Invoiced",
+    "stat_unpaid": "Unpaid",
+    "excluded_currency": "{{count}} invoices have a missing or invalid currency and are excluded from the financial totals."
   },
   "admin_uploads": {
     "title": "Upload Manager",
@@ -1979,5 +2032,22 @@
     "placeholder_not_applicable": "Not applicable",
     "optional_summary": "Some optional information is missing and will be replaced with default text.",
     "field_currency": "Currency"
+  },
+  "consent": {
+    "not_configured": "Approved legal documents have not been published in the Hub yet. No acceptance is being recorded.",
+    "terms": "Terms of use",
+    "privacy": "Privacy policy and personal data processing",
+    "accept": "I have read and accept these versions of the terms of use and privacy policy.",
+    "marketing": "Marketing communications (optional)",
+    "analytics": "Optional usage analytics",
+    "ai_improvement": "Use of my data to improve AI (optional)",
+    "optional": "Optional choices",
+    "save_error": "Acceptance was not saved. Review the current documents and try again.",
+    "save": "Save my choices",
+    "title": "Terms and privacy",
+    "proof": "Acceptance history (latest 100)",
+    "no_proof": "No acceptance recorded.",
+    "proof_choices": "Optional consents: marketing {{marketing}}, analytics {{analytics}}, AI improvement {{ai}}",
+    "manage": "Privacy choices"
   }
 }

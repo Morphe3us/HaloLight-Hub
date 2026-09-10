@@ -3,12 +3,14 @@ import { useTranslation } from "react-i18next";
 import {
   useGetConsumables, useGetConsumableOrders,
   useCreateConsumableStock, useRestockConsumable, useGetConsumableForecast,
+  customFetch,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
@@ -21,7 +23,7 @@ import {
   Package, AlertTriangle, ShoppingCart, Clock,
   Layers, Printer, Brush, TrendingDown, RotateCcw,
   ChevronDown, ChevronUp, Plus, Loader2, RefreshCw,
-  Calendar, Zap, CheckCircle2,
+  Calendar, Zap, CheckCircle2, Pencil,
 } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -33,12 +35,18 @@ type StockItem = {
   sku: string;
   category: string;
   unitType: string;
+  quantityUnit?: string | null;
   unitPrice: string;
   reorderThreshold: number;
   description: string | null;
   compatibleModels: string | null;
   currentQuantity: number;
   estimatedDailyUsage: string | null;
+  averagePrintsPerEvent: number | null;
+  averageEventsPerMonth: string | null;
+  monthlyConsumption: number | null;
+  eventsRemaining: number | null;
+  monthsRemaining: number | null;
   lastRestockedAt: string | null;
   lowStockAlertEnabled: boolean;
   isLow: boolean;
@@ -336,7 +344,8 @@ const EMPTY_SUPPLY = {
   unitType: "units",
   currentQuantity: "",
   reorderThreshold: "5",
-  estimatedDailyUsage: "",
+  averagePrintsPerEvent: "",
+  averageEventsPerMonth: "",
   unitPrice: "0",
   compatibleModels: "",
   description: "",
@@ -374,17 +383,18 @@ function AddSupplyModal({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const qty = parseInt(form.currentQuantity, 10);
-    if (!form.name.trim() || !form.category || isNaN(qty) || qty < 0) return;
+    const qty = Number(form.currentQuantity);
+    if (!form.name.trim() || !form.category || !Number.isInteger(qty) || qty < 0) return;
     create({
       data: {
         name: form.name.trim(),
         category: form.category,
         sku: form.sku.trim() || null,
-        unitType: form.unitType.trim() || "units",
+        unitType: form.category === "paper" ? "prints" : form.unitType.trim() || "units",
         currentQuantity: qty,
-        reorderThreshold: parseInt(form.reorderThreshold, 10) || 5,
-        estimatedDailyUsage: form.estimatedDailyUsage.trim() || null,
+        reorderThreshold: form.reorderThreshold === "" ? 5 : Number(form.reorderThreshold),
+        averagePrintsPerEvent: (form.category !== "paper" && form.unitType !== "prints") || form.averagePrintsPerEvent === "" ? null : Number(form.averagePrintsPerEvent),
+        averageEventsPerMonth: (form.category !== "paper" && form.unitType !== "prints") || form.averageEventsPerMonth === "" ? null : Number(form.averageEventsPerMonth),
         unitPrice: form.unitPrice.trim() || "0",
         compatibleModels: form.compatibleModels.trim() || null,
         description: form.description.trim() || null,
@@ -395,7 +405,7 @@ function AddSupplyModal({
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg max-h-[90dvh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{t("consumables.add_supply_title")}</DialogTitle>
         </DialogHeader>
@@ -430,12 +440,13 @@ function AddSupplyModal({
               <Input
                 id="unitType"
                 placeholder="e.g. sheets, rolls, packs"
-                value={form.unitType}
+                value={form.category === "paper" ? "prints" : form.unitType}
+                readOnly={form.category === "paper"}
                 onChange={(e) => set("unitType")(e.target.value)}
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="currentQty">{t("consumables.current_qty_label")} <span className="text-destructive">*</span></Label>
+              <Label htmlFor="currentQty">{form.category === "paper" || form.unitType === "prints" ? t("consumables.stock_prints", { defaultValue: "Current stock (prints)" }) : t("consumables.current_qty_label")} <span className="text-destructive">*</span></Label>
               <Input
                 id="currentQty"
                 type="number"
@@ -458,16 +469,22 @@ function AddSupplyModal({
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="dailyUsage">{t("consumables.daily_usage_label")}</Label>
+              <Label htmlFor="eventUsage">{t("consumables.average_prints_event", { defaultValue: "Average prints per event" })}</Label>
               <Input
-                id="dailyUsage"
+                id="eventUsage"
+                disabled={form.category !== "paper" && form.unitType !== "prints"}
                 type="number"
                 min="0"
-                step="0.1"
-                placeholder="e.g. 10"
-                value={form.estimatedDailyUsage}
-                onChange={(e) => set("estimatedDailyUsage")(e.target.value)}
+                step="1"
+                max="1000000"
+                placeholder="250"
+                value={form.averagePrintsPerEvent}
+                onChange={(e) => set("averagePrintsPerEvent")(e.target.value)}
               />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="monthlyEvents">{t("consumables.average_events_month", { defaultValue: "Average events per month (optional)" })}</Label>
+              <Input id="monthlyEvents" type="number" min="0" max="999999.99" step="0.01" placeholder="8" disabled={form.category !== "paper" && form.unitType !== "prints"} value={form.averageEventsPerMonth} onChange={e => set("averageEventsPerMonth")(e.target.value)} />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="unitPrice">{t("consumables.unit_price_label")}</Label>
@@ -522,14 +539,60 @@ function AddSupplyModal({
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
+function UsageModal({ item, onClose }: { item: StockItem; onClose: () => void }) {
+  const { t } = useTranslation();
+  const { toast } = useToast();
+  const qc = useQueryClient();
+  const [prints, setPrints] = useState(item.averagePrintsPerEvent?.toString() ?? "");
+  const [events, setEvents] = useState(item.averageEventsPerMonth ?? "");
+  const [saving, setSaving] = useState(false);
+  const needsConversion = item.unitType !== "prints";
+  const [verifiedQuantity, setVerifiedQuantity] = useState("");
+  const [confirmed, setConfirmed] = useState(false);
+  const validConversion = !needsConversion || (confirmed && verifiedQuantity !== "" && Number.isInteger(Number(verifiedQuantity)) && Number(verifiedQuantity) >= 0 && Number(verifiedQuantity) <= 2000000000);
+  return <Dialog open onOpenChange={open => { if (!open && !saving) onClose(); }}>
+    <DialogContent className="sm:max-w-md">
+      <DialogHeader><DialogTitle>{t("consumables.edit_usage", { defaultValue: "Edit event usage" })}</DialogTitle></DialogHeader>
+      <form className="space-y-4" onSubmit={async event => {
+        event.preventDefault();
+        if (!validConversion) return;
+        setSaving(true);
+        try {
+          await customFetch(`/api/consumables/stock/${item.id}/usage`, { method: "PATCH", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ averagePrintsPerEvent: prints === "" ? null : Number(prints), averageEventsPerMonth: events === "" ? null : Number(events),
+              ...(needsConversion ? { currentQuantityPrints: Number(verifiedQuantity) } : {}) }) });
+          await qc.invalidateQueries({ queryKey: ["/api/consumables"] });
+          await qc.invalidateQueries({ queryKey: ["/api/consumables/forecast"] }); onClose();
+        } catch { toast({ title: t("common.error"), description: t("consumables.usage_save_failed", { defaultValue: "Unable to save event usage" }), variant: "destructive" }); }
+        finally { setSaving(false); }
+      }}>
+        <p className="text-sm break-words">{item.name}</p>
+        {needsConversion && <div className="space-y-3 border-y py-3">
+          <p className="text-sm">{item.currentQuantity.toLocaleString()} {item.unitType}</p>
+          <div className="space-y-1.5"><Label htmlFor="verified-print-quantity">{t("consumables.verified_print_quantity", { defaultValue: "Verified remaining prints" })}</Label>
+            <Input id="verified-print-quantity" type="number" required min="0" max="2000000000" step="1" value={verifiedQuantity} onChange={event => { setVerifiedQuantity(event.target.value); setConfirmed(false); }} /></div>
+          <div className="flex items-start gap-2"><Checkbox id="confirm-print-unit" checked={confirmed} onCheckedChange={value => setConfirmed(value === true)} />
+            <Label htmlFor="confirm-print-unit" className="text-sm leading-relaxed">{t("consumables.confirm_print_conversion", { defaultValue: "I confirm this is the total remaining print capacity. Replace only my stock quantity and unit; do not change the shared catalog." })}</Label></div>
+        </div>}
+        <div className="space-y-1.5"><Label htmlFor="edit-event-prints">{t("consumables.average_prints_event", { defaultValue: "Average prints per event" })}</Label>
+          <Input id="edit-event-prints" type="number" min="0" max="1000000" step="1" value={prints} onChange={event => setPrints(event.target.value)} /></div>
+        <div className="space-y-1.5"><Label htmlFor="edit-month-events">{t("consumables.average_events_month", { defaultValue: "Average events per month (optional)" })}</Label>
+          <Input id="edit-month-events" type="number" min="0" max="999999.99" step="0.01" value={events} onChange={event => setEvents(event.target.value)} /></div>
+        <DialogFooter><Button type="button" variant="outline" disabled={saving} onClick={onClose}>{t("common.cancel")}</Button><Button type="submit" disabled={saving || !validConversion}>{t("common.save")}</Button></DialogFooter>
+      </form>
+    </DialogContent>
+  </Dialog>;
+}
+
 export default function Consumables() {
   const { t } = useTranslation();
   const [showOrders, setShowOrders] = useState(false);
   const [addSupplyOpen, setAddSupplyOpen] = useState(false);
   const [restockOpen, setRestockOpen] = useState(false);
   const [restockPreSelected, setRestockPreSelected] = useState<string | undefined>();
+  const [editingUsage, setEditingUsage] = useState<StockItem | null>(null);
 
-  const { data: stockData = [], isLoading: stockLoading } = useGetConsumables();
+  const { data: stockData = [], isLoading: stockLoading, isError: stockError, refetch: retryStock } = useGetConsumables();
   const { data: ordersData = [], isLoading: ordersLoading } = useGetConsumableOrders();
   const { data: forecastData } = useGetConsumableForecast({
     query: {
@@ -566,14 +629,16 @@ export default function Consumables() {
       {[1, 2, 3].map(i => <div key={i} className="h-28 bg-muted rounded-xl animate-pulse" />)}
     </div>
   );
+  if (stockError) return <div role="alert" className="max-w-4xl mx-auto flex items-center gap-3"><p>{t("common.error")}</p><Button variant="outline" onClick={() => void retryStock()}>{t("common.retry", { defaultValue: "Retry" })}</Button></div>;
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <AddSupplyModal open={addSupplyOpen} onClose={() => setAddSupplyOpen(false)} />
+      {editingUsage && <UsageModal key={editingUsage.id} item={editingUsage} onClose={() => setEditingUsage(null)} />}
       <RestockModal
         open={restockOpen}
         onClose={() => { setRestockOpen(false); setRestockPreSelected(undefined); }}
-        stock={stock}
+        stock={stock.filter(item => item.unitType === "prints")}
         preSelectedId={restockPreSelected}
       />
 
@@ -590,7 +655,7 @@ export default function Consumables() {
             <span className="sm:hidden">{t("consumables.orders", { defaultValue: "Orders" })}</span>
             {showOrders ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
           </Button>
-          {stock.length > 0 && (
+          {stock.some(item => item.unitType === "prints") && (
             <Button variant="outline" size="sm" className="gap-1.5" onClick={() => openRestock()}>
               <RefreshCw className="w-4 h-4" />
               {t("consumables.reorder")}
@@ -612,7 +677,8 @@ export default function Consumables() {
             <p className="text-xs text-destructive mt-0.5">{criticalItems.map(i => i.name).join(", ")} — {t("consumables.critical_desc")}</p>
           </div>
           <Button size="sm" variant="outline" className="shrink-0 gap-1.5 border-destructive/30 text-destructive hover:bg-destructive/8"
-            onClick={() => openRestock(criticalItems[0]?.id)}>
+            disabled={!criticalItems.some(item => item.unitType === "prints")}
+            onClick={() => openRestock(criticalItems.find(item => item.unitType === "prints")?.id)}>
             <RefreshCw className="w-3.5 h-3.5" />
             {t("consumables.reorder")}
           </Button>
@@ -626,7 +692,8 @@ export default function Consumables() {
             <p className="text-xs text-warning mt-0.5">{lowItems.map(i => `${i.name} (${i.currentQuantity} ${i.unitType})`).join(", ")}</p>
           </div>
           <Button size="sm" variant="outline" className="shrink-0 gap-1.5 border-warning/30 text-warning hover:bg-warning/8"
-            onClick={() => openRestock(lowItems[0]?.id)}>
+            disabled={!lowItems.some(item => item.unitType === "prints")}
+            onClick={() => openRestock(lowItems.find(item => item.unitType === "prints")?.id)}>
             <RefreshCw className="w-3.5 h-3.5" />
             {t("consumables.reorder")}
           </Button>
@@ -817,31 +884,37 @@ export default function Consumables() {
                           <div className="text-right">
                             <p className={`text-lg font-bold ${item.isCritical ? "text-destructive" : item.isLow ? "text-warning" : "text-foreground"}`}>
                               {item.currentQuantity.toLocaleString()}
-                              <span className="text-xs font-normal text-muted-foreground ml-1">{item.unitType}</span>
+                              <span className="text-xs font-normal text-muted-foreground ml-1">{item.unitType === "prints" ? t("consumables.forecast_prints_label", { defaultValue: "prints" }) : item.unitType}</span>
                             </p>
-                            {item.daysRemaining !== null && item.daysRemaining >= 0 && (
-                              <p className="text-xs text-muted-foreground">
-                                {t("consumables.days_remaining_short", { days: item.daysRemaining })}
-                              </p>
-                            )}
                           </div>
                           <Button
                             size="sm"
                             variant="ghost"
                             className="h-8 w-8 p-0 text-muted-foreground hover:text-primary hover:bg-primary/8"
                             title={t("consumables.record_purchase_title")}
+                            disabled={item.unitType !== "prints"}
                             onClick={() => openRestock(item.id)}
                           >
                             <RefreshCw className="w-3.5 h-3.5" />
                           </Button>
+                          <Button size="icon" variant="ghost" className="h-8 w-8" title={t("consumables.edit_usage", { defaultValue: "Edit event usage" })} aria-label={t("consumables.edit_usage", { defaultValue: "Edit event usage" })} onClick={() => setEditingUsage(item)}><Pencil className="h-3.5 w-3.5" /></Button>
                         </div>
                       </div>
                       <StockBar qty={item.currentQuantity} threshold={item.reorderThreshold} isCritical={item.isCritical} isLow={item.isLow} />
+                      {item.unitType !== "prints" ? <p className="text-xs text-muted-foreground">{t("consumables.print_units_required", { defaultValue: "Estimates and print restocking are unavailable for this unit. Existing quantities are unchanged." })}</p> : <dl className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
+                        {[
+                          [t("consumables.average_prints_event", { defaultValue: "Average prints per event" }), item.averagePrintsPerEvent],
+                          [t("consumables.average_events_month", { defaultValue: "Average events per month (optional)" }), item.averageEventsPerMonth == null ? null : Number(item.averageEventsPerMonth)],
+                          [t("consumables.monthly_consumption", { defaultValue: "Estimated prints per month" }), item.monthlyConsumption],
+                          [t("consumables.events_remaining", { defaultValue: "Events remaining" }), item.eventsRemaining],
+                          [t("consumables.months_remaining", { defaultValue: "Months remaining" }), item.monthsRemaining],
+                        ].map(([label, value]) => <div key={String(label)}><dt className="text-muted-foreground">{label}</dt><dd className="font-medium mt-1">{value == null ? t("consumables.usage_unknown", { defaultValue: "Not estimated" }) : typeof value === "number" ? value.toLocaleString() : value}</dd></div>)}
+                      </dl>}
                       <div className="flex justify-between text-xs text-muted-foreground">
                         <span>{t("consumables.reorder_threshold", { threshold: item.reorderThreshold, unit: item.unitType })}</span>
                         <span>{t("consumables.last_restocked", { date: fmtDate(item.lastRestockedAt) })}</span>
                       </div>
-                      {item.reorderRecommended && (
+                      {item.reorderRecommended && item.unitType === "prints" && (
                         <div className="bg-warning/8 border border-warning/30 rounded-lg p-2.5 flex items-center justify-between">
                           <p className="text-xs text-warning font-medium flex items-center gap-1.5">
                             <RotateCcw className="w-3.5 h-3.5" />

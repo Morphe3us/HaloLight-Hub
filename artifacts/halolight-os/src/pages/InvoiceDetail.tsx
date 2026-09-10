@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { paymentMethodPrint } from "@/lib/paymentMethodPrint";
 import { useRoute, Link, useLocation } from "wouter";
 import { useTranslation } from "react-i18next";
 import { useGetInvoice, useUpdateInvoiceStatus, useDeleteInvoice, useGetCurrentUser, useCreateContract } from "@workspace/api-client-react";
@@ -195,6 +196,7 @@ function PrintButton({ invoice, items, lang }: { invoice: any; items: any[]; lan
       <tr class="grand"><td>${t("invoices.total_col")}</td><td>${formatCurrency(invoice.total)}</td></tr>
     </table>
     ${invoice.notes ? `<div class="section"><div class="label">${t("invoices.notes_section")}</div><div style="font-size:13px;color:#666;white-space:pre-wrap">${invoice.notes}</div></div>` : ""}
+    ${paymentMethodPrint(t("invoices.payment_method", { defaultValue: "Payment method" }), invoice.paymentMethod)}
     ${invoice.terms ? `<div class="section"><div class="label">${t("invoices.payment_terms_section")}</div><div style="font-size:13px;color:#666;white-space:pre-wrap">${invoice.terms}</div></div>` : ""}
     </body></html>`;
     const w = window.open("", "_blank");
@@ -434,6 +436,7 @@ export default function InvoiceDetail() {
         </table>
       </div>
 
+      {invoice.paymentMethod && <p className="text-sm"><span className="font-medium">{t("invoices.payment_method", { defaultValue: "Payment method" })}: </span>{invoice.paymentMethod}</p>}
       {(invoice.notes || invoice.terms) && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {invoice.notes && <div className="rounded-xl border bg-card p-5"><h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide mb-2">{t("invoices.notes_section")}</h4><p className="text-sm text-muted-foreground whitespace-pre-wrap">{invoice.notes}</p></div>}

@@ -70,6 +70,21 @@ export async function* streamProviderResponse(
         yield { type: "error", error: `${provider} stream error` };
         return;
       }
+      const finish =
+        provider === "OpenAI"
+          ? (
+              payload.choices as Array<{ finish_reason?: string }> | undefined
+            )?.[0]?.finish_reason
+          : (payload.delta as { stop_reason?: string } | undefined)
+              ?.stop_reason;
+      if (
+        finish === "length" ||
+        finish === "max_tokens" ||
+        finish === "content_filter"
+      ) {
+        yield { type: "error", error: `${provider} response incomplete` };
+        return;
+      }
       const complete =
         provider === "OpenAI"
           ? frame.data === "[DONE]"

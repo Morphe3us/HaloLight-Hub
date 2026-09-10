@@ -1,3 +1,4 @@
+import { validPaymentMethod } from "../lib/paymentMethod.js";
 import { Router, type IRouter, type Request, type Response } from "express";
 import { eq, and, desc, sql, gte } from "drizzle-orm";
 import {
@@ -360,6 +361,7 @@ router.post(
       taxRate,
       notes,
       terms,
+      paymentMethod,
       dueDate,
       items,
     } = req.body as {
@@ -397,6 +399,7 @@ router.post(
       taxRate?: string;
       notes?: string;
       terms?: string;
+      paymentMethod?: string | null;
       dueDate?: string;
       items?: InvoiceItemInput[];
     };
@@ -422,6 +425,7 @@ router.post(
 
     // Start with form values
     let r = {
+      paymentMethod,
       clientName,
       clientEmail,
       clientPhone,
@@ -479,6 +483,7 @@ router.post(
         }
 
         r.clientName = clientName || contract.clientName;
+        r.paymentMethod = paymentMethod === undefined ? contract.paymentMethod : paymentMethod;
         r.clientEmail = clientEmail ?? contract.clientEmail ?? undefined;
         r.clientPhone = clientPhone ?? contract.clientPhone ?? undefined;
         r.clientCompany = clientCompany ?? contract.clientCompany ?? undefined;
@@ -548,6 +553,7 @@ router.post(
           equipmentDescription ?? quote.equipmentDescription ?? undefined;
         r.optionsList = optionsList ?? quote.optionsList ?? undefined;
         r.rentalPrice = rentalPrice ?? quote.rentalPrice ?? undefined;
+        if (r.paymentMethod === undefined) r.paymentMethod = quote.paymentMethod;
         r.optionsPrice = optionsPrice ?? quote.optionsPrice ?? undefined;
         r.deliveryFees = deliveryFees ?? quote.deliveryFees ?? undefined;
         r.discountAmount = discountAmount ?? quote.discountAmount ?? undefined;
@@ -625,6 +631,10 @@ router.post(
       "Invoice";
 
     const eventDateInput = parseOptionalDateInput("eventDate", r.eventDate);
+    if (!validPaymentMethod(r.paymentMethod)) {
+      res.status(400).json({ error: "Invalid paymentMethod" });
+      return;
+    }
     const dueDateInput = parseOptionalDateInput("dueDate", dueDate);
     for (const parsed of [eventDateInput, dueDateInput]) {
       if (!parsed.ok) {
@@ -675,6 +685,7 @@ router.post(
           ...totals,
           notes: notes ?? null,
           terms: terms ?? null,
+          paymentMethod: r.paymentMethod?.trim() || null,
           dueDate: dueDateInput.ok ? dueDateInput.value : null,
         })
         .returning();
@@ -789,6 +800,7 @@ router.put(
       taxRate,
       notes,
       terms,
+      paymentMethod,
       dueDate,
       items,
     } = req.body as {
@@ -826,6 +838,7 @@ router.put(
       taxRate?: string;
       notes?: string | null;
       terms?: string | null;
+      paymentMethod?: string | null;
       dueDate?: string;
       items?: InvoiceItemInput[];
     };
@@ -856,6 +869,10 @@ router.put(
     }
 
     const eventDateInput = parseOptionalDateInput("eventDate", eventDate);
+    if (!validPaymentMethod(paymentMethod)) {
+      res.status(400).json({ error: "Invalid paymentMethod" });
+      return;
+    }
     const dueDateInput = parseOptionalDateInput("dueDate", dueDate);
     for (const parsed of [eventDateInput, dueDateInput]) {
       if (!parsed.ok) {
@@ -997,6 +1014,7 @@ router.put(
           ...totals,
           notes: notes !== undefined ? notes : lockedExisting.notes,
           terms: terms !== undefined ? terms : lockedExisting.terms,
+          paymentMethod: paymentMethod === undefined ? lockedExisting.paymentMethod : paymentMethod?.trim() || null,
           dueDate:
             dueDateInput.ok && dueDateInput.value
               ? dueDateInput.value

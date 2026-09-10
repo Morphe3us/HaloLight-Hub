@@ -1,12 +1,80 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import { randomUUID } from "node:crypto";
-import { and, eq, ilike, or, sql } from "drizzle-orm";
-import { db, usersTable } from "@workspace/db";
+import { and, desc, eq, ilike, or, sql } from "drizzle-orm";
+import { db, usersTable, userDashboardPreferences, userConsentEvents } from "@workspace/db";
 import { getAuth } from "@clerk/express";
 import { requireAuth } from "../middlewares/requireAuth";
 import { getOrCreateUser } from "../lib/userSync";
+import { userConsentStatus } from "../lib/userCompliance";
+import { legalConsentEnabled, parseAcceptance, publishedLegalDocuments } from "../lib/userConsentPolicy";
+import { dashboardWidgets, parseDashboardPatch } from "../lib/userDashboardPreferences";
 
 const router: IRouter = Router();
+router.use("/users", (_req, res, next) => {
+  res.setHeader("Cache-Control", "private, no-store");
+  next();
+});
+
+router.get("/users/me/consent", requireAuth, async (req, res) => {
+  const user = await getOrCreateUser(req);
+  if (!user) { res.status(401).json({ error: "Unauthorized" }); return; }
+  if (legalConsentEnabled() && !publishedLegalDocuments()) {
+    res.status(503).json({ error: "Approved legal documents are not configured", code: "LEGAL_NOT_CONFIGURED" });
+    return;
+  }
+  res.json(await userConsentStatus(user.id));
+});
+
+router.post("/users/me/consent", requireAuth, async (req, res) => {
+  const user = await getOrCreateUser(req);
+  if (!user) { res.status(401).json({ error: "Unauthorized" }); return; }
+  const documents = publishedLegalDocuments();
+  if (!documents) {
+    res.status(503).json({ error: "Approved legal documents are not configured", code: "LEGAL_NOT_CONFIGURED" });
+    return;
+  }
+  const optional = parseAcceptance(req.body, documents);
+  if (!optional) {
+    res.status(409).json({ error: "Review and explicitly accept the current document versions", code: "CONSENT_REVIEW_REQUIRED" });
+    return;
+  }
+  // Identity, versions, document URLs and time are never accepted from the client.
+  await db.insert(userConsentEvents).values({ userId: user.id, ...documents, ...optional });
+  res.json(await userConsentStatus(user.id));
+});
+
+router.get("/users/me/dashboard-preferences", requireAuth, async (req, res) => {
+  const user = await getOrCreateUser(req);
+  if (!user) { res.status(401).json({ error: "Unauthorized" }); return; }
+  const [saved] = await db.select().from(userDashboardPreferences)
+    .where(eq(userDashboardPreferences.userId, user.id));
+  res.json({ widgets: dashboardWidgets(saved?.widgets) });
+});
+
+router.patch("/users/me/dashboard-preferences", requireAuth, async (req, res) => {
+  const user = await getOrCreateUser(req);
+  if (!user) { res.status(401).json({ error: "Unauthorized" }); return; }
+  const patch = parseDashboardPatch(req.body?.widgets);
+  if (!patch) { res.status(400).json({ error: "Invalid dashboard widgets" }); return; }
+  // Merge only changed keys in SQL so parallel updates cannot lose other widgets.
+  const [saved] = await db.insert(userDashboardPreferences).values({ userId: user.id, widgets: patch })
+    .onConflictDoUpdate({ target: userDashboardPreferences.userId, set: {
+      widgets: sql`coalesce(${userDashboardPreferences.widgets}, '{}'::jsonb) || ${JSON.stringify(patch)}::jsonb`,
+      updatedAt: new Date(),
+    } }).returning();
+  res.json({ widgets: dashboardWidgets(saved?.widgets) });
+});
+
+router.get("/users/:id/consent", requireAuth, async (req, res) => {
+  const user = await getOrCreateUser(req);
+  if (!requireAdmin(user, res)) return;
+  const userId = String(req.params.id);
+  const [target] = await db.select({ id: usersTable.id }).from(usersTable).where(eq(usersTable.id, userId));
+  if (!target) { res.status(404).json({ error: "User not found" }); return; }
+  const items = await db.select().from(userConsentEvents).where(eq(userConsentEvents.userId, userId))
+    .orderBy(desc(userConsentEvents.acceptedAt), desc(userConsentEvents.id)).limit(100);
+  res.json({ items });
+});
 
 function requireAdmin(
   user: typeof usersTable.$inferSelect | null | undefined,

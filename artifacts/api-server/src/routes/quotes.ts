@@ -1,3 +1,4 @@
+import { validPaymentMethod } from "../lib/paymentMethod.js";
 import { Router, type IRouter, type Request, type Response } from "express";
 import { eq, and, desc, sql } from "drizzle-orm";
 import { db, quotes, quoteItems, leads } from "@workspace/db";
@@ -175,6 +176,7 @@ router.post(
       taxRate = "0",
       notes,
       terms,
+      paymentMethod,
       validUntil,
       items = [],
     } = req.body as {
@@ -210,6 +212,7 @@ router.post(
       taxRate?: string;
       notes?: string;
       terms?: string;
+      paymentMethod?: string | null;
       validUntil?: string;
       items?: QuoteItemInput[];
     };
@@ -282,6 +285,10 @@ router.post(
       "eventDate",
       resolvedEventDate,
     );
+    if (!validPaymentMethod(paymentMethod)) {
+      res.status(400).json({ error: "Invalid paymentMethod" });
+      return;
+    }
     const validUntilInput = parseOptionalDateInput("validUntil", validUntil);
     for (const parsed of [eventDateInput, validUntilInput]) {
       if (!parsed.ok) {
@@ -330,6 +337,7 @@ router.post(
           ...totals,
           notes: notes ?? null,
           terms: terms ?? null,
+          paymentMethod: paymentMethod?.trim() || null,
           validUntil: validUntilInput.ok ? validUntilInput.value : null,
         })
         .returning();
@@ -442,6 +450,7 @@ router.put(
       taxRate,
       notes,
       terms,
+      paymentMethod,
       validUntil,
       items,
     } = req.body as {
@@ -477,6 +486,7 @@ router.put(
       taxRate?: string;
       notes?: string | null;
       terms?: string | null;
+      paymentMethod?: string | null;
       validUntil?: string;
       items?: QuoteItemInput[];
     } & ServiceFields;
@@ -490,6 +500,10 @@ router.put(
     }
 
     const eventDateInput = parseOptionalDateInput("eventDate", eventDate);
+    if (!validPaymentMethod(paymentMethod)) {
+      res.status(400).json({ error: "Invalid paymentMethod" });
+      return;
+    }
     const validUntilInput = parseOptionalDateInput("validUntil", validUntil);
     for (const parsed of [eventDateInput, validUntilInput]) {
       if (!parsed.ok) {
@@ -655,6 +669,7 @@ router.put(
           ...totals,
           notes: notes !== undefined ? notes : lockedExisting.notes,
           terms: terms !== undefined ? terms : lockedExisting.terms,
+          paymentMethod: paymentMethod === undefined ? lockedExisting.paymentMethod : paymentMethod?.trim() || null,
           validUntil:
             validUntilInput.ok && validUntilInput.value
               ? validUntilInput.value

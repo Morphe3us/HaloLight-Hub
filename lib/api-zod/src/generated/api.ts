@@ -1151,6 +1151,7 @@ export const GetLeadResponse = zod.object({
   "currency": zod.string().nullish(),
   "language": zod.string().nullish(),
   "status": zod.enum(['draft', 'sent', 'accepted', 'declined', 'expired']),
+  "paymentMethod": zod.string().nullish(),
   "subtotal": zod.string(),
   "taxRate": zod.string(),
   "taxAmount": zod.string(),
@@ -1191,6 +1192,14 @@ export const GetLeadResponse = zod.object({
   "discountAmount": zod.string().nullish(),
   "taxRate": zod.string().nullish(),
   "depositAmount": zod.string().nullish(),
+  "advanceAmount": zod.string().nullish(),
+  "paymentMethod": zod.string().nullish(),
+  "responsibilityTerms": zod.string().nullish(),
+  "breakdownTerms": zod.string().nullish(),
+  "postponementTerms": zod.string().nullish(),
+  "forceMajeureTerms": zod.string().nullish(),
+  "privacyTerms": zod.string().nullish(),
+  "specialConditions": zod.string().nullish(),
   "depositMethod": zod.string().nullish(),
   "depositConditions": zod.string().nullish(),
   "depositReturn": zod.string().nullish(),
@@ -1381,6 +1390,7 @@ export const GetLeadPipelineResponse = zod.object({
   "currency": zod.string().nullish(),
   "language": zod.string().nullish(),
   "status": zod.enum(['draft', 'sent', 'accepted', 'declined', 'expired']),
+  "paymentMethod": zod.string().nullish(),
   "subtotal": zod.string(),
   "taxRate": zod.string(),
   "taxAmount": zod.string(),
@@ -1421,6 +1431,14 @@ export const GetLeadPipelineResponse = zod.object({
   "discountAmount": zod.string().nullish(),
   "taxRate": zod.string().nullish(),
   "depositAmount": zod.string().nullish(),
+  "advanceAmount": zod.string().nullish(),
+  "paymentMethod": zod.string().nullish(),
+  "responsibilityTerms": zod.string().nullish(),
+  "breakdownTerms": zod.string().nullish(),
+  "postponementTerms": zod.string().nullish(),
+  "forceMajeureTerms": zod.string().nullish(),
+  "privacyTerms": zod.string().nullish(),
+  "specialConditions": zod.string().nullish(),
   "depositMethod": zod.string().nullish(),
   "depositConditions": zod.string().nullish(),
   "depositReturn": zod.string().nullish(),
@@ -1573,6 +1591,7 @@ export const ListQuotesResponse = zod.object({
   "currency": zod.string().nullish(),
   "language": zod.string().nullish(),
   "status": zod.enum(['draft', 'sent', 'accepted', 'declined', 'expired']),
+  "paymentMethod": zod.string().nullish(),
   "subtotal": zod.string(),
   "taxRate": zod.string(),
   "taxAmount": zod.string(),
@@ -1592,7 +1611,12 @@ export const ListQuotesResponse = zod.object({
 /**
  * @summary Create a new quote
  */
+export const createQuoteBodyPaymentMethodMax = 200;
+
+
+
 export const CreateQuoteBody = zod.object({
+  "paymentMethod": zod.string().max(createQuoteBodyPaymentMethodMax).nullish(),
   "leadId": zod.string().optional(),
   "title": zod.string(),
   "clientName": zod.string(),
@@ -1676,6 +1700,7 @@ export const GetQuoteResponse = zod.object({
   "currency": zod.string().nullish(),
   "language": zod.string().nullish(),
   "status": zod.enum(['draft', 'sent', 'accepted', 'declined', 'expired']),
+  "paymentMethod": zod.string().nullish(),
   "subtotal": zod.string(),
   "taxRate": zod.string(),
   "taxAmount": zod.string(),
@@ -1707,7 +1732,12 @@ export const UpdateQuoteParams = zod.object({
   "id": zod.coerce.string()
 })
 
+export const updateQuoteBodyPaymentMethodMax = 200;
+
+
+
 export const UpdateQuoteBody = zod.object({
+  "paymentMethod": zod.string().max(updateQuoteBodyPaymentMethodMax).nullish(),
   "leadId": zod.string().optional(),
   "title": zod.string(),
   "clientName": zod.string(),
@@ -1783,6 +1813,7 @@ export const UpdateQuoteResponse = zod.object({
   "currency": zod.string().nullish(),
   "language": zod.string().nullish(),
   "status": zod.enum(['draft', 'sent', 'accepted', 'declined', 'expired']),
+  "paymentMethod": zod.string().nullish(),
   "subtotal": zod.string(),
   "taxRate": zod.string(),
   "taxAmount": zod.string(),
@@ -1860,6 +1891,7 @@ export const UpdateQuoteStatusResponse = zod.object({
   "currency": zod.string().nullish(),
   "language": zod.string().nullish(),
   "status": zod.enum(['draft', 'sent', 'accepted', 'declined', 'expired']),
+  "paymentMethod": zod.string().nullish(),
   "subtotal": zod.string(),
   "taxRate": zod.string(),
   "taxAmount": zod.string(),
@@ -1926,6 +1958,7 @@ export const SendQuoteResponse = zod.object({
   "currency": zod.string().nullish(),
   "language": zod.string().nullish(),
   "status": zod.enum(['draft', 'sent', 'accepted', 'declined', 'expired']),
+  "paymentMethod": zod.string().nullish(),
   "subtotal": zod.string(),
   "taxRate": zod.string(),
   "taxAmount": zod.string(),
@@ -1995,6 +2028,14 @@ export const ListContractsResponse = zod.object({
   "discountAmount": zod.string().nullish(),
   "taxRate": zod.string().nullish(),
   "depositAmount": zod.string().nullish(),
+  "advanceAmount": zod.string().nullish(),
+  "paymentMethod": zod.string().nullish(),
+  "responsibilityTerms": zod.string().nullish(),
+  "breakdownTerms": zod.string().nullish(),
+  "postponementTerms": zod.string().nullish(),
+  "forceMajeureTerms": zod.string().nullish(),
+  "privacyTerms": zod.string().nullish(),
+  "specialConditions": zod.string().nullish(),
   "depositMethod": zod.string().nullish(),
   "depositConditions": zod.string().nullish(),
   "depositReturn": zod.string().nullish(),
@@ -2055,6 +2096,14 @@ export const CreateContractBody = zod.object({
   "discountAmount": zod.string().optional(),
   "taxRate": zod.string().optional(),
   "depositAmount": zod.string().optional(),
+  "advanceAmount": zod.string().optional(),
+  "paymentMethod": zod.string().optional(),
+  "responsibilityTerms": zod.string().optional(),
+  "breakdownTerms": zod.string().optional(),
+  "postponementTerms": zod.string().optional(),
+  "forceMajeureTerms": zod.string().optional(),
+  "privacyTerms": zod.string().optional(),
+  "specialConditions": zod.string().optional(),
   "depositMethod": zod.string().optional(),
   "depositConditions": zod.string().optional(),
   "depositReturn": zod.string().optional(),
@@ -2115,6 +2164,14 @@ export const GetContractResponse = zod.object({
   "discountAmount": zod.string().nullish(),
   "taxRate": zod.string().nullish(),
   "depositAmount": zod.string().nullish(),
+  "advanceAmount": zod.string().nullish(),
+  "paymentMethod": zod.string().nullish(),
+  "responsibilityTerms": zod.string().nullish(),
+  "breakdownTerms": zod.string().nullish(),
+  "postponementTerms": zod.string().nullish(),
+  "forceMajeureTerms": zod.string().nullish(),
+  "privacyTerms": zod.string().nullish(),
+  "specialConditions": zod.string().nullish(),
   "depositMethod": zod.string().nullish(),
   "depositConditions": zod.string().nullish(),
   "depositReturn": zod.string().nullish(),
@@ -2190,6 +2247,14 @@ export const UpdateContractResponse = zod.object({
   "discountAmount": zod.string().nullish(),
   "taxRate": zod.string().nullish(),
   "depositAmount": zod.string().nullish(),
+  "advanceAmount": zod.string().nullish(),
+  "paymentMethod": zod.string().nullish(),
+  "responsibilityTerms": zod.string().nullish(),
+  "breakdownTerms": zod.string().nullish(),
+  "postponementTerms": zod.string().nullish(),
+  "forceMajeureTerms": zod.string().nullish(),
+  "privacyTerms": zod.string().nullish(),
+  "specialConditions": zod.string().nullish(),
   "depositMethod": zod.string().nullish(),
   "depositConditions": zod.string().nullish(),
   "depositReturn": zod.string().nullish(),
@@ -2266,6 +2331,14 @@ export const UpdateContractStatusResponse = zod.object({
   "discountAmount": zod.string().nullish(),
   "taxRate": zod.string().nullish(),
   "depositAmount": zod.string().nullish(),
+  "advanceAmount": zod.string().nullish(),
+  "paymentMethod": zod.string().nullish(),
+  "responsibilityTerms": zod.string().nullish(),
+  "breakdownTerms": zod.string().nullish(),
+  "postponementTerms": zod.string().nullish(),
+  "forceMajeureTerms": zod.string().nullish(),
+  "privacyTerms": zod.string().nullish(),
+  "specialConditions": zod.string().nullish(),
   "depositMethod": zod.string().nullish(),
   "depositConditions": zod.string().nullish(),
   "depositReturn": zod.string().nullish(),
@@ -2465,7 +2538,12 @@ export const ListInvoicesResponse = zod.object({
 /**
  * @summary Create a new invoice
  */
+export const createInvoiceBodyPaymentMethodMax = 200;
+
+
+
 export const CreateInvoiceBody = zod.object({
+  "paymentMethod": zod.string().max(createInvoiceBodyPaymentMethodMax).nullish(),
   "leadId": zod.string().optional(),
   "quoteId": zod.string().optional(),
   "contractId": zod.string().optional(),
@@ -2587,7 +2665,12 @@ export const UpdateInvoiceParams = zod.object({
   "id": zod.coerce.string()
 })
 
+export const updateInvoiceBodyPaymentMethodMax = 200;
+
+
+
 export const UpdateInvoiceBody = zod.object({
+  "paymentMethod": zod.string().max(updateInvoiceBodyPaymentMethodMax).nullish(),
   "leadId": zod.string().optional(),
   "quoteId": zod.string().optional(),
   "contractId": zod.string().optional(),
@@ -2838,7 +2921,16 @@ export const ListSupportTicketsResponse = zod.object({
   "resolvedAt": zod.coerce.date().nullish(),
   "closedAt": zod.coerce.date().nullish(),
   "createdAt": zod.coerce.date().optional(),
-  "updatedAt": zod.coerce.date().optional()
+  "updatedAt": zod.coerce.date().optional(),
+  "equipmentModel": zod.string().nullish(),
+  "serialNumber": zod.string().nullish(),
+  "attachments": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "fileName": zod.string(),
+  "mimeType": zod.string(),
+  "size": zod.number(),
+  "downloadUrl": zod.string()
+})).optional()
 })).optional(),
   "total": zod.number().optional()
 })
@@ -2847,11 +2939,30 @@ export const ListSupportTicketsResponse = zod.object({
 /**
  * @summary Create a support ticket
  */
+export const createSupportTicketBodyEquipmentModelMax = 200;
+
+export const createSupportTicketBodySerialNumberMax = 200;
+
+export const createSupportTicketBodyAttachmentsItemFileNameMax = 180;
+
+export const createSupportTicketBodyAttachmentsItemDataMax = 13981016;
+
+export const createSupportTicketBodyAttachmentsMax = 3;
+
+
+
 export const CreateSupportTicketBody = zod.object({
   "title": zod.string(),
   "description": zod.string(),
   "priority": zod.enum(['low', 'medium', 'high', 'urgent']).optional(),
-  "category": zod.enum(['billing', 'technical', 'general', 'feature_request', 'bug_report']).optional()
+  "category": zod.enum(['billing', 'technical', 'general', 'feature_request', 'bug_report']).optional(),
+  "equipmentModel": zod.string().max(createSupportTicketBodyEquipmentModelMax).nullish(),
+  "serialNumber": zod.string().max(createSupportTicketBodySerialNumberMax).nullish(),
+  "attachments": zod.array(zod.object({
+  "fileName": zod.string().min(1).max(createSupportTicketBodyAttachmentsItemFileNameMax),
+  "mimeType": zod.enum(['application/pdf', 'image/png', 'image/jpeg', 'image/webp']),
+  "data": zod.string().max(createSupportTicketBodyAttachmentsItemDataMax)
+})).max(createSupportTicketBodyAttachmentsMax).optional().describe('Creation only. At most 10 MiB decoded total; updates reject this field.')
 })
 
 
@@ -2884,6 +2995,27 @@ export const GetSupportTicketResponse = zod.object({
   "isStaff": zod.number().optional(),
   "createdAt": zod.coerce.date().optional(),
   "updatedAt": zod.coerce.date().optional()
+})).optional(),
+  "equipmentModel": zod.string().nullish(),
+  "serialNumber": zod.string().nullish(),
+  "attachments": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "fileName": zod.string(),
+  "mimeType": zod.string(),
+  "size": zod.number(),
+  "downloadUrl": zod.string()
+})).optional(),
+  "emailDelivery": zod.union([zod.object({
+  "status": zod.enum(['pending', 'sending', 'sent', 'failed', 'unknown', 'disabled']),
+  "attempts": zod.number(),
+  "sentAt": zod.coerce.date().nullable()
+}),zod.null()]).optional(),
+  "deliveryHistory": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "status": zod.enum(['pending', 'sending', 'sent', 'failed', 'unknown', 'disabled']),
+  "attempt": zod.number(),
+  "detail": zod.string().nullable(),
+  "createdAt": zod.coerce.date()
 })).optional()
 })
 
@@ -2895,11 +3027,30 @@ export const UpdateSupportTicketParams = zod.object({
   "id": zod.coerce.string()
 })
 
+export const updateSupportTicketBodyEquipmentModelMax = 200;
+
+export const updateSupportTicketBodySerialNumberMax = 200;
+
+export const updateSupportTicketBodyAttachmentsItemFileNameMax = 180;
+
+export const updateSupportTicketBodyAttachmentsItemDataMax = 13981016;
+
+export const updateSupportTicketBodyAttachmentsMax = 3;
+
+
+
 export const UpdateSupportTicketBody = zod.object({
   "title": zod.string(),
   "description": zod.string(),
   "priority": zod.enum(['low', 'medium', 'high', 'urgent']).optional(),
-  "category": zod.enum(['billing', 'technical', 'general', 'feature_request', 'bug_report']).optional()
+  "category": zod.enum(['billing', 'technical', 'general', 'feature_request', 'bug_report']).optional(),
+  "equipmentModel": zod.string().max(updateSupportTicketBodyEquipmentModelMax).nullish(),
+  "serialNumber": zod.string().max(updateSupportTicketBodySerialNumberMax).nullish(),
+  "attachments": zod.array(zod.object({
+  "fileName": zod.string().min(1).max(updateSupportTicketBodyAttachmentsItemFileNameMax),
+  "mimeType": zod.enum(['application/pdf', 'image/png', 'image/jpeg', 'image/webp']),
+  "data": zod.string().max(updateSupportTicketBodyAttachmentsItemDataMax)
+})).max(updateSupportTicketBodyAttachmentsMax).optional().describe('Creation only. At most 10 MiB decoded total; updates reject this field.')
 })
 
 export const UpdateSupportTicketResponse = zod.object({
@@ -2915,7 +3066,16 @@ export const UpdateSupportTicketResponse = zod.object({
   "resolvedAt": zod.coerce.date().nullish(),
   "closedAt": zod.coerce.date().nullish(),
   "createdAt": zod.coerce.date().optional(),
-  "updatedAt": zod.coerce.date().optional()
+  "updatedAt": zod.coerce.date().optional(),
+  "equipmentModel": zod.string().nullish(),
+  "serialNumber": zod.string().nullish(),
+  "attachments": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "fileName": zod.string(),
+  "mimeType": zod.string(),
+  "size": zod.number(),
+  "downloadUrl": zod.string()
+})).optional()
 })
 
 
@@ -2956,7 +3116,16 @@ export const UpdateTicketStatusResponse = zod.object({
   "resolvedAt": zod.coerce.date().nullish(),
   "closedAt": zod.coerce.date().nullish(),
   "createdAt": zod.coerce.date().optional(),
-  "updatedAt": zod.coerce.date().optional()
+  "updatedAt": zod.coerce.date().optional(),
+  "equipmentModel": zod.string().nullish(),
+  "serialNumber": zod.string().nullish(),
+  "attachments": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "fileName": zod.string(),
+  "mimeType": zod.string(),
+  "size": zod.number(),
+  "downloadUrl": zod.string()
+})).optional()
 })
 
 
@@ -3776,6 +3945,7 @@ export const GetConsumableCatalogResponse = zod.array(GetConsumableCatalogRespon
  * @summary Client's consumable stock with alerts
  */
 export const GetConsumablesResponseItem = zod.object({
+  "quantityUnit": zod.string().nullish(),
   "id": zod.string().optional(),
   "catalogItemId": zod.string().optional(),
   "currentQuantity": zod.number().optional(),
@@ -3793,7 +3963,12 @@ export const GetConsumablesResponseItem = zod.object({
   "isLow": zod.boolean().optional(),
   "isCritical": zod.boolean().optional(),
   "daysRemaining": zod.number().nullish(),
-  "reorderRecommended": zod.boolean().optional()
+  "reorderRecommended": zod.boolean().optional(),
+  "averagePrintsPerEvent": zod.number().nullish(),
+  "averageEventsPerMonth": zod.string().nullish(),
+  "monthlyConsumption": zod.number().nullish(),
+  "eventsRemaining": zod.number().nullish(),
+  "monthsRemaining": zod.number().nullish()
 })
 export const GetConsumablesResponse = zod.array(GetConsumablesResponseItem)
 
@@ -3872,6 +4047,7 @@ export const RestockConsumableBody = zod.object({
 })
 
 export const RestockConsumableResponse = zod.object({
+  "quantityUnit": zod.string().nullish(),
   "id": zod.string().optional(),
   "catalogItemId": zod.string().optional(),
   "currentQuantity": zod.number().optional(),
@@ -3889,13 +4065,27 @@ export const RestockConsumableResponse = zod.object({
   "isLow": zod.boolean().optional(),
   "isCritical": zod.boolean().optional(),
   "daysRemaining": zod.number().nullish(),
-  "reorderRecommended": zod.boolean().optional()
+  "reorderRecommended": zod.boolean().optional(),
+  "averagePrintsPerEvent": zod.number().nullish(),
+  "averageEventsPerMonth": zod.string().nullish(),
+  "monthlyConsumption": zod.number().nullish(),
+  "eventsRemaining": zod.number().nullish(),
+  "monthsRemaining": zod.number().nullish()
 })
 
 
 /**
  * @summary Add a new supply item to stock
  */
+export const createConsumableStockBodyAveragePrintsPerEventMin = 0;
+export const createConsumableStockBodyAveragePrintsPerEventMax = 1000000;
+
+export const createConsumableStockBodyAverageEventsPerMonthMin = 0;
+export const createConsumableStockBodyAverageEventsPerMonthMax = 999999.99;
+export const createConsumableStockBodyAverageEventsPerMonthMultipleOf = 0.01;
+
+
+
 export const CreateConsumableStockBody = zod.object({
   "name": zod.string(),
   "category": zod.string(),
@@ -3907,7 +4097,9 @@ export const CreateConsumableStockBody = zod.object({
   "description": zod.string().nullish(),
   "currentQuantity": zod.number(),
   "estimatedDailyUsage": zod.string().nullish(),
-  "lowStockAlertEnabled": zod.boolean().nullish()
+  "lowStockAlertEnabled": zod.boolean().nullish(),
+  "averagePrintsPerEvent": zod.number().min(createConsumableStockBodyAveragePrintsPerEventMin).max(createConsumableStockBodyAveragePrintsPerEventMax).nullish(),
+  "averageEventsPerMonth": zod.number().min(createConsumableStockBodyAverageEventsPerMonthMin).max(createConsumableStockBodyAverageEventsPerMonthMax).multipleOf(createConsumableStockBodyAverageEventsPerMonthMultipleOf).nullish()
 })
 
 
@@ -3915,6 +4107,7 @@ export const CreateConsumableStockBody = zod.object({
  * @summary All client consumable stock with alerts
  */
 export const GetAdminConsumablesResponseItem = zod.object({
+  "quantityUnit": zod.string().nullish(),
   "id": zod.string().optional(),
   "catalogItemId": zod.string().optional(),
   "currentQuantity": zod.number().optional(),
@@ -3932,7 +4125,12 @@ export const GetAdminConsumablesResponseItem = zod.object({
   "isLow": zod.boolean().optional(),
   "isCritical": zod.boolean().optional(),
   "daysRemaining": zod.number().nullish(),
-  "reorderRecommended": zod.boolean().optional()
+  "reorderRecommended": zod.boolean().optional(),
+  "averagePrintsPerEvent": zod.number().nullish(),
+  "averageEventsPerMonth": zod.string().nullish(),
+  "monthlyConsumption": zod.number().nullish(),
+  "eventsRemaining": zod.number().nullish(),
+  "monthsRemaining": zod.number().nullish()
 }).and(zod.object({
   "userId": zod.string().optional(),
   "ownerName": zod.string().optional(),
@@ -3945,17 +4143,29 @@ export const GetAdminConsumablesResponse = zod.array(GetAdminConsumablesResponse
 /**
  * @summary Revenue Intelligence dashboard data
  */
+export const getAdminRevenueQueryCurrencyRegExp = new RegExp('^[A-Z]{3}$');
+
+
+export const GetAdminRevenueQueryParams = zod.object({
+  "currency": zod.coerce.string().regex(getAdminRevenueQueryCurrencyRegExp).optional()
+})
+
 export const GetAdminRevenueResponse = zod.object({
+  "currency": zod.string().optional(),
+  "availableCurrencies": zod.array(zod.string()).optional(),
+  "undatedPaidInvoices": zod.number().optional(),
+  "excludedCurrencyInvoices": zod.number().optional(),
   "overview": zod.object({
   "totalRevenue": zod.number().optional(),
+  "totalInvoiced": zod.number().optional(),
+  "totalUnpaid": zod.number().optional(),
   "pipelineRevenue": zod.number().optional(),
   "outstandingRevenue": zod.number().optional(),
   "overdueRevenue": zod.number().optional(),
   "paidInvoices": zod.number().optional(),
   "avgBookingValue": zod.number().optional(),
-  "quoteAcceptanceRate": zod.number().optional(),
-  "revenueGrowth": zod.number().optional(),
-  "lifetimeEstimate": zod.number().optional(),
+  "quoteAcceptanceRate": zod.number().nullish(),
+  "revenueGrowth": zod.number().nullish(),
   "totalInvoices": zod.number().optional()
 }).optional(),
   "monthly": zod.array(zod.object({
@@ -3972,6 +4182,7 @@ export const GetAdminRevenueResponse = zod.object({
   "totalRevenue": zod.number().optional(),
   "invoiceCount": zod.number().optional(),
   "avgBooking": zod.number().optional(),
+  "lastInvoice": zod.coerce.date().nullish(),
   "score": zod.number().nullish(),
   "tier": zod.string().nullish()
 })).optional(),
@@ -4002,7 +4213,8 @@ export const GetAdminRevenueResponse = zod.object({
 
 }).passthrough().optional(),
   "totalQuotes": zod.number().optional(),
-  "acceptanceRate": zod.number().optional(),
+  "issuedQuotes": zod.number().optional(),
+  "acceptanceRate": zod.number().nullish(),
   "conversionValue": zod.number().optional()
 }).optional(),
   "topPerformers": zod.array(zod.object({
@@ -4013,6 +4225,7 @@ export const GetAdminRevenueResponse = zod.object({
   "totalRevenue": zod.number().optional(),
   "invoiceCount": zod.number().optional(),
   "avgBooking": zod.number().optional(),
+  "lastInvoice": zod.coerce.date().nullish(),
   "score": zod.number().nullish(),
   "tier": zod.string().nullish()
 })).optional()
@@ -5181,6 +5394,212 @@ export const GetExportHistoryResponse = zod.object({
   "createdAt": zod.coerce.date()
 })),
   "total": zod.number()
+})
+
+
+/**
+ * @summary Current user's configured legal documents and acceptance
+ */
+export const GetUserConsentResponse = zod.object({
+  "configured": zod.boolean(),
+  "required": zod.boolean(),
+  "documents": zod.union([zod.object({
+  "termsVersion": zod.string(),
+  "privacyVersion": zod.string(),
+  "termsUrl": zod.string().url(),
+  "privacyUrl": zod.string().url()
+}),zod.null()]),
+  "acceptance": zod.union([zod.object({
+  "termsVersion": zod.string(),
+  "privacyVersion": zod.string(),
+  "termsUrl": zod.string().url(),
+  "privacyUrl": zod.string().url()
+}).and(zod.object({
+  "id": zod.string().uuid(),
+  "userId": zod.string(),
+  "acceptedAt": zod.coerce.date(),
+  "marketing": zod.boolean(),
+  "analytics": zod.boolean(),
+  "aiImprovement": zod.boolean()
+})),zod.null()])
+})
+
+
+/**
+ * @summary Record explicit acceptance of current versions and independent optional choices
+ */
+export const acceptUserConsentBodyMarketingDefault = false;
+export const acceptUserConsentBodyAnalyticsDefault = false;
+export const acceptUserConsentBodyAiImprovementDefault = false;
+
+export const AcceptUserConsentBody = zod.object({
+  "termsUrl": zod.string().url(),
+  "privacyUrl": zod.string().url(),
+  "accepted": zod.literal(true),
+  "termsVersion": zod.string(),
+  "privacyVersion": zod.string(),
+  "marketing": zod.boolean().default(acceptUserConsentBodyMarketingDefault),
+  "analytics": zod.boolean().default(acceptUserConsentBodyAnalyticsDefault),
+  "aiImprovement": zod.boolean().default(acceptUserConsentBodyAiImprovementDefault)
+})
+
+export const AcceptUserConsentResponse = zod.object({
+  "configured": zod.boolean(),
+  "required": zod.boolean(),
+  "documents": zod.union([zod.object({
+  "termsVersion": zod.string(),
+  "privacyVersion": zod.string(),
+  "termsUrl": zod.string().url(),
+  "privacyUrl": zod.string().url()
+}),zod.null()]),
+  "acceptance": zod.union([zod.object({
+  "termsVersion": zod.string(),
+  "privacyVersion": zod.string(),
+  "termsUrl": zod.string().url(),
+  "privacyUrl": zod.string().url()
+}).and(zod.object({
+  "id": zod.string().uuid(),
+  "userId": zod.string(),
+  "acceptedAt": zod.coerce.date(),
+  "marketing": zod.boolean(),
+  "analytics": zod.boolean(),
+  "aiImprovement": zod.boolean()
+})),zod.null()])
+})
+
+
+/**
+ * @summary Read only the authenticated user's dashboard preferences
+ */
+export const GetDashboardPreferencesResponse = zod.object({
+  "widgets": zod.object({
+  "next_lesson": zod.boolean().optional(),
+  "onboarding": zod.boolean().optional(),
+  "notifications": zod.boolean().optional(),
+  "upcoming_events": zod.boolean().optional(),
+  "academy_stats": zod.boolean().optional(),
+  "sales_overview": zod.boolean().optional()
+}).and(zod.unknown())
+})
+
+
+/**
+ * @summary Atomically merge changed widget choices for the authenticated user
+ */
+export const UpdateDashboardPreferencesBody = zod.object({
+  "widgets": zod.object({
+  "next_lesson": zod.boolean().optional(),
+  "onboarding": zod.boolean().optional(),
+  "notifications": zod.boolean().optional(),
+  "upcoming_events": zod.boolean().optional(),
+  "academy_stats": zod.boolean().optional(),
+  "sales_overview": zod.boolean().optional()
+})
+})
+
+export const UpdateDashboardPreferencesResponse = zod.object({
+  "widgets": zod.object({
+  "next_lesson": zod.boolean().optional(),
+  "onboarding": zod.boolean().optional(),
+  "notifications": zod.boolean().optional(),
+  "upcoming_events": zod.boolean().optional(),
+  "academy_stats": zod.boolean().optional(),
+  "sales_overview": zod.boolean().optional()
+}).and(zod.unknown())
+})
+
+
+/**
+ * @summary Admin-only acceptance evidence, newest 100 events
+ */
+export const GetUserConsentHistoryParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const GetUserConsentHistoryResponse = zod.object({
+  "items": zod.array(zod.object({
+  "termsVersion": zod.string(),
+  "privacyVersion": zod.string(),
+  "termsUrl": zod.string().url(),
+  "privacyUrl": zod.string().url()
+}).and(zod.object({
+  "id": zod.string().uuid(),
+  "userId": zod.string(),
+  "acceptedAt": zod.coerce.date(),
+  "marketing": zod.boolean(),
+  "analytics": zod.boolean(),
+  "aiImprovement": zod.boolean()
+})))
+})
+
+
+/**
+ * Authenticated ticket owner or administrator only. Always attachment disposition and private no-store.
+ */
+export const DownloadSupportTicketAttachmentParams = zod.object({
+  "id": zod.coerce.string().uuid(),
+  "attachmentId": zod.coerce.string().uuid()
+})
+
+
+/**
+ * Administrator only. Idempotent retry subject to lease, maximum attempts and provider deduplication window. Inspect returned delivery status; HTTP 200 does not assert delivery.
+ */
+export const RetrySupportTicketEmailParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+export const RetrySupportTicketEmailResponse = zod.object({
+  "emailDelivery": zod.union([zod.object({
+  "status": zod.enum(['pending', 'sending', 'sent', 'failed', 'unknown', 'disabled']),
+  "attempts": zod.number(),
+  "sentAt": zod.coerce.date().nullable()
+}),zod.null()]),
+  "deliveryHistory": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "status": zod.enum(['pending', 'sending', 'sent', 'failed', 'unknown', 'disabled']),
+  "attempt": zod.number(),
+  "detail": zod.string().nullable(),
+  "createdAt": zod.coerce.date()
+}))
+})
+
+
+/**
+ * Stock owner only, including administrators. Null clears an estimate. Legacy daily usage is never converted into event usage. Zero consumption yields no finite duration estimate.
+ */
+export const UpdateConsumableUsageParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+export const updateConsumableUsageBodyCurrentQuantityPrintsMin = 0;
+export const updateConsumableUsageBodyCurrentQuantityPrintsMax = 2000000000;
+
+export const updateConsumableUsageBodyAveragePrintsPerEventMin = 0;
+export const updateConsumableUsageBodyAveragePrintsPerEventMax = 1000000;
+
+export const updateConsumableUsageBodyAverageEventsPerMonthMin = 0;
+export const updateConsumableUsageBodyAverageEventsPerMonthMax = 999999.99;
+export const updateConsumableUsageBodyAverageEventsPerMonthMultipleOf = 0.01;
+
+
+
+export const UpdateConsumableUsageBody = zod.object({
+  "currentQuantityPrints": zod.number().min(updateConsumableUsageBodyCurrentQuantityPrintsMin).max(updateConsumableUsageBodyCurrentQuantityPrintsMax).optional().describe('Explicitly verified remaining print capacity. Converts only this owner\'s stock to prints; never changes the shared catalog or guesses a roll capacity.'),
+  "averagePrintsPerEvent": zod.number().min(updateConsumableUsageBodyAveragePrintsPerEventMin).max(updateConsumableUsageBodyAveragePrintsPerEventMax).nullish(),
+  "averageEventsPerMonth": zod.number().min(updateConsumableUsageBodyAverageEventsPerMonthMin).max(updateConsumableUsageBodyAverageEventsPerMonthMax).multipleOf(updateConsumableUsageBodyAverageEventsPerMonthMultipleOf).nullish()
+})
+
+export const UpdateConsumableUsageResponse = zod.object({
+  "currentQuantity": zod.number().optional(),
+  "quantityUnit": zod.string().nullish(),
+  "unitType": zod.string().optional(),
+  "id": zod.string().uuid(),
+  "averagePrintsPerEvent": zod.number().nullable(),
+  "averageEventsPerMonth": zod.string().nullable(),
+  "monthlyConsumption": zod.number().nullable(),
+  "eventsRemaining": zod.number().nullable(),
+  "monthsRemaining": zod.number().nullable()
 })
 
 

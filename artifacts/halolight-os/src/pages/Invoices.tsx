@@ -16,6 +16,8 @@ import { Plus, ReceiptText, Trash2, ChevronRight, X, AlertCircle, CheckCircle2, 
 import { cn } from "@/lib/utils";
 import { useCurrency } from "@/lib/currency";
 import CustomerSearchCombobox from "@/components/CustomerSearchCombobox";
+import { useProspectCreation } from "@/hooks/useProspectCreation";
+import { prospectPrefill } from "@/lib/prospectCreation";
 
 const STATUS_COLORS: Record<string, string> = {
   draft: "bg-slate-100 text-slate-700 border-slate-200",
@@ -40,6 +42,7 @@ function isOverdue(dueDate: string | null | undefined, status: string) {
 type LineItem = { description: string; quantity: string; unitPrice: string };
 
 type InvoiceForm = {
+  paymentMethod: string;
   title: string; clientName: string; clientEmail: string; taxRate: string; notes: string; terms: string; dueDate: string;
   leadId: string; quoteId: string; contractId: string; clientPhone: string; clientCompany: string; clientAddress: string;
   eventType: string; eventDate: string; eventLocation: string; eventStartTime: string; eventEndTime: string;
@@ -51,6 +54,7 @@ type InvoiceForm = {
 };
 
 const EMPTY_FORM: InvoiceForm = {
+  paymentMethod: "",
   title: "", clientName: "", clientEmail: "", taxRate: "10", notes: "", terms: "", dueDate: "",
   leadId: "", quoteId: "", contractId: "", clientPhone: "", clientCompany: "", clientAddress: "",
   eventType: "", eventDate: "", eventLocation: "", eventStartTime: "", eventEndTime: "",
@@ -81,10 +85,19 @@ export default function Invoices() {
   const { data: equipmentListData } = useGetEquipment();
   const equipmentItems = (equipmentListData as any[]) ?? [];
 
+  useProspectCreation((lead) => {
+    setForm({ ...EMPTY_FORM, ...prospectPrefill(lead) });
+    setCustomerSearch(lead.contactName);
+    setItems([{ description: "", quantity: "1", unitPrice: "" }]);
+    setShowService(false);
+    setShowCreate(true);
+  });
+
   const createMutation = useCreateInvoice({
     mutation: {
       onSuccess: () => {
         qc.invalidateQueries({ queryKey: ["invoices"] });
+        qc.invalidateQueries({ queryKey: ["lead-pipeline"] });
         qc.invalidateQueries({ queryKey: ["events"] });
         setShowCreate(false);
         setShowService(false);
@@ -150,6 +163,7 @@ export default function Invoices() {
     createMutation.mutate({
       data: {
         title: form.title.trim(),
+        paymentMethod: form.paymentMethod || undefined,
         clientName: form.clientName,
         clientEmail: form.clientEmail || undefined,
         clientPhone: form.clientPhone || undefined,
@@ -390,6 +404,14 @@ export default function Invoices() {
             {/* Client info */}
             <div className="grid grid-cols-2 gap-3">
               <div className="col-span-2 space-y-1.5">
+                <Label htmlFor="invoice-company">{t("contracts.client_company_label", { defaultValue: "Company" })}</Label>
+                <Input id="invoice-company" value={form.clientCompany} onChange={f("clientCompany")} />
+              </div>
+              <div className="col-span-2 space-y-1.5">
+                <Label htmlFor="invoice-address">{t("contracts.client_address_label", { defaultValue: "Client address" })}</Label>
+                <Input id="invoice-address" value={form.clientAddress} onChange={f("clientAddress")} />
+              </div>
+              <div className="col-span-2 space-y-1.5">
                 <Label>{t("invoices.title_label")}</Label>
                 <Input value={form.title} onChange={f("title")} placeholder={t("invoices.title_placeholder")} />
               </div>
@@ -559,6 +581,7 @@ export default function Invoices() {
               </div>
             </div>
 
+            <div className="space-y-1.5"><Label htmlFor="invoice-payment-method">{t("invoices.payment_method", { defaultValue: "Payment method" })}</Label><Input id="invoice-payment-method" maxLength={200} value={form.paymentMethod} onChange={f("paymentMethod")} /></div>
             <div className="space-y-1.5"><Label>{t("invoices.notes_section")}</Label><Textarea value={form.notes} onChange={f("notes")} rows={2} /></div>
             <div className="space-y-1.5"><Label>{t("invoices.payment_terms_section")}</Label><Textarea value={form.terms} onChange={f("terms")} rows={2} placeholder="Net 30, etc." /></div>
           </div>

@@ -466,6 +466,7 @@ export default function AIAssistant() {
       const ac = new AbortController();
       setAbortCtrl(ac);
       setStream({ content: "", sources: [], actions: [] });
+      let completed = false;
 
       try {
         const authToken = await getAuthToken();
@@ -484,7 +485,8 @@ export default function AIAssistant() {
           throw new Error(errBody.error ?? `HTTP ${response.status}`);
         }
 
-        const reader = response.body!.getReader();
+        if (!response.body) throw new Error(t("ai.error"));
+        const reader = response.body.getReader();
         const decoder = new TextDecoder();
         let buf = "";
 
@@ -498,14 +500,18 @@ export default function AIAssistant() {
           for (const line of lines) {
             const trimmed = line.trim();
             if (!trimmed.startsWith("data:")) continue;
-            try {
-              const evt = JSON.parse(trimmed.slice(5).trim()) as {
+              let evt: {
                 type: string;
                 content?: string;
                 sources?: RAGSource[];
                 actions?: SuggestedAction[];
                 error?: string;
               };
+              try {
+                evt = JSON.parse(trimmed.slice(5).trim());
+              } catch {
+                throw new Error(t("ai.error"));
+              }
               if (evt.type === "user_message") {
                 // no-op: persisted server-side
               } else if (evt.type === "content") {
@@ -522,23 +528,25 @@ export default function AIAssistant() {
               } else if (evt.type === "error") {
                 throw new Error(evt.error ?? "AI error");
               } else if (evt.type === "done") {
-                reader.cancel();
+                completed = true;
+                await reader.cancel();
                 break outer;
               }
-            } catch (parseErr) {
-              if ((parseErr as Error).message !== "AI error") continue;
-              throw parseErr;
-            }
           }
         }
+        if (!completed) throw new Error(t("ai.error"));
       } catch (err: unknown) {
         if ((err as { name?: string }).name === "AbortError") return;
+        const errorMessage = (err as Error).message;
         toast({
           title: t("common.error"),
-          description: (err as Error).message ?? t("ai.error"),
+          description: errorMessage?.startsWith("AI_PROVIDER_UNAVAILABLE")
+            ? t("ai.provider_unavailable")
+            : errorMessage ?? t("ai.error"),
           variant: "destructive",
         });
       } finally {
+        ac.abort();
         const finalContent = streamFinalContentRef.current;
         streamFinalContentRef.current = "";
         setStream(null);
@@ -546,13 +554,13 @@ export default function AIAssistant() {
         setPendingUserMsg(null);
         qc.invalidateQueries({ queryKey: [`/api/ai/conversations/${convId}`] });
         qc.invalidateQueries({ queryKey: ["/api/ai/conversations"] });
-        if (autoPlay && finalContent) {
+        if (completed && autoPlay && finalContent) {
           voiceOutput.speak(finalContent, "latest-response");
         }
       }
     },
     // deliberately excludes activeConvId — convId is passed as a parameter
-    [stream, qc, toast, autoPlay, voiceOutput]
+    [stream, qc, toast, autoPlay, voiceOutput, t]
   );
 
   // ─── sendMessage: wrapper used by the chat input (activeConvId is set) ─────

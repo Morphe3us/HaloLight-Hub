@@ -31,6 +31,8 @@ function fixture(seed = initial()) {
   let transactions = 0;
   let writes = 0;
   let failTags = false;
+  let storedChunks: Array<{ content: string }> = [{ content: "old chunk" }];
+  let failChunks = false;
   type Request = {
     params: { id: string };
     body: Record<string, unknown>;
@@ -41,8 +43,10 @@ function fixture(seed = initial()) {
     json: (body: unknown) => void;
   };
   let handler: (req: Request, res: Response) => Promise<void>;
+  let reindexHandler: typeof handler;
   const docs = { id: "docs.id" };
   const tags = { documentId: "tags.documentId" };
+  const chunks = { documentId: "chunks.documentId" };
   const tx = {
     select: () => ({
       from: (table: unknown) => {
@@ -63,32 +67,44 @@ function fixture(seed = initial()) {
       assert.ok(locked);
       return {
         set: (patch: Partial<ReturnType<typeof initial>>) => ({
-          where: (id: string) => ({
-            returning: async () => {
+          where: (id: string) => {
+            const execute = async () => {
               assert.equal(id, document?.id);
               document = { ...document!, ...patch };
               writes++;
               return [structuredClone(document)];
-            },
-          }),
+            };
+            return {
+              returning: execute,
+              then: (resolve: (value: unknown) => void) =>
+                execute().then(resolve),
+            };
+          },
         }),
       };
     },
     delete: (table: unknown) => {
-      assert.equal(table, tags);
+      assert.ok(table === tags || table === chunks);
       assert.ok(locked);
       return {
         where: async () => {
-          storedTags = [];
+          if (table === tags) storedTags = [];
+          else storedChunks = [];
           writes++;
         },
       };
     },
     insert: (table: unknown) => {
-      assert.equal(table, tags);
+      assert.ok(table === tags || table === chunks);
       assert.ok(locked);
       return {
-        values: async (rows: Array<{ tag: string }>) => {
+        values: async (rows: Array<{ tag: string; content: string }>) => {
+          if (table === chunks) {
+            if (failChunks) throw new Error("simulated chunk write failure");
+            storedChunks = rows.map((row) => ({ content: row.content }));
+            writes++;
+            return;
+          }
           if (failTags) throw new Error("simulated tag write failure");
           storedTags = rows.map((row) => row.tag);
           writes++;
@@ -98,7 +114,10 @@ function fixture(seed = initial()) {
   };
   const router = {
     get() {},
-    post() {},
+    post(path: string, ...handlers: unknown[]) {
+      if (path.endsWith("/reindex"))
+        reindexHandler = handlers.at(-1) as typeof handler;
+    },
     delete() {},
     put(_path: string, ...handlers: unknown[]) {
       handler = handlers.at(-1) as typeof handler;
@@ -109,7 +128,7 @@ function fixture(seed = initial()) {
     "drizzle-orm": { eq: (_column: unknown, value: unknown) => value },
     "@workspace/db": {
       aiKnowledgeDocuments: docs,
-      aiKnowledgeChunks: {},
+      aiKnowledgeChunks: chunks,
       aiKnowledgeTags: tags,
       db: {
         transaction: async (callback: (db: typeof tx) => Promise<unknown>) => {
@@ -117,12 +136,14 @@ function fixture(seed = initial()) {
           locked = false;
           const snapshot = structuredClone(document);
           const oldTags = [...storedTags];
+          const oldChunks = structuredClone(storedChunks);
           const oldWrites = writes;
           try {
             return await callback(tx);
           } catch (error) {
             document = snapshot;
             storedTags = oldTags;
+            storedChunks = oldChunks;
             writes = oldWrites;
             throw error;
           } finally {
@@ -158,16 +179,21 @@ function fixture(seed = initial()) {
     read: () => ({
       document: structuredClone(document),
       storedTags: [...storedTags],
+      storedChunks: structuredClone(storedChunks),
       transactions,
       writes,
     }),
     failTags: () => {
       failTags = true;
     },
+    failChunks: () => {
+      failChunks = true;
+    },
     put: async (
       body: Record<string, unknown>,
       role = "admin",
       id = seed.id,
+      reindex = false,
     ) => {
       let status = 200;
       let result: unknown;
@@ -180,7 +206,10 @@ function fixture(seed = initial()) {
           result = value;
         },
       };
-      await handler({ params: { id }, body, role }, response);
+      await (reindex ? reindexHandler : handler)(
+        { params: { id }, body, role },
+        response,
+      );
       return { status, body: result as Record<string, unknown> };
     },
   };
@@ -204,6 +233,38 @@ test("imported copies reject URL changes, clearing, marker removal and marker re
     assert.deepEqual(f.read().document, before.document);
     assert.equal(f.read().writes, 0);
   }
+});
+
+test("reindex uses a locked transaction, indexes current content and preserves revocation", async () => {
+  for (const status of ["indexed", "needs_review", "archived"]) {
+    const f = fixture({ ...initial(), status, aiActive: false });
+    const response = await f.put({}, "admin", "document-id", true);
+    assert.equal(response.status, 200);
+    assert.equal(f.read().document?.status, status);
+    assert.equal(f.read().document?.aiActive, false);
+    assert.deepEqual(f.read().storedChunks, [{ content: initial().content }]);
+    assert.equal(f.read().transactions, 1);
+  }
+  const f = fixture();
+  await f.put({ content: "Latest edited original extraction" });
+  await f.put({}, "admin", "document-id", true);
+  assert.equal(f.read().document?.status, "needs_review");
+  assert.deepEqual(f.read().storedChunks, [
+    { content: "Latest edited original extraction" },
+  ]);
+});
+
+test("reindex chunk failure rolls back deletion and leaves document unchanged", async () => {
+  const f = fixture();
+  const before = f.read();
+  f.failChunks();
+  await assert.rejects(
+    f.put({}, "admin", "document-id", true),
+    /chunk write failure/,
+  );
+  assert.deepEqual(f.read().document, before.document);
+  assert.deepEqual(f.read().storedChunks, before.storedChunks);
+  assert.equal(f.read().writes, 0);
 });
 
 test("neither URL-first nor tags-first sequential updates can detach imported provenance", async () => {

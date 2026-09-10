@@ -1,7 +1,10 @@
 import { useTranslation } from "react-i18next";
+import { useState } from "react";
 import { Link } from "wouter";
-import { useCurrency } from "@/lib/currency";
-import { useGetAdminRevenue } from "@workspace/api-client-react";
+import { formatCurrency, useCurrency } from "@/lib/currency";
+import { useRevenueReport } from "@/lib/revenueReport";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -51,9 +54,12 @@ function RankBadge({ rank }: { rank: number }) {
 }
 
 export default function AdminRevenue() {
-  const { t } = useTranslation();
-  const { format } = useCurrency();
-  const { data, isLoading } = useGetAdminRevenue();
+  const { t, i18n } = useTranslation();
+  const { currency: defaultCurrency } = useCurrency();
+  const [selection, setSelection] = useState<string | null>(null);
+  const currency = selection ?? defaultCurrency;
+  const format = (value: number) => formatCurrency(value, currency, { locale: i18n.language });
+  const { data, isLoading, isError, refetch } = useRevenueReport(currency);
 
   const tierLabels: Record<string, string> = {
     champion: t("admin_clients.tier_champion"),
@@ -76,10 +82,11 @@ export default function AdminRevenue() {
     );
   }
 
-  const revenue = (data ?? {}) as Record<string, any>;
+  if (isError || !data) return <div role="alert" className="space-y-4"><p>{t("common.error")}</p><Button onClick={() => void refetch()}>{t("common.retry")}</Button></div>;
+  const revenue = data as unknown as Record<string, any>;
   const overview = revenue.overview ?? {};
   const monthlyData = (revenue.monthly ?? []).map((m: any) => ({
-    month: m.label ?? m.month,
+    month: new Date(`${m.month}-01T00:00:00Z`).toLocaleDateString(i18n.language, { month: "short", year: "numeric", timeZone: "UTC" }),
     revenue: Number(m.revenue ?? 0),
   }));
   const sizeData = (revenue.revenueBySegment ?? []).map((s: any) => ({
@@ -110,8 +117,23 @@ export default function AdminRevenue() {
         </p>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+      <Select value={currency} onValueChange={setSelection}>
+        <SelectTrigger className="w-40" aria-label={t("admin_revenue.currency", { defaultValue: "Currency" })}><SelectValue /></SelectTrigger>
+        <SelectContent>{data.availableCurrencies.map((code) => <SelectItem key={code} value={code}>{code}</SelectItem>)}</SelectContent>
+      </Select>
+      {data.undatedPaidInvoices > 0 && <p role="status" className="text-sm text-warning">{t("admin_revenue.undated_paid", { defaultValue: "{{count}} paid invoices have no payment date and are excluded from the monthly chart.", count: data.undatedPaidInvoices })}</p>}
+      {data.excludedCurrencyInvoices > 0 && <p role="status" className="text-sm text-warning">{t("admin_revenue.excluded_currency", { defaultValue: "{{count}} invoices have a missing or invalid currency and are excluded from the financial totals.", count: data.excludedCurrencyInvoices })}</p>}
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
+          {
+            labelKey: "admin_revenue.stat_invoiced",
+            value: format(overview.totalInvoiced ?? 0), icon: FileText, color: "text-info",
+          },
+          {
+            labelKey: "admin_revenue.stat_unpaid",
+            value: format(overview.totalUnpaid ?? 0), icon: AlertCircle, color: "text-warning",
+          },
           {
             labelKey: "admin_revenue.stat_total",
             value: format(overview.totalRevenue ?? 0),
@@ -146,13 +168,13 @@ export default function AdminRevenue() {
           <Card key={s.labelKey}>
             <CardContent className="p-4">
               <div className="flex items-start justify-between">
-                <div>
+                <div className="min-w-0 flex-1">
                   <p className="text-xs text-muted-foreground mb-1">
-                    {t(s.labelKey as Parameters<typeof t>[0])}
+                    {t(s.labelKey as Parameters<typeof t>[0], { defaultValue: s.labelKey === "admin_revenue.stat_invoiced" ? "Invoiced" : s.labelKey === "admin_revenue.stat_unpaid" ? "Unpaid" : s.labelKey })}
                   </p>
-                  <p className={`text-xl font-bold ${s.color}`}>{s.value}</p>
+                  <p className={`text-xl font-bold break-words ${s.color}`}>{s.value}</p>
                 </div>
-                <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center">
+                <div className="w-8 h-8 shrink-0 rounded-lg bg-muted flex items-center justify-center">
                   <s.icon className={`w-4 h-4 ${s.color}`} />
                 </div>
               </div>
@@ -356,7 +378,7 @@ export default function AdminRevenue() {
               <div className="pt-2 border-t text-xs text-muted-foreground flex justify-between">
                 <span>{t("admin_revenue.funnel_acceptance")}</span>
                 <span className="font-bold text-success">
-                  {quoteFunnel?.acceptanceRate ?? 0}%
+                  {quoteFunnel?.acceptanceRate == null ? "-" : `${quoteFunnel.acceptanceRate}%`}
                 </span>
               </div>
             </div>
@@ -398,7 +420,7 @@ export default function AdminRevenue() {
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {(clientLeaderboard ?? []).map((client: any, i: number) => {
-                  const tier = client.tier ?? "at_risk";
+                  const tier = client.tier ?? "";
                   const cfg = TIER_CONFIG[tier];
                   return (
                     <tr
@@ -470,7 +492,7 @@ export default function AdminRevenue() {
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             {(topPerformers ?? []).slice(0, 5).map((client: any, i: number) => {
-              const tier = client.tier ?? "at_risk";
+              const tier = client.tier ?? "";
               const cfg = TIER_CONFIG[tier];
               return (
                 <Link

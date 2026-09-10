@@ -3,6 +3,7 @@ import { eq, ilike, and } from "drizzle-orm";
 import { db, resources } from "@workspace/db";
 import { requireAuth } from "../middlewares/requireAuth";
 import { getOrCreateUser } from "../lib/userSync";
+import { protectImportedFileUpdate } from "./uploads";
 
 const router: IRouter = Router();
 
@@ -79,6 +80,13 @@ router.put("/admin/resources/:id", requireAuth, async (req: Request, res: Respon
   if (!requireAdmin(user, res)) return;
 
   const id = String(req.params.id);
+  const [current] = await db.select().from(resources).where(eq(resources.id, id));
+  if (!current) { res.status(404).json({ error: "Resource not found" }); return; }
+  const protectedUpdate = protectImportedFileUpdate(current, req.body);
+  if (!protectedUpdate.ok) {
+    res.status(400).json({ error: "Imported file provenance cannot be changed" });
+    return;
+  }
   const { title, category, language, fileUrl, description, status } = req.body as {
     title?: string; category?: string; language?: string; fileUrl?: string; description?: string; status?: string;
   };
@@ -89,6 +97,7 @@ router.put("/admin/resources/:id", requireAuth, async (req: Request, res: Respon
   if (language !== undefined) updates.language = language;
   if (fileUrl !== undefined) updates.fileUrl = fileUrl;
   if (description !== undefined) updates.description = description;
+  if (protectedUpdate.description !== undefined) updates.description = protectedUpdate.description;
   if (status !== undefined) updates.status = status as "draft" | "published";
 
   const [updated] = await db.update(resources).set(updates).where(eq(resources.id, id)).returning();

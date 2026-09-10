@@ -6,9 +6,6 @@ import {
   useUpdateLead,
   useCreateLeadActivity,
   useGetLeadPipeline,
-  useCreateQuote,
-  useCreateContract,
-  useCreateInvoice,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -26,6 +23,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCurrency } from "@/lib/currency";
+import { prospectCreationUrl } from "@/lib/prospectCreation";
 
 const LEAD_STAGE_COLORS: Record<string, string> = {
   new: "bg-slate-100 text-slate-700 border-slate-200",
@@ -98,16 +96,8 @@ export default function LeadDetail() {
 
   const [editing, setEditing] = useState(false);
   const [showActivity, setShowActivity] = useState(false);
-  const [showCreateQuote, setShowCreateQuote] = useState(false);
-  const [showCreateContract, setShowCreateContract] = useState(false);
-  const [showCreateInvoice, setShowCreateInvoice] = useState(false);
-
   const [editForm, setEditForm] = useState<Record<string, string>>({});
   const [activityForm, setActivityForm] = useState({ type: "note", title: "", description: "" });
-
-  const [quoteForm, setQuoteForm] = useState({ title: "", clientName: "", clientEmail: "", clientPhone: "", clientCompany: "", eventType: "", description: "", unitPrice: "", quantity: "1" });
-  const [contractForm, setContractForm] = useState({ title: "", clientName: "", clientEmail: "", clientPhone: "", clientCompany: "", eventType: "", value: "" });
-  const [invoiceForm, setInvoiceForm] = useState({ title: "", clientName: "", clientEmail: "", clientPhone: "", clientCompany: "", eventType: "", description: "", unitPrice: "", quantity: "1" });
 
   const { data: lead, isLoading } = useGetLead(id, {
     query: { queryKey: ["lead", id], enabled: !!id },
@@ -140,141 +130,9 @@ export default function LeadDetail() {
     },
   });
 
-  const createQuoteMutation = useCreateQuote({
-    mutation: {
-      onSuccess: (data) => {
-        qc.invalidateQueries({ queryKey: ["lead-pipeline", id] });
-        qc.invalidateQueries({ queryKey: ["quotes"] });
-        setShowCreateQuote(false);
-        toast({ title: t("pipeline.quote_created") });
-        navigate(`/quotes/${data.id}`);
-      },
-    },
-  });
-
-  const createContractMutation = useCreateContract({
-    mutation: {
-      onSuccess: (data) => {
-        qc.invalidateQueries({ queryKey: ["lead-pipeline", id] });
-        qc.invalidateQueries({ queryKey: ["contracts"] });
-        setShowCreateContract(false);
-        toast({ title: t("pipeline.contract_created") });
-        navigate(`/contracts/${data.id}`);
-      },
-    },
-  });
-
-  const createInvoiceMutation = useCreateInvoice({
-    mutation: {
-      onSuccess: (data) => {
-        qc.invalidateQueries({ queryKey: ["lead-pipeline", id] });
-        qc.invalidateQueries({ queryKey: ["invoices"] });
-        setShowCreateInvoice(false);
-        toast({ title: t("pipeline.invoice_created") });
-        navigate(`/invoices/${data.id}`);
-      },
-    },
-  });
-
-  const openCreateQuote = () => {
-    if (!lead) return;
-    setQuoteForm({
-      title: `Quote for ${lead.companyName}`,
-      clientName: lead.contactName,
-      clientEmail: lead.email ?? "",
-      clientPhone: lead.phone ?? "",
-      clientCompany: lead.companyName,
-      eventType: lead.eventType ?? "",
-      description: lead.eventType ? `${lead.eventType} photobooth package` : "Photobooth package",
-      unitPrice: lead.value,
-      quantity: "1",
-    });
-    setShowCreateQuote(true);
-  };
-
-  const openCreateContract = () => {
-    if (!lead) return;
-    setContractForm({
-      title: `Contract — ${lead.companyName}`,
-      clientName: lead.contactName,
-      clientEmail: lead.email ?? "",
-      clientPhone: lead.phone ?? "",
-      clientCompany: lead.companyName,
-      eventType: lead.eventType ?? "",
-      value: lead.value,
-    });
-    setShowCreateContract(true);
-  };
-
-  const openCreateInvoice = () => {
-    if (!lead) return;
-    setInvoiceForm({
-      title: `Invoice — ${lead.companyName}`,
-      clientName: lead.contactName,
-      clientEmail: lead.email ?? "",
-      clientPhone: lead.phone ?? "",
-      clientCompany: lead.companyName,
-      eventType: lead.eventType ?? "",
-      description: lead.eventType ? `${lead.eventType} photobooth package` : "Photobooth package",
-      unitPrice: lead.value,
-      quantity: "1",
-    });
-    setShowCreateInvoice(true);
-  };
-
-  const submitCreateQuote = () => {
-    if (!quoteForm.title || !quoteForm.clientName) return;
-    const qty = quoteForm.quantity || "1";
-    const price = quoteForm.unitPrice || "0";
-    const total = String(Number(qty) * Number(price));
-    createQuoteMutation.mutate({
-      data: {
-        leadId: id,
-        title: quoteForm.title,
-        clientName: quoteForm.clientName,
-        clientEmail: quoteForm.clientEmail || undefined,
-        clientPhone: quoteForm.clientPhone || undefined,
-        clientCompany: quoteForm.clientCompany || undefined,
-        eventType: quoteForm.eventType || undefined,
-        items: [{ description: quoteForm.description || "Service", quantity: qty, unitPrice: price, order: 1 }],
-      },
-    });
-  };
-
-  const submitCreateContract = () => {
-    if (!contractForm.title || !contractForm.clientName) return;
-    createContractMutation.mutate({
-      data: {
-        leadId: id,
-        title: contractForm.title,
-        clientName: contractForm.clientName,
-        clientEmail: contractForm.clientEmail || undefined,
-        clientPhone: contractForm.clientPhone || undefined,
-        clientCompany: contractForm.clientCompany || undefined,
-        eventType: contractForm.eventType || undefined,
-        value: contractForm.value || undefined,
-      },
-    });
-  };
-
-  const submitCreateInvoice = () => {
-    if (!invoiceForm.title || !invoiceForm.clientName) return;
-    const qty = invoiceForm.quantity || "1";
-    const price = invoiceForm.unitPrice || "0";
-    const total = String(Number(qty) * Number(price));
-    createInvoiceMutation.mutate({
-      data: {
-        leadId: id,
-        title: invoiceForm.title,
-        clientName: invoiceForm.clientName,
-        clientEmail: invoiceForm.clientEmail || undefined,
-        clientPhone: invoiceForm.clientPhone || undefined,
-        clientCompany: invoiceForm.clientCompany || undefined,
-        eventType: invoiceForm.eventType || undefined,
-        items: [{ description: invoiceForm.description || "Service", quantity: qty, unitPrice: price, order: 1 }],
-      },
-    });
-  };
+  const openCreateQuote = () => navigate(prospectCreationUrl("quotes", id));
+  const openCreateContract = () => navigate(prospectCreationUrl("contracts", id));
+  const openCreateInvoice = () => navigate(prospectCreationUrl("invoices", id));
 
   const markStatus = (status: string) => {
     if (!lead) return;
@@ -607,69 +465,6 @@ export default function LeadDetail() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={showCreateQuote} onOpenChange={setShowCreateQuote}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader><DialogTitle>{t("pipeline.create_quote_for", { company: lead.companyName })}</DialogTitle></DialogHeader>
-          <div className="grid grid-cols-2 gap-4 py-2">
-            <div className="col-span-2 space-y-1.5"><Label>{t("quotes.title_label")} *</Label><Input value={quoteForm.title} onChange={(e) => setQuoteForm({ ...quoteForm, title: e.target.value })} /></div>
-            <div className="space-y-1.5"><Label>{t("quotes.client_name_label")} *</Label><Input value={quoteForm.clientName} onChange={(e) => setQuoteForm({ ...quoteForm, clientName: e.target.value })} /></div>
-            <div className="space-y-1.5"><Label>{t("quotes.client_email_label")}</Label><Input value={quoteForm.clientEmail} onChange={(e) => setQuoteForm({ ...quoteForm, clientEmail: e.target.value })} /></div>
-            <div className="space-y-1.5"><Label>{t("leads.phone_label")}</Label><Input value={quoteForm.clientPhone} onChange={(e) => setQuoteForm({ ...quoteForm, clientPhone: e.target.value })} /></div>
-            <div className="space-y-1.5"><Label>{t("leads.event_type_label")}</Label><Input value={quoteForm.eventType} onChange={(e) => setQuoteForm({ ...quoteForm, eventType: e.target.value })} /></div>
-            <div className="col-span-2 space-y-1.5"><Label>{t("pipeline.item_description")}</Label><Input value={quoteForm.description} onChange={(e) => setQuoteForm({ ...quoteForm, description: e.target.value })} /></div>
-            <div className="space-y-1.5"><Label>{t("pipeline.unit_price")}</Label><Input type="number" value={quoteForm.unitPrice} onChange={(e) => setQuoteForm({ ...quoteForm, unitPrice: e.target.value })} /></div>
-            <div className="space-y-1.5"><Label>{t("pipeline.quantity")}</Label><Input type="number" value={quoteForm.quantity} onChange={(e) => setQuoteForm({ ...quoteForm, quantity: e.target.value })} /></div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowCreateQuote(false)}>{t("common.cancel")}</Button>
-            <Button onClick={submitCreateQuote} disabled={createQuoteMutation.isPending || !quoteForm.title || !quoteForm.clientName}>
-              {createQuoteMutation.isPending ? t("leads.saving") : t("pipeline.create_quote")}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={showCreateContract} onOpenChange={setShowCreateContract}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader><DialogTitle>{t("pipeline.create_contract_for", { company: lead.companyName })}</DialogTitle></DialogHeader>
-          <div className="grid grid-cols-2 gap-4 py-2">
-            <div className="col-span-2 space-y-1.5"><Label>{t("contracts.title_label")} *</Label><Input value={contractForm.title} onChange={(e) => setContractForm({ ...contractForm, title: e.target.value })} /></div>
-            <div className="space-y-1.5"><Label>{t("contracts.client_name_label")} *</Label><Input value={contractForm.clientName} onChange={(e) => setContractForm({ ...contractForm, clientName: e.target.value })} /></div>
-            <div className="space-y-1.5"><Label>{t("contracts.client_email_label")}</Label><Input value={contractForm.clientEmail} onChange={(e) => setContractForm({ ...contractForm, clientEmail: e.target.value })} /></div>
-            <div className="space-y-1.5"><Label>{t("leads.phone_label")}</Label><Input value={contractForm.clientPhone} onChange={(e) => setContractForm({ ...contractForm, clientPhone: e.target.value })} /></div>
-            <div className="space-y-1.5"><Label>{t("leads.event_type_label")}</Label><Input value={contractForm.eventType} onChange={(e) => setContractForm({ ...contractForm, eventType: e.target.value })} /></div>
-            <div className="col-span-2 space-y-1.5"><Label>{t("contracts.value_dollar_label")}</Label><Input type="number" value={contractForm.value} onChange={(e) => setContractForm({ ...contractForm, value: e.target.value })} /></div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowCreateContract(false)}>{t("common.cancel")}</Button>
-            <Button onClick={submitCreateContract} disabled={createContractMutation.isPending || !contractForm.title || !contractForm.clientName}>
-              {createContractMutation.isPending ? t("leads.saving") : t("pipeline.create_contract")}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={showCreateInvoice} onOpenChange={setShowCreateInvoice}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader><DialogTitle>{t("pipeline.create_invoice_for", { company: lead.companyName })}</DialogTitle></DialogHeader>
-          <div className="grid grid-cols-2 gap-4 py-2">
-            <div className="col-span-2 space-y-1.5"><Label>{t("invoices.title_label")} *</Label><Input value={invoiceForm.title} onChange={(e) => setInvoiceForm({ ...invoiceForm, title: e.target.value })} /></div>
-            <div className="space-y-1.5"><Label>{t("invoices.client_name_label")} *</Label><Input value={invoiceForm.clientName} onChange={(e) => setInvoiceForm({ ...invoiceForm, clientName: e.target.value })} /></div>
-            <div className="space-y-1.5"><Label>{t("invoices.client_email_label")}</Label><Input value={invoiceForm.clientEmail} onChange={(e) => setInvoiceForm({ ...invoiceForm, clientEmail: e.target.value })} /></div>
-            <div className="space-y-1.5"><Label>{t("leads.phone_label")}</Label><Input value={invoiceForm.clientPhone} onChange={(e) => setInvoiceForm({ ...invoiceForm, clientPhone: e.target.value })} /></div>
-            <div className="space-y-1.5"><Label>{t("leads.event_type_label")}</Label><Input value={invoiceForm.eventType} onChange={(e) => setInvoiceForm({ ...invoiceForm, eventType: e.target.value })} /></div>
-            <div className="col-span-2 space-y-1.5"><Label>{t("pipeline.item_description")}</Label><Input value={invoiceForm.description} onChange={(e) => setInvoiceForm({ ...invoiceForm, description: e.target.value })} /></div>
-            <div className="space-y-1.5"><Label>{t("pipeline.unit_price")}</Label><Input type="number" value={invoiceForm.unitPrice} onChange={(e) => setInvoiceForm({ ...invoiceForm, unitPrice: e.target.value })} /></div>
-            <div className="space-y-1.5"><Label>{t("pipeline.quantity")}</Label><Input type="number" value={invoiceForm.quantity} onChange={(e) => setInvoiceForm({ ...invoiceForm, quantity: e.target.value })} /></div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowCreateInvoice(false)}>{t("common.cancel")}</Button>
-            <Button onClick={submitCreateInvoice} disabled={createInvoiceMutation.isPending || !invoiceForm.title || !invoiceForm.clientName}>
-              {createInvoiceMutation.isPending ? t("leads.saving") : t("pipeline.create_invoice")}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

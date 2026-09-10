@@ -42,6 +42,8 @@ import {
 import { cn } from "@/lib/utils";
 import { useCurrency } from "@/lib/currency";
 import CustomerSearchCombobox from "@/components/CustomerSearchCombobox";
+import { useProspectCreation } from "@/hooks/useProspectCreation";
+import { prospectPrefill } from "@/lib/prospectCreation";
 
 const STATUS_COLORS: Record<string, string> = {
   draft: "bg-slate-100 text-slate-700 border-slate-200",
@@ -65,6 +67,8 @@ function formatDate(d: string | null | undefined) {
 type LineItem = { description: string; quantity: string; unitPrice: string };
 
 type QuoteForm = {
+  validUntil: string;
+  paymentMethod: string;
   title: string;
   clientName: string;
   clientEmail: string;
@@ -99,6 +103,8 @@ type QuoteForm = {
 };
 
 const EMPTY_FORM: QuoteForm = {
+  validUntil: "",
+  paymentMethod: "",
   title: "",
   clientName: "",
   clientEmail: "",
@@ -154,10 +160,19 @@ export default function Quotes() {
   const { data: equipmentListData } = useGetEquipment();
   const equipmentItems = (equipmentListData as any[]) ?? [];
 
+  useProspectCreation((lead) => {
+    setForm({ ...EMPTY_FORM, ...prospectPrefill(lead) });
+    setCustomerSearch(lead.contactName);
+    setItems([{ description: "", quantity: "1", unitPrice: "" }]);
+    setShowService(false);
+    setShowCreate(true);
+  });
+
   const createMutation = useCreateQuote({
     mutation: {
       onSuccess: () => {
         qc.invalidateQueries({ queryKey: ["quotes"] });
+        qc.invalidateQueries({ queryKey: ["lead-pipeline"] });
         setShowCreate(false);
         setShowService(false);
         setCustomerSearch("");
@@ -256,6 +271,8 @@ export default function Quotes() {
     createMutation.mutate({
       data: {
         title: form.title.trim(),
+        validUntil: form.validUntil ? new Date(form.validUntil).toISOString() : undefined,
+        paymentMethod: form.paymentMethod || undefined,
         clientName: form.clientName,
         clientEmail: form.clientEmail || undefined,
         clientPhone: form.clientPhone || undefined,
@@ -548,6 +565,14 @@ export default function Quotes() {
 
             {/* Client info */}
             <div className="grid grid-cols-2 gap-3">
+              <div className="col-span-2 space-y-1.5">
+                <Label htmlFor="quote-company">{t("contracts.client_company_label", { defaultValue: "Company" })}</Label>
+                <Input id="quote-company" value={form.clientCompany} onChange={f("clientCompany")} />
+              </div>
+              <div className="col-span-2 space-y-1.5">
+                <Label htmlFor="quote-address">{t("contracts.client_address_label", { defaultValue: "Client address" })}</Label>
+                <Input id="quote-address" value={form.clientAddress} onChange={f("clientAddress")} />
+              </div>
               <div className="col-span-2 space-y-1.5">
                 <Label>{t("quotes.title_label")}</Label>
                 <Input
@@ -881,6 +906,16 @@ export default function Quotes() {
             <div className="space-y-1.5">
               <Label>{t("quotes.notes_section")}</Label>
               <Textarea value={form.notes} onChange={f("notes")} rows={2} />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="quote-valid-until">{t("quotes.valid_until_label", { defaultValue: "Valid until" })}</Label>
+                <Input id="quote-valid-until" type="date" value={form.validUntil} onChange={f("validUntil")} />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="quote-payment-method">{t("quotes.payment_method", { defaultValue: "Payment method" })}</Label>
+                <Input id="quote-payment-method" maxLength={200} value={form.paymentMethod} onChange={f("paymentMethod")} />
+              </div>
             </div>
             <div className="space-y-1.5">
               <Label>{t("quotes.terms_section")}</Label>

@@ -360,46 +360,52 @@ router.post(
     if (!requireAdmin(user, res)) return;
 
     const id = String(req.params.id);
-    const [doc] = await db
-      .select()
-      .from(aiKnowledgeDocuments)
-      .where(eq(aiKnowledgeDocuments.id, id));
-    if (!doc) {
-      res.status(404).json({ error: "Not found" });
-      return;
-    }
+    const result = await db.transaction(async (tx) => {
+      const [doc] = await tx
+        .select()
+        .from(aiKnowledgeDocuments)
+        .where(eq(aiKnowledgeDocuments.id, id))
+        .for("update");
+      if (!doc) {
+        return { status: 404, body: { error: "Not found" } };
+      }
 
-    await db
-      .delete(aiKnowledgeChunks)
-      .where(eq(aiKnowledgeChunks.documentId, id));
+      await tx
+        .delete(aiKnowledgeChunks)
+        .where(eq(aiKnowledgeChunks.documentId, id));
 
-    const chunks = chunkText(doc.content);
-    if (chunks.length > 0) {
-      await db.insert(aiKnowledgeChunks).values(
-        chunks.map((c, i) => ({
-          documentId: id,
-          content: c,
-          chunkIndex: i,
-          metadata: {
-            language: doc.language,
-            category: doc.category,
-            title: doc.title,
-            productModel: doc.productModel ?? "",
-          },
-        })),
-      );
-    }
+      const chunks = chunkText(doc.content);
+      if (chunks.length > 0) {
+        await tx.insert(aiKnowledgeChunks).values(
+          chunks.map((c, i) => ({
+            documentId: id,
+            content: c,
+            chunkIndex: i,
+            metadata: {
+              language: doc.language,
+              category: doc.category,
+              title: doc.title,
+              productModel: doc.productModel ?? "",
+            },
+          })),
+        );
+      }
 
-    await db
-      .update(aiKnowledgeDocuments)
-      .set({
-        status: "indexed",
-        lastIndexedAt: new Date(),
-        updatedAt: new Date(),
-      })
-      .where(eq(aiKnowledgeDocuments.id, id));
+      await tx
+        .update(aiKnowledgeDocuments)
+        .set({
+          status: doc.status === "draft" ? "indexed" : doc.status,
+          lastIndexedAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .where(eq(aiKnowledgeDocuments.id, id));
 
-    res.json({ documentId: id, chunksCreated: chunks.length });
+      return {
+        status: 200,
+        body: { documentId: id, chunksCreated: chunks.length },
+      };
+    });
+    res.status(result.status).json(result.body);
   },
 );
 

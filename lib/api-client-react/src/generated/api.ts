@@ -24,6 +24,7 @@ import type {
   AIKnowledgeDocDetail,
   AIKnowledgeDocList,
   AcademyProgressSummary,
+  AcceptUserConsentBody,
   Activity,
   ActivityInput,
   AdminAnalytics,
@@ -75,6 +76,8 @@ import type {
   ConsumableForecast,
   ConsumableOrder,
   ConsumableStockItem,
+  ConsumableUsageInput,
+  ConsumableUsageResult,
   Contract,
   ContractInput,
   ContractList,
@@ -108,6 +111,7 @@ import type {
   EventList,
   EventUpdate,
   GetAcademyProgressSummaryParams,
+  GetAdminRevenueParams,
   GetCourseParams,
   GetDashboardSummaryParams,
   GetExportHistory200,
@@ -115,6 +119,7 @@ import type {
   GetLeadPipeline200,
   GetLessonParams,
   GetNextLessonParams,
+  GetUserConsentHistory200,
   HealthStatus,
   InvoiceDetail,
   InvoiceInput,
@@ -182,6 +187,7 @@ import type {
   ServiceRecord,
   SubmitQuizParams,
   SuccessScoreResponse,
+  SupportEmailDeliveryResult,
   SupportTicket,
   SupportTicketDetail,
   SupportTicketInput,
@@ -197,6 +203,7 @@ import type {
   UpdateAIKnowledgeDocInput,
   UpdateContractStatusBody,
   UpdateCourseInput,
+  UpdateDashboardPreferencesBody,
   UpdateEquipmentBody,
   UpdateLessonInput,
   UpdateLessonProgressParams,
@@ -214,6 +221,8 @@ import type {
   User,
   UserAdminCreate,
   UserAdminUpdate,
+  UserConsentStatus,
+  UserDashboardPreferences,
   UserList,
   UserUpdate
 } from './api.schemas';
@@ -9149,20 +9158,27 @@ export function useGetAdminConsumables<TData = Awaited<ReturnType<typeof getAdmi
 
 
 
-export const getGetAdminRevenueUrl = () => {
+export const getGetAdminRevenueUrl = (params?: GetAdminRevenueParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
 
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/admin/revenue`
+  return stringifiedParams.length > 0 ? `/api/admin/revenue?${stringifiedParams}` : `/api/admin/revenue`
 }
 
 /**
  * @summary Revenue Intelligence dashboard data
  */
-export const getAdminRevenue = async ( options?: RequestInit): Promise<RevenueIntelligence> => {
+export const getAdminRevenue = async (params?: GetAdminRevenueParams, options?: RequestInit): Promise<RevenueIntelligence> => {
 
-  return customFetch<RevenueIntelligence>(getGetAdminRevenueUrl(),
+  return customFetch<RevenueIntelligence>(getGetAdminRevenueUrl(params),
   {
     ...options,
     method: 'GET'
@@ -9175,23 +9191,23 @@ export const getAdminRevenue = async ( options?: RequestInit): Promise<RevenueIn
 
 
 
-export const getGetAdminRevenueQueryKey = () => {
+export const getGetAdminRevenueQueryKey = (params?: GetAdminRevenueParams,) => {
     return [
-    `/api/admin/revenue`
+    `/api/admin/revenue`, ...(params ? [params] : [])
     ] as const;
     }
 
 
-export const getGetAdminRevenueQueryOptions = <TData = Awaited<ReturnType<typeof getAdminRevenue>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminRevenue>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetAdminRevenueQueryOptions = <TData = Awaited<ReturnType<typeof getAdminRevenue>>, TError = ErrorType<unknown>>(params?: GetAdminRevenueParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminRevenue>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getGetAdminRevenueQueryKey();
+  const queryKey =  queryOptions?.queryKey ?? getGetAdminRevenueQueryKey(params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAdminRevenue>>> = ({ signal }) => getAdminRevenue({ signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAdminRevenue>>> = ({ signal }) => getAdminRevenue(params, { signal, ...requestOptions });
 
 
 
@@ -9209,11 +9225,11 @@ export type GetAdminRevenueQueryError = ErrorType<unknown>
  */
 
 export function useGetAdminRevenue<TData = Awaited<ReturnType<typeof getAdminRevenue>>, TError = ErrorType<unknown>>(
-  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminRevenue>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+ params?: GetAdminRevenueParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminRevenue>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
-  const queryOptions = getGetAdminRevenueQueryOptions(options)
+  const queryOptions = getGetAdminRevenueQueryOptions(params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
@@ -13055,4 +13071,592 @@ export function useGetExportHistory<TData = Awaited<ReturnType<typeof getExportH
 
 
 
+
+export const getGetUserConsentUrl = () => {
+
+
+
+
+  return `/api/users/me/consent`
+}
+
+/**
+ * @summary Current user's configured legal documents and acceptance
+ */
+export const getUserConsent = async ( options?: RequestInit): Promise<UserConsentStatus> => {
+
+  return customFetch<UserConsentStatus>(getGetUserConsentUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetUserConsentQueryKey = () => {
+    return [
+    `/api/users/me/consent`
+    ] as const;
+    }
+
+
+export const getGetUserConsentQueryOptions = <TData = Awaited<ReturnType<typeof getUserConsent>>, TError = ErrorType<void>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getUserConsent>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetUserConsentQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getUserConsent>>> = ({ signal }) => getUserConsent({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getUserConsent>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetUserConsentQueryResult = NonNullable<Awaited<ReturnType<typeof getUserConsent>>>
+export type GetUserConsentQueryError = ErrorType<void>
+
+
+/**
+ * @summary Current user's configured legal documents and acceptance
+ */
+
+export function useGetUserConsent<TData = Awaited<ReturnType<typeof getUserConsent>>, TError = ErrorType<void>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getUserConsent>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetUserConsentQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getAcceptUserConsentUrl = () => {
+
+
+
+
+  return `/api/users/me/consent`
+}
+
+/**
+ * @summary Record explicit acceptance of current versions and independent optional choices
+ */
+export const acceptUserConsent = async (acceptUserConsentBody: AcceptUserConsentBody, options?: RequestInit): Promise<UserConsentStatus> => {
+
+  return customFetch<UserConsentStatus>(getAcceptUserConsentUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      acceptUserConsentBody,)
+  }
+);}
+
+
+
+
+export const getAcceptUserConsentMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof acceptUserConsent>>, TError,{data: BodyType<AcceptUserConsentBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof acceptUserConsent>>, TError,{data: BodyType<AcceptUserConsentBody>}, TContext> => {
+
+const mutationKey = ['acceptUserConsent'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof acceptUserConsent>>, {data: BodyType<AcceptUserConsentBody>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  acceptUserConsent(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AcceptUserConsentMutationResult = NonNullable<Awaited<ReturnType<typeof acceptUserConsent>>>
+    export type AcceptUserConsentMutationBody = BodyType<AcceptUserConsentBody>
+    export type AcceptUserConsentMutationError = ErrorType<void>
+
+    /**
+ * @summary Record explicit acceptance of current versions and independent optional choices
+ */
+export const useAcceptUserConsent = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof acceptUserConsent>>, TError,{data: BodyType<AcceptUserConsentBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof acceptUserConsent>>,
+        TError,
+        {data: BodyType<AcceptUserConsentBody>},
+        TContext
+      > => {
+      return useMutation(getAcceptUserConsentMutationOptions(options));
+    }
+
+export const getGetDashboardPreferencesUrl = () => {
+
+
+
+
+  return `/api/users/me/dashboard-preferences`
+}
+
+/**
+ * @summary Read only the authenticated user's dashboard preferences
+ */
+export const getDashboardPreferences = async ( options?: RequestInit): Promise<UserDashboardPreferences> => {
+
+  return customFetch<UserDashboardPreferences>(getGetDashboardPreferencesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetDashboardPreferencesQueryKey = () => {
+    return [
+    `/api/users/me/dashboard-preferences`
+    ] as const;
+    }
+
+
+export const getGetDashboardPreferencesQueryOptions = <TData = Awaited<ReturnType<typeof getDashboardPreferences>>, TError = ErrorType<void>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getDashboardPreferences>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetDashboardPreferencesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getDashboardPreferences>>> = ({ signal }) => getDashboardPreferences({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getDashboardPreferences>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetDashboardPreferencesQueryResult = NonNullable<Awaited<ReturnType<typeof getDashboardPreferences>>>
+export type GetDashboardPreferencesQueryError = ErrorType<void>
+
+
+/**
+ * @summary Read only the authenticated user's dashboard preferences
+ */
+
+export function useGetDashboardPreferences<TData = Awaited<ReturnType<typeof getDashboardPreferences>>, TError = ErrorType<void>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getDashboardPreferences>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetDashboardPreferencesQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getUpdateDashboardPreferencesUrl = () => {
+
+
+
+
+  return `/api/users/me/dashboard-preferences`
+}
+
+/**
+ * @summary Atomically merge changed widget choices for the authenticated user
+ */
+export const updateDashboardPreferences = async (updateDashboardPreferencesBody: UpdateDashboardPreferencesBody, options?: RequestInit): Promise<UserDashboardPreferences> => {
+
+  return customFetch<UserDashboardPreferences>(getUpdateDashboardPreferencesUrl(),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      updateDashboardPreferencesBody,)
+  }
+);}
+
+
+
+
+export const getUpdateDashboardPreferencesMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateDashboardPreferences>>, TError,{data: BodyType<UpdateDashboardPreferencesBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateDashboardPreferences>>, TError,{data: BodyType<UpdateDashboardPreferencesBody>}, TContext> => {
+
+const mutationKey = ['updateDashboardPreferences'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateDashboardPreferences>>, {data: BodyType<UpdateDashboardPreferencesBody>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  updateDashboardPreferences(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateDashboardPreferencesMutationResult = NonNullable<Awaited<ReturnType<typeof updateDashboardPreferences>>>
+    export type UpdateDashboardPreferencesMutationBody = BodyType<UpdateDashboardPreferencesBody>
+    export type UpdateDashboardPreferencesMutationError = ErrorType<void>
+
+    /**
+ * @summary Atomically merge changed widget choices for the authenticated user
+ */
+export const useUpdateDashboardPreferences = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateDashboardPreferences>>, TError,{data: BodyType<UpdateDashboardPreferencesBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateDashboardPreferences>>,
+        TError,
+        {data: BodyType<UpdateDashboardPreferencesBody>},
+        TContext
+      > => {
+      return useMutation(getUpdateDashboardPreferencesMutationOptions(options));
+    }
+
+export const getGetUserConsentHistoryUrl = (id: string,) => {
+
+
+
+
+  return `/api/users/${id}/consent`
+}
+
+/**
+ * @summary Admin-only acceptance evidence, newest 100 events
+ */
+export const getUserConsentHistory = async (id: string, options?: RequestInit): Promise<GetUserConsentHistory200> => {
+
+  return customFetch<GetUserConsentHistory200>(getGetUserConsentHistoryUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetUserConsentHistoryQueryKey = (id: string,) => {
+    return [
+    `/api/users/${id}/consent`
+    ] as const;
+    }
+
+
+export const getGetUserConsentHistoryQueryOptions = <TData = Awaited<ReturnType<typeof getUserConsentHistory>>, TError = ErrorType<void>>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getUserConsentHistory>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetUserConsentHistoryQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getUserConsentHistory>>> = ({ signal }) => getUserConsentHistory(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getUserConsentHistory>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetUserConsentHistoryQueryResult = NonNullable<Awaited<ReturnType<typeof getUserConsentHistory>>>
+export type GetUserConsentHistoryQueryError = ErrorType<void>
+
+
+/**
+ * @summary Admin-only acceptance evidence, newest 100 events
+ */
+
+export function useGetUserConsentHistory<TData = Awaited<ReturnType<typeof getUserConsentHistory>>, TError = ErrorType<void>>(
+ id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getUserConsentHistory>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetUserConsentHistoryQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getDownloadSupportTicketAttachmentUrl = (id: string,
+    attachmentId: string,) => {
+
+
+
+
+  return `/api/support/tickets/${id}/attachments/${attachmentId}`
+}
+
+/**
+ * Authenticated ticket owner or administrator only. Always attachment disposition and private no-store.
+ */
+export const downloadSupportTicketAttachment = async (id: string,
+    attachmentId: string, options?: RequestInit): Promise<Blob> => {
+
+  return customFetch<Blob>(getDownloadSupportTicketAttachmentUrl(id,attachmentId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getDownloadSupportTicketAttachmentQueryKey = (id: string,
+    attachmentId: string,) => {
+    return [
+    `/api/support/tickets/${id}/attachments/${attachmentId}`
+    ] as const;
+    }
+
+
+export const getDownloadSupportTicketAttachmentQueryOptions = <TData = Awaited<ReturnType<typeof downloadSupportTicketAttachment>>, TError = ErrorType<void>>(id: string,
+    attachmentId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof downloadSupportTicketAttachment>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getDownloadSupportTicketAttachmentQueryKey(id,attachmentId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof downloadSupportTicketAttachment>>> = ({ signal }) => downloadSupportTicketAttachment(id,attachmentId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(id && attachmentId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof downloadSupportTicketAttachment>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type DownloadSupportTicketAttachmentQueryResult = NonNullable<Awaited<ReturnType<typeof downloadSupportTicketAttachment>>>
+export type DownloadSupportTicketAttachmentQueryError = ErrorType<void>
+
+
+
+export function useDownloadSupportTicketAttachment<TData = Awaited<ReturnType<typeof downloadSupportTicketAttachment>>, TError = ErrorType<void>>(
+ id: string,
+    attachmentId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof downloadSupportTicketAttachment>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getDownloadSupportTicketAttachmentQueryOptions(id,attachmentId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getRetrySupportTicketEmailUrl = (id: string,) => {
+
+
+
+
+  return `/api/support/tickets/${id}/email/retry`
+}
+
+/**
+ * Administrator only. Idempotent retry subject to lease, maximum attempts and provider deduplication window. Inspect returned delivery status; HTTP 200 does not assert delivery.
+ */
+export const retrySupportTicketEmail = async (id: string, options?: RequestInit): Promise<SupportEmailDeliveryResult> => {
+
+  return customFetch<SupportEmailDeliveryResult>(getRetrySupportTicketEmailUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getRetrySupportTicketEmailMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof retrySupportTicketEmail>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof retrySupportTicketEmail>>, TError,{id: string}, TContext> => {
+
+const mutationKey = ['retrySupportTicketEmail'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof retrySupportTicketEmail>>, {id: string}> = (props) => {
+          const {id} = props ?? {};
+
+          return  retrySupportTicketEmail(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RetrySupportTicketEmailMutationResult = NonNullable<Awaited<ReturnType<typeof retrySupportTicketEmail>>>
+
+    export type RetrySupportTicketEmailMutationError = ErrorType<void>
+
+    export const useRetrySupportTicketEmail = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof retrySupportTicketEmail>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof retrySupportTicketEmail>>,
+        TError,
+        {id: string},
+        TContext
+      > => {
+      return useMutation(getRetrySupportTicketEmailMutationOptions(options));
+    }
+
+export const getUpdateConsumableUsageUrl = (id: string,) => {
+
+
+
+
+  return `/api/consumables/stock/${id}/usage`
+}
+
+/**
+ * Stock owner only, including administrators. Null clears an estimate. Legacy daily usage is never converted into event usage. Zero consumption yields no finite duration estimate.
+ */
+export const updateConsumableUsage = async (id: string,
+    consumableUsageInput: ConsumableUsageInput, options?: RequestInit): Promise<ConsumableUsageResult> => {
+
+  return customFetch<ConsumableUsageResult>(getUpdateConsumableUsageUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      consumableUsageInput,)
+  }
+);}
+
+
+
+
+export const getUpdateConsumableUsageMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateConsumableUsage>>, TError,{id: string;data: BodyType<ConsumableUsageInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateConsumableUsage>>, TError,{id: string;data: BodyType<ConsumableUsageInput>}, TContext> => {
+
+const mutationKey = ['updateConsumableUsage'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateConsumableUsage>>, {id: string;data: BodyType<ConsumableUsageInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateConsumableUsage(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateConsumableUsageMutationResult = NonNullable<Awaited<ReturnType<typeof updateConsumableUsage>>>
+    export type UpdateConsumableUsageMutationBody = BodyType<ConsumableUsageInput>
+    export type UpdateConsumableUsageMutationError = ErrorType<void>
+
+    export const useUpdateConsumableUsage = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateConsumableUsage>>, TError,{id: string;data: BodyType<ConsumableUsageInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateConsumableUsage>>,
+        TError,
+        {id: string;data: BodyType<ConsumableUsageInput>},
+        TContext
+      > => {
+      return useMutation(getUpdateConsumableUsageMutationOptions(options));
+    }
 

@@ -21,7 +21,8 @@ test("live-event failure persists across user turns and ignores assistant claims
   const context = recentSupportContext(messages);
   assert.equal(classifySupport(context).liveFailure, true);
   assert.equal(supportAction(context)?.data?.priority, "urgent");
-  assert.match(safetyResponse(context)!, /urgent support ticket/);
+  assert.equal(safetyResponse(context), undefined);
+  assert.equal(supportAction(context, "en", true), undefined);
   assert.equal(
     classifySupport(
       recentSupportContext([
@@ -116,37 +117,85 @@ test("physical danger overrides live-event diagnostics in English and French", (
   }
 });
 
-test("live-event failure offers urgent ticket before consenting to visible-only observations", () => {
+test("live-event failure retrieves documentation first; missing evidence offers an urgent ticket", () => {
   for (const query of [
     "Printer not working during an event",
     "Panne de borne pendant un evenement en cours",
   ]) {
     assert.equal(classifySupport(query).liveFailure, true);
     assert.equal(supportAction(query)?.data?.priority, "urgent");
-    const response = safetyResponse(query)!;
-    assert.match(
-      response,
-      /^Would you like to prepare an urgent support ticket/,
-    );
-    assert.match(response, /No ticket has been created/);
-    assert.match(response, /you agree/);
-    assert.match(
-      response,
-      /without touching equipment or opening private screens/,
+    assert.equal(safetyResponse(query), undefined);
+    assert.equal(supportAction(query, "en", true), undefined);
+    assert.equal(
+      supportAction(`${query}. Please open a ticket`, "en", true)?.data
+        ?.priority,
+      "urgent",
     );
   }
   assert.equal(classifySupport("Book an event next month").liveFailure, false);
 });
 
-test("human, warranty and sales requests offer escalation immediately", () => {
+test("explicit human and ticket requests offer escalation immediately", () => {
   for (const query of [
     "I want a human",
-    "garantie",
+    "ouvrir un ticket",
     "reclamation",
-    "devis",
+    "contacter le support",
     "refund",
   ]) {
     assert.equal(supportAction(query)?.type, "escalate");
+  }
+});
+
+test("ordinary documented technical topics do not force escalation or bypass the provider", async () => {
+  for (const query of [
+    "Comment faire le montage de la borne ?",
+    "Mon imprimante a un probleme de papier",
+    "Configurer LumaBooth",
+    "Comment connecter mon appareil photo ?",
+    "Quels consommables utiliser ?",
+    "Guide support : depannage de la camera",
+    "Printer paper problem during a live event",
+    "Probleme de papier imprimante pendant un mariage en cours",
+    "What does the documented warranty cover?",
+  ]) {
+    assert.equal(safetyResponse(query), undefined, query);
+    assert.equal(supportAction(query, "fr", true), undefined, query);
+    const sources = [
+      {
+        id: "official-original",
+        type: "knowledge" as const,
+        title: "Official original",
+        excerpt: "Exact approved extracted passage",
+        meta: { language: "fr" },
+      },
+    ];
+    let called = false;
+    const provider: AIProvider = {
+      name: "test",
+      modelId: "test",
+      async *chat(_messages, prompt, received) {
+        called = true;
+        assert.deepEqual(received, sources);
+        assert.match(prompt, /Knowledge first/);
+        yield { type: "content", content: received[0].excerpt };
+        yield { type: "done" };
+      },
+    };
+    for await (const _event of supportChat(
+      provider,
+      [],
+      buildSystemPrompt(sources),
+      sources,
+      "fr",
+      query,
+    )) {
+      /* drain */
+    }
+    assert.ok(called);
+    const response = generateMockResponse(query, sources, "fr");
+    assert.match(response, /Exact approved extracted passage/);
+    assert.doesNotMatch(response, /ticket/i);
   }
 });
 
@@ -245,7 +294,7 @@ test("prompt contains grounding, trust boundaries and provenance without staging
     "faq-1",
     "2026-09-10",
     "explicitly disclose",
-    "No manipulation is approved",
+    "Never bypass safety interlocks",
   ])
     assert.ok(prompt.includes(text));
   assert.doesNotMatch(

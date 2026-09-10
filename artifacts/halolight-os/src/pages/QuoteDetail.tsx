@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { paymentMethodPrint } from "@/lib/paymentMethodPrint";
 import { useRoute, Link, useLocation } from "wouter";
 import { useTranslation } from "react-i18next";
 import {
@@ -267,6 +268,7 @@ function PrintPreview({ quote, lang }: { quote: any; lang: string }) {
       <tr class="grand"><td style="font-weight:700">${t("quotes.total_col")}</td><td style="font-size:18px;font-weight:700">${formatCurrency(quote.total)}</td></tr>
     </table>
     ${quote.notes ? `<div class="section"><div class="label">${t("quotes.notes_section")}</div><div class="notes">${quote.notes}</div></div>` : ""}
+    ${paymentMethodPrint(t("quotes.payment_method", { defaultValue: "Payment method" }), quote.paymentMethod)}
     ${quote.terms ? `<div class="section"><div class="label">${t("quotes.terms_section")}</div><div class="notes">${quote.terms}</div></div>` : ""}
     </body></html>`;
     const w = window.open("", "_blank");
@@ -896,6 +898,7 @@ export default function QuoteDetail() {
         </table>
       </div>
 
+      {quote.paymentMethod && <p className="text-sm"><span className="font-medium">{t("quotes.payment_method", { defaultValue: "Payment method" })}: </span>{quote.paymentMethod}</p>}
       {(quote.notes || quote.terms) && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {quote.notes && (

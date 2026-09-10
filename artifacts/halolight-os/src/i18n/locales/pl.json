@@ -46,7 +46,10 @@
     "users": "Użytkownicy",
     "resources": "Zasoby",
     "contract_templates": "Szablony umów",
-    "exports": "Eksporty"
+    "exports": "Eksporty",
+    "admin_pilotage": "Zarządzanie",
+    "admin_content_ai": "Treści i AI",
+    "admin_data_system": "Dane i system"
   },
   "dashboard": {
     "title": "Panel",
@@ -88,7 +91,8 @@
     "widget_notifications": "Ostatnie powiadomienia",
     "widget_upcoming_events": "Nadchodzące wydarzenia",
     "widget_academy_stats": "Postęp akademii",
-    "widget_sales_overview": "Lejek sprzedaży"
+    "widget_sales_overview": "Lejek sprzedaży",
+    "preferences_error": "Nie udało się wczytać lub zapisać preferencji panelu. Poprzednie wybory zostały zachowane."
   },
   "academy": {
     "title": "Akademia",
@@ -337,7 +341,19 @@
     "forecast_reorder_hint": "Zamów papier przed następnym wydarzeniem, aby uniknąć braków.",
     "forecast_prints_label": "wydruków",
     "forecast_more_events": "więcej wydarzeń",
-    "forecast_no_prints_warning": "Ilość wydruków nie określona"
+    "forecast_no_prints_warning": "Ilość wydruków nie określona",
+    "average_prints_event": "Średnia liczba wydruków na wydarzenie",
+    "average_events_month": "Średnia liczba wydarzeń miesięcznie (opcjonalnie)",
+    "monthly_consumption": "Szacowana liczba wydruków miesięcznie",
+    "events_remaining": "Pozostała liczba wydarzeń",
+    "months_remaining": "Pozostała liczba miesięcy",
+    "edit_usage": "Edytuj zużycie na wydarzenie",
+    "usage_save_failed": "Nie można zapisać zużycia na wydarzenie",
+    "usage_unknown": "Brak szacunku",
+    "stock_prints": "Aktualny zapas (wydruki)",
+    "print_units_required": "Szacunki i uzupełnianie zapasu wydruków są niedostępne dla tej jednostki. Istniejące ilości pozostają bez zmian.",
+    "verified_print_quantity": "Zweryfikowana liczba pozostałych wydruków",
+    "confirm_print_conversion": "Potwierdzam, że jest to całkowita pozostała liczba możliwych wydruków. Zmień tylko ilość i jednostkę mojego zapasu, bez zmiany wspólnego katalogu."
   },
   "support": {
     "title": "Wsparcie",
@@ -390,7 +406,13 @@
     "stat_in_progress": "In Progress",
     "stat_resolved": "Rozwiązany",
     "ticket_created_msg": "Ticket created",
-    "ticket_created_desc": "Your support ticket has been submitted."
+    "ticket_created_desc": "Your support ticket has been submitted.",
+    "equipment_model": "Sprzęt/model (opcjonalnie)",
+    "serial_number": "Numer seryjny (opcjonalnie)",
+    "attachments": "Załączniki",
+    "attachments_limit": "Maksymalnie 3 pliki PDF lub obrazy, łącznie 10 MiB",
+    "attachments_invalid": "Wybierz maksymalnie 3 pliki PDF lub obrazy, łącznie do 10 MiB",
+    "create_failed": "Nie udało się utworzyć zgłoszenia. Sprawdź pola i załączniki, a następnie spróbuj ponownie."
   },
   "kb": {
     "content_language": "Język treści",
@@ -509,7 +531,8 @@
     "voice_input_error": "Błąd wejścia głosowego",
     "new_chat": "Nowa rozmowa",
     "send_get_started": "Wyślij wiadomość, aby rozpocząć",
-    "escalate_dialog_desc": "Zostanie utworzone zgłoszenie z transkryptem tej rozmowy. Możesz je śledzić w swoich Zgłoszeniach Wsparcia."
+    "escalate_dialog_desc": "Zostanie utworzone zgłoszenie z transkryptem tej rozmowy. Możesz je śledzić w swoich Zgłoszeniach Wsparcia.",
+    "provider_unavailable": "Usługa AI jest niedostępna, ponieważ jej dostawca nie został poprawnie skonfigurowany. Administrator HaloLight Hub musi ją skonfigurować, zanim będzie można otrzymywać odpowiedzi generowane przez AI."
   },
   "notifications": {
     "title": "Powiadomienia",
@@ -913,7 +936,8 @@
     "discount_label": "Rabat",
     "send_quote": "Przygotuj email",
     "quote_sent": "Szkic emaila przygotowany",
-    "quote_send_failed": "Nie można wysłać oferty"
+    "quote_send_failed": "Nie można wysłać oferty",
+    "payment_method": "Metoda płatności"
   },
   "contracts": {
     "title": "Umowy",
@@ -1031,7 +1055,19 @@
     "provider_signature_section": "Podpis dostawcy dla umów",
     "provider_signature_desc": "Jeśli ustawiony, ten podpis pojawia się w generowanych umowach.",
     "provider_signature_saved": "Podpis zapisany",
-    "no_content_message": "Brak treści umowy. Użyj Edytuj, aby dodać treść, albo wygeneruj umowę z szablonu."
+    "no_content_message": "Brak treści umowy. Użyj Edytuj, aby dodać treść, albo wygeneruj umowę z szablonu.",
+    "advanceAmount": "Zaliczka",
+    "paymentMethod": "Metoda płatności",
+    "responsibilityTerms": "Obowiązki stron",
+    "breakdownTerms": "Awaria i pomoc",
+    "postponementTerms": "Przełożenie terminu",
+    "forceMajeureTerms": "Siła wyższa",
+    "privacyTerms": "Ochrona danych osobowych",
+    "specialConditions": "Warunki szczególne",
+    "language_label": "Język umowy",
+    "balanceAmount": "Pozostała kwota",
+    "invalid_advance": "Sprawdź zaliczkę i wprowadzone warunki.",
+    "legal_review_required": "Zatwierdzenie prawne tego wzoru nie zostało potwierdzone. Przed podpisaniem zleć sprawdzenie warunków."
   },
   "invoices": {
     "title": "Faktury",
@@ -1147,7 +1183,8 @@
     "equipment_label": "Sprzęt",
     "options_label": "Opcje",
     "discount_label": "Rabat",
-    "status_updated": "Status zaktualizowany"
+    "status_updated": "Status zaktualizowany",
+    "payment_method": "Metoda płatności"
   },
   "admin_analytics": {
     "title": "Panel analityczny",
@@ -1249,7 +1286,18 @@
     "priority_urgent": "Pilny",
     "priority_suffix": "priorytet {{level}}",
     "toast_reply_sent": "Odpowiedź wysłana",
-    "toast_status_updated": "Status zaktualizowany"
+    "toast_status_updated": "Status zaktualizowany",
+    "download_failed": "Nie udało się pobrać załącznika",
+    "email_history": "Historia wysyłania wiadomości email",
+    "email_pending": "Email w kolejce",
+    "email_sending": "Wysyłanie wiadomości email",
+    "email_sent": "Przyjęto przez dostawcę poczty",
+    "email_failed": "Wysyłanie wiadomości email nie powiodło się",
+    "email_unknown": "Wysyłka wymaga weryfikacji",
+    "email_disabled": "Wysyłanie wiadomości email nie jest skonfigurowane",
+    "email_retry": "Ponów wysyłkę",
+    "email_retry_failed": "Ponowna wysyłka nie powiodła się",
+    "email_none": "Brak historii wysyłania wiadomości email"
   },
   "post_detail": {
     "back": "Wróć",
@@ -1524,7 +1572,12 @@
     "col_avg_booking": "Śr. rezerwacja",
     "col_tier": "Poziom",
     "no_revenue": "Brak danych przychodów",
-    "top_performers": "Najlepsi wykonawcy"
+    "top_performers": "Najlepsi wykonawcy",
+    "currency": "Waluta",
+    "undated_paid": "Liczba opłaconych faktur bez daty płatności, pominiętych na wykresie miesięcznym: {{count}}.",
+    "stat_invoiced": "Zafakturowano",
+    "stat_unpaid": "Niezapłacone",
+    "excluded_currency": "Liczba faktur bez waluty lub z nieprawidłową walutą, pominiętych w sumach finansowych: {{count}}."
   },
   "admin_uploads": {
     "title": "Menedżer plików",
@@ -1979,5 +2032,22 @@
     "placeholder_not_applicable": "Nie dotyczy",
     "optional_summary": "Brakuje niektórych opcjonalnych informacji i zostaną zastąpione domyślnym tekstem.",
     "field_currency": "Waluta"
+  },
+  "consent": {
+    "not_configured": "Zatwierdzone dokumenty prawne nie zostały jeszcze opublikowane w Hubie. Żadna akceptacja nie jest rejestrowana.",
+    "terms": "Warunki korzystania",
+    "privacy": "Polityka prywatności i przetwarzanie danych osobowych",
+    "accept": "Zapoznałem się z tymi wersjami warunków korzystania i polityki prywatności oraz je akceptuję.",
+    "marketing": "Komunikacja marketingowa (opcjonalna)",
+    "analytics": "Opcjonalna analiza użytkowania",
+    "ai_improvement": "Wykorzystanie moich danych do ulepszania AI (opcjonalne)",
+    "optional": "Opcjonalne wybory",
+    "save_error": "Akceptacja nie została zapisana. Sprawdź aktualne dokumenty i spróbuj ponownie.",
+    "save": "Zapisz moje wybory",
+    "title": "Warunki i prywatność",
+    "proof": "Historia akceptacji (ostatnie 100)",
+    "no_proof": "Brak zarejestrowanej akceptacji.",
+    "proof_choices": "Opcjonalne zgody: marketing {{marketing}}, analiza {{analytics}}, ulepszanie AI {{ai}}",
+    "manage": "Ustawienia prywatności"
   }
 }

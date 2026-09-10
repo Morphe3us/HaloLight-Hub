@@ -14,6 +14,8 @@ import {
   consumableCatalog,
   consumableStock,
   exportLogs,
+  userConsentEvents,
+  userDashboardPreferences,
 } from "@workspace/db";
 import { requireAuth } from "../middlewares/requireAuth";
 import { getOrCreateUser } from "../lib/userSync";
@@ -580,7 +582,7 @@ router.get(
     const date = dateSuffix();
 
     try {
-      const [profileRows, leadsData, quotesData, contractsData, invoicesData, eventsData, ticketsData] =
+      const [profileRows, leadsData, quotesData, contractsData, invoicesData, eventsData, ticketsData, consentEvents, dashboardPreferences] =
         await Promise.all([
           db
             .select({
@@ -608,13 +610,15 @@ router.get(
           fetchInvoices(user.id),
           fetchEvents(user.id),
           fetchSupportTickets(user.id),
+          db.select().from(userConsentEvents).where(eq(userConsentEvents.userId, user.id)).orderBy(desc(userConsentEvents.acceptedAt)),
+          db.select().from(userDashboardPreferences).where(eq(userDashboardPreferences.userId, user.id)),
         ]);
 
       const exportPayload = {
         exportDate: new Date().toISOString(),
         scope: "personal",
         gdprNote:
-          "This file contains all personal data linked to your account, provided under GDPR Article 20 (Right to Data Portability).",
+          "This export contains the account and business records listed below, including consent history and dashboard preferences.",
         profile: profileRows[0] ?? null,
         leads: leadsData,
         quotes: quotesData,
@@ -622,9 +626,12 @@ router.get(
         invoices: invoicesData,
         events: eventsData,
         supportTickets: ticketsData,
+        consentEvents,
+        dashboardPreferences: dashboardPreferences[0] ?? null,
       };
 
       res.setHeader("Content-Type", "application/json; charset=utf-8");
+      res.setHeader("Cache-Control", "private, no-store");
       res.setHeader(
         "Content-Disposition",
         `attachment; filename="halolight-personal-data-${date}.json"`
@@ -638,6 +645,8 @@ router.get(
         invoices: invoicesData.length,
         events: eventsData.length,
         support_tickets: ticketsData.length,
+        consent_events: consentEvents.length,
+        dashboard_preferences: dashboardPreferences.length,
       });
     } catch (err) {
       req.log.error({ err }, "Export personal data failed");

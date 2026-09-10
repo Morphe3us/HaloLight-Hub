@@ -26,6 +26,15 @@ const LANGUAGES = [
 ];
 
 const TEMPLATE_VARIABLES = [
+  ["advance_amount", "Advance payment (not the security deposit)"],
+  ["balance_amount", "Contract total minus advance payment"],
+  ["payment_method", "Payment method"],
+  ["responsibility_terms", "Author-supplied responsibilities"],
+  ["breakdown_terms", "Author-supplied breakdown terms"],
+  ["postponement_terms", "Author-supplied postponement terms"],
+  ["force_majeure_terms", "Author-supplied force majeure terms"],
+  ["privacy_terms", "Author-supplied personal data terms"],
+  ["special_conditions", "Author-supplied special conditions"],
   ["contract_number", "Auto-generated contract number"],
   ["rental_company_name", "Your company name"],
   ["rental_company_representative", "Your full name"],
@@ -88,7 +97,8 @@ export default function AdminContractTemplates() {
 
   const { data: templatesData, isLoading } = useListContractTemplates({}, { query: { queryKey: ["contract-templates-admin"] } });
   const templates = templatesData?.items ?? [];
-  const activeTemplate = templates.find((t) => t.language === activeLang);
+  const activeTemplate = [...templates].filter((t) => t.language === activeLang)
+    .sort((a, b) => Number(b.isDefault) - Number(a.isDefault) || a.id.localeCompare(b.id))[0];
 
   const updateMutation = useUpdateContractTemplate({
     mutation: {

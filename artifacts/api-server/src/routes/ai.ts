@@ -10,6 +10,11 @@ import {
 import { requireAuth } from "../middlewares/requireAuth";
 import { getOrCreateUser } from "../lib/userSync";
 import { getAIProvider } from "../lib/ai/factory";
+import { chatInputError } from "../lib/ai/chatLimits";
+import {
+  enqueueTicketMail,
+  dispatchTicketMail,
+} from "../lib/mail/ticketOutbox";
 import { buildSystemPrompt } from "../lib/ai/provider";
 import { retrieveContext, buildSuggestedActions } from "../lib/ai/rag";
 import type { RAGSource, SuggestedAction } from "../lib/ai/provider";
@@ -168,8 +173,9 @@ router.post(
     }
 
     const { content: rawContent } = req.body as { content?: string };
-    if (typeof rawContent !== "string" || !rawContent.trim()) {
-      res.status(400).json({ error: "content required" });
+    const inputError = chatInputError(rawContent);
+    if (inputError || typeof rawContent !== "string") {
+      res.status(400).json({ error: inputError });
       return;
     }
     const content = redactSensitiveText(rawContent.trim());
@@ -336,8 +342,9 @@ router.post(
     }
 
     const { content: rawContent } = req.body as { content?: string };
-    if (typeof rawContent !== "string" || !rawContent.trim()) {
-      res.status(400).json({ error: "content required" });
+    const inputError = chatInputError(rawContent);
+    if (inputError || typeof rawContent !== "string") {
+      res.status(400).json({ error: inputError });
       return;
     }
     const content = redactSensitiveText(rawContent.trim());
@@ -493,22 +500,29 @@ router.post(
 
     const ticketNumber = `AI-${Date.now().toString(36).toUpperCase().slice(-6)}`;
 
-    const [ticket] = await db
-      .insert(supportTickets)
-      .values({
-        userId: user.id,
-        ticketNumber,
-        title: ticketTitle,
-        description: ticketBody,
-        priority: (liveFailure
-          ? "urgent"
-          : ["low", "medium", "high", "urgent"].includes(priority)
-            ? priority
-            : "medium") as "low" | "medium" | "high" | "urgent",
-        status: "open",
-        category: "technical",
-      })
-      .returning();
+    const ticket = await db.transaction(async (tx) => {
+      const [created] = await tx
+        .insert(supportTickets)
+        .values({
+          userId: user.id,
+          ticketNumber,
+          title: ticketTitle,
+          description: ticketBody,
+          priority: (liveFailure
+            ? "urgent"
+            : ["low", "medium", "high", "urgent"].includes(priority)
+              ? priority
+              : "medium") as "low" | "medium" | "high" | "urgent",
+          status: "open",
+          category: "technical",
+        })
+        .returning();
+      await enqueueTicketMail(tx, created!, user);
+      return created!;
+    });
+    void dispatchTicketMail(ticket.id).catch((error) =>
+      req.log?.error(error, "AI ticket mail dispatch failed"),
+    );
 
     res.status(201).json({ ticket });
   },

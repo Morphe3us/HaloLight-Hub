@@ -1,5 +1,7 @@
-import { pgTable, text, uuid, timestamp, pgEnum, integer, index } from "drizzle-orm/pg-core";
+import { pgTable, text, uuid, timestamp, pgEnum, integer, index, jsonb } from "drizzle-orm/pg-core";
 import { usersTable } from "./users";
+
+export type SupportAttachment = { id: string; key: string; fileName: string; mimeType: string; size: number };
 
 export const ticketStatusEnum = pgEnum("ticket_status", [
   "open",
@@ -38,6 +40,9 @@ export const supportTickets = pgTable(
     status: ticketStatusEnum("status").notNull().default("open"),
     priority: ticketPriorityEnum("priority").notNull().default("medium"),
     category: ticketCategoryEnum("category").notNull().default("general"),
+    equipmentModel: text("equipment_model"),
+    serialNumber: text("serial_number"),
+    attachments: jsonb("attachments").$type<SupportAttachment[]>().notNull().default([]),
     resolvedAt: timestamp("resolved_at"),
     closedAt: timestamp("closed_at"),
     createdAt: timestamp("created_at").notNull().defaultNow(),
@@ -59,3 +64,27 @@ export const supportTicketReplies = pgTable("support_ticket_replies", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
+
+export const supportTicketMailOutbox = pgTable("support_ticket_mail_outbox", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  ticketId: uuid("ticket_id").notNull().unique().references(() => supportTickets.id, { onDelete: "cascade" }),
+  payload: jsonb("payload").$type<Record<string, unknown>>().notNull(),
+  status: text("status").notNull().default("pending"),
+  attempts: integer("attempts").notNull().default(0),
+  providerMessageId: text("provider_message_id"),
+  lastError: text("last_error"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  sentAt: timestamp("sent_at", { withTimezone: true }),
+  claimedAt: timestamp("claimed_at", { withTimezone: true }),
+}).enableRLS();
+
+export const supportTicketMailHistory = pgTable("support_ticket_mail_history", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  ticketId: uuid("ticket_id").notNull().references(() => supportTickets.id, { onDelete: "cascade" }),
+  outboxId: uuid("outbox_id").notNull().references(() => supportTicketMailOutbox.id, { onDelete: "cascade" }),
+  status: text("status").notNull(),
+  attempt: integer("attempt").notNull(),
+  detail: text("detail"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [index("support_ticket_mail_history_ticket_idx").on(t.ticketId, t.createdAt)]).enableRLS();

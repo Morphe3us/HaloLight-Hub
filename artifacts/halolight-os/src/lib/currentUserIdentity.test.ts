@@ -181,6 +181,7 @@ function appHarness(key = "pk_test_fixture") {
       if (id === "./components/theme-provider") return { ThemeProvider: pass };
       if (id === "./components/layout/AppShell") return { AppShell: pass };
       if (id === "./components/LanguageSync") return { LanguageSync: pass };
+      if (id === "./components/ConsentGate") return { ConsentGate: pass };
       if (id === "@/components/ui/toaster") return { Toaster: pass };
       if (id === "@/components/ui/tooltip") return { TooltipProvider: pass };
       if (id.startsWith("./pages/")) {

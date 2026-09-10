@@ -14,6 +14,8 @@ import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Printer, Building2, Mail, Edit2, FileSignature, ReceiptText } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCurrency } from "@/lib/currency";
+import { contractPrintSettings } from "@/lib/contractPrintSettings";
+import { loadLocale } from "@/i18n";
 
 const STATUS_COLORS: Record<string, string> = {
   draft: "bg-slate-100 text-slate-700 border-slate-200",
@@ -31,13 +33,17 @@ function formatDate(d: string | null | undefined, locale = "en") {
   return new Date(d).toLocaleDateString(locale, { year: "numeric", month: "long", day: "numeric" });
 }
 
-function PrintButton({ contractNumber, title, clientName, content, value, lang }: {
-  contractNumber: string; title: string; clientName: string; content: string | null | undefined; value: string; lang: string;
+function PrintButton({ contractNumber, title, clientName, content, value, lang, currency }: {
+  contractNumber: string; title: string; clientName: string; content: string | null | undefined; value: string; lang: string; currency: string;
 }) {
-  const { t } = useTranslation();
-  const { format: formatCurrency } = useCurrency();
+  const { t, i18n } = useTranslation();
   const { data: me } = useGetCurrentUser();
-  const handlePrint = () => {
+  const handlePrint = async () => {
+    const w = window.open("", "_blank");
+    if (!w) return;
+    const settings = contractPrintSettings({ language: lang, currency });
+    await loadLocale(settings.language);
+    const t = i18n.getFixedT(settings.language);
     const today = new Date().toLocaleDateString(lang, { year: "numeric", month: "long", day: "numeric" });
     const logoUrl = (me as any)?.logoUrl ?? "";
     const companyName = (me as any)?.companyName ?? (me as any)?.fullName ?? "";
@@ -118,12 +124,11 @@ function PrintButton({ contractNumber, title, clientName, content, value, lang }
 <div class="contract-value-bar">
   <div class="cv-inner">
     <div class="cv-label">${t("contracts.contract_value")}</div>
-    <div class="cv-amount">${formatCurrency(Number(value))}</div>
+    <div class="cv-amount">${settings.formatValue(value)}</div>
   </div>
 </div>
 ${bodyHtml}
 </body></html>`;
-    const w = window.open("", "_blank");
     if (w) { w.document.write(html); w.document.close(); w.document.title = contractNumber; w.focus(); w.print(); }
   };
   return <Button variant="outline" onClick={handlePrint} className="gap-2"><Printer className="w-4 h-4" /> {t("contracts.export_pdf_btn")}</Button>;
@@ -258,7 +263,7 @@ export default function ContractDetail() {
           </div>
         </div>
         <div className="flex gap-2 flex-wrap">
-          <PrintButton contractNumber={contract.contractNumber} title={contract.title} clientName={contract.clientName} content={contract.content} value={contract.value} lang={lang} />
+          <PrintButton contractNumber={contract.contractNumber} title={contract.title} clientName={contract.clientName} content={contract.content} value={contract.value} lang={contract.language ?? "en"} currency={contract.currency ?? "EUR"} />
           <Button variant="outline" size="sm" onClick={openCreateInvoice} className="gap-1.5">
             <ReceiptText className="w-3.5 h-3.5" /> {t("pipeline.create_invoice")}
           </Button>

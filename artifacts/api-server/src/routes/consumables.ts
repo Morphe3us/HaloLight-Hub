@@ -1,8 +1,10 @@
 import { Router, type IRouter, type Request, type Response } from "express";
+import { randomUUID } from "node:crypto";
 import { eq, desc, and, lte, sql, gte, asc } from "drizzle-orm";
 import { db, usersTable, consumableCatalog, consumableStock, consumableOrders, events } from "@workspace/db";
 import { requireAuth } from "../middlewares/requireAuth";
 import { getOrCreateUser } from "../lib/userSync";
+import { consumableUsage, parseConsumableUsage } from "../lib/consumableUsage";
 
 const router: IRouter = Router();
 
@@ -24,14 +26,17 @@ router.get("/consumables", requireAuth, async (req: Request, res: Response): Pro
     id: consumableStock.id,
     catalogItemId: consumableStock.catalogItemId,
     currentQuantity: consumableStock.currentQuantity,
+    quantityUnit: consumableStock.quantityUnit,
     estimatedDailyUsage: consumableStock.estimatedDailyUsage,
+    averagePrintsPerEvent: consumableStock.averagePrintsPerEvent,
+    averageEventsPerMonth: consumableStock.averageEventsPerMonth,
     lastRestockedAt: consumableStock.lastRestockedAt,
     lowStockAlertEnabled: consumableStock.lowStockAlertEnabled,
     updatedAt: consumableStock.updatedAt,
     name: consumableCatalog.name,
     sku: consumableCatalog.sku,
     category: consumableCatalog.category,
-    unitType: consumableCatalog.unitType,
+    unitType: sql<string>`coalesce(${consumableStock.quantityUnit}, ${consumableCatalog.unitType})`,
     unitPrice: consumableCatalog.unitPrice,
     reorderThreshold: consumableCatalog.reorderThreshold,
     description: consumableCatalog.description,
@@ -45,14 +50,13 @@ router.get("/consumables", requireAuth, async (req: Request, res: Response): Pro
   const enriched = stockItems.map((item) => {
     const isLow = item.currentQuantity <= item.reorderThreshold;
     const isCritical = item.currentQuantity === 0;
-    const dailyUsage = Number(item.estimatedDailyUsage ?? 0);
-    const daysRemaining = dailyUsage > 0 ? Math.floor(item.currentQuantity / dailyUsage) : null;
 
     return {
       ...item,
       isLow,
       isCritical,
-      daysRemaining,
+      daysRemaining: null,
+      ...consumableUsage(item),
       reorderRecommended: isLow && item.lowStockAlertEnabled,
     };
   });
@@ -96,45 +100,64 @@ router.post("/consumables/stock", requireAuth, async (req: Request, res: Respons
     name, category, sku, unitType, unitPrice,
     reorderThreshold, compatibleModels, description,
     currentQuantity, estimatedDailyUsage, lowStockAlertEnabled,
-  } = req.body as {
+  } = (req.body ?? {}) as {
     name?: string; category?: string; sku?: string; unitType?: string;
     unitPrice?: string; reorderThreshold?: number; compatibleModels?: string;
     description?: string; currentQuantity?: number; estimatedDailyUsage?: string;
     lowStockAlertEnabled?: boolean;
   };
 
-  if (!name?.trim() || !category?.trim()) {
+  if (typeof name !== "string" || !name.trim() || name.length > 200 || !["paper", "ribbon", "accessory", "cleaning"].includes(category ?? "")) {
     res.status(400).json({ error: "name and category are required" });
     return;
   }
-  if (typeof currentQuantity !== "number" || currentQuantity < 0) {
+  if (typeof currentQuantity !== "number" || !Number.isInteger(currentQuantity) || currentQuantity < 0 || currentQuantity > 2147483647) {
     res.status(400).json({ error: "currentQuantity must be a non-negative number" });
     return;
   }
 
-  const generatedSku = sku?.trim() || `USR-${user.id.slice(-6).toUpperCase()}-${Date.now()}`;
+  let usage: ReturnType<typeof parseConsumableUsage>;
+  try { usage = parseConsumableUsage(req.body); }
+  catch (error) { res.status(400).json({ error: (error as Error).message }); return; }
+  if ((reorderThreshold !== undefined && (!Number.isInteger(reorderThreshold) || reorderThreshold < 0 || reorderThreshold > 2147483647)) ||
+    [sku, unitType, compatibleModels, description].some(value => value != null && (typeof value !== "string" || value.length > 2000)) ||
+    (unitPrice != null && (typeof unitPrice !== "string" || !/^\d{1,8}(\.\d{1,2})?$/.test(unitPrice))) ||
+    (estimatedDailyUsage != null && (typeof estimatedDailyUsage !== "string" || !/^\d{1,4}(\.\d{1,2})?$/.test(estimatedDailyUsage))) ||
+    (lowStockAlertEnabled !== undefined && typeof lowStockAlertEnabled !== "boolean")) {
+    res.status(400).json({ error: "Invalid stock fields" }); return;
+  }
+  const generatedSku = sku?.trim() || `USR-${randomUUID()}`;
+  const stockUnit = category === "paper" ? "prints" : unitType?.trim() || "units";
+  if ((category === "paper" && unitType?.trim() && unitType.trim() !== "prints") ||
+    (stockUnit !== "prints" && Object.values(usage).some(value => value !== null))) {
+    res.status(400).json({ error: "Event estimates require stock expressed in prints; paper quantities must be prints" }); return;
+  }
 
-  const [catalogItem] = await db.insert(consumableCatalog).values({
+  let result;
+  try { result = await db.transaction(async tx => {
+  const [catalogItem] = await tx.insert(consumableCatalog).values({
     name: name.trim(),
     sku: generatedSku,
     category: category as typeof consumableCatalog.$inferInsert["category"],
-    unitType: unitType?.trim() || "units",
+    unitType: stockUnit,
     unitPrice: unitPrice || "0",
     reorderThreshold: reorderThreshold ?? 5,
     compatibleModels: compatibleModels?.trim() || null,
     description: description?.trim() || null,
   }).returning();
 
-  const [stockItem] = await db.insert(consumableStock).values({
+  const [stockItem] = await tx.insert(consumableStock).values({
     userId: user.id,
     catalogItemId: catalogItem!.id,
     currentQuantity,
+    quantityUnit: stockUnit,
     estimatedDailyUsage: estimatedDailyUsage || null,
+    ...usage,
     lastRestockedAt: currentQuantity > 0 ? new Date() : null,
     lowStockAlertEnabled: lowStockAlertEnabled ?? true,
   }).returning();
 
-  const result = {
+  return {
     ...stockItem,
     name: catalogItem!.name,
     sku: catalogItem!.sku,
@@ -147,10 +170,46 @@ router.post("/consumables/stock", requireAuth, async (req: Request, res: Respons
     isLow: currentQuantity <= (reorderThreshold ?? 5),
     isCritical: currentQuantity === 0,
     daysRemaining: null,
+    ...consumableUsage({ ...stockItem!, unitType: stockUnit }),
     reorderRecommended: currentQuantity <= (reorderThreshold ?? 5) && (lowStockAlertEnabled ?? true),
   };
+  }); } catch (error) {
+    const code = (error as { code?: string; cause?: { code?: string } }).code ?? (error as { cause?: { code?: string } }).cause?.code;
+    res.status(code === "23505" ? 409 : 503).json({ error: code === "23505" ? "SKU already exists" : "Stock creation failed" }); return;
+  }
 
   res.status(201).json(result);
+});
+
+// Usage belongs to the stock owner, including when the caller is an administrator.
+router.patch("/consumables/stock/:id/usage", requireAuth, async (req: Request, res: Response): Promise<void> => {
+  const user = await getOrCreateUser(req);
+  if (!user) { res.status(401).json({ error: "Unauthorized" }); return; }
+  const id = String(req.params.id);
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) { res.status(400).json({ error: "Invalid stock ID" }); return; }
+  let usage: ReturnType<typeof parseConsumableUsage>;
+  const currentQuantityPrints = req.body?.currentQuantityPrints;
+  try {
+    usage = parseConsumableUsage(req.body);
+    if ((!Object.keys(usage).length && currentQuantityPrints === undefined) || Object.keys(req.body).some(key => !["averagePrintsPerEvent", "averageEventsPerMonth", "currentQuantityPrints"].includes(key))) throw new Error("Provide only event usage settings");
+    if (currentQuantityPrints !== undefined && (typeof currentQuantityPrints !== "number" || !Number.isInteger(currentQuantityPrints) || currentQuantityPrints < 0 || currentQuantityPrints > 2000000000)) throw new Error("currentQuantityPrints must be a verified integer total from 0 to 2000000000");
+  } catch (error) { res.status(400).json({ error: (error as Error).message }); return; }
+  const result = await db.transaction(async tx => {
+  const [owned] = await tx.select({ unitType: sql<string>`coalesce(${consumableStock.quantityUnit}, ${consumableCatalog.unitType})` }).from(consumableStock)
+    .innerJoin(consumableCatalog, eq(consumableStock.catalogItemId, consumableCatalog.id))
+    .where(and(eq(consumableStock.id, id), eq(consumableStock.userId, user.id))).for("update", { of: consumableStock });
+  if (!owned) return { status: 404, body: { error: "Stock item not found" } };
+  if (owned.unitType !== "prints" && currentQuantityPrints === undefined) return { status: 409, body: { error: "Enter the verified remaining print quantity to convert your stock" } };
+  const [updated] = await tx.update(consumableStock).set({ ...usage,
+    ...(currentQuantityPrints === undefined ? {} : { currentQuantity: currentQuantityPrints, quantityUnit: "prints" }), updatedAt: new Date() })
+    .where(and(eq(consumableStock.id, id), eq(consumableStock.userId, user.id))).returning();
+  if (!updated) return { status: 404, body: { error: "Stock item not found" } };
+  const unitType = updated.quantityUnit ?? owned.unitType;
+  return { status: 200, body: { id: updated.id, currentQuantity: updated.currentQuantity, quantityUnit: updated.quantityUnit, unitType,
+    averagePrintsPerEvent: updated.averagePrintsPerEvent, averageEventsPerMonth: updated.averageEventsPerMonth,
+    ...consumableUsage({ ...updated, unitType }) } };
+  });
+  res.status(result.status).json(result.body);
 });
 
 // POST /consumables/restock — record a purchase and increase stock
@@ -178,14 +237,19 @@ router.post("/consumables/restock", requireAuth, async (req: Request, res: Respo
     userId: consumableStock.userId,
     catalogItemId: consumableStock.catalogItemId,
     currentQuantity: consumableStock.currentQuantity,
+    quantityUnit: consumableStock.quantityUnit,
     lowStockAlertEnabled: consumableStock.lowStockAlertEnabled,
     estimatedDailyUsage: consumableStock.estimatedDailyUsage,
+    averagePrintsPerEvent: consumableStock.averagePrintsPerEvent,
+    averageEventsPerMonth: consumableStock.averageEventsPerMonth,
   }).from(consumableStock).where(and(eq(consumableStock.id, stockItemId), eq(consumableStock.userId, user.id)));
 
   if (!stockItem) { res.status(404).json({ error: "Stock item not found" }); return; }
 
   const [catalogItem] = await db.select().from(consumableCatalog).where(eq(consumableCatalog.id, stockItem.catalogItemId));
   if (!catalogItem) { res.status(404).json({ error: "Catalog item not found" }); return; }
+  const unitType = stockItem.quantityUnit ?? catalogItem.unitType;
+  if (unitType !== "prints") { res.status(409).json({ error: "Print restocking requires stock recorded in prints; existing quantities are unchanged" }); return; }
 
   const totalAdded = rollsPurchased * printsPerRoll;
   const newQuantity = stockItem.currentQuantity + totalAdded;
@@ -218,8 +282,6 @@ router.post("/consumables/restock", requireAuth, async (req: Request, res: Respo
 
   const isLow = newQuantity <= catalogItem.reorderThreshold;
   const isCritical = newQuantity === 0;
-  const dailyUsage = Number(stockItem.estimatedDailyUsage ?? 0);
-  const daysRemaining = dailyUsage > 0 ? Math.floor(newQuantity / dailyUsage) : null;
 
   res.json({
     id: stockItem.id,
@@ -227,19 +289,23 @@ router.post("/consumables/restock", requireAuth, async (req: Request, res: Respo
     userId: stockItem.userId,
     currentQuantity: newQuantity,
     estimatedDailyUsage: stockItem.estimatedDailyUsage,
+    averagePrintsPerEvent: stockItem.averagePrintsPerEvent,
+    averageEventsPerMonth: stockItem.averageEventsPerMonth,
     lastRestockedAt: new Date(purchaseDate).toISOString(),
     lowStockAlertEnabled: stockItem.lowStockAlertEnabled,
     name: catalogItem.name,
     sku: catalogItem.sku,
     category: catalogItem.category,
-    unitType: catalogItem.unitType,
+    unitType,
+    quantityUnit: stockItem.quantityUnit,
     unitPrice: catalogItem.unitPrice,
     reorderThreshold: catalogItem.reorderThreshold,
     description: catalogItem.description,
     compatibleModels: catalogItem.compatibleModels,
     isLow,
     isCritical,
-    daysRemaining,
+    daysRemaining: null,
+    ...consumableUsage({ ...stockItem, currentQuantity: newQuantity, unitType }),
     reorderRecommended: isLow && stockItem.lowStockAlertEnabled,
   });
 });
@@ -287,13 +353,16 @@ router.get("/admin/consumables", requireAuth, async (req: Request, res: Response
     userId: consumableStock.userId,
     catalogItemId: consumableStock.catalogItemId,
     currentQuantity: consumableStock.currentQuantity,
+    quantityUnit: consumableStock.quantityUnit,
     estimatedDailyUsage: consumableStock.estimatedDailyUsage,
+    averagePrintsPerEvent: consumableStock.averagePrintsPerEvent,
+    averageEventsPerMonth: consumableStock.averageEventsPerMonth,
     lastRestockedAt: consumableStock.lastRestockedAt,
     lowStockAlertEnabled: consumableStock.lowStockAlertEnabled,
     name: consumableCatalog.name,
     sku: consumableCatalog.sku,
     category: consumableCatalog.category,
-    unitType: consumableCatalog.unitType,
+    unitType: sql<string>`coalesce(${consumableStock.quantityUnit}, ${consumableCatalog.unitType})`,
     unitPrice: consumableCatalog.unitPrice,
     reorderThreshold: consumableCatalog.reorderThreshold,
   })
@@ -310,8 +379,6 @@ router.get("/admin/consumables", requireAuth, async (req: Request, res: Response
 
     const isLow = item.currentQuantity <= item.reorderThreshold;
     const isCritical = item.currentQuantity === 0;
-    const dailyUsage = Number(item.estimatedDailyUsage ?? 0);
-    const daysRemaining = dailyUsage > 0 ? Math.floor(item.currentQuantity / dailyUsage) : null;
 
     return {
       ...item,
@@ -320,7 +387,8 @@ router.get("/admin/consumables", requireAuth, async (req: Request, res: Response
       ownerCompany: owner?.companyName ?? "",
       isLow,
       isCritical,
-      daysRemaining,
+      daysRemaining: null,
+      ...consumableUsage(item),
       reorderRecommended: isLow && item.lowStockAlertEnabled,
     };
   }));
@@ -379,6 +447,7 @@ router.get("/consumables/forecast", requireAuth, async (req: Request, res: Respo
     .where(
       and(
         eq(consumableStock.userId, user.id),
+        sql`coalesce(${consumableStock.quantityUnit}, ${consumableCatalog.unitType}) = 'prints'`,
         sql`lower(${consumableCatalog.category}) LIKE '%paper%'`
       )
     );

@@ -48,6 +48,9 @@ import {
 import { cn } from "@/lib/utils";
 import { useCurrency } from "@/lib/currency";
 import CustomerSearchCombobox from "@/components/CustomerSearchCombobox";
+import { useProspectCreation } from "@/hooks/useProspectCreation";
+import { prospectPrefill } from "@/lib/prospectCreation";
+import { CONTRACT_TERM_KEYS, CONTRACT_TERM_LABELS, contractBalance, contractCreationTerms } from "../../../api-server/src/lib/contractTerms";
 import {
   type ContractFormData,
   type ProviderData,
@@ -248,13 +251,13 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 
 export default function Contracts() {
   const { t, i18n } = useTranslation();
-  const lang = i18n.language?.split("-")[0] ?? "en";
   const { toast } = useToast();
   const qc = useQueryClient();
   const { format: formatCurrency, currency: currencyCode } = useCurrency();
   const [filterStatus, setFilterStatus] = useState("all");
   const [showCreate, setShowCreate] = useState(false);
   const [customerSearch, setCustomerSearch] = useState("");
+  const [paymentMethodEdited, setPaymentMethodEdited] = useState(false);
   const [showMissingDialog, setShowMissingDialog] = useState(false);
   const [pendingValidation, setPendingValidation] =
     useState<ValidationResult | null>(null);
@@ -263,6 +266,8 @@ export default function Contracts() {
   const [rawTemplate, setRawTemplate] = useState("");
 
   const EMPTY_FORM = (): ContractFormData => ({
+    advanceAmount: "", paymentMethod: "", responsibilityTerms: "", breakdownTerms: "",
+    postponementTerms: "", forceMajeureTerms: "", privacyTerms: "", specialConditions: "",
     title: "",
     clientName: "",
     clientEmail: "",
@@ -311,6 +316,12 @@ export default function Contracts() {
   const [form, setForm] = useState<ContractFormData>(EMPTY_FORM);
 
   const { data: currentUserData } = useGetCurrentUser();
+  const [languageChoice, setLanguageChoice] = useState("");
+  const lang = languageChoice || (currentUserData?.language ?? i18n.language ?? "en").split("-")[0];
+  useEffect(() => {
+    setRawTemplate("");
+    setForm((f) => ({ ...f, templateId: "" }));
+  }, [lang]);
   const currentUser = currentUserData as any;
 
   const { data: equipmentListData } = useGetEquipment();
@@ -385,11 +396,21 @@ export default function Contracts() {
     { query: { queryKey: ["contract-templates", lang] } },
   );
 
+  useProspectCreation((lead) => {
+    setPaymentMethodEdited(false);
+    setForm({ ...EMPTY_FORM(), ...prospectPrefill(lead) });
+    setCustomerSearch(lead.contactName);
+    setRawTemplate("");
+    setShowCreate(true);
+  });
+
   const createMutation = useCreateContract({
     mutation: {
       onSuccess: () => {
         qc.invalidateQueries({ queryKey: ["contracts"] });
+        qc.invalidateQueries({ queryKey: ["lead-pipeline"] });
         setShowCreate(false);
+        setPaymentMethodEdited(false);
         setCustomerSearch("");
         setRawTemplate("");
         setForm(EMPTY_FORM());
@@ -433,15 +454,14 @@ export default function Contracts() {
   useEffect(() => {
     if (showCreate && templates.length > 0 && !form.templateId) {
       const preferred =
-        templates.find((t: any) => t.language === lang) ??
-        templates.find((t: any) => t.language === "en") ??
-        templates[0];
+        [...templates].filter((t: any) => t.language === lang)
+          .sort((a: any, b: any) => Number(b.isDefault) - Number(a.isDefault) || a.id.localeCompare(b.id))[0];
       if (preferred) {
         setRawTemplate(preferred.content);
         setForm((f) => ({ ...f, templateId: preferred.id }));
       }
     }
-  }, [showCreate, templates.length, lang]);
+  }, [showCreate, templates, lang, form.templateId]);
 
   const handleTemplateSelect = (id: string) => {
     const tpl = templates.find((t: any) => t.id === id);
@@ -458,6 +478,15 @@ export default function Contracts() {
   };
 
   const doCreate = () => {
+    if (!currentUserData) return;
+    let extraTerms;
+    try {
+      extraTerms = contractCreationTerms(form as unknown as Record<string, unknown>, paymentMethodEdited);
+      if (form.value || !(form.quoteId || form.invoiceId)) contractBalance(computePricing(form).total, form.advanceAmount);
+    } catch {
+      toast({ title: t("contracts.invalid_advance", { defaultValue: lang === "fr" ? "Vérifiez l'acompte et les conditions saisis." : "Check the advance payment and entered terms." }), variant: "destructive" });
+      return;
+    }
     const finalContent = getFinalContent();
     const isSourceLinked = Boolean(form.quoteId || form.invoiceId);
     const sourceAwareContent =
@@ -475,6 +504,7 @@ export default function Contracts() {
       "Contract";
     createMutation.mutate({
       data: {
+        ...extraTerms,
         title: autoTitle,
         clientName: form.clientName,
         clientEmail: form.clientEmail || undefined,
@@ -565,10 +595,12 @@ export default function Contracts() {
 
   const f =
     (key: keyof ContractFormData) =>
-    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      if (key === "paymentMethod") setPaymentMethodEdited(true);
       setForm(
         (prev) => ({ ...prev, [key]: e.target.value }) as ContractFormData,
       );
+    };
 
   const flag =
     (
@@ -794,6 +826,7 @@ export default function Contracts() {
         onOpenChange={(open) => {
           setShowCreate(open);
           if (!open) {
+            setPaymentMethodEdited(false);
             setCustomerSearch("");
             setRawTemplate("");
             setForm(EMPTY_FORM());
@@ -828,6 +861,15 @@ export default function Contracts() {
               className="overflow-y-auto flex-1 space-y-5 py-1 pr-1 mt-0"
             >
               {/* Customer search */}
+              <div className="space-y-1.5">
+                <Label htmlFor="contract-language">{t("contracts.language_label", { defaultValue: lang === "fr" ? "Langue du contrat" : "Contract language" })}</Label>
+                <Select value={lang} onValueChange={setLanguageChoice}>
+                  <SelectTrigger id="contract-language"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {Object.entries({ fr: "Français", en: "English", es: "Español", de: "Deutsch", nl: "Nederlands", it: "Italiano", pt: "Português", pl: "Polski" }).map(([code, label]) => <SelectItem key={code} value={code}>{label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="space-y-1.5">
                 <Label>{t("sales_search.search_label")}</Label>
                 <CustomerSearchCombobox
@@ -1292,6 +1334,25 @@ export default function Contracts() {
               </div>
 
               {/* Cancellation */}
+              <div className="space-y-3">
+                {CONTRACT_TERM_KEYS.map((key) => (
+                  <div key={key} className="space-y-1.5">
+                    <Label htmlFor={`contract-${key}`}>{t(`contracts.${key}`, { defaultValue: CONTRACT_TERM_LABELS[key][lang === "fr" ? "fr" : "en"] })}</Label>
+                    {key === "advanceAmount" || key === "paymentMethod" ? (
+                      <Input id={`contract-${key}`} type={key === "advanceAmount" ? "number" : "text"} min={key === "advanceAmount" ? "0" : undefined} step={key === "advanceAmount" ? "0.01" : undefined} maxLength={key === "paymentMethod" ? 200 : undefined} value={form[key] ?? ""} onChange={f(key)} />
+                    ) : (
+                      <Textarea id={`contract-${key}`} rows={3} maxLength={10000} value={form[key] ?? ""} onChange={f(key)} />
+                    )}
+                  </div>
+                ))}
+                <div className="space-y-1.5">
+                  <Label htmlFor="contract-balance">{t("contracts.balanceAmount", { defaultValue: lang === "fr" ? "Solde" : "Balance due" })}</Label>
+                  <Input id="contract-balance" readOnly value={form.advanceAmount && Number(form.advanceAmount) <= computePricing(form).total ? (computePricing(form).total - Number(form.advanceAmount)).toFixed(2) : ""} />
+                </div>
+                <p className="text-xs text-muted-foreground">{t("contracts.legal_review_required", { defaultValue: lang === "fr" ? "Validation juridique du modèle non attestée. Faites approuver les clauses avant signature." : "Legal approval of this template is not verified. Have the terms reviewed before signature." })}</p>
+              </div>
+
+              {/* Cancellation */}
               <div className="space-y-2">
                 <SectionLabel>
                   {t("contracts.cancellation_section")}
@@ -1395,7 +1456,7 @@ export default function Contracts() {
               </div>
             )}
             <DialogFooter>
-              <Button variant="outline" onClick={() => setShowCreate(false)}>
+              <Button variant="outline" onClick={() => { setShowCreate(false); setForm(EMPTY_FORM()); setRawTemplate(""); setPaymentMethodEdited(false); }}>
                 {t("common.cancel")}
               </Button>
               <Button

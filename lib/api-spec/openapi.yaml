@@ -1685,7 +1685,8 @@ paths:
               properties:
                 name: { type: string }
                 slug: { type: string }
-                language: { type: string, enum: [en, fr, es, de, it, pl, pt, nl] }
+                language:
+                  { type: string, enum: [en, fr, es, de, it, pl, pt, nl] }
                 description: { type: string }
                 icon: { type: string }
                 order: { type: integer }
@@ -2475,6 +2476,11 @@ paths:
       operationId: getAdminRevenue
       tags: [admin]
       summary: Revenue Intelligence dashboard data
+      parameters:
+        - in: query
+          name: currency
+          required: false
+          schema: { type: string, pattern: "^[A-Z]{3}$" }
       responses:
         "200":
           description: Revenue intelligence data
@@ -3464,6 +3470,220 @@ paths:
                   total: { type: integer }
         "401": { description: Unauthorized }
         "403": { description: Forbidden }
+  /users/me/consent:
+    get:
+      operationId: getUserConsent
+      tags:
+        - Users
+      summary: Current user's configured legal documents and acceptance
+      responses:
+        "200":
+          description: Configuration status and latest acceptance; never shared-cacheable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserConsentStatus"
+        "401":
+          description: Authentication or active local account required
+    post:
+      operationId: acceptUserConsent
+      tags:
+        - Users
+      summary: Record explicit acceptance of current versions and independent optional choices
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AcceptUserConsentBody"
+      responses:
+        "200":
+          description: Acceptance saved with server identity, document URLs and timestamp
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserConsentStatus"
+        "401":
+          description: Authentication or active local account required
+        "409":
+          description: CONSENT_REVIEW_REQUIRED - stale versions or invalid explicit acceptance
+        "503":
+          description: LEGAL_NOT_CONFIGURED - approved published documents missing
+  /users/me/dashboard-preferences:
+    get:
+      operationId: getDashboardPreferences
+      tags:
+        - Users
+      summary: Read only the authenticated user's dashboard preferences
+      responses:
+        "200":
+          description: Six widget preferences with true defaults
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserDashboardPreferences"
+        "401":
+          description: Authentication or active local account required
+        "428":
+          description: CONSENT_REQUIRED
+    patch:
+      operationId: updateDashboardPreferences
+      tags:
+        - Users
+      summary: Atomically merge changed widget choices for the authenticated user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - widgets
+              properties:
+                widgets:
+                  $ref: "#/components/schemas/DashboardWidgetPatch"
+      responses:
+        "200":
+          description: Saved preferences; no organisation or client-supplied user selector
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserDashboardPreferences"
+        "400":
+          description: Invalid or empty widget patch
+        "401":
+          description: Authentication or active local account required
+        "428":
+          description: CONSENT_REQUIRED
+  /users/{id}/consent:
+    get:
+      operationId: getUserConsentHistory
+      tags:
+        - Users
+      summary: Admin-only acceptance evidence, newest 100 events
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Append-only acceptance history, newest first
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - items
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/UserConsentEvent"
+        "401":
+          description: Authentication or active local account required
+        "403":
+          description: Admin role required
+        "404":
+          description: User not found
+        "428":
+          description: CONSENT_REQUIRED
+  /support/tickets/{id}/attachments/{attachmentId}:
+    get:
+      operationId: downloadSupportTicketAttachment
+      tags:
+        - Support
+      description: Authenticated ticket owner or administrator only. Always attachment disposition and private no-store.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: attachmentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Original attachment bytes
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        "400":
+          description: Invalid UUID
+        "401":
+          description: Authentication required
+        "404":
+          description: Attachment unavailable or ticket not accessible
+  /support/tickets/{id}/email/retry:
+    post:
+      operationId: retrySupportTicketEmail
+      tags:
+        - Support
+      description: Administrator only. Idempotent retry subject to lease, maximum attempts and provider deduplication window. Inspect returned delivery status; HTTP 200 does not assert delivery.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Current delivery history
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SupportEmailDeliveryResult"
+        "400":
+          description: Invalid UUID
+        "401":
+          description: Authentication required
+        "403":
+          description: Administrator required
+        "404":
+          description: Ticket not found
+  /consumables/stock/{id}/usage:
+    patch:
+      operationId: updateConsumableUsage
+      tags:
+        - Consumables
+      description: Stock owner only, including administrators. Null clears an estimate. Legacy daily usage is never converted into event usage. Zero consumption yields no finite duration estimate.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConsumableUsageInput"
+      responses:
+        "200":
+          description: Saved event usage and derived estimates (stock quantity remains prints)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConsumableUsageResult"
+        "400":
+          description: Invalid UUID or usage fields
+        "401":
+          description: Authentication required
+        "404":
+          description: Stock not found or not owned by caller
+        "409":
+          description: Legacy stock requires an explicitly verified remaining print quantity before event estimates can be saved
 
 components:
   schemas:
@@ -4741,6 +4961,8 @@ components:
         status:
           type: string
           enum: [draft, sent, accepted, declined, expired]
+        paymentMethod:
+          type: ["string", "null"]
         subtotal:
           type: string
         taxRate:
@@ -4808,6 +5030,9 @@ components:
       type: object
       required: [title, clientName, items]
       properties:
+        paymentMethod:
+          type: ["string", "null"]
+          maxLength: 200
         leadId:
           type: string
         title:
@@ -4988,6 +5213,22 @@ components:
           type: ["string", "null"]
         depositAmount:
           type: ["string", "null"]
+        advanceAmount:
+          type: ["string", "null"]
+        paymentMethod:
+          type: ["string", "null"]
+        responsibilityTerms:
+          type: ["string", "null"]
+        breakdownTerms:
+          type: ["string", "null"]
+        postponementTerms:
+          type: ["string", "null"]
+        forceMajeureTerms:
+          type: ["string", "null"]
+        privacyTerms:
+          type: ["string", "null"]
+        specialConditions:
+          type: ["string", "null"]
         depositMethod:
           type: ["string", "null"]
         depositConditions:
@@ -5115,6 +5356,22 @@ components:
         taxRate:
           type: string
         depositAmount:
+          type: string
+        advanceAmount:
+          type: string
+        paymentMethod:
+          type: string
+        responsibilityTerms:
+          type: string
+        breakdownTerms:
+          type: string
+        postponementTerms:
+          type: string
+        forceMajeureTerms:
+          type: string
+        privacyTerms:
+          type: string
+        specialConditions:
           type: string
         depositMethod:
           type: string
@@ -5374,6 +5631,9 @@ components:
       type: object
       required: [title, clientName, items]
       properties:
+        paymentMethod:
+          type: ["string", "null"]
+          maxLength: 200
         leadId:
           type: string
         quoteId:
@@ -5507,6 +5767,18 @@ components:
         updatedAt:
           type: string
           format: date-time
+        equipmentModel:
+          type:
+            - string
+            - "null"
+        serialNumber:
+          type:
+            - string
+            - "null"
+        attachments:
+          type: array
+          items:
+            $ref: "#/components/schemas/SupportAttachment"
 
     SupportTicketReply:
       type: object
@@ -5542,6 +5814,22 @@ components:
         category:
           type: string
           enum: [billing, technical, general, feature_request, bug_report]
+        equipmentModel:
+          type:
+            - string
+            - "null"
+          maxLength: 200
+        serialNumber:
+          type:
+            - string
+            - "null"
+          maxLength: 200
+        attachments:
+          description: Creation only. At most 10 MiB decoded total; updates reject this field.
+          type: array
+          maxItems: 3
+          items:
+            $ref: "#/components/schemas/SupportAttachmentInput"
 
     SupportTicketReplyInput:
       type: object
@@ -6318,6 +6606,7 @@ components:
     ConsumableStockItem:
       type: object
       properties:
+        quantityUnit: { type: [string, "null"] }
         id: { type: string }
         catalogItemId: { type: string }
         currentQuantity: { type: integer }
@@ -6336,6 +6625,26 @@ components:
         isCritical: { type: boolean }
         daysRemaining: { type: integer, nullable: true }
         reorderRecommended: { type: boolean }
+        averagePrintsPerEvent:
+          type:
+            - integer
+            - "null"
+        averageEventsPerMonth:
+          type:
+            - string
+            - "null"
+        monthlyConsumption:
+          type:
+            - number
+            - "null"
+        eventsRemaining:
+          type:
+            - integer
+            - "null"
+        monthsRemaining:
+          type:
+            - number
+            - "null"
 
     ConsumableForecastEvent:
       type: object
@@ -6408,6 +6717,19 @@ components:
         currentQuantity: { type: integer }
         estimatedDailyUsage: { type: string, nullable: true }
         lowStockAlertEnabled: { type: boolean, nullable: true }
+        averagePrintsPerEvent:
+          type:
+            - integer
+            - "null"
+          minimum: 0
+          maximum: 1000000
+        averageEventsPerMonth:
+          type:
+            - number
+            - "null"
+          minimum: 0
+          maximum: 999999.99
+          multipleOf: 0.01
 
     ConsumableOrder:
       type: object
@@ -6429,15 +6751,16 @@ components:
     RevenueOverview:
       type: object
       properties:
-        totalRevenue: { type: integer }
-        pipelineRevenue: { type: integer }
-        outstandingRevenue: { type: integer }
-        overdueRevenue: { type: integer }
+        totalRevenue: { type: number }
+        totalInvoiced: { type: number }
+        totalUnpaid: { type: number }
+        pipelineRevenue: { type: number }
+        outstandingRevenue: { type: number }
+        overdueRevenue: { type: number }
         paidInvoices: { type: integer }
-        avgBookingValue: { type: integer }
-        quoteAcceptanceRate: { type: integer }
-        revenueGrowth: { type: integer }
-        lifetimeEstimate: { type: integer }
+        avgBookingValue: { type: number }
+        quoteAcceptanceRate: { type: [number, "null"] }
+        revenueGrowth: { type: [number, "null"] }
         totalInvoices: { type: integer }
 
     RevenueMonthly:
@@ -6445,7 +6768,7 @@ components:
       properties:
         month: { type: string }
         label: { type: string }
-        revenue: { type: integer }
+        revenue: { type: number }
         invoiceCount: { type: integer }
 
     RevenueClient:
@@ -6455,9 +6778,10 @@ components:
         name: { type: string }
         email: { type: string }
         company: { type: string }
-        totalRevenue: { type: integer }
+        totalRevenue: { type: number }
         invoiceCount: { type: integer }
-        avgBooking: { type: integer }
+        avgBooking: { type: number }
+        lastInvoice: { type: [string, "null"], format: date-time }
         score: { type: integer, nullable: true }
         tier: { type: string, nullable: true }
 
@@ -6465,19 +6789,25 @@ components:
       type: object
       properties:
         tier: { type: string }
-        revenue: { type: integer }
+        revenue: { type: number }
         clientCount: { type: integer }
 
     RevenueSegment:
       type: object
       properties:
         label: { type: string }
-        revenue: { type: integer }
+        revenue: { type: number }
         count: { type: integer }
 
     RevenueIntelligence:
       type: object
       properties:
+        currency: { type: string }
+        availableCurrencies:
+          type: array
+          items: { type: string }
+        undatedPaidInvoices: { type: integer }
+        excludedCurrencyInvoices: { type: integer }
         overview:
           $ref: "#/components/schemas/RevenueOverview"
         monthly:
@@ -6505,8 +6835,9 @@ components:
             declined: { type: object }
             expired: { type: object }
             totalQuotes: { type: integer }
-            acceptanceRate: { type: integer }
-            conversionValue: { type: integer }
+            issuedQuotes: { type: integer }
+            acceptanceRate: { type: [number, "null"] }
+            conversionValue: { type: number }
         topPerformers:
           type: array
           items:
@@ -6552,6 +6883,27 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/SupportTicketReply"
+        equipmentModel:
+          type:
+            - string
+            - "null"
+        serialNumber:
+          type:
+            - string
+            - "null"
+        attachments:
+          type: array
+          items:
+            $ref: "#/components/schemas/SupportAttachment"
+        emailDelivery:
+          anyOf:
+            - allOf:
+                - $ref: "#/components/schemas/SupportEmailDelivery"
+            - type: "null"
+        deliveryHistory:
+          type: array
+          items:
+            $ref: "#/components/schemas/SupportEmailHistoryEntry"
 
     AiConversationDetail:
       type: object
@@ -7550,8 +7902,7 @@ components:
 
     BunnyImportItem:
       type: object
-      required:
-        [videoId, collectionId, durationSeconds, videoTitle]
+      required: [videoId, collectionId, durationSeconds, videoTitle]
       properties:
         videoId: { type: string }
         collectionId: { type: string }
@@ -7673,3 +8024,298 @@ components:
         invoiceId: { type: string, nullable: true }
         pipelineStage: { type: string, nullable: true }
         lastActivityAt: { type: string, nullable: true }
+    PublishedLegalDocuments:
+      type: object
+      required:
+        - termsVersion
+        - privacyVersion
+        - termsUrl
+        - privacyUrl
+      properties:
+        termsVersion:
+          type: string
+        privacyVersion:
+          type: string
+        termsUrl:
+          type: string
+          format: uri
+        privacyUrl:
+          type: string
+          format: uri
+    UserConsentEvent:
+      allOf:
+        - $ref: "#/components/schemas/PublishedLegalDocuments"
+        - type: object
+          required:
+            - id
+            - userId
+            - acceptedAt
+            - marketing
+            - analytics
+            - aiImprovement
+          properties:
+            id:
+              type: string
+              format: uuid
+            userId:
+              type: string
+            acceptedAt:
+              type: string
+              format: date-time
+            marketing:
+              type: boolean
+            analytics:
+              type: boolean
+            aiImprovement:
+              type: boolean
+    UserConsentStatus:
+      type: object
+      required:
+        - configured
+        - required
+        - documents
+        - acceptance
+      properties:
+        configured:
+          type: boolean
+        required:
+          type: boolean
+        documents:
+          anyOf:
+            - $ref: "#/components/schemas/PublishedLegalDocuments"
+            - type: "null"
+        acceptance:
+          anyOf:
+            - $ref: "#/components/schemas/UserConsentEvent"
+            - type: "null"
+    AcceptUserConsentBody:
+      type: object
+      required:
+        - accepted
+        - termsVersion
+        - privacyVersion
+        - termsUrl
+        - privacyUrl
+      properties:
+        termsUrl: { type: string, format: uri }
+        privacyUrl: { type: string, format: uri }
+        accepted:
+          type: boolean
+          enum:
+            - true
+        termsVersion:
+          type: string
+        privacyVersion:
+          type: string
+        marketing:
+          type: boolean
+          default: false
+        analytics:
+          type: boolean
+          default: false
+        aiImprovement:
+          type: boolean
+          default: false
+    DashboardWidgetPatch:
+      type: object
+      minProperties: 1
+      additionalProperties: false
+      properties:
+        next_lesson:
+          type: boolean
+        onboarding:
+          type: boolean
+        notifications:
+          type: boolean
+        upcoming_events:
+          type: boolean
+        academy_stats:
+          type: boolean
+        sales_overview:
+          type: boolean
+    DashboardWidgets:
+      allOf:
+        - $ref: "#/components/schemas/DashboardWidgetPatch"
+        - required:
+            - next_lesson
+            - onboarding
+            - notifications
+            - upcoming_events
+            - academy_stats
+            - sales_overview
+    UserDashboardPreferences:
+      type: object
+      required:
+        - widgets
+      properties:
+        widgets:
+          $ref: "#/components/schemas/DashboardWidgets"
+    SupportAttachmentInput:
+      type: object
+      required:
+        - fileName
+        - mimeType
+        - data
+      properties:
+        fileName:
+          type: string
+          minLength: 1
+          maxLength: 180
+        mimeType:
+          type: string
+          enum:
+            - application/pdf
+            - image/png
+            - image/jpeg
+            - image/webp
+        data:
+          type: string
+          format: byte
+          maxLength: 13981016
+    SupportAttachment:
+      type: object
+      required:
+        - id
+        - fileName
+        - mimeType
+        - size
+        - downloadUrl
+      properties:
+        id:
+          type: string
+          format: uuid
+        fileName:
+          type: string
+        mimeType:
+          type: string
+        size:
+          type: integer
+        downloadUrl:
+          type: string
+    SupportEmailDelivery:
+      type: object
+      required:
+        - status
+        - attempts
+        - sentAt
+      properties:
+        status:
+          type: string
+          enum:
+            - pending
+            - sending
+            - sent
+            - failed
+            - unknown
+            - disabled
+        attempts:
+          type: integer
+        sentAt:
+          type:
+            - string
+            - "null"
+          format: date-time
+    SupportEmailHistoryEntry:
+      type: object
+      required:
+        - id
+        - status
+        - attempt
+        - detail
+        - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+            - pending
+            - sending
+            - sent
+            - failed
+            - unknown
+            - disabled
+        attempt:
+          type: integer
+        detail:
+          type:
+            - string
+            - "null"
+        createdAt:
+          type: string
+          format: date-time
+    SupportEmailDeliveryResult:
+      type: object
+      required:
+        - emailDelivery
+        - deliveryHistory
+      properties:
+        emailDelivery:
+          anyOf:
+            - allOf:
+                - $ref: "#/components/schemas/SupportEmailDelivery"
+            - type: "null"
+        deliveryHistory:
+          type: array
+          items:
+            $ref: "#/components/schemas/SupportEmailHistoryEntry"
+    ConsumableUsageInput:
+      type: object
+      minProperties: 1
+      additionalProperties: false
+      properties:
+        currentQuantityPrints:
+          type: integer
+          minimum: 0
+          maximum: 2000000000
+          description: Explicitly verified remaining print capacity. Converts only this owner's stock to prints; never changes the shared catalog or guesses a roll capacity.
+        averagePrintsPerEvent:
+          type:
+            - integer
+            - "null"
+          minimum: 0
+          maximum: 1000000
+        averageEventsPerMonth:
+          type:
+            - number
+            - "null"
+          minimum: 0
+          maximum: 999999.99
+          multipleOf: 0.01
+    ConsumableUsageResult:
+      type: object
+      required:
+        - id
+        - averagePrintsPerEvent
+        - averageEventsPerMonth
+        - monthlyConsumption
+        - eventsRemaining
+        - monthsRemaining
+      properties:
+        currentQuantity: { type: integer }
+        quantityUnit: { type: [string, "null"] }
+        unitType: { type: string }
+        id:
+          type: string
+          format: uuid
+        averagePrintsPerEvent:
+          type:
+            - integer
+            - "null"
+        averageEventsPerMonth:
+          type:
+            - string
+            - "null"
+        monthlyConsumption:
+          type:
+            - number
+            - "null"
+        eventsRemaining:
+          type:
+            - integer
+            - "null"
+        monthsRemaining:
+          type:
+            - number
+            - "null"

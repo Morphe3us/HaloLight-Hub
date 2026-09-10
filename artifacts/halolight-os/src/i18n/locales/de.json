@@ -46,7 +46,10 @@
     "users": "Benutzer",
     "resources": "Ressourcen",
     "contract_templates": "Vertragsvorlagen",
-    "exports": "Exporte"
+    "exports": "Exporte",
+    "admin_pilotage": "Steuerung",
+    "admin_content_ai": "Inhalte & KI",
+    "admin_data_system": "Daten & System"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -88,7 +91,8 @@
     "widget_notifications": "Letzte Benachrichtigungen",
     "widget_upcoming_events": "Bevorstehende Termine",
     "widget_academy_stats": "Akademie-Fortschritt",
-    "widget_sales_overview": "Vertriebspipeline"
+    "widget_sales_overview": "Vertriebspipeline",
+    "preferences_error": "Die Dashboard-Einstellungen konnten nicht geladen oder gespeichert werden. Ihre bisherige Auswahl wurde beibehalten."
   },
   "academy": {
     "title": "Akademie",
@@ -337,7 +341,19 @@
     "forecast_reorder_hint": "Bestellen Sie Papier vor Ihrem nächsten Event, um Engpässe zu vermeiden.",
     "forecast_prints_label": "Drucke",
     "forecast_more_events": "weitere Events",
-    "forecast_no_prints_warning": "Druckmenge nicht angegeben"
+    "forecast_no_prints_warning": "Druckmenge nicht angegeben",
+    "average_prints_event": "Durchschnittliche Ausdrucke pro Veranstaltung",
+    "average_events_month": "Durchschnittliche Veranstaltungen pro Monat (optional)",
+    "monthly_consumption": "Geschätzte Ausdrucke pro Monat",
+    "events_remaining": "Verbleibende Veranstaltungen",
+    "months_remaining": "Verbleibende Monate",
+    "edit_usage": "Verbrauch pro Veranstaltung bearbeiten",
+    "usage_save_failed": "Verbrauch pro Veranstaltung konnte nicht gespeichert werden",
+    "usage_unknown": "Nicht geschätzt",
+    "stock_prints": "Aktueller Bestand (Ausdrucke)",
+    "print_units_required": "Schätzungen und Nachfüllen in Ausdrucken sind für diese Einheit nicht verfügbar. Bestehende Mengen bleiben unverändert.",
+    "verified_print_quantity": "Geprüfte verbleibende Ausdrucke",
+    "confirm_print_conversion": "Ich bestätige, dass dies die gesamte verbleibende Druckkapazität ist. Nur Menge und Einheit meines Bestands ersetzen, ohne den gemeinsamen Katalog zu ändern."
   },
   "support": {
     "title": "Support",
@@ -390,7 +406,13 @@
     "stat_in_progress": "In Bearbeitung",
     "stat_resolved": "Gelöst",
     "ticket_created_msg": "Ticket created",
-    "ticket_created_desc": "Your support ticket has been submitted."
+    "ticket_created_desc": "Your support ticket has been submitted.",
+    "equipment_model": "Gerät/Modell (optional)",
+    "serial_number": "Seriennummer (optional)",
+    "attachments": "Anhänge",
+    "attachments_limit": "Bis zu 3 PDF- oder Bilddateien, insgesamt 10 MiB",
+    "attachments_invalid": "Wählen Sie bis zu 3 PDF- oder Bilddateien mit insgesamt höchstens 10 MiB",
+    "create_failed": "Ticket konnte nicht erstellt werden. Prüfen Sie die Felder und Anhänge und versuchen Sie es erneut."
   },
   "kb": {
     "content_language": "Inhaltssprache",
@@ -509,7 +531,8 @@
     "voice_input_error": "Spracheingabefehler",
     "new_chat": "Neues Gespräch",
     "send_get_started": "Senden Sie eine Nachricht, um zu beginnen",
-    "escalate_dialog_desc": "Ein Support-Ticket wird mit einer Abschrift dieses Gesprächs erstellt, damit unser Team direkt nachfassen kann. Sie können es in Ihren Support-Tickets verfolgen."
+    "escalate_dialog_desc": "Ein Support-Ticket wird mit einer Abschrift dieses Gesprächs erstellt, damit unser Team direkt nachfassen kann. Sie können es in Ihren Support-Tickets verfolgen.",
+    "provider_unavailable": "Der KI-Dienst ist nicht verfügbar, da sein Anbieter nicht korrekt konfiguriert ist. Ein Administrator von HaloLight Hub muss ihn konfigurieren, bevor Sie KI-generierte Antworten erhalten können."
   },
   "notifications": {
     "title": "Benachrichtigungen",
@@ -913,7 +936,8 @@
     "discount_label": "Rabatt",
     "send_quote": "E-Mail vorbereiten",
     "quote_sent": "E-Mail-Entwurf vorbereitet",
-    "quote_send_failed": "Angebot konnte nicht gesendet werden"
+    "quote_send_failed": "Angebot konnte nicht gesendet werden",
+    "payment_method": "Zahlungsart"
   },
   "contracts": {
     "title": "Verträge",
@@ -1031,7 +1055,19 @@
     "provider_signature_section": "Anbieter-Unterschrift für Verträge",
     "provider_signature_desc": "Wenn gesetzt, erscheint diese Unterschrift in generierten Verträgen.",
     "provider_signature_saved": "Unterschrift gespeichert",
-    "no_content_message": "Noch kein Vertragstext vorhanden. Verwende Bearbeiten, um Inhalt hinzuzufügen, oder erstelle einen Vertrag aus einer Vorlage."
+    "no_content_message": "Noch kein Vertragstext vorhanden. Verwende Bearbeiten, um Inhalt hinzuzufügen, oder erstelle einen Vertrag aus einer Vorlage.",
+    "advanceAmount": "Anzahlung",
+    "paymentMethod": "Zahlungsart",
+    "responsibilityTerms": "Verantwortlichkeiten",
+    "breakdownTerms": "Störung und Unterstützung",
+    "postponementTerms": "Verschiebung",
+    "forceMajeureTerms": "Höhere Gewalt",
+    "privacyTerms": "Schutz personenbezogener Daten",
+    "specialConditions": "Besondere Bedingungen",
+    "language_label": "Vertragssprache",
+    "balanceAmount": "Restbetrag",
+    "invalid_advance": "Prüfen Sie die Anzahlung und die eingegebenen Bedingungen.",
+    "legal_review_required": "Die rechtliche Freigabe dieser Vorlage ist nicht bestätigt. Lassen Sie die Bedingungen vor der Unterzeichnung prüfen."
   },
   "invoices": {
     "title": "Rechnungen",
@@ -1147,7 +1183,8 @@
     "equipment_label": "Ausrüstung",
     "options_label": "Optionen",
     "discount_label": "Rabatt",
-    "status_updated": "Status aktualisiert"
+    "status_updated": "Status aktualisiert",
+    "payment_method": "Zahlungsart"
   },
   "admin_analytics": {
     "title": "Analyse-Dashboard",
@@ -1249,7 +1286,18 @@
     "priority_urgent": "Dringend",
     "priority_suffix": "{{level}} Priorität",
     "toast_reply_sent": "Antwort gesendet",
-    "toast_status_updated": "Status aktualisiert"
+    "toast_status_updated": "Status aktualisiert",
+    "download_failed": "Anhang konnte nicht heruntergeladen werden",
+    "email_history": "E-Mail-Versandverlauf",
+    "email_pending": "E-Mail in Warteschlange",
+    "email_sending": "E-Mail wird gesendet",
+    "email_sent": "Vom E-Mail-Anbieter angenommen",
+    "email_failed": "E-Mail-Versand fehlgeschlagen",
+    "email_unknown": "Versand muss überprüft werden",
+    "email_disabled": "E-Mail-Versand ist nicht konfiguriert",
+    "email_retry": "Versand erneut versuchen",
+    "email_retry_failed": "Erneuter Versand fehlgeschlagen",
+    "email_none": "Kein E-Mail-Versand aufgezeichnet"
   },
   "post_detail": {
     "back": "Zurück",
@@ -1524,7 +1572,12 @@
     "col_avg_booking": "Ø Buchung",
     "col_tier": "Stufe",
     "no_revenue": "Noch keine Umsatzdaten",
-    "top_performers": "Beste Performer"
+    "top_performers": "Beste Performer",
+    "currency": "Währung",
+    "undated_paid": "{{count}} bezahlte Rechnungen haben kein Zahlungsdatum und sind vom Monatsdiagramm ausgeschlossen.",
+    "stat_invoiced": "In Rechnung gestellt",
+    "stat_unpaid": "Unbezahlt",
+    "excluded_currency": "{{count}} Rechnungen haben keine oder eine ungültige Währung und sind von den Finanzsummen ausgeschlossen."
   },
   "admin_uploads": {
     "title": "Upload-Manager",
@@ -1979,5 +2032,22 @@
     "placeholder_not_applicable": "Nicht zutreffend",
     "optional_summary": "Einige optionale Informationen fehlen und werden durch Standardtext ersetzt.",
     "field_currency": "Währung"
+  },
+  "consent": {
+    "not_configured": "Die genehmigten rechtlichen Dokumente wurden noch nicht im Hub veröffentlicht. Es wird keine Zustimmung gespeichert.",
+    "terms": "Nutzungsbedingungen",
+    "privacy": "Datenschutzerklärung und Verarbeitung personenbezogener Daten",
+    "accept": "Ich habe diese Fassungen der Nutzungsbedingungen und der Datenschutzerklärung gelesen und akzeptiere sie.",
+    "marketing": "Marketingmitteilungen (optional)",
+    "analytics": "Optionale Nutzungsanalyse",
+    "ai_improvement": "Nutzung meiner Daten zur Verbesserung der KI (optional)",
+    "optional": "Optionale Auswahl",
+    "save_error": "Die Zustimmung wurde nicht gespeichert. Prüfen Sie die aktuellen Dokumente und versuchen Sie es erneut.",
+    "save": "Meine Auswahl speichern",
+    "title": "Bedingungen und Datenschutz",
+    "proof": "Zustimmungsverlauf (letzte 100)",
+    "no_proof": "Keine Zustimmung gespeichert.",
+    "proof_choices": "Optionale Einwilligungen: Marketing {{marketing}}, Analyse {{analytics}}, KI-Verbesserung {{ai}}",
+    "manage": "Datenschutzauswahl"
   }
 }

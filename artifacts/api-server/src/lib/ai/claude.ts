@@ -69,6 +69,7 @@ export class ClaudeProvider implements AIProvider {
           "anthropic-version": ANTHROPIC_VERSION,
         },
         body: JSON.stringify(payload),
+        signal: AbortSignal.timeout(90_000),
       });
     } catch (err) {
       yield { type: "error", error: "Failed to connect to Anthropic API" };

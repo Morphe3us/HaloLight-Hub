@@ -7,14 +7,17 @@ export type RevenueInvoiceRow = {
 };
 
 function amount(value: RevenueInvoiceRow["total"]): number {
-  return Number(value ?? 0);
+  const parsed = Number(value ?? 0);
+  return Number.isFinite(parsed) ? parsed : 0;
 }
+
+export const roundMoney = (value: number): number => Math.round((value + Number.EPSILON) * 100) / 100;
 
 export function isInvoiceRevenueOverdue(
   invoice: RevenueInvoiceRow,
   now = new Date(),
 ): boolean {
-  if (invoice.status === "paid" || invoice.status === "cancelled") {
+  if (invoice.status !== "sent" && invoice.status !== "overdue") {
     return false;
   }
   if (invoice.status === "overdue") {
@@ -44,19 +47,20 @@ export function summarizeInvoiceRevenue(
   const outstandingRevenue = invoices
     .filter(
       (invoice) =>
-        invoice.status !== "paid" &&
-        invoice.status !== "cancelled" &&
+        invoice.status === "sent" &&
         !isInvoiceRevenueOverdue(invoice, now),
     )
     .reduce((sum, invoice) => sum + amount(invoice.total), 0);
   const paidCount = paidInvoices.length;
 
   return {
-    totalRevenue: Math.round(totalRevenue),
-    pipelineRevenue: Math.round(pipelineRevenue),
-    outstandingRevenue: Math.round(outstandingRevenue),
-    overdueRevenue: Math.round(overdueRevenue),
+    totalRevenue: roundMoney(totalRevenue),
+    totalInvoiced: roundMoney(totalRevenue + outstandingRevenue + overdueRevenue),
+    totalUnpaid: roundMoney(outstandingRevenue + overdueRevenue),
+    pipelineRevenue: roundMoney(pipelineRevenue),
+    outstandingRevenue: roundMoney(outstandingRevenue),
+    overdueRevenue: roundMoney(overdueRevenue),
     paidInvoices: paidCount,
-    avgBookingValue: paidCount > 0 ? Math.round(totalRevenue / paidCount) : 0,
+    avgBookingValue: paidCount > 0 ? roundMoney(totalRevenue / paidCount) : 0,
   };
 }

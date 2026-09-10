@@ -4,10 +4,26 @@ import { createRequire } from "node:module";
 import { runInNewContext } from "node:vm";
 import { describe, it } from "node:test";
 import ts from "typescript";
-import { createClientNavigation, hasNotificationBadge, isNavItemActive, type NavItem } from "../components/layout/sidebarNavigation";
+import { createAdminNavigation, createClientNavigation, hasNotificationBadge, isNavItemActive, type NavItem } from "../components/layout/sidebarNavigation";
 
 const items = createClientNavigation((key) => key);
 const leaves = (nodes: NavItem[]): NavItem[] => nodes.flatMap((node) => node.children ? leaves(node.children) : [node]);
+
+describe("admin navigation", () => {
+  const admin = createAdminNavigation((key) => key);
+  it("groups all existing admin pages without changing their destinations", () => {
+    assert.deepEqual(admin[0].children!.map((item) => item.title), [
+      "nav.admin_pilotage", "nav.admin_operations", "nav.admin_content_ai", "nav.admin_data_system", "nav.settings",
+    ]);
+    const destinations = leaves(admin).map((item) => item.href);
+    assert.equal(destinations.length, 15);
+    assert.equal(new Set(destinations).size, 15);
+    for (const path of ["/admin", "/admin/analytics", "/admin/revenue", "/admin/clients", "/admin/equipment", "/admin/automation", "/admin/academy", "/admin/resources", "/admin/search", "/admin/translations", "/admin/uploads", "/admin/ai-knowledge", "/admin/backup", "/admin/exports", "/admin/contract-templates"]) {
+      assert.ok(destinations.includes(path), path);
+      assert.equal(admin[0].children!.filter((item) => isNavItemActive(item, path)).length, 1);
+    }
+  });
+});
 
 describe("client navigation", () => {
   it("exposes the six requested groups in order", () => {
@@ -47,7 +63,7 @@ describe("client navigation", () => {
   });
 
   it("has translated navigation and requested KB labels in all eight locales", () => {
-    const navKeys = new Set(["nav.navigation", ...items.flatMap(function keys(item): string[] { return [item.title, ...(item.children?.flatMap(keys) ?? [])]; })]);
+    const navKeys = new Set(["nav.navigation", ...[...items, ...createAdminNavigation((key) => key)].flatMap(function keys(item): string[] { return [item.title, ...(item.children?.flatMap(keys) ?? [])]; })]);
     for (const lang of ["en", "fr", "de", "es", "it", "pl", "pt", "nl"]) {
       const locale = JSON.parse(readFileSync(new URL(`../i18n/locales/${lang}.json`, import.meta.url), "utf8"));
       for (const key of navKeys) assert.ok(locale.nav[key.slice(4)], `${lang}: ${key}`);

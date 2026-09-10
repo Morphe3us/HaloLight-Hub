@@ -1,4 +1,9 @@
 import { useTranslation } from "react-i18next";
+import { useState } from "react";
+import { formatCurrency, useCurrency } from "@/lib/currency";
+import { useRevenueReport } from "@/lib/revenueReport";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 import { useGetAdminAnalytics } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -46,8 +51,13 @@ function ProgressBar({ value, max = 100, color = "bg-primary" }: { value: number
 }
 
 export default function AdminAnalytics() {
-  const { t } = useTranslation();
-  const { data, isLoading } = useGetAdminAnalytics();
+  const { t, i18n } = useTranslation();
+  const { data, isLoading, isError, refetch } = useGetAdminAnalytics();
+  const { currency: defaultCurrency } = useCurrency();
+  const [selection, setSelection] = useState<string | null>(null);
+  const currency = selection ?? defaultCurrency;
+  const revenue = useRevenueReport(currency);
+  const format = (value: number | null | undefined) => value == null ? "-" : formatCurrency(value, currency, { locale: i18n.language });
 
   if (isLoading) {
     return (
@@ -63,7 +73,7 @@ export default function AdminAnalytics() {
     );
   }
 
-  if (!data) return null;
+  if (isError || !data) return <div role="alert" className="space-y-4"><p>{t("common.error")}</p><Button onClick={() => void refetch()}>{t("common.retry")}</Button></div>;
 
   const { users, onboarding, academy, sales, community, support, successScores } = data;
   const tierDist = successScores?.tierDistribution as Record<string, number> ?? {};
@@ -119,12 +129,18 @@ export default function AdminAnalytics() {
 
       <section>
         <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">{t("admin_analytics.section_sales")}</h2>
+        <Select value={currency} onValueChange={setSelection}>
+          <SelectTrigger className="w-40 mb-4" aria-label={t("admin_revenue.currency", { defaultValue: "Currency" })}><SelectValue /></SelectTrigger>
+          <SelectContent>{(revenue.data?.availableCurrencies ?? [currency]).map((code) => <SelectItem key={code} value={code}>{code}</SelectItem>)}</SelectContent>
+        </Select>
+        {revenue.isError && <div role="alert"><p>{t("common.error")}</p><Button onClick={() => void revenue.refetch()}>{t("common.retry")}</Button></div>}
+        {!!revenue.data?.excludedCurrencyInvoices && <p role="status" className="mb-4 text-sm text-warning">{t("admin_revenue.excluded_currency", { defaultValue: "{{count}} invoices have a missing or invalid currency and are excluded from the financial totals.", count: revenue.data.excludedCurrencyInvoices })}</p>}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-          <StatCard title={t("admin_analytics.stat_revenue")} value={`$${((sales?.totalRevenue ?? 0) / 100).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}`} sub={t("admin_analytics.stat_revenue_sub")} icon={DollarSign} color="text-success" />
+          <StatCard title={t("admin_analytics.stat_revenue")} value={format(revenue.data?.overview.totalRevenue)} sub={t("admin_analytics.stat_revenue_sub")} icon={DollarSign} color="text-success" />
           <StatCard title={t("admin_analytics.stat_events")} value={sales?.totalEvents ?? 0} icon={Calendar} />
-          <StatCard title={t("admin_analytics.stat_quotes")} value={sales?.totalQuotes ?? 0} icon={FileText} />
-          <StatCard title={t("admin_analytics.stat_invoices")} value={sales?.totalInvoices ?? 0} sub={t("admin_analytics.stat_invoices_sub", { paid: sales?.paidInvoices ?? 0 })} icon={ReceiptText} />
-          <StatCard title={t("admin_analytics.stat_conversion")} value={`${sales?.conversionRate ?? 0}%`} icon={TrendingUp} color="text-info" />
+          <StatCard title={t("admin_analytics.stat_quotes")} value={revenue.data?.quoteFunnel.totalQuotes ?? "-"} icon={FileText} />
+          <StatCard title={t("admin_analytics.stat_invoices")} value={revenue.data?.overview.totalInvoices ?? "-"} sub={revenue.data ? t("admin_analytics.stat_invoices_sub", { paid: revenue.data.overview.paidInvoices ?? 0 }) : undefined} icon={ReceiptText} />
+          <StatCard title={t("admin_revenue.funnel_acceptance")} value={revenue.data?.overview.quoteAcceptanceRate == null ? "-" : `${revenue.data.overview.quoteAcceptanceRate}%`} icon={TrendingUp} color="text-info" />
         </div>
       </section>
 

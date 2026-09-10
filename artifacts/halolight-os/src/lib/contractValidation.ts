@@ -68,7 +68,9 @@ function formatPrice(amount: number, currency: string, lang: string): string {
   }
 }
 
-export interface ContractFormData {
+import { withContractTerms, removeEmptyContractSections, type ContractTerms } from "../../../api-server/src/lib/contractTerms";
+
+export interface ContractFormData extends ContractTerms {
   title: string;
   clientName: string;
   clientEmail: string;
@@ -467,9 +469,9 @@ export function fillAllVariables(
     signature_place: form.signaturePlace || placeholders.to_be_specified,
   };
 
-  let result = content;
+  let result = withContractTerms(content, form, total, lang, cur);
   for (const [key, value] of Object.entries(replacements)) {
-    result = result.replace(new RegExp(`\\{\\{${key}\\}\\}`, "g"), value);
+    result = result.replace(new RegExp(`\\{\\{${key}\\}\\}`, "g"), () => value);
   }
 
   // Final safety net: replace any remaining {{...}} with generic fallback.
@@ -490,5 +492,5 @@ export function fillAllVariables(
     .join("\n")
     .replace(/\n{3,}/g, "\n\n");
 
-  return result;
+  return removeEmptyContractSections(result);
 }

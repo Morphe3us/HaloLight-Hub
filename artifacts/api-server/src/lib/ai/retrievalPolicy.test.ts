@@ -108,17 +108,57 @@ test("French lexical retrieval preserves accents via normalization and drops com
     extractKeywords(
       "Bonjour, je voudrais de l'aide pour un bourrage papier sur mon imprimante",
     ),
-    ["bourrage", "papier", "imprimante"],
+    ["bourrage", "papier", "imprimante", "paper", "printer"],
   );
   assert.deepEqual(extractKeywords("Événement événement caméra réglage"), [
     "evenement",
     "camera",
     "reglage",
+    "appareil photo",
   ]);
   assert.deepEqual(extractKeywords("please help me with my printer printer"), [
     "printer",
+    "imprimante",
   ]);
   assert.equal(extractKeywords("% _ ' OR 1=1 --").length, 0);
+});
+
+test("closed bilingual domain glossary expands both directions without generic help terms", () => {
+  for (const [en, fr] of [
+    ["printer", "imprimante"],
+    ["paper", "papier"],
+    ["consumables", "consommables"],
+    ["troubleshooting", "depannage"],
+    ["assembly", "montage"],
+    ["camera", "appareil photo"],
+  ]) {
+    assert.deepEqual(extractKeywords(en), [en, fr]);
+    assert.deepEqual(extractKeywords(fr), [fr, en]);
+  }
+  assert.deepEqual(extractKeywords("help please aide merci"), []);
+  assert.deepEqual(extractKeywords("appareil\nphoto"), [
+    "appareil photo",
+    "camera",
+  ]);
+  assert.deepEqual(extractKeywords("camera appareil photo camera"), [
+    "camera",
+    "appareil photo",
+  ]);
+  assert.ok(
+    extractKeywords(
+      "printer paper consumables troubleshooting assembly camera alpha beta gamma delta",
+    ).length <= 16,
+  );
+  assert.ok(
+    !extractKeywords(
+      "printer paper consumables troubleshooting assembly camera alpha beta gamma delta",
+    ).includes("gamma"),
+  );
+  assert.deepEqual(
+    new PgDialect().sqlToQuery(languagePreference(sql`language`, "en-US"))
+      .params,
+    ["en"],
+  );
 });
 
 test("lexical SQL uses parameter binding and accent normalization without a DB extension", () => {

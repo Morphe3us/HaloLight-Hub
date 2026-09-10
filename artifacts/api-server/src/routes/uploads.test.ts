@@ -84,7 +84,7 @@ test("upload/file routes enforce auth, metadata, containment and private caching
       },
     },
   );
-  const routes = isolatedModule(new URL("./uploads.ts", import.meta.url), {
+  const dependencies = {
     express: { Router: express.Router },
     "node:stream/promises": streams,
     "drizzle-orm": { eq: (_column: unknown, value: unknown) => value },
@@ -102,10 +102,16 @@ test("upload/file routes enforce auth, metadata, containment and private caching
                 return article?.sourceKey === url ? [article] : [];
               }
               const row = table === uploadTable ? upload : resource;
-              return row?.fileUrl === url ? [row] : [];
+              return row?.fileUrl === url || row?.id === url ? [row] : [];
             },
           }),
         }),
+        update: (table: unknown) => ({ set: (updates: RecordRow) => ({ where: () => ({ returning: async () => {
+          const row = table === uploadTable ? upload : resource;
+          if (!row) return [];
+          Object.assign(row, updates);
+          return [row];
+        } }) }) }),
       },
     },
     "../middlewares/requireAuth": requireAuth,
@@ -120,10 +126,20 @@ test("upload/file routes enforce auth, metadata, containment and private caching
     "../lib/storage/local-provider": localStorage,
     "../lib/fileAccess": fileAccess,
     "../lib/uploadSecurity": uploadSecurity,
+  };
+  const routes = isolatedModule(new URL("./uploads.ts", import.meta.url), dependencies);
+  const resourceRoutes = isolatedModule(new URL("./resources.ts", import.meta.url), {
+    express: dependencies.express,
+    "drizzle-orm": { ...dependencies["drizzle-orm"], ilike: () => {}, and: () => {} },
+    "@workspace/db": dependencies["@workspace/db"],
+    "../middlewares/requireAuth": requireAuth,
+    "../lib/userSync": dependencies["../lib/userSync"],
+    "./uploads": routes,
   });
   const app = express();
   app.use(express.json({ limit: "25mb" }));
   app.use("/api", routes.default as express.Router);
+  app.use("/api", resourceRoutes.default as express.Router);
   const server = app.listen(0, "127.0.0.1");
   t.after(
     () =>
@@ -331,6 +347,68 @@ test("upload/file routes enforce auth, metadata, containment and private caching
       article = null;
     },
   );
+
+  await t.test("original PDF exact hash owner, anonymous denial and admin inspection", async () => {
+    const hash = "b".repeat(64);
+    const key = `original-2026-09-10/${hash}.pdf`;
+    const url = `/api/files/${key}`;
+    const sourceKey = "halolight:corrected-content:fr:guide-ultime";
+    const description = `[sourceKey=${sourceKey}] revision=2026-09-10 sha256=${hash}`;
+    await mkdir(path.join(root, "original-2026-09-10"), { mode: 0o700 });
+    await writeFile(path.join(root, key), pdf, { mode: 0o600 });
+    upload = { id: "original-upload", fileUrl: url, description, visibility: "client_visible", status: "ready", mimeType: "application/pdf", fileSize: pdf.length };
+    resource = { id: "original-resource", fileUrl: url, description, status: "published" };
+    article = { sourceKey, sourceHash: hash, status: "published" };
+    const download = async (role?: string) => {
+      const response = await request(url, role ? { headers: headers(role) } : undefined);
+      const bytes = Buffer.from(await response.arrayBuffer());
+      if (response.status === 200) assert.deepEqual(bytes, pdf);
+      return response.status;
+    };
+    assert.equal(await download(), 401);
+    assert.equal(await download("client"), 200);
+    article.sourceHash = "c".repeat(64);
+    assert.equal(await download("client"), 403);
+    assert.equal(await download("admin"), 200);
+    article.sourceHash = hash;
+    upload.relatedProduct = "scoped-owner";
+    assert.equal(await download("client"), 403);
+    assert.equal(await download("admin"), 200);
+    delete upload.relatedProduct;
+    article.status = "archived";
+    assert.equal(await download("client"), 403);
+    assert.equal(await download("admin"), 200);
+    article.status = "published";
+
+    for (const [kind, row] of [["uploads", upload], ["resources", resource]] as const) {
+      const put = (body: RecordRow, role?: string) => fetch(`${base}/api/admin/${kind}/${row.id}`, {
+        method: "PUT", headers: { "content-type": "application/json", ...(role ? headers(role) : {}) }, body: JSON.stringify(body),
+      });
+      assert.equal((await put({ description: "" })).status, 401);
+      assert.equal((await put({ description: "" }, "client")).status, 403);
+      for (const descriptionValue of [null, "", "Editable description"]) {
+        const response = await put({ description: descriptionValue }, "admin");
+        assert.equal(response.status, 200);
+        assert.ok(String(row.description).startsWith(description));
+        assert.equal(await download("client"), 200);
+      }
+      for (const body of [
+        { fileUrl: "/api/files/original-2026-09-10/other.pdf" },
+        { fileUrl: "https://public.invalid/original.pdf" },
+        { description: "[sourceKey=halolight:corrected-content:fr:other]" },
+      ]) {
+        const before = { ...row };
+        assert.equal((await put(body, "admin")).status, 400);
+        assert.deepEqual(row, before);
+      }
+      assert.equal((await put({ fileUrl: url }, "admin")).status, 200);
+    }
+    upload = null;
+    assert.equal(await download("client"), 404);
+    assert.equal(await download("admin"), 200);
+    resource = null;
+    article = null;
+  });
 
   await mkdir(path.join(temp, "outside"));
   await writeFile(path.join(temp, "outside", "secret.pdf"), "do not expose");

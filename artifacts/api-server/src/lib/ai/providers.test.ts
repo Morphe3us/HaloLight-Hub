@@ -118,6 +118,24 @@ for (const provider of ["OpenAI", "Anthropic"] as const) {
     ["empty body", ""],
     ["malformed-only body", "data: not-json\n\n" + terminal],
     ["premature EOF", content],
+    [
+      "token limit",
+      content +
+        (provider === "OpenAI"
+          ? 'data: {"choices":[{"finish_reason":"length"}]}\n\n'
+          : 'data: {"type":"message_delta","delta":{"stop_reason":"max_tokens"}}\n\n') +
+        terminal,
+    ],
+    ...(provider === "OpenAI"
+      ? [
+          [
+            "content filter",
+            content +
+              'data: {"choices":[{"finish_reason":"content_filter"}]}\n\n' +
+              terminal,
+          ],
+        ]
+      : []),
     ["non-SSE HTTP 200 error", '{"error":"private-details"}'],
   ]) {
     test(`${provider} rejects ${name} without sources/done`, async () => {

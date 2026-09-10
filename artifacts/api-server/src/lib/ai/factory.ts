@@ -7,47 +7,49 @@ import type { AIProvider } from "./provider";
 import { OpenAIProvider } from "./openai";
 import { ClaudeProvider } from "./claude";
 import { MockAIProvider } from "./mock";
+import { UnavailableAIProvider } from "./unavailable";
 
 // Singleton — provider is resolved once per process lifecycle
 let _provider: AIProvider | null = null;
 
 export function getAIProvider(): AIProvider {
-  if (_provider) return _provider;
+  _provider ??= resolveAIProvider(process.env);
+  return _provider;
+}
 
-  const forceProvider = process.env.AI_PROVIDER?.toLowerCase();
-  const openaiKey = process.env.OPENAI_API_KEY;
-  const anthropicKey = process.env.ANTHROPIC_API_KEY;
+export function resolveAIProvider(
+  env: Record<string, string | undefined>,
+): AIProvider {
+  const forceProvider = env.AI_PROVIDER?.trim().toLowerCase();
+  const openaiKey = env.OPENAI_API_KEY?.trim();
+  const anthropicKey = env.ANTHROPIC_API_KEY?.trim();
 
   if (forceProvider === "mock") {
-    _provider = new MockAIProvider();
-    return _provider;
+    return new MockAIProvider();
   }
 
   if (forceProvider === "openai" || (!forceProvider && openaiKey)) {
     if (!openaiKey) {
-      console.warn("[AI] AI_PROVIDER=openai but OPENAI_API_KEY is not set — falling back to mock");
-      _provider = new MockAIProvider();
+      return new UnavailableAIProvider();
     } else {
-      const model = process.env.OPENAI_MODEL ?? "gpt-4o-mini";
-      _provider = new OpenAIProvider(openaiKey, model);
+      const model = env.OPENAI_MODEL ?? "gpt-4o-mini";
+      return new OpenAIProvider(openaiKey, model);
     }
-    return _provider;
   }
 
   if (forceProvider === "claude" || (!forceProvider && anthropicKey)) {
     if (!anthropicKey) {
-      console.warn("[AI] AI_PROVIDER=claude but ANTHROPIC_API_KEY is not set — falling back to mock");
-      _provider = new MockAIProvider();
+      return new UnavailableAIProvider();
     } else {
-      const model = process.env.ANTHROPIC_MODEL ?? "claude-3-5-haiku-20241022";
-      _provider = new ClaudeProvider(anthropicKey, model);
+      const model = env.ANTHROPIC_MODEL ?? "claude-3-5-haiku-20241022";
+      return new ClaudeProvider(anthropicKey, model);
     }
-    return _provider;
   }
 
-  // Default: mock provider (no API keys configured)
-  _provider = new MockAIProvider();
-  return _provider;
+  if (forceProvider || env.NODE_ENV === "production")
+    return new UnavailableAIProvider();
+  // Unconfigured development remains an explicitly labelled documentation demo.
+  return new MockAIProvider();
 }
 
 /** Reset the provider singleton — useful in tests or when env vars change */

@@ -33,7 +33,7 @@
     "admin_section": "Admin",
     "admin_intelligence": "Intelligentie",
     "admin_management": "Beheer",
-    "admin_operations": "Operaties",
+    "admin_operations": "Activiteiten",
     "analytics": "Analyse",
     "revenue": "Inkomsten",
     "clients": "Klanten",
@@ -46,7 +46,10 @@
     "users": "Gebruikers",
     "resources": "Bronnen",
     "contract_templates": "Contractsjablonen",
-    "exports": "Exports"
+    "exports": "Exports",
+    "admin_pilotage": "Beheer",
+    "admin_content_ai": "Inhoud & AI",
+    "admin_data_system": "Gegevens & systeem"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -88,7 +91,8 @@
     "widget_notifications": "Recente meldingen",
     "widget_upcoming_events": "Komende evenementen",
     "widget_academy_stats": "Academy voortgang",
-    "widget_sales_overview": "Verkooppipeline"
+    "widget_sales_overview": "Verkooppipeline",
+    "preferences_error": "De dashboardvoorkeuren konden niet worden geladen of opgeslagen. Uw eerdere keuzes zijn behouden."
   },
   "academy": {
     "title": "Academie",
@@ -337,7 +341,19 @@
     "forecast_reorder_hint": "Bestel papier vóór uw volgende evenement om tekorten te vermijden.",
     "forecast_prints_label": "afdrukken",
     "forecast_more_events": "meer evenementen",
-    "forecast_no_prints_warning": "Afdrukaantal niet opgegeven"
+    "forecast_no_prints_warning": "Afdrukaantal niet opgegeven",
+    "average_prints_event": "Gemiddeld aantal afdrukken per evenement",
+    "average_events_month": "Gemiddeld aantal evenementen per maand (optioneel)",
+    "monthly_consumption": "Geschatte afdrukken per maand",
+    "events_remaining": "Resterende evenementen",
+    "months_remaining": "Resterende maanden",
+    "edit_usage": "Verbruik per evenement bewerken",
+    "usage_save_failed": "Verbruik per evenement kon niet worden opgeslagen",
+    "usage_unknown": "Niet geschat",
+    "stock_prints": "Huidige voorraad (afdrukken)",
+    "print_units_required": "Schattingen en aanvullen in afdrukken zijn niet beschikbaar voor deze eenheid. Bestaande hoeveelheden blijven ongewijzigd.",
+    "verified_print_quantity": "Geverifieerde resterende afdrukken",
+    "confirm_print_conversion": "Ik bevestig dat dit de totale resterende afdrukcapaciteit is. Vervang alleen de hoeveelheid en eenheid van mijn voorraad, zonder de gedeelde catalogus te wijzigen."
   },
   "support": {
     "title": "Support",
@@ -390,7 +406,13 @@
     "stat_in_progress": "In behandeling",
     "stat_resolved": "Opgelost",
     "ticket_created_msg": "Ticket created",
-    "ticket_created_desc": "Your support ticket has been submitted."
+    "ticket_created_desc": "Your support ticket has been submitted.",
+    "equipment_model": "Apparatuur/model (optioneel)",
+    "serial_number": "Serienummer (optioneel)",
+    "attachments": "Bijlagen",
+    "attachments_limit": "Maximaal 3 PDF- of afbeeldingsbestanden, 10 MiB totaal",
+    "attachments_invalid": "Kies maximaal 3 PDF- of afbeeldingsbestanden van samen maximaal 10 MiB",
+    "create_failed": "Ticket aanmaken mislukt. Controleer de velden en bijlagen en probeer het opnieuw."
   },
   "kb": {
     "content_language": "Taal van de inhoud",
@@ -509,7 +531,8 @@
     "voice_input_error": "Spraakfout",
     "new_chat": "Nieuw gesprek",
     "send_get_started": "Stuur een bericht om te beginnen",
-    "escalate_dialog_desc": "Er wordt een supportticket aangemaakt met een transcript van dit gesprek, zodat ons team direct contact kan opnemen. U kunt het volgen in uw Supporttickets."
+    "escalate_dialog_desc": "Er wordt een supportticket aangemaakt met een transcript van dit gesprek, zodat ons team direct contact kan opnemen. U kunt het volgen in uw Supporttickets.",
+    "provider_unavailable": "De AI-dienst is niet beschikbaar omdat de aanbieder niet correct is ingesteld. Een beheerder van HaloLight Hub moet deze instellen voordat je door AI gegenereerde antwoorden kunt ontvangen."
   },
   "notifications": {
     "title": "Meldingen",
@@ -913,7 +936,8 @@
     "discount_label": "Korting",
     "send_quote": "E-mail voorbereiden",
     "quote_sent": "E-mailconcept voorbereid",
-    "quote_send_failed": "Offerte verzenden mislukt"
+    "quote_send_failed": "Offerte verzenden mislukt",
+    "payment_method": "Betaalmethode"
   },
   "contracts": {
     "title": "Contracten",
@@ -1031,7 +1055,19 @@
     "provider_signature_section": "Handtekening aanbieder voor contracten",
     "provider_signature_desc": "Indien ingesteld, verschijnt deze handtekening in gegenereerde contracten.",
     "provider_signature_saved": "Handtekening opgeslagen",
-    "no_content_message": "Er is nog geen contractinhoud. Gebruik Bewerken om inhoud toe te voegen of genereer een contract vanuit een sjabloon."
+    "no_content_message": "Er is nog geen contractinhoud. Gebruik Bewerken om inhoud toe te voegen of genereer een contract vanuit een sjabloon.",
+    "advanceAmount": "Aanbetaling",
+    "paymentMethod": "Betaalmethode",
+    "responsibilityTerms": "Verantwoordelijkheden",
+    "breakdownTerms": "Storing en ondersteuning",
+    "postponementTerms": "Uitstel",
+    "forceMajeureTerms": "Overmacht",
+    "privacyTerms": "Bescherming van persoonsgegevens",
+    "specialConditions": "Bijzondere voorwaarden",
+    "language_label": "Contracttaal",
+    "balanceAmount": "Resterend bedrag",
+    "invalid_advance": "Controleer de aanbetaling en de ingevoerde voorwaarden.",
+    "legal_review_required": "De juridische goedkeuring van dit sjabloon is niet bevestigd. Laat de voorwaarden vóór ondertekening beoordelen."
   },
   "invoices": {
     "title": "Facturen",
@@ -1147,7 +1183,8 @@
     "equipment_label": "Apparatuur",
     "options_label": "Opties",
     "discount_label": "Korting",
-    "status_updated": "Status bijgewerkt"
+    "status_updated": "Status bijgewerkt",
+    "payment_method": "Betaalmethode"
   },
   "admin_analytics": {
     "title": "Analytics-dashboard",
@@ -1249,7 +1286,18 @@
     "priority_urgent": "Urgent",
     "priority_suffix": "{{level}} prioriteit",
     "toast_reply_sent": "Reactie verzonden",
-    "toast_status_updated": "Status bijgewerkt"
+    "toast_status_updated": "Status bijgewerkt",
+    "download_failed": "Bijlage downloaden mislukt",
+    "email_history": "E-mailverzendgeschiedenis",
+    "email_pending": "E-mail in wachtrij",
+    "email_sending": "E-mail wordt verzonden",
+    "email_sent": "Geaccepteerd door e-mailprovider",
+    "email_failed": "E-mail verzenden mislukt",
+    "email_unknown": "Verzending moet worden gecontroleerd",
+    "email_disabled": "E-mailverzending is niet ingesteld",
+    "email_retry": "Verzending opnieuw proberen",
+    "email_retry_failed": "Opnieuw verzenden mislukt",
+    "email_none": "Geen e-mailverzending geregistreerd"
   },
   "post_detail": {
     "back": "Terug",
@@ -1524,7 +1572,12 @@
     "col_avg_booking": "Gem. boeking",
     "col_tier": "Niveau",
     "no_revenue": "Nog geen omzetgegevens",
-    "top_performers": "Toppresteerders"
+    "top_performers": "Toppresteerders",
+    "currency": "Valuta",
+    "undated_paid": "{{count}} betaalde facturen hebben geen betaaldatum en zijn uitgesloten van de maandgrafiek.",
+    "stat_invoiced": "Gefactureerd",
+    "stat_unpaid": "Onbetaald",
+    "excluded_currency": "{{count}} facturen hebben geen of een ongeldige valuta en zijn uitgesloten van de financiële totalen."
   },
   "admin_uploads": {
     "title": "Upload-beheer",
@@ -1979,5 +2032,22 @@
     "placeholder_not_applicable": "Niet van toepassing",
     "optional_summary": "Sommige optionele informatie ontbreekt en wordt vervangen door standaardtekst.",
     "field_currency": "Valuta"
+  },
+  "consent": {
+    "not_configured": "De goedgekeurde juridische documenten zijn nog niet in de Hub gepubliceerd. Er wordt geen akkoord vastgelegd.",
+    "terms": "Gebruiksvoorwaarden",
+    "privacy": "Privacybeleid en verwerking van persoonsgegevens",
+    "accept": "Ik heb deze versies van de gebruiksvoorwaarden en het privacybeleid gelezen en ga ermee akkoord.",
+    "marketing": "Marketingberichten (optioneel)",
+    "analytics": "Optionele gebruiksanalyse",
+    "ai_improvement": "Gebruik van mijn gegevens om AI te verbeteren (optioneel)",
+    "optional": "Optionele keuzes",
+    "save_error": "Het akkoord is niet opgeslagen. Bekijk de huidige documenten en probeer het opnieuw.",
+    "save": "Mijn keuzes opslaan",
+    "title": "Voorwaarden en privacy",
+    "proof": "Akkoordgeschiedenis (laatste 100)",
+    "no_proof": "Geen akkoord vastgelegd.",
+    "proof_choices": "Optionele toestemmingen: marketing {{marketing}}, analyse {{analytics}}, AI-verbetering {{ai}}",
+    "manage": "Privacykeuzes"
   }
 }

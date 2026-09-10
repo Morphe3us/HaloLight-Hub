@@ -58,6 +58,7 @@ export class OpenAIProvider implements AIProvider {
           Authorization: `Bearer ${this.apiKey}`,
         },
         body: JSON.stringify(payload),
+        signal: AbortSignal.timeout(90_000),
       });
     } catch (err) {
       yield { type: "error", error: "Failed to connect to OpenAI API" };

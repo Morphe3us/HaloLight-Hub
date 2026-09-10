@@ -773,6 +773,8 @@ export interface Quote {
   /** @nullable */
   language?: string | null;
   status: QuoteStatus;
+  /** @nullable */
+  paymentMethod?: string | null;
   subtotal: string;
   taxRate: string;
   taxAmount: string;
@@ -853,6 +855,22 @@ export interface Contract {
   taxRate?: string | null;
   /** @nullable */
   depositAmount?: string | null;
+  /** @nullable */
+  advanceAmount?: string | null;
+  /** @nullable */
+  paymentMethod?: string | null;
+  /** @nullable */
+  responsibilityTerms?: string | null;
+  /** @nullable */
+  breakdownTerms?: string | null;
+  /** @nullable */
+  postponementTerms?: string | null;
+  /** @nullable */
+  forceMajeureTerms?: string | null;
+  /** @nullable */
+  privacyTerms?: string | null;
+  /** @nullable */
+  specialConditions?: string | null;
   /** @nullable */
   depositMethod?: string | null;
   /** @nullable */
@@ -1103,6 +1121,11 @@ export interface QuoteList {
 }
 
 export interface QuoteInput {
+  /**
+     * @maxLength 200
+     * @nullable
+     */
+  paymentMethod?: string | null;
   leadId?: string;
   title: string;
   clientName: string;
@@ -1189,6 +1212,14 @@ export interface ContractInput {
   discountAmount?: string;
   taxRate?: string;
   depositAmount?: string;
+  advanceAmount?: string;
+  paymentMethod?: string;
+  responsibilityTerms?: string;
+  breakdownTerms?: string;
+  postponementTerms?: string;
+  forceMajeureTerms?: string;
+  privacyTerms?: string;
+  specialConditions?: string;
   depositMethod?: string;
   depositConditions?: string;
   depositReturn?: string;
@@ -1253,6 +1284,11 @@ export interface InvoiceList {
 }
 
 export interface InvoiceInput {
+  /**
+     * @maxLength 200
+     * @nullable
+     */
+  paymentMethod?: string | null;
   leadId?: string;
   quoteId?: string;
   contractId?: string;
@@ -1341,6 +1377,14 @@ export const SupportTicketCategory = {
   bug_report: 'bug_report',
 } as const;
 
+export interface SupportAttachment {
+  id: string;
+  fileName: string;
+  mimeType: string;
+  size: number;
+  downloadUrl: string;
+}
+
 export interface SupportTicket {
   id?: string;
   userId?: string;
@@ -1355,6 +1399,11 @@ export interface SupportTicket {
   closedAt?: string | null;
   createdAt?: string;
   updatedAt?: string;
+  /** @nullable */
+  equipmentModel?: string | null;
+  /** @nullable */
+  serialNumber?: string | null;
+  attachments?: SupportAttachment[];
 }
 
 export interface SupportTicketReply {
@@ -1388,11 +1437,47 @@ export const SupportTicketInputCategory = {
   bug_report: 'bug_report',
 } as const;
 
+export type SupportAttachmentInputMimeType = typeof SupportAttachmentInputMimeType[keyof typeof SupportAttachmentInputMimeType];
+
+
+export const SupportAttachmentInputMimeType = {
+  'application/pdf': 'application/pdf',
+  'image/png': 'image/png',
+  'image/jpeg': 'image/jpeg',
+  'image/webp': 'image/webp',
+} as const;
+
+export interface SupportAttachmentInput {
+  /**
+     * @minLength 1
+     * @maxLength 180
+     */
+  fileName: string;
+  mimeType: SupportAttachmentInputMimeType;
+  /** @maxLength 13981016 */
+  data: string;
+}
+
 export interface SupportTicketInput {
   title: string;
   description: string;
   priority?: SupportTicketInputPriority;
   category?: SupportTicketInputCategory;
+  /**
+     * @maxLength 200
+     * @nullable
+     */
+  equipmentModel?: string | null;
+  /**
+     * @maxLength 200
+     * @nullable
+     */
+  serialNumber?: string | null;
+  /**
+     * Creation only. At most 10 MiB decoded total; updates reject this field.
+     * @maxItems 3
+     */
+  attachments?: SupportAttachmentInput[];
 }
 
 export interface SupportTicketReplyInput {
@@ -1962,6 +2047,8 @@ export interface ConsumableCatalogItem {
 }
 
 export interface ConsumableStockItem {
+  /** @nullable */
+  quantityUnit?: string | null;
   id?: string;
   catalogItemId?: string;
   currentQuantity?: number;
@@ -1980,6 +2067,16 @@ export interface ConsumableStockItem {
   isCritical?: boolean;
   daysRemaining?: number | null;
   reorderRecommended?: boolean;
+  /** @nullable */
+  averagePrintsPerEvent?: number | null;
+  /** @nullable */
+  averageEventsPerMonth?: string | null;
+  /** @nullable */
+  monthlyConsumption?: number | null;
+  /** @nullable */
+  eventsRemaining?: number | null;
+  /** @nullable */
+  monthsRemaining?: number | null;
 }
 
 export interface ConsumableForecastEvent {
@@ -2038,6 +2135,18 @@ export interface CreateConsumableStockInput {
   currentQuantity: number;
   estimatedDailyUsage?: string | null;
   lowStockAlertEnabled?: boolean | null;
+  /**
+     * @minimum 0
+     * @maximum 1000000
+     * @nullable
+     */
+  averagePrintsPerEvent?: number | null;
+  /**
+     * @minimum 0
+     * @maximum 999999.99
+     * @nullable
+     */
+  averageEventsPerMonth?: number | null;
 }
 
 export interface ConsumableOrder {
@@ -2057,14 +2166,17 @@ export interface ConsumableOrder {
 
 export interface RevenueOverview {
   totalRevenue?: number;
+  totalInvoiced?: number;
+  totalUnpaid?: number;
   pipelineRevenue?: number;
   outstandingRevenue?: number;
   overdueRevenue?: number;
   paidInvoices?: number;
   avgBookingValue?: number;
-  quoteAcceptanceRate?: number;
-  revenueGrowth?: number;
-  lifetimeEstimate?: number;
+  /** @nullable */
+  quoteAcceptanceRate?: number | null;
+  /** @nullable */
+  revenueGrowth?: number | null;
   totalInvoices?: number;
 }
 
@@ -2083,6 +2195,8 @@ export interface RevenueClient {
   totalRevenue?: number;
   invoiceCount?: number;
   avgBooking?: number;
+  /** @nullable */
+  lastInvoice?: string | null;
   score?: number | null;
   tier?: string | null;
 }
@@ -2116,11 +2230,17 @@ export type RevenueIntelligenceQuoteFunnel = {
   declined?: RevenueIntelligenceQuoteFunnelDeclined;
   expired?: RevenueIntelligenceQuoteFunnelExpired;
   totalQuotes?: number;
-  acceptanceRate?: number;
+  issuedQuotes?: number;
+  /** @nullable */
+  acceptanceRate?: number | null;
   conversionValue?: number;
 };
 
 export interface RevenueIntelligence {
+  currency?: string;
+  availableCurrencies?: string[];
+  undatedPaidInvoices?: number;
+  excludedCurrencyInvoices?: number;
   overview?: RevenueOverview;
   monthly?: RevenueMonthly[];
   clientLeaderboard?: RevenueClient[];
@@ -2128,6 +2248,46 @@ export interface RevenueIntelligence {
   revenueBySegment?: RevenueSegment[];
   quoteFunnel?: RevenueIntelligenceQuoteFunnel;
   topPerformers?: RevenueClient[];
+}
+
+export type SupportEmailDeliveryStatus = typeof SupportEmailDeliveryStatus[keyof typeof SupportEmailDeliveryStatus];
+
+
+export const SupportEmailDeliveryStatus = {
+  pending: 'pending',
+  sending: 'sending',
+  sent: 'sent',
+  failed: 'failed',
+  unknown: 'unknown',
+  disabled: 'disabled',
+} as const;
+
+export interface SupportEmailDelivery {
+  status: SupportEmailDeliveryStatus;
+  attempts: number;
+  /** @nullable */
+  sentAt: string | null;
+}
+
+export type SupportEmailHistoryEntryStatus = typeof SupportEmailHistoryEntryStatus[keyof typeof SupportEmailHistoryEntryStatus];
+
+
+export const SupportEmailHistoryEntryStatus = {
+  pending: 'pending',
+  sending: 'sending',
+  sent: 'sent',
+  failed: 'failed',
+  unknown: 'unknown',
+  disabled: 'disabled',
+} as const;
+
+export interface SupportEmailHistoryEntry {
+  id: string;
+  status: SupportEmailHistoryEntryStatus;
+  attempt: number;
+  /** @nullable */
+  detail: string | null;
+  createdAt: string;
 }
 
 export interface SupportTicketDetail {
@@ -2145,6 +2305,13 @@ export interface SupportTicketDetail {
   createdAt?: string;
   updatedAt?: string;
   replies?: SupportTicketReply[];
+  /** @nullable */
+  equipmentModel?: string | null;
+  /** @nullable */
+  serialNumber?: string | null;
+  attachments?: SupportAttachment[];
+  emailDelivery?: SupportEmailDelivery | null;
+  deliveryHistory?: SupportEmailHistoryEntry[];
 }
 
 export interface AiConversationDetail {
@@ -3150,6 +3317,99 @@ export interface CustomerSuggestion {
   lastActivityAt?: string | null;
 }
 
+export interface PublishedLegalDocuments {
+  termsVersion: string;
+  privacyVersion: string;
+  termsUrl: string;
+  privacyUrl: string;
+}
+
+export type UserConsentEvent = PublishedLegalDocuments & {
+  id: string;
+  userId: string;
+  acceptedAt: string;
+  marketing: boolean;
+  analytics: boolean;
+  aiImprovement: boolean;
+};
+
+export interface UserConsentStatus {
+  configured: boolean;
+  required: boolean;
+  documents: PublishedLegalDocuments | null;
+  acceptance: UserConsentEvent | null;
+}
+
+export interface AcceptUserConsentBody {
+  termsUrl: string;
+  privacyUrl: string;
+  accepted: true;
+  termsVersion: string;
+  privacyVersion: string;
+  marketing?: boolean;
+  analytics?: boolean;
+  aiImprovement?: boolean;
+}
+
+export interface DashboardWidgetPatch {
+  next_lesson?: boolean;
+  onboarding?: boolean;
+  notifications?: boolean;
+  upcoming_events?: boolean;
+  academy_stats?: boolean;
+  sales_overview?: boolean;
+}
+
+export type DashboardWidgets = DashboardWidgetPatch & unknown;
+
+export interface UserDashboardPreferences {
+  widgets: DashboardWidgets;
+}
+
+export interface SupportEmailDeliveryResult {
+  emailDelivery: SupportEmailDelivery | null;
+  deliveryHistory: SupportEmailHistoryEntry[];
+}
+
+export interface ConsumableUsageInput {
+  /**
+     * Explicitly verified remaining print capacity. Converts only this owner's stock to prints; never changes the shared catalog or guesses a roll capacity.
+     * @minimum 0
+     * @maximum 2000000000
+     */
+  currentQuantityPrints?: number;
+  /**
+     * @minimum 0
+     * @maximum 1000000
+     * @nullable
+     */
+  averagePrintsPerEvent?: number | null;
+  /**
+     * @minimum 0
+     * @maximum 999999.99
+     * @nullable
+     */
+  averageEventsPerMonth?: number | null;
+}
+
+export interface ConsumableUsageResult {
+  currentQuantity?: number;
+  /** @nullable */
+  quantityUnit?: string | null;
+  unitType?: string;
+  id: string;
+  /** @nullable */
+  averagePrintsPerEvent: number | null;
+  /** @nullable */
+  averageEventsPerMonth: string | null;
+  /** @nullable */
+  monthlyConsumption: number | null;
+  /** @nullable */
+  eventsRemaining: number | null;
+  /** @nullable */
+  monthsRemaining: number | null;
+}
+
 export type ReadinessCheck503Code = typeof ReadinessCheck503Code[keyof typeof ReadinessCheck503Code];
 
 
@@ -3484,6 +3744,13 @@ export type CreateConsumableOrderBody = {
   notes?: string;
 };
 
+export type GetAdminRevenueParams = {
+/**
+ * @pattern ^[A-Z]{3}$
+ */
+currency?: string;
+};
+
 export type ListTranslationsParams = {
 contentType?: string;
 language?: string;
@@ -3577,5 +3844,13 @@ limit?: number;
 export type GetExportHistory200 = {
   items: ExportLog[];
   total: number;
+};
+
+export type UpdateDashboardPreferencesBody = {
+  widgets: DashboardWidgetPatch;
+};
+
+export type GetUserConsentHistory200 = {
+  items: UserConsentEvent[];
 };
 

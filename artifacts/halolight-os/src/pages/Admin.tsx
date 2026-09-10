@@ -54,6 +54,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
+import { AdminConsentProof } from "@/components/AdminConsentProof";
 
 const ROLES = ["admin", "client", "coach", "sales_rep"] as const;
 const LANGUAGES = ["en", "fr", "de", "nl", "es", "it", "pt", "pl"] as const;
@@ -418,7 +419,7 @@ export default function Admin() {
       </Card>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[90dvh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {editingUser ? t("admin.edit_user") : t("admin.create_user")}
@@ -553,6 +554,7 @@ export default function Admin() {
               />
             </div>
           </div>
+          {editingUser && <AdminConsentProof userId={editingUser.id} />}
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>
               {t("common.cancel")}

@@ -46,7 +46,10 @@
     "exports": "Exportações",
     "users": "Usuários",
     "resources": "Recursos",
-    "contract_templates": "Modelos de contrato"
+    "contract_templates": "Modelos de contrato",
+    "admin_pilotage": "Gestão",
+    "admin_content_ai": "Conteúdos e IA",
+    "admin_data_system": "Dados e sistema"
   },
   "dashboard": {
     "title": "Painel",
@@ -88,7 +91,8 @@
     "widget_notifications": "Notificações recentes",
     "widget_upcoming_events": "Próximos eventos",
     "widget_academy_stats": "Progresso da academia",
-    "widget_sales_overview": "Pipeline de vendas"
+    "widget_sales_overview": "Pipeline de vendas",
+    "preferences_error": "Não foi possível carregar ou guardar as preferências do painel. As suas escolhas anteriores foram mantidas."
   },
   "academy": {
     "title": "Academia",
@@ -337,7 +341,19 @@
     "forecast_reorder_hint": "Reabasteça o papel antes do próximo evento para evitar escassez.",
     "forecast_prints_label": "impressões",
     "forecast_more_events": "mais eventos",
-    "forecast_no_prints_warning": "Quantidade de impressões não especificada"
+    "forecast_no_prints_warning": "Quantidade de impressões não especificada",
+    "average_prints_event": "Média de impressões por evento",
+    "average_events_month": "Média de eventos por mês (opcional)",
+    "monthly_consumption": "Impressões mensais estimadas",
+    "events_remaining": "Eventos restantes",
+    "months_remaining": "Meses restantes",
+    "edit_usage": "Editar consumo por evento",
+    "usage_save_failed": "Não foi possível guardar o consumo por evento",
+    "usage_unknown": "Sem estimativa",
+    "stock_prints": "Stock atual (impressões)",
+    "print_units_required": "As estimativas e a reposição em impressões não estão disponíveis para esta unidade. As quantidades existentes permanecem inalteradas.",
+    "verified_print_quantity": "Impressões restantes verificadas",
+    "confirm_print_conversion": "Confirmo que esta é a capacidade total de impressão restante. Substituir apenas a quantidade e a unidade do meu stock, sem alterar o catálogo partilhado."
   },
   "support": {
     "title": "Suporte",
@@ -390,7 +406,13 @@
     "stat_in_progress": "In Progress",
     "stat_resolved": "Resolvido",
     "ticket_created_msg": "Ticket created",
-    "ticket_created_desc": "Your support ticket has been submitted."
+    "ticket_created_desc": "Your support ticket has been submitted.",
+    "equipment_model": "Equipamento/modelo (opcional)",
+    "serial_number": "Número de série (opcional)",
+    "attachments": "Anexos",
+    "attachments_limit": "Até 3 PDF ou imagens, 10 MiB no total",
+    "attachments_invalid": "Selecione até 3 PDF ou imagens, até 10 MiB no total",
+    "create_failed": "Não foi possível criar o pedido de suporte. Verifique os campos e anexos e tente novamente."
   },
   "kb": {
     "content_language": "Idioma do conteúdo",
@@ -509,7 +531,8 @@
     "voice_input_error": "Erro de entrada de voz",
     "new_chat": "Nova conversa",
     "send_get_started": "Envie uma mensagem para começar",
-    "escalate_dialog_desc": "Um ticket de suporte será criado com a transcrição desta conversa. Você poderá rastreá-lo em seus Tickets de Suporte."
+    "escalate_dialog_desc": "Um ticket de suporte será criado com a transcrição desta conversa. Você poderá rastreá-lo em seus Tickets de Suporte.",
+    "provider_unavailable": "O serviço de IA está indisponível porque o fornecedor não está configurado corretamente. Um administrador do HaloLight Hub deve configurá-lo antes de poder receber respostas geradas por IA."
   },
   "notifications": {
     "title": "Notificações",
@@ -913,7 +936,8 @@
     "discount_label": "Desconto",
     "send_quote": "Preparar email",
     "quote_sent": "Rascunho de email preparado",
-    "quote_send_failed": "Não foi possível enviar o orçamento"
+    "quote_send_failed": "Não foi possível enviar o orçamento",
+    "payment_method": "Método de pagamento"
   },
   "contracts": {
     "title": "Contratos",
@@ -1031,7 +1055,19 @@
     "provider_signature_section": "Assinatura do fornecedor para contratos",
     "provider_signature_desc": "Se definida, esta assinatura aparece nos contratos gerados.",
     "provider_signature_saved": "Assinatura guardada",
-    "no_content_message": "Ainda não há conteúdo de contrato. Use Editar para adicionar conteúdo ou gere um contrato a partir de um modelo."
+    "no_content_message": "Ainda não há conteúdo de contrato. Use Editar para adicionar conteúdo ou gere um contrato a partir de um modelo.",
+    "advanceAmount": "Adiantamento",
+    "paymentMethod": "Método de pagamento",
+    "responsibilityTerms": "Responsabilidades",
+    "breakdownTerms": "Avaria e assistência",
+    "postponementTerms": "Adiamento",
+    "forceMajeureTerms": "Força maior",
+    "privacyTerms": "Proteção de dados pessoais",
+    "specialConditions": "Condições particulares",
+    "language_label": "Idioma do contrato",
+    "balanceAmount": "Saldo em dívida",
+    "invalid_advance": "Verifique o adiantamento e as condições introduzidas.",
+    "legal_review_required": "A aprovação jurídica deste modelo não está comprovada. Solicite a revisão das condições antes de assinar."
   },
   "invoices": {
     "title": "Faturas",
@@ -1147,7 +1183,8 @@
     "equipment_label": "Equipamento",
     "options_label": "Opções",
     "discount_label": "Desconto",
-    "status_updated": "Estado atualizado"
+    "status_updated": "Estado atualizado",
+    "payment_method": "Método de pagamento"
   },
   "admin_analytics": {
     "title": "Dashboard de análise",
@@ -1249,7 +1286,18 @@
     "priority_urgent": "Urgente",
     "priority_suffix": "prioridade {{level}}",
     "toast_reply_sent": "Resposta enviada",
-    "toast_status_updated": "Estado atualizado"
+    "toast_status_updated": "Estado atualizado",
+    "download_failed": "Falha ao transferir o anexo",
+    "email_history": "Histórico de envio de emails",
+    "email_pending": "Email em fila",
+    "email_sending": "A enviar email",
+    "email_sent": "Aceite pelo fornecedor de email",
+    "email_failed": "Falha no envio do email",
+    "email_unknown": "O envio requer verificação",
+    "email_disabled": "O envio de email não está configurado",
+    "email_retry": "Tentar enviar novamente",
+    "email_retry_failed": "Falha na nova tentativa de envio",
+    "email_none": "Nenhum envio de email registado"
   },
   "post_detail": {
     "back": "Voltar",
@@ -1524,7 +1572,12 @@
     "col_avg_booking": "Reserva média",
     "col_tier": "Nível",
     "no_revenue": "Sem dados de receita ainda",
-    "top_performers": "Melhores performers"
+    "top_performers": "Melhores performers",
+    "currency": "Moeda",
+    "undated_paid": "{{count}} faturas pagas não têm data de pagamento e estão excluídas do gráfico mensal.",
+    "stat_invoiced": "Faturado",
+    "stat_unpaid": "Por pagar",
+    "excluded_currency": "{{count}} faturas têm uma moeda em falta ou inválida e estão excluídas dos totais financeiros."
   },
   "admin_uploads": {
     "title": "Gestor de ficheiros",
@@ -1979,5 +2032,22 @@
     "placeholder_not_applicable": "Não aplicável",
     "optional_summary": "Algumas informações opcionais estão em falta e serão substituídas por texto padrão.",
     "field_currency": "Moeda"
+  },
+  "consent": {
+    "not_configured": "Os documentos legais aprovados ainda não foram publicados no Hub. Não está a ser registada qualquer aceitação.",
+    "terms": "Condições de utilização",
+    "privacy": "Política de privacidade e tratamento de dados pessoais",
+    "accept": "Li e aceito estas versões das condições de utilização e da política de privacidade.",
+    "marketing": "Comunicações de marketing (opcional)",
+    "analytics": "Análise opcional de utilização",
+    "ai_improvement": "Utilização dos meus dados para melhorar a IA (opcional)",
+    "optional": "Escolhas opcionais",
+    "save_error": "A aceitação não foi guardada. Consulte os documentos atuais e tente novamente.",
+    "save": "Guardar as minhas escolhas",
+    "title": "Condições e privacidade",
+    "proof": "Histórico de aceitações (últimas 100)",
+    "no_proof": "Nenhuma aceitação registada.",
+    "proof_choices": "Consentimentos opcionais: marketing {{marketing}}, análise {{analytics}}, melhoria de IA {{ai}}",
+    "manage": "Escolhas de privacidade"
   }
 }

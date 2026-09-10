@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useParams, Link } from "wouter";
-import { useGetSupportTicket, useCreateTicketReply, useUpdateTicketStatus, useGetCurrentUser } from "@workspace/api-client-react";
+import { customFetch, useGetSupportTicket, useCreateTicketReply, useUpdateTicketStatus, useGetCurrentUser } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,7 +9,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Send, Shield, User, Clock, CheckCircle2, AlertCircle, Tag } from "lucide-react";
+import { ArrowLeft, Send, Shield, User, Clock, CheckCircle2, AlertCircle, Tag, Download, RotateCw } from "lucide-react";
+import { downloadSupportAttachment } from "./supportAttachmentFiles";
 
 const statusColors: Record<string, string> = {
   open:              "bg-info/15 text-info",
@@ -38,10 +39,16 @@ export default function TicketDetail() {
   const queryClient = useQueryClient();
   const [reply, setReply] = useState("");
   const [statusUpdate, setStatusUpdate] = useState("");
+  const [downloading, setDownloading] = useState<string | null>(null);
+  const [retrying, setRetrying] = useState(false);
 
-  const { data: ticket, isLoading } = useGetSupportTicket(id!);
+  const { data: ticket, isLoading, isError, refetch } = useGetSupportTicket(id!);
   const { data: currentUser } = useGetCurrentUser();
   const isAdmin = currentUser?.role === "admin";
+  const deliveryLabels: Record<string, string> = {
+    pending: "Email queued", sending: "Sending email", sent: "Accepted by email provider", failed: "Email delivery failed",
+    unknown: "Delivery needs verification", disabled: "Email delivery is not configured",
+  };
 
   const priorityLabels: Record<string, string> = {
     low:    t("ticket_detail.priority_low"),
@@ -80,10 +87,11 @@ export default function TicketDetail() {
     );
   }
 
-  if (!ticket) {
+  if (!ticket || isError) {
     return (
       <div className="max-w-3xl mx-auto text-center py-16">
-        <p className="text-muted-foreground">{t("ticket_detail.not_found")}</p>
+        <p className="text-muted-foreground">{t(isError ? "common.error" : "ticket_detail.not_found")}</p>
+        {isError && <Button variant="outline" onClick={() => void refetch()}>{t("common.retry", { defaultValue: "Retry" })}</Button>}
         <Link href="/support">
           <Button variant="outline" className="mt-4">{t("ticket_detail.back_btn")}</Button>
         </Link>
@@ -108,9 +116,9 @@ export default function TicketDetail() {
 
       <Card>
         <CardHeader>
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex-1">
-              <CardTitle className="text-xl font-semibold">{ticket.title}</CardTitle>
+          <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              <CardTitle className="text-xl font-semibold break-words [overflow-wrap:anywhere]">{ticket.title}</CardTitle>
               <div className="flex flex-wrap items-center gap-2 mt-2">
                 <Badge className={`text-xs ${statusColors[ticket.status ?? "open"] ?? ""}`}>
                   {t(`ticket_detail.status_${ticket.status ?? "open"}`, { defaultValue: (ticket.status ?? "open").replace(/_/g, " ") })}
@@ -152,10 +160,38 @@ export default function TicketDetail() {
             {t("ticket_detail.opened", { date: formatDate(ticket.createdAt) })}
           </div>
           <div className="bg-muted rounded-lg p-4">
-            <p className="text-foreground whitespace-pre-wrap">{ticket.description}</p>
+            <p className="text-foreground whitespace-pre-wrap [overflow-wrap:anywhere]">{ticket.description}</p>
           </div>
+          {(ticket.equipmentModel || ticket.serialNumber) && <dl className="mt-4 text-sm space-y-2">
+            {ticket.equipmentModel && <div><dt className="text-muted-foreground">{t("support.equipment_model", { defaultValue: "Equipment/model (optional)" })}</dt><dd className="break-words">{ticket.equipmentModel}</dd></div>}
+            {ticket.serialNumber && <div><dt className="text-muted-foreground">{t("support.serial_number", { defaultValue: "Serial number (optional)" })}</dt><dd className="break-words">{ticket.serialNumber}</dd></div>}
+          </dl>}
+          {(ticket.attachments ?? []).map(file => <div key={file.id} className="flex items-center justify-between gap-3 border-t py-3 mt-3">
+            <span className="text-sm min-w-0 break-all">{file.fileName}</span>
+            <Button variant="outline" size="icon" disabled={downloading !== null} title={file.fileName} aria-label={file.fileName} onClick={async () => {
+              setDownloading(file.id);
+              try { await downloadSupportAttachment(id!, file.id, file.fileName); }
+              catch { toast({ title: t("common.error"), description: t("ticket_detail.download_failed", { defaultValue: "Attachment download failed" }), variant: "destructive" }); }
+              finally { setDownloading(null); }
+            }}><Download className="h-4 w-4" /></Button>
+          </div>)}
         </CardContent>
       </Card>
+
+      <section className="space-y-3 border-t pt-4">
+        <h2 className="font-medium">{t("ticket_detail.email_history", { defaultValue: "Email delivery history" })}</h2>
+        <p className="text-sm">{ticket.emailDelivery ? t(`ticket_detail.email_${ticket.emailDelivery.status}`, { defaultValue: deliveryLabels[ticket.emailDelivery.status] ?? "Delivery needs verification" }) : t("ticket_detail.email_none", { defaultValue: "No email delivery record" })}</p>
+        {(ticket.deliveryHistory ?? []).map(event => <div key={event.id} className="text-sm flex flex-wrap justify-between gap-2">
+          <span>{t(`ticket_detail.email_${event.status}`, { defaultValue: deliveryLabels[event.status] ?? "Delivery needs verification" })}</span>
+          <time className="text-muted-foreground">{formatDate(event.createdAt)}</time>
+        </div>)}
+        {isAdmin && ticket.emailDelivery && !["sent", "sending"].includes(ticket.emailDelivery.status) && <Button variant="outline" disabled={retrying} onClick={async () => {
+          setRetrying(true);
+          try { await customFetch(`/api/support/tickets/${id}/email/retry`, { method: "POST" }); await refetch(); }
+          catch { toast({ title: t("common.error"), description: t("ticket_detail.email_retry_failed", { defaultValue: "Email retry failed" }), variant: "destructive" }); }
+          finally { setRetrying(false); }
+        }}><RotateCw className="h-4 w-4 mr-2" />{t("ticket_detail.email_retry", { defaultValue: "Retry email" })}</Button>}
+      </section>
 
       {replies.length > 0 && (
         <div className="space-y-3">

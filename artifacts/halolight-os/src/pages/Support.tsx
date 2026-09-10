@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { Plus, Search, Ticket, AlertCircle, Clock, CheckCircle2, ChevronRight } from "lucide-react";
+import { encodeSupportFiles } from "./supportAttachmentFiles";
 
 const statusColors: Record<string, string> = {
   open: "bg-info/15 text-info",
@@ -51,19 +52,34 @@ export default function Support() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [showCreate, setShowCreate] = useState(false);
-  const [form, setForm] = useState({ title: "", description: "", priority: "medium", category: "general" });
+  const emptyForm = { title: "", description: "", priority: "medium", category: "general", equipmentModel: "", serialNumber: "" };
+  const [form, setForm] = useState(emptyForm);
+  const [files, setFiles] = useState<File[]>([]);
+  const [encoding, setEncoding] = useState(false);
 
-  const { data, isLoading } = useListSupportTickets({ status: statusFilter === "all" ? undefined : statusFilter });
-  const { mutate: createTicket, isPending } = useCreateSupportTicket({
+  const { data, isLoading, isError, refetch } = useListSupportTickets({ status: statusFilter === "all" ? undefined : statusFilter });
+  const { mutateAsync: createTicket, isPending } = useCreateSupportTicket({
     mutation: {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: ["/api/support/tickets"] });
         setShowCreate(false);
-        setForm({ title: "", description: "", priority: "medium", category: "general" });
+        setForm(emptyForm);
+        setFiles([]);
         toast({ title: t("support.ticket_created_msg"), description: t("support.ticket_created_desc") });
       },
     },
   });
+
+  async function submitTicket() {
+    setEncoding(true);
+    try {
+      const attachments = await encodeSupportFiles(files);
+      await createTicket({ data: { ...form, equipmentModel: form.equipmentModel.trim() || null,
+        serialNumber: form.serialNumber.trim() || null, priority: form.priority as "medium", category: form.category as "general", attachments } });
+    } catch {
+      toast({ title: t("common.error"), description: t("support.create_failed", { defaultValue: "Ticket creation failed. Check the fields and attachments, then try again." }), variant: "destructive" });
+    } finally { setEncoding(false); }
+  }
 
   const tickets = data?.items ?? [];
   const filtered = tickets.filter((ticket) =>
@@ -129,7 +145,9 @@ export default function Support() {
         </Select>
       </div>
 
-      {isLoading ? (
+      {isError ? (
+        <div role="alert" className="flex items-center gap-3"><p>{t("common.error")}</p><Button variant="outline" onClick={() => void refetch()}>{t("common.retry", { defaultValue: "Retry" })}</Button></div>
+      ) : isLoading ? (
         <div className="space-y-3">
           {[1, 2, 3].map((i) => <div key={i} className="h-20 bg-muted rounded-lg animate-pulse" />)}
         </div>
@@ -178,8 +196,8 @@ export default function Support() {
         </div>
       )}
 
-      <Dialog open={showCreate} onOpenChange={setShowCreate}>
-        <DialogContent className="sm:max-w-lg">
+      <Dialog open={showCreate} onOpenChange={open => { if (!encoding && !isPending) setShowCreate(open); }}>
+        <DialogContent className="sm:max-w-lg max-h-[90dvh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{t("support.new_ticket_title")}</DialogTitle>
           </DialogHeader>
@@ -189,6 +207,7 @@ export default function Support() {
               <Input
                 placeholder={t("support.title_placeholder")}
                 value={form.title}
+                maxLength={250}
                 onChange={(e) => setForm({ ...form, title: e.target.value })}
                 className="mt-1"
               />
@@ -198,10 +217,28 @@ export default function Support() {
               <Textarea
                 placeholder={t("support.desc_placeholder")}
                 value={form.description}
+                maxLength={20000}
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
                 rows={4}
                 className="mt-1"
               />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div><Label htmlFor="ticket-equipment">{t("support.equipment_model", { defaultValue: "Equipment/model (optional)" })}</Label>
+                <Input id="ticket-equipment" maxLength={200} value={form.equipmentModel} onChange={event => setForm({ ...form, equipmentModel: event.target.value })} /></div>
+              <div><Label htmlFor="ticket-serial">{t("support.serial_number", { defaultValue: "Serial number (optional)" })}</Label>
+                <Input id="ticket-serial" maxLength={200} value={form.serialNumber} onChange={event => setForm({ ...form, serialNumber: event.target.value })} /></div>
+            </div>
+            <div>
+              <Label htmlFor="ticket-files">{t("support.attachments", { defaultValue: "Attachments" })}</Label>
+              <Input id="ticket-files" type="file" multiple accept=".pdf,.png,.jpg,.jpeg,.webp" disabled={encoding || isPending} onChange={event => {
+                const selected = Array.from(event.target.files ?? []);
+                if (selected.length > 3 || selected.reduce((sum, file) => sum + file.size, 0) > 10 * 1024 * 1024) {
+                  event.target.value = ""; setFiles([]);
+                  toast({ title: t("common.error"), description: t("support.attachments_invalid", { defaultValue: "Choose up to 3 PDF or image files, up to 10 MiB total" }), variant: "destructive" });
+                } else setFiles(selected);
+              }} />
+              <p className="text-xs text-muted-foreground mt-1">{t("support.attachments_limit", { defaultValue: "Up to 3 PDF or image files, 10 MiB total" })}</p>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -236,10 +273,10 @@ export default function Support() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowCreate(false)}>{t("common.cancel")}</Button>
+            <Button variant="outline" disabled={encoding || isPending} onClick={() => setShowCreate(false)}>{t("common.cancel")}</Button>
             <Button
-              onClick={() => createTicket({ data: { title: form.title, description: form.description, priority: form.priority as "medium", category: form.category as "general" } })}
-              disabled={!form.title || !form.description || isPending}
+              onClick={() => void submitTicket()}
+              disabled={!form.title.trim() || !form.description.trim() || isPending || encoding}
             >
               {t("support.submit_btn")}
             </Button>
