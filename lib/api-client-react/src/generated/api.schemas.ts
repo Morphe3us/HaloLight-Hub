@@ -5,6 +5,57 @@
  * HaloLight OS API specification
  * OpenAPI spec version: 0.2.0
  */
+export type OperationalConfigurationStatus = typeof OperationalConfigurationStatus[keyof typeof OperationalConfigurationStatus];
+
+
+export const OperationalConfigurationStatus = {
+  disabled: 'disabled',
+  misconfigured: 'misconfigured',
+  configured_unverified: 'configured_unverified',
+} as const;
+
+export type OperationalReadinessAiStatus = typeof OperationalReadinessAiStatus[keyof typeof OperationalReadinessAiStatus];
+
+
+export const OperationalReadinessAiStatus = {
+  disabled: 'disabled',
+  misconfigured: 'misconfigured',
+  configured_unverified: 'configured_unverified',
+  demo: 'demo',
+} as const;
+
+export type OperationalReadinessAi = {
+  status: OperationalReadinessAiStatus;
+  providerSelectionValid: boolean;
+  selectedCredentialPresent: boolean;
+  demoMode: boolean;
+  realProviderSelected: boolean;
+};
+
+export type OperationalReadinessMail = {
+  status: OperationalConfigurationStatus;
+  enabled: boolean;
+  supportedProvider: boolean;
+  credentialPresent: boolean;
+  senderValid: boolean;
+  hubOriginValid: boolean;
+};
+
+export type OperationalReadinessLegal = {
+  status: OperationalConfigurationStatus;
+  enabled: boolean;
+  versionsPresent: boolean;
+  urlsValid: boolean;
+};
+
+export interface OperationalReadiness {
+  configurationOnly: true;
+  externalChecksPerformed: false;
+  ai: OperationalReadinessAi;
+  mail: OperationalReadinessMail;
+  legal: OperationalReadinessLegal;
+}
+
 export interface HealthStatus {
   status: string;
 }

@@ -16,9 +16,9 @@ describe("admin navigation", () => {
       "nav.admin_pilotage", "nav.admin_operations", "nav.admin_content_ai", "nav.admin_data_system", "nav.settings",
     ]);
     const destinations = leaves(admin).map((item) => item.href);
-    assert.equal(destinations.length, 15);
-    assert.equal(new Set(destinations).size, 15);
-    for (const path of ["/admin", "/admin/analytics", "/admin/revenue", "/admin/clients", "/admin/equipment", "/admin/automation", "/admin/academy", "/admin/resources", "/admin/search", "/admin/translations", "/admin/uploads", "/admin/ai-knowledge", "/admin/backup", "/admin/exports", "/admin/contract-templates"]) {
+    assert.equal(destinations.length, 19);
+    assert.equal(new Set(destinations).size, 19);
+    for (const path of ["/admin", "/admin/analytics", "/admin/revenue", "/admin/clients", "/admin/equipment", "/admin/automation", "/admin/academy", "/admin/resources", "/admin/search", "/admin/translations", "/admin/uploads", "/admin/ai-knowledge", "/admin/backup", "/admin/exports", "/admin/contract-templates", "/admin/roles", "/admin/settings", "/admin/branding", "/admin/notifications"]) {
       assert.ok(destinations.includes(path), path);
       assert.equal(admin[0].children!.filter((item) => isNavItemActive(item, path)).length, 1);
     }
@@ -66,7 +66,7 @@ describe("client navigation", () => {
     const navKeys = new Set(["nav.navigation", ...[...items, ...createAdminNavigation((key) => key)].flatMap(function keys(item): string[] { return [item.title, ...(item.children?.flatMap(keys) ?? [])]; })]);
     for (const lang of ["en", "fr", "de", "es", "it", "pl", "pt", "nl"]) {
       const locale = JSON.parse(readFileSync(new URL(`../i18n/locales/${lang}.json`, import.meta.url), "utf8"));
-      for (const key of navKeys) assert.ok(locale.nav[key.slice(4)], `${lang}: ${key}`);
+      for (const key of navKeys) assert.ok(key.split(".").reduce((value, part) => value?.[part], locale), `${lang}: ${key}`);
       for (const key of ["content_language", "french_fallback", "load_error", "retry", "previous_page", "next_page", "source", "revision", "download_error", "downloading"]) assert.ok(locale.kb[key], `${lang}: kb.${key}`);
       assert.deepEqual(locale.kb.page_status.match(/\{\{\w+\}\}/g), ["{{from}}", "{{to}}", "{{total}}"]);
       for (const key of ["ai_eligible", "ai_review_required"]) assert.ok(locale.kb_admin[key], `${lang}: kb_admin.${key}`);

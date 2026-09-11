@@ -9,6 +9,36 @@ import * as zod from 'zod';
 
 
 /**
+ * @summary Read administrator-only service configuration status
+ */
+export const GetOperationalReadinessResponse = zod.object({
+  "configurationOnly": zod.literal(true),
+  "externalChecksPerformed": zod.literal(false),
+  "ai": zod.object({
+  "status": zod.enum(['disabled', 'misconfigured', 'configured_unverified', 'demo']),
+  "providerSelectionValid": zod.boolean(),
+  "selectedCredentialPresent": zod.boolean(),
+  "demoMode": zod.boolean(),
+  "realProviderSelected": zod.boolean()
+}),
+  "mail": zod.object({
+  "status": zod.enum(['disabled', 'misconfigured', 'configured_unverified']),
+  "enabled": zod.boolean(),
+  "supportedProvider": zod.boolean(),
+  "credentialPresent": zod.boolean(),
+  "senderValid": zod.boolean(),
+  "hubOriginValid": zod.boolean()
+}),
+  "legal": zod.object({
+  "status": zod.enum(['disabled', 'misconfigured', 'configured_unverified']),
+  "enabled": zod.boolean(),
+  "versionsPresent": zod.boolean(),
+  "urlsValid": zod.boolean()
+})
+})
+
+
+/**
  * @summary Health check
  */
 export const HealthCheckResponse = zod.object({

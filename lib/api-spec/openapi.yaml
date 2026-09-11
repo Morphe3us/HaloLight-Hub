@@ -42,6 +42,24 @@ tags:
     description: Community channels, posts, and replies
 
 paths:
+  /admin/operational-readiness:
+    get:
+      operationId: getOperationalReadiness
+      tags: [admin]
+      summary: Read administrator-only service configuration status
+      responses:
+        "200":
+          description: Configuration only, not proof of delivery, legal approval or provider availability
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OperationalReadiness"
+        "401":
+          description: Authentication required
+        "403":
+          description: Active administrator required
+        "503":
+          description: Configuration status unavailable
   /healthz:
     get:
       operationId: healthCheck
@@ -3697,6 +3715,66 @@ paths:
 
 components:
   schemas:
+    OperationalConfigurationStatus:
+      type: string
+      enum: [disabled, misconfigured, configured_unverified]
+    OperationalReadiness:
+      type: object
+      additionalProperties: false
+      required: [configurationOnly, externalChecksPerformed, ai, mail, legal]
+      properties:
+        configurationOnly:
+          type: boolean
+          enum: [true]
+        externalChecksPerformed:
+          type: boolean
+          enum: [false]
+        ai:
+          type: object
+          additionalProperties: false
+          required: [status, providerSelectionValid, selectedCredentialPresent, demoMode, realProviderSelected]
+          properties:
+            status:
+              type: string
+              enum: [disabled, misconfigured, configured_unverified, demo]
+            providerSelectionValid:
+              type: boolean
+            selectedCredentialPresent:
+              type: boolean
+            demoMode:
+              type: boolean
+            realProviderSelected:
+              type: boolean
+        mail:
+          type: object
+          additionalProperties: false
+          required: [status, enabled, supportedProvider, credentialPresent, senderValid, hubOriginValid]
+          properties:
+            status:
+              $ref: "#/components/schemas/OperationalConfigurationStatus"
+            enabled:
+              type: boolean
+            supportedProvider:
+              type: boolean
+            credentialPresent:
+              type: boolean
+            senderValid:
+              type: boolean
+            hubOriginValid:
+              type: boolean
+        legal:
+          type: object
+          additionalProperties: false
+          required: [status, enabled, versionsPresent, urlsValid]
+          properties:
+            status:
+              $ref: "#/components/schemas/OperationalConfigurationStatus"
+            enabled:
+              type: boolean
+            versionsPresent:
+              type: boolean
+            urlsValid:
+              type: boolean
     HealthStatus:
       type: object
       required: [status]

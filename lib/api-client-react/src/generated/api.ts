@@ -168,6 +168,7 @@ import type {
   OnboardingStep,
   OnboardingStepList,
   OnboardingSummary,
+  OperationalReadiness,
   QuizResult,
   QuizSubmission,
   QuoteDetail,
@@ -237,6 +238,83 @@ type AwaitedInput<T> = PromiseLike<T> | T;
 
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
+
+
+
+export const getGetOperationalReadinessUrl = () => {
+
+
+
+
+  return `/api/admin/operational-readiness`
+}
+
+/**
+ * @summary Read administrator-only service configuration status
+ */
+export const getOperationalReadiness = async ( options?: RequestInit): Promise<OperationalReadiness> => {
+
+  return customFetch<OperationalReadiness>(getGetOperationalReadinessUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetOperationalReadinessQueryKey = () => {
+    return [
+    `/api/admin/operational-readiness`
+    ] as const;
+    }
+
+
+export const getGetOperationalReadinessQueryOptions = <TData = Awaited<ReturnType<typeof getOperationalReadiness>>, TError = ErrorType<void>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getOperationalReadiness>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetOperationalReadinessQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getOperationalReadiness>>> = ({ signal }) => getOperationalReadiness({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getOperationalReadiness>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetOperationalReadinessQueryResult = NonNullable<Awaited<ReturnType<typeof getOperationalReadiness>>>
+export type GetOperationalReadinessQueryError = ErrorType<void>
+
+
+/**
+ * @summary Read administrator-only service configuration status
+ */
+
+export function useGetOperationalReadiness<TData = Awaited<ReturnType<typeof getOperationalReadiness>>, TError = ErrorType<void>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getOperationalReadiness>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetOperationalReadinessQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
 
 
 

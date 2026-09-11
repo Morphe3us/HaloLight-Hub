@@ -50,6 +50,10 @@ export function createAdminNavigation(t: (key: string) => string): NavItem[] {
     ] },
     { title: t("nav.settings"), href: "/admin/group/settings", icon: Settings, children: [
       { title: t("nav.users"), href: "/admin", icon: Users },
+      { title: t("admin_roles.title"), href: "/admin/roles", icon: Shield },
+      { title: t("admin_settings.general"), href: "/admin/settings", icon: Settings },
+      { title: t("admin_settings.branding"), href: "/admin/branding", icon: Monitor },
+      { title: t("admin_settings.notifications"), href: "/admin/notifications", icon: Bell },
       { title: t("nav.search_admin"), href: "/admin/search", icon: Search },
     ] },
   ] }];

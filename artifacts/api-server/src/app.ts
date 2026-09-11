@@ -11,6 +11,7 @@ import { logger } from "./lib/logger";
 import { getAllowedCorsOrigins, isCorsOriginAllowed } from "./lib/corsPolicy";
 import { createApiErrorHandler, serializeApiError } from "./lib/apiErrors";
 import healthRouter from "./routes/health";
+import operationalReadinessRouter from "./routes/operational-readiness";
 import { createFrontendHandler } from "./lib/frontend";
 import { consentGate } from "./middlewares/consentGate";
 
@@ -59,6 +60,14 @@ app.use(express.urlencoded({ extended: true, limit: "25mb" }));
 
 app.use(clerkMiddleware());
 
+// This exact read-only route independently requires an existing active admin.
+app.use("/api", (req, res, next) => {
+  if (req.method === "GET" && req.path === "/admin/operational-readiness") {
+    operationalReadinessRouter(req, res, next);
+  } else {
+    next();
+  }
+});
 app.use("/api", consentGate);
 app.use("/api", router);
 

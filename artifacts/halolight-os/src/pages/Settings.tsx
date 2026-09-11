@@ -241,6 +241,16 @@ export default function Settings() {
   const { theme, setTheme } = useTheme();
   const { data: user, isLoading: isLoadingUser } = useGetCurrentUser();
   const { user: clerkUser, isLoaded: isClerkLoaded } = useUser();
+  useEffect(() => {
+    const scrollToLogo = () => {
+      if (!isLoadingUser && isClerkLoaded && window.location.hash === "#company-logo") {
+        document.getElementById("company-logo")?.scrollIntoView({ block: "start" });
+      }
+    };
+    scrollToLogo();
+    window.addEventListener("hashchange", scrollToLogo);
+    return () => window.removeEventListener("hashchange", scrollToLogo);
+  }, [isLoadingUser, isClerkLoaded]);
   const updateUser = useUpdateCurrentUser();
   const sigInitRef = useRef(false);
   const [sigForm, setSigForm] = useState({
@@ -854,7 +864,7 @@ export default function Settings() {
       </Card>
 
       {/* Company Logo for Documents */}
-      <Card className="shadow-sm">
+      <Card id="company-logo" className="shadow-sm scroll-mt-24">
         <CardHeader>
           <CardTitle>
             {t("settings.logo_title", { defaultValue: "Company Logo" })}
