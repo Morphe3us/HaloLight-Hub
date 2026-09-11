@@ -208,6 +208,7 @@ import type {
   UpdateLessonInput,
   UpdateLessonProgressParams,
   UpdateModuleInput,
+  UpdateNotificationPreferences400,
   UpdateQuoteStatusBody,
   UpdateResourceInput,
   UpdateTranslationInput,
@@ -1644,7 +1645,7 @@ export const updateNotificationPreferences = async (notificationPreferencesUpdat
 
 
 
-export const getUpdateNotificationPreferencesMutationOptions = <TError = ErrorType<unknown>,
+export const getUpdateNotificationPreferencesMutationOptions = <TError = ErrorType<UpdateNotificationPreferences400>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateNotificationPreferences>>, TError,{data: BodyType<NotificationPreferencesUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof updateNotificationPreferences>>, TError,{data: BodyType<NotificationPreferencesUpdate>}, TContext> => {
 
@@ -1673,12 +1674,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type UpdateNotificationPreferencesMutationResult = NonNullable<Awaited<ReturnType<typeof updateNotificationPreferences>>>
     export type UpdateNotificationPreferencesMutationBody = BodyType<NotificationPreferencesUpdate>
-    export type UpdateNotificationPreferencesMutationError = ErrorType<unknown>
+    export type UpdateNotificationPreferencesMutationError = ErrorType<UpdateNotificationPreferences400>
 
     /**
  * @summary Update notification preferences
  */
-export const useUpdateNotificationPreferences = <TError = ErrorType<unknown>,
+export const useUpdateNotificationPreferences = <TError = ErrorType<UpdateNotificationPreferences400>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateNotificationPreferences>>, TError,{data: BodyType<NotificationPreferencesUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof updateNotificationPreferences>>,

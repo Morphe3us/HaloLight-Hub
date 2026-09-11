@@ -3,8 +3,13 @@ import { eq, and, sql, desc } from "drizzle-orm";
 import { db, notificationsTable, notificationPreferencesTable } from "@workspace/db";
 import { requireAuth } from "../middlewares/requireAuth";
 import { getOrCreateUser } from "../lib/userSync";
+import { parsePreferenceUpdate, preferenceResponse } from "../lib/notificationPreferences";
 
 const router: IRouter = Router();
+router.use("/notifications", (_req, res, next) => {
+  res.setHeader("Cache-Control", "private, no-store");
+  next();
+});
 
 // GET /notifications
 router.get("/notifications", requireAuth, async (req: Request, res: Response): Promise<void> => {
@@ -88,25 +93,12 @@ router.get("/notifications/preferences", requireAuth, async (req: Request, res: 
   const user = await getOrCreateUser(req);
   if (!user) { res.status(401).json({ error: "Unauthorized" }); return; }
 
-  let [prefs] = await db
+  const [prefs] = await db
     .select()
     .from(notificationPreferencesTable)
     .where(eq(notificationPreferencesTable.userId, user.id));
 
-  if (!prefs) {
-    const [created] = await db
-      .insert(notificationPreferencesTable)
-      .values({ userId: user.id })
-      .returning();
-    prefs = created;
-  }
-
-  res.json({
-    userId: prefs.userId,
-    emailEnabled: prefs.emailEnabled,
-    inAppEnabled: prefs.inAppEnabled,
-    typeOverrides: JSON.parse(prefs.typeOverrides || "{}"),
-  });
+  res.json(preferenceResponse(user.id, prefs));
 });
 
 // PUT /notifications/preferences
@@ -114,37 +106,16 @@ router.put("/notifications/preferences", requireAuth, async (req: Request, res: 
   const user = await getOrCreateUser(req);
   if (!user) { res.status(401).json({ error: "Unauthorized" }); return; }
 
-  const { emailEnabled, inAppEnabled, typeOverrides } = req.body;
-  const updates: Record<string, unknown> = {};
-  if (emailEnabled !== undefined) updates.emailEnabled = emailEnabled;
-  if (inAppEnabled !== undefined) updates.inAppEnabled = inAppEnabled;
-  if (typeOverrides !== undefined) updates.typeOverrides = JSON.stringify(typeOverrides);
-
-  const existing = await db
-    .select()
-    .from(notificationPreferencesTable)
-    .where(eq(notificationPreferencesTable.userId, user.id));
-
-  let result;
-  if (existing.length === 0) {
-    [result] = await db
-      .insert(notificationPreferencesTable)
-      .values({ userId: user.id, ...updates as any })
-      .returning();
-  } else {
-    [result] = await db
-      .update(notificationPreferencesTable)
-      .set(updates as any)
-      .where(eq(notificationPreferencesTable.userId, user.id))
-      .returning();
+  const updates = parsePreferenceUpdate(req.body);
+  if (!updates) {
+    res.status(400).json({ error: "Invalid notification preferences" });
+    return;
   }
-
-  res.json({
-    userId: result.userId,
-    emailEnabled: result.emailEnabled,
-    inAppEnabled: result.inAppEnabled,
-    typeOverrides: JSON.parse(result.typeOverrides || "{}"),
-  });
+  const [result] = await db.insert(notificationPreferencesTable)
+    .values({ userId: user.id, ...updates })
+    .onConflictDoUpdate({ target: notificationPreferencesTable.userId, set: { userId: user.id, ...updates } })
+    .returning();
+  res.json(preferenceResponse(user.id, result));
 });
 
 export default router;

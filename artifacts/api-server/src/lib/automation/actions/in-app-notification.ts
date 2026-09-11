@@ -1,4 +1,4 @@
-import { db, notificationsTable } from "@workspace/db";
+import { createOrdinaryNotification } from "../../createOrdinaryNotification";
 import type { ActionHandler } from "../types";
 
 export const actionInAppNotification: ActionHandler = async (rule, match, _executionId) => {
@@ -12,7 +12,7 @@ export const actionInAppNotification: ActionHandler = async (rule, match, _execu
   const body = interpolate(cfg.notificationBody ?? defaultBody(rule.triggerType, detail), detail);
   const link = cfg.notificationLink ?? defaultLink(rule.triggerType);
 
-  await db.insert(notificationsTable).values({
+  const notificationCreated = await createOrdinaryNotification({
     userId: targetUserId,
     type: `automation_${rule.triggerType}`,
     title,
@@ -23,7 +23,8 @@ export const actionInAppNotification: ActionHandler = async (rule, match, _execu
     deliveredPush: false,
   });
 
-  return { success: true, detail: { title, body, link, userName } };
+  if (!notificationCreated) return { success: true, skipped: "preference", detail: { notificationCreated: false, reason: "in_app_disabled" } };
+  return { success: true, detail: { title, body, link, userName, notificationCreated } };
 };
 
 function interpolate(template: string, data: Record<string, unknown>): string {

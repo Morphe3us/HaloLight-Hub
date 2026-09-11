@@ -12,11 +12,17 @@ export type Evaluator = (
   rule: AutomationRule
 ) => Promise<EvalMatch[]>;
 
+export type ActionResult = {
+  success: boolean;
+  skipped?: "preference";
+  detail: Record<string, unknown>;
+};
+
 export type ActionHandler = (
   rule: AutomationRule,
   match: EvalMatch,
   executionId: string
-) => Promise<{ success: boolean; detail: Record<string, unknown> }>;
+) => Promise<ActionResult>;
 
 export const TRIGGER_LABELS: Record<AutomationTriggerType, string> = {
   onboarding_stalled: "Onboarding Stalled",

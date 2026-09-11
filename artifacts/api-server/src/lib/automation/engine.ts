@@ -20,7 +20,7 @@ import { actionSupportFollowup } from "./actions/support-followup";
 import { actionUpsellRecommendation } from "./actions/upsell-recommendation";
 import { actionConsumableReorder } from "./actions/consumable-reorder";
 
-import type { AutomationRule, AutomationTriggerType, AutomationActionType, Evaluator, ActionHandler, EvalMatch } from "./types";
+import type { AutomationRule, AutomationTriggerType, AutomationActionType, Evaluator, ActionHandler, ActionResult, EvalMatch } from "./types";
 
 const EVALUATORS: Record<AutomationTriggerType, Evaluator> = {
   onboarding_stalled: evaluateOnboardingStalled,
@@ -169,7 +169,7 @@ export async function runAutomation(triggeredBy = "scheduled"): Promise<RunResul
           continue;
         }
 
-        let actionResult: { success: boolean; detail: Record<string, unknown> };
+        let actionResult: ActionResult;
         try {
           actionResult = await actionHandler(rule, match, executionId);
         } catch (err) {
@@ -189,7 +189,15 @@ export async function runAutomation(triggeredBy = "scheduled"): Promise<RunResul
           continue;
         }
 
-        if (actionResult.success) {
+        if (actionResult.skipped === "preference") {
+          await db.insert(automationLogs).values({
+            executionId, ruleId: rule.id, ruleName: rule.name,
+            triggerType: rule.triggerType, actionType: rule.actionType,
+            targetUserId: match.targetUserId ?? null, targetEntityId: match.targetEntityId ?? null,
+            status: "skipped_preference",
+            detail: { ...match.detail, actionResult: actionResult.detail },
+          });
+        } else if (actionResult.success) {
           actionsFired++;
           await db.insert(automationLogs).values({
             executionId,
@@ -288,7 +296,15 @@ export async function runSingleRule(ruleId: string, triggeredBy = "manual"): Pro
   for (const match of matches) {
     try {
       const result = await actionHandler(rule, match, executionId);
-      if (result.success) {
+      if (result.skipped === "preference") {
+        await db.insert(automationLogs).values({
+          executionId, ruleId: rule.id, ruleName: rule.name,
+          triggerType: rule.triggerType, actionType: rule.actionType,
+          targetUserId: match.targetUserId ?? null, targetEntityId: match.targetEntityId ?? null,
+          status: "skipped_preference",
+          detail: { ...match.detail, actionResult: result.detail },
+        });
+      } else if (result.success) {
         actionsFired++;
         await db.insert(automationLogs).values({
           executionId,

@@ -158,16 +158,90 @@ function PersonalExportCard() {
   );
 }
 
+export function NotificationPreferences() {
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const prefs = useGetNotificationPreferences();
+  const update = useUpdateNotificationPreferences({ mutation: {
+    onSuccess: async (data) => {
+      const queryKey = getGetNotificationPreferencesQueryKey();
+      await queryClient.cancelQueries({ queryKey });
+      queryClient.setQueryData(queryKey, data);
+    },
+  } });
+  const saving = useRef(false);
+  const attempted = useRef(false);
+  const ready = !prefs.isLoading && !prefs.isError && typeof prefs.data?.inAppEnabled === "boolean";
+  const busy = prefs.isFetching || update.isPending;
+
+  const save = (checked: boolean) => {
+    if (!ready || busy || saving.current) return;
+    saving.current = true;
+    attempted.current = checked;
+    update.mutate({ data: { inAppEnabled: checked } }, {
+      onSettled: () => { saving.current = false; },
+    });
+  };
+
+  return (
+    <Card className="shadow-sm">
+      <CardHeader>
+        <CardTitle>{t("settings.notifications")}</CardTitle>
+        <CardDescription>{t("settings.notifications_desc")}</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <div className="min-w-0 space-y-0.5 break-words">
+          <p className="text-base font-medium">{t("settings.email_notifications")}</p>
+          <p className="text-sm text-muted-foreground">{t("settings.email_notifications_desc")}</p>
+        </div>
+        <div className="h-px bg-muted w-full" />
+        <div className="flex items-center justify-between gap-4" aria-busy={busy}>
+          <div className="min-w-0 space-y-0.5 break-words">
+            <Label htmlFor="settings-inapp-notifications" className="text-base">
+              {t("settings.in_app_notifications")}
+            </Label>
+            <p id="settings-inapp-description" className="text-sm text-muted-foreground">
+              {t("settings.in_app_notifications_desc")}
+            </p>
+          </div>
+          <Switch
+            id="settings-inapp-notifications"
+            className="shrink-0"
+            aria-describedby="settings-inapp-description"
+            checked={prefs.data?.inAppEnabled === true}
+            onCheckedChange={save}
+            disabled={!ready || busy}
+            data-testid="switch-inapp-notif"
+          />
+        </div>
+        <div className="min-h-6 text-sm" role="status" aria-live="polite">
+          {update.isPending ? t("settings.saving") : prefs.isFetching || prefs.isLoading
+            ? t("common.loading") : update.isSuccess && !prefs.isError ? t("settings.saved") : null}
+        </div>
+        {(!prefs.isLoading && !ready || update.isError) && (
+          <Alert variant="destructive">
+            <AlertDescription className="flex flex-wrap items-center justify-between gap-3">
+              <span>{t("common.error")}</span>
+              <Button type="button" variant="outline" disabled={busy}
+                onClick={() => { if (!ready) void prefs.refetch(); else save(attempted.current); }}>
+                <RefreshCw className="mr-2 h-4 w-4 shrink-0" aria-hidden="true" />
+                {t("common.retry")}
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function Settings() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { theme, setTheme } = useTheme();
   const { data: user, isLoading: isLoadingUser } = useGetCurrentUser();
   const { user: clerkUser, isLoaded: isClerkLoaded } = useUser();
-  const { data: prefs, isLoading: isLoadingPrefs } =
-    useGetNotificationPreferences();
   const updateUser = useUpdateCurrentUser();
-  const updatePrefs = useUpdateNotificationPreferences();
   const sigInitRef = useRef(false);
   const [sigForm, setSigForm] = useState({
     providerSignature: "",
@@ -375,22 +449,6 @@ export default function Settings() {
     if (logoInputRef.current) logoInputRef.current.value = "";
   };
 
-  const handleTogglePref = (
-    key: "emailEnabled" | "inAppEnabled",
-    checked: boolean,
-  ) => {
-    updatePrefs.mutate(
-      { data: { [key]: checked } },
-      {
-        onSuccess: () => {
-          queryClient.invalidateQueries({
-            queryKey: getGetNotificationPreferencesQueryKey(),
-          });
-        },
-      },
-    );
-  };
-
   const u = user as any;
   const identity = resolveCurrentUserIdentity(user, clerkUser);
   const displayEmail = isPlaceholderEmail(u?.email) ? identity.email : u?.email ?? "";
@@ -401,7 +459,7 @@ export default function Settings() {
       !filledString(u.companyName) ||
       !filledString(u.phone));
 
-  if (isLoadingUser || isLoadingPrefs || !isClerkLoaded) {
+  if (isLoadingUser || !isClerkLoaded) {
     return (
       <div className="max-w-3xl mx-auto space-y-6">
         <Skeleton className="h-10 w-64" />
@@ -944,56 +1002,7 @@ export default function Settings() {
       <PersonalExportCard />
 
       {/* Notification Preferences */}
-      <Card className="shadow-sm">
-        <CardHeader>
-          <CardTitle>{t("settings.notifications")}</CardTitle>
-          <CardDescription>
-            {t("settings.notifications_desc", {
-              defaultValue: "Control how you receive alerts and updates.",
-            })}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label className="text-base">
-                {t("settings.email_notifications")}
-              </Label>
-              <p className="text-sm text-muted-foreground">
-                {t("settings.email_notifications_desc", {
-                  defaultValue:
-                    "Receive daily summaries and critical alerts via email.",
-                })}
-              </p>
-            </div>
-            <Switch
-              checked={prefs?.emailEnabled}
-              onCheckedChange={(c) => handleTogglePref("emailEnabled", c)}
-              disabled={updatePrefs.isPending}
-              data-testid="switch-email-notif"
-            />
-          </div>
-          <div className="h-px bg-muted w-full" />
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label className="text-base">
-                {t("settings.in_app_notifications")}
-              </Label>
-              <p className="text-sm text-muted-foreground">
-                {t("settings.in_app_notifications_desc", {
-                  defaultValue: "Show alerts inside the dashboard.",
-                })}
-              </p>
-            </div>
-            <Switch
-              checked={prefs?.inAppEnabled}
-              onCheckedChange={(c) => handleTogglePref("inAppEnabled", c)}
-              disabled={updatePrefs.isPending}
-              data-testid="switch-inapp-notif"
-            />
-          </div>
-        </CardContent>
-      </Card>
+      <NotificationPreferences />
     </div>
   );
 }

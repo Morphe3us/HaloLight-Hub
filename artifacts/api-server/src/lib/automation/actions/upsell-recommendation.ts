@@ -1,4 +1,5 @@
-import { db, upsellOpportunities, notificationsTable } from "@workspace/db";
+import { db, upsellOpportunities } from "@workspace/db";
+import { createOrdinaryNotification } from "../../createOrdinaryNotification";
 import type { ActionHandler } from "../types";
 
 export const actionUpsellRecommendation: ActionHandler = async (rule, match, _executionId) => {
@@ -21,7 +22,7 @@ export const actionUpsellRecommendation: ActionHandler = async (rule, match, _ex
   });
 
   // Also send in-app notification
-  await db.insert(notificationsTable).values({
+  const notificationCreated = await createOrdinaryNotification({
     userId: targetUserId,
     type: "upsell_opportunity",
     title: "Growth Opportunity Available",
@@ -40,6 +41,7 @@ export const actionUpsellRecommendation: ActionHandler = async (rule, match, _ex
       description,
       estimatedValue,
       targetUserId,
+      notificationCreated,
     },
   };
 };

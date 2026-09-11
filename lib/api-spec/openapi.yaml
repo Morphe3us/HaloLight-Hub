@@ -424,6 +424,16 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/NotificationPreferences"
+        "400":
+          description: Invalid preference fields or values
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [error]
+                properties:
+                  error:
+                    type: string
 
   # ─── Onboarding ─────────────────────────────────────────────────────────
   /onboarding/steps:
@@ -3957,6 +3967,7 @@ components:
 
     NotificationPreferencesUpdate:
       type: object
+      additionalProperties: false
       properties:
         emailEnabled:
           type: boolean

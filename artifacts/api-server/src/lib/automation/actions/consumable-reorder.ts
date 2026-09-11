@@ -1,4 +1,4 @@
-import { db, notificationsTable } from "@workspace/db";
+import { createOrdinaryNotification } from "../../createOrdinaryNotification";
 import type { ActionHandler } from "../types";
 
 export const actionConsumableReorder: ActionHandler = async (rule, match, _executionId) => {
@@ -10,7 +10,7 @@ export const actionConsumableReorder: ActionHandler = async (rule, match, _execu
   const daysRemaining = Number(detail.daysRemaining ?? 0);
 
   // Create an in-app notification with a direct link to consumables
-  await db.insert(notificationsTable).values({
+  const notificationCreated = await createOrdinaryNotification({
     userId: targetUserId,
     type: "consumable_reorder",
     title: `Reorder Recommended: ${catalogName}`,
@@ -20,6 +20,8 @@ export const actionConsumableReorder: ActionHandler = async (rule, match, _execu
     deliveredEmail: false,
     deliveredPush: false,
   });
+
+  if (!notificationCreated) return { success: true, skipped: "preference", detail: { notificationCreated: false, reason: "in_app_disabled" } };
 
   const recommendation = {
     userId: targetUserId,
@@ -35,6 +37,6 @@ export const actionConsumableReorder: ActionHandler = async (rule, match, _execu
 
   return {
     success: true,
-    detail: { recommendation },
+    detail: { recommendation, notificationCreated },
   };
 };

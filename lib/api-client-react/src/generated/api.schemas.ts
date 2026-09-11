@@ -3444,6 +3444,10 @@ limit?: number;
 offset?: number;
 };
 
+export type UpdateNotificationPreferences400 = {
+  error: string;
+};
+
 export type GetDashboardSummaryParams = {
 lang?: string;
 };

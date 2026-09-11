@@ -76,6 +76,7 @@ const STATUS_ICONS: Record<string, { Icon: React.ElementType; color: string }> =
   action_taken:     { Icon: CheckCircle2, color: "text-success" },
   no_match:         { Icon: SkipForward,  color: "text-slate-400" },
   skipped_cooldown: { Icon: Clock,        color: "text-warning" },
+  skipped_preference: { Icon: SkipForward, color: "text-muted-foreground" },
   error:            { Icon: XCircle,      color: "text-destructive" },
   matched:          { Icon: CheckCircle2, color: "text-info" },
 };
@@ -370,7 +371,7 @@ export default function AdminAutomation() {
         <div className="space-y-3">
           <div className="flex items-center gap-2 flex-wrap">
             <ListFilter className="h-4 w-4 text-muted-foreground" />
-            {["", "action_taken", "no_match", "skipped_cooldown", "error"].map((f) => (
+            {["", "action_taken", "no_match", "skipped_cooldown", "skipped_preference", "error"].map((f) => (
               <button
                 key={f}
                 onClick={() => setLogFilter(f)}
