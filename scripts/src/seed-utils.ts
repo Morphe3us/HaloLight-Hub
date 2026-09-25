@@ -15,7 +15,7 @@ function resolveSeedBaseDate(): Date {
 
 export const SEED_BASE_DATE = resolveSeedBaseDate();
 
-export const SEED_DEMO_CLIENT_CLERK_IDS = [
+export const SEED_DEMO_CLIENT_AUTH_IDS = [
   "demo_champion_001",
   "demo_healthy_001",
   "demo_developing_001",

@@ -54,7 +54,7 @@ export default defineConfig({
           if (id.includes("commonjsHelpers.js")) return "vendor-react";
           if (id.includes("/lib/api-client-react/")) return "api-client";
           if (!id.includes("node_modules")) return undefined;
-          if (id.includes("@clerk")) return "vendor-clerk";
+          if (id.includes("@supabase")) return "vendor-auth";
           if (id.includes("@tanstack")) return "vendor-query";
           if (
             id.includes("/node_modules/react/") ||

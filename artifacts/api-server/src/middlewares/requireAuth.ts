@@ -1,5 +1,5 @@
 import { type Request, type Response, type NextFunction } from "express";
-import { getAuth } from "@clerk/express";
+import { getAuth } from "../middlewares/supabaseAuth";
 
 export function requireAuth(req: Request, res: Response, next: NextFunction): void {
   const auth = getAuth(req);

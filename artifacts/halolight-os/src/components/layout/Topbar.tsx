@@ -4,7 +4,7 @@ import {
   useUpdateCurrentUser,
   type UserUpdateLanguage,
 } from "@workspace/api-client-react";
-import { useUser } from "@clerk/react";
+import { useAuth } from "@/auth/AuthProvider";
 import { useQueryClient } from "@tanstack/react-query";
 import { Bell, Sun, Moon, Home, Globe, ChevronDown } from "lucide-react";
 import { Link } from "wouter";
@@ -42,14 +42,14 @@ const ROLE_LABELS: Record<string, string> = {
 
 export function Topbar() {
   const { data: apiUser } = useGetCurrentUser();
-  const { user: clerkUser } = useUser();
-  const user = apiUser?.clerkId === clerkUser?.id ? apiUser : undefined;
+  const { user: authUser } = useAuth();
+  const user = !!authUser?.id && !!apiUser?.authId && apiUser.authId === authUser.id ? apiUser : undefined;
   const { data: unreadData } = useGetUnreadNotificationCount();
   const updateUser = useUpdateCurrentUser();
   const queryClient = useQueryClient();
   const { theme, setTheme } = useTheme();
   const { t, i18n: i18nInst } = useTranslation();
-  const identity = resolveCurrentUserIdentity(user, clerkUser);
+  const identity = resolveCurrentUserIdentity(user, authUser);
 
   const isDark = theme === "dark";
   const currentLang = i18nInst.language?.split("-")[0] ?? "en";
@@ -129,7 +129,7 @@ export function Topbar() {
           </div>
           <Link href="/settings">
             <Avatar className="h-9 w-9 cursor-pointer hover:ring-2 hover:ring-accent transition-all" data-testid="avatar-topbar">
-              <AvatarImage src={clerkUser?.imageUrl} alt={identity.displayName} />
+              <AvatarImage src={authUser?.avatarUrl ?? undefined} alt={identity.displayName} />
               <AvatarFallback className="bg-accent/20 text-foreground font-semibold text-sm">
                 {identity.initials}
               </AvatarFallback>

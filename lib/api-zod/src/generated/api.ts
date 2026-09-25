@@ -9,6 +9,18 @@ import * as zod from 'zod';
 
 
 /**
+ * @summary Send an invitation to an active manually provisioned user (admin only)
+ */
+export const InviteUserParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const InviteUserResponse = zod.object({
+  "sent": zod.literal(true)
+})
+
+
+/**
  * @summary Read administrator-only service configuration status
  */
 export const GetOperationalReadinessResponse = zod.object({
@@ -163,7 +175,7 @@ export const getCurrentUserResponseCurrencyDefault = `EUR`;
 
 export const GetCurrentUserResponse = zod.object({
   "id": zod.string(),
-  "clerkId": zod.string(),
+  "authId": zod.string(),
   "email": zod.string(),
   "firstName": zod.string().nullish(),
   "lastName": zod.string().nullish(),
@@ -232,7 +244,7 @@ export const updateCurrentUserResponseCurrencyDefault = `EUR`;
 
 export const UpdateCurrentUserResponse = zod.object({
   "id": zod.string(),
-  "clerkId": zod.string(),
+  "authId": zod.string(),
   "email": zod.string(),
   "firstName": zod.string().nullish(),
   "lastName": zod.string().nullish(),
@@ -285,7 +297,7 @@ export const listUsersResponseItemsItemCurrencyDefault = `EUR`;
 export const ListUsersResponse = zod.object({
   "items": zod.array(zod.object({
   "id": zod.string(),
-  "clerkId": zod.string(),
+  "authId": zod.string(),
   "email": zod.string(),
   "firstName": zod.string().nullish(),
   "lastName": zod.string().nullish(),
@@ -349,7 +361,7 @@ export const getUserResponseCurrencyDefault = `EUR`;
 
 export const GetUserResponse = zod.object({
   "id": zod.string(),
-  "clerkId": zod.string(),
+  "authId": zod.string(),
   "email": zod.string(),
   "firstName": zod.string().nullish(),
   "lastName": zod.string().nullish(),
@@ -413,7 +425,7 @@ export const updateUserResponseCurrencyDefault = `EUR`;
 
 export const UpdateUserResponse = zod.object({
   "id": zod.string(),
-  "clerkId": zod.string(),
+  "authId": zod.string(),
   "email": zod.string(),
   "firstName": zod.string().nullish(),
   "lastName": zod.string().nullish(),

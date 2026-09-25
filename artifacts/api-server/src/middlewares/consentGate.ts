@@ -1,5 +1,5 @@
 import type { RequestHandler } from "express";
-import { getAuth } from "@clerk/express";
+import { getAuth } from "../middlewares/supabaseAuth";
 import { getOrCreateUser } from "../lib/userSync";
 import { legalConsentEnabled, publishedLegalDocuments } from "../lib/userConsentPolicy";
 import { userConsentStatus } from "../lib/userCompliance";

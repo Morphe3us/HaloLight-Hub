@@ -42,6 +42,38 @@ tags:
     description: Community channels, posts, and replies
 
 paths:
+  /users/{id}/invite:
+    post:
+      operationId: inviteUser
+      tags: [users]
+      summary: Send an invitation to an active manually provisioned user (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Invitation accepted by the authentication email provider
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [sent]
+                properties:
+                  sent: { type: boolean, enum: [true] }
+        "401":
+          description: Authentication required
+        "403":
+          description: Active administrator required
+        "404":
+          description: User not found
+        "409":
+          description: User is inactive or already linked
+        "429":
+          description: Invitation rate limit reached
+        "503":
+          description: Invitation unavailable or rejected by the authentication provider
   /admin/operational-readiness:
     get:
       operationId: getOperationalReadiness
@@ -3786,11 +3818,11 @@ components:
     User:
       type: object
       required:
-        [id, clerkId, email, role, isActive, language, currency, createdAt]
+        [id, authId, email, role, isActive, language, currency, createdAt]
       properties:
         id:
           type: string
-        clerkId:
+        authId:
           type: string
         email:
           type: string

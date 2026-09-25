@@ -29,7 +29,7 @@ test("consent UI starts unchecked, submits independent false choices, and never 
       const key = index++; if (!(key in state)) state[key] = value;
       return [state[key], (next: unknown) => { state[key] = typeof next === "function" ? next(state[key]) : next; }];
     } },
-    "@clerk/react": {}, "@workspace/api-client-react": {},
+    "@/auth/AuthProvider": {}, "@workspace/api-client-react": {},
     "@tanstack/react-query": { useQueryClient: () => ({}), useMutation: () => ({ mutate: (body: unknown) => submitted.push(body), isPending: false, isError: false }) },
     "react-i18next": { useTranslation: () => ({ t: (key: string, options?: { defaultValue?: string }) => options?.defaultValue ?? key }) },
     "@/components/ui/button": { Button }, "@/components/ui/checkbox": { Checkbox },
@@ -66,5 +66,5 @@ test("dashboard transport scopes keys to user, patches one widget, and never rea
   assert.ok(!dashboard.includes("localStorage"));
   assert.ok(dashboard.includes("dashboardPreferencesKey(user?.id"));
   const app = readFileSync(new URL("../App.tsx", import.meta.url), "utf8");
-  assert.match(app, /<LocalUserGate>\s*<ConsentGate>\s*<AppShell>/);
+  assert.match(app, /<LocalUserGate>\s*<LanguageSync \/>\s*<ConsentGate>\s*<AppShell>/);
 });

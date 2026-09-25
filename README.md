@@ -2,12 +2,17 @@
 
 Local setup for a public clone.
 
+Supabase Auth replaces Clerk in the implementation currently underway. These
+instructions describe the target setup, not a completed production rollout.
+Keep the existing live release until the cutover smoke tests pass; deployment
+is handled separately by the parent task/operator.
+
 ## Prerequisites
 
 - Node.js 24+
 - `pnpm` 11.7.x
 - PostgreSQL database reachable through `DATABASE_URL`
-- Clerk app keys for local auth
+- A Supabase project with Auth configured for email/password and Google
 
 The checked-in lockfile is validated for macOS and Linux x64 glibc. If you use Alpine/musl or ARM Linux, regenerate and verify the lockfile on that platform before relying on CI.
 
@@ -28,22 +33,28 @@ set +a
 Create `.env` from `.env.example` and fill in the required values:
 
 - `DATABASE_URL`
-- `CLERK_SECRET_KEY`
-- `CLERK_PUBLISHABLE_KEY`
-- `VITE_CLERK_PUBLISHABLE_KEY`
+- `SUPABASE_URL`
+- `SUPABASE_PUBLISHABLE_KEY`
+- `SUPABASE_SECRET_KEY` (server-side admin operations only; never browser code)
+- `VITE_SUPABASE_URL` (same project as `SUPABASE_URL`)
+- `VITE_SUPABASE_PUBLISHABLE_KEY` (public browser key for that project)
+- `APP_PUBLIC_URL` (`http://localhost:18205` locally; the HTTPS app origin in production)
+- `ALLOW_PUBLIC_SIGNUPS=false`
+
+All `VITE_` values are public build-time configuration. Never expose a secret or
+service-role key there. The server publishable key authenticates ordinary user
+requests; the secret key is reserved for trusted admin operations such as invites
+and the operator-run relink tool.
 
 Optional:
 
-- `VITE_CLERK_PROXY_URL`
 - `VITE_API_PROXY_TARGET`
 - `LOG_LEVEL`
 - `RUN_DB_PUSH_ON_POST_MERGE`
-- `SEED_ADMIN_CLERK_ID`, `SEED_ADMIN_EMAIL`
+- `SEED_ADMIN_AUTH_ID`, `SEED_ADMIN_EMAIL` (disposable development databases only)
 - `AI_PROVIDER`, `OPENAI_API_KEY`, `OPENAI_MODEL`
 - `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL`
 - `STORAGE_PROVIDER`
-- `ALLOW_PUBLIC_SIGNUPS`
-- `VITE_ALLOW_PUBLIC_SIGNUPS`
 - `ENABLE_COMMUNITY`
 - `BUNNY_PLAYBACK_SECURITY_CONFIRMED`
 - `SEED_DEMO_ACADEMY`
@@ -54,6 +65,8 @@ Optional:
 
 ## Database
 
+For a disposable local development database only (verify `DATABASE_URL` first):
+
 ```bash
 set -a
 source .env
@@ -62,9 +75,53 @@ pnpm --filter @workspace/db run push
 pnpm --filter @workspace/scripts run seed
 ```
 
-In non-development environments, the seed requires `SEED_ADMIN_CLERK_ID` or `SEED_ADMIN_EMAIL`. To make the seeded admin match your real Clerk login, set `SEED_ADMIN_CLERK_ID` to your Clerk user ID. If you do not have the Clerk user ID yet, set `SEED_ADMIN_EMAIL` to the real admin email; the seed creates a `manual_*` admin row that can be linked on first login after Clerk confirms the primary email is verified.
+For local setup, `SEED_ADMIN_AUTH_ID` identifies the Supabase user UUID; alternatively, `SEED_ADMIN_EMAIL` creates a `manual_*` admin row eligible for verified-email linking. Never run seed commands against production, including to migrate an existing admin.
 
-In production, new Clerk users are not provisioned automatically unless `ALLOW_PUBLIC_SIGNUPS=true` is set. For client training launches, keep public signups disabled, leave `VITE_ALLOW_PUBLIC_SIGNUPS` empty, and create/link users through manual invites or admin-managed accounts.
+Keep both signup flags explicitly `false`. Supabase authentication alone does not grant app access: existing active bindings are used, and only an unambiguous active `manual_*` app user can be linked by verified email. Existing Clerk-bound app users require the exact one-time relink below, not automatic email rebinding.
+
+The logical API/ORM user field is now `authId`, replacing `clerkId`. Its physical SQL column remains `public.users.clerk_id` for a reversible provider cutover; it has not been dropped or renamed. Local user IDs, roles and data ownership must remain unchanged.
+
+### Invitations and existing accounts
+
+An authenticated app admin can send an invitation with `POST /users/{id}/invite`
+(HTTP path `/api/users/{id}/invite`). The target must be an active, manually
+created `manual_*` user with a real email. Creating the app row alone does not
+send email, and this endpoint does not migrate an existing Clerk-bound account.
+
+For each existing app user, first have the operator establish the intended
+Supabase account with a confirmed matching email. With credentials supplied
+securely in the process environment, inspect the exact mapping using:
+
+```bash
+node --import tsx scripts/src/supabase-auth-relink.ts \
+  --local-user-id <exact-local-uuid> \
+  --expected-auth-id <exact-existing-auth-id> \
+  --new-auth-id <supabase-user-uuid>
+```
+
+Dry-run is the default: it reads the DB and Supabase Admin API without writes.
+The script does not load `.env`; it requires `DATABASE_URL`, `SUPABASE_URL` and
+`SUPABASE_SECRET_KEY` in its process environment. Use canonical lowercase UUIDs
+and the exact old binding, not an email or a guessed ID. Apply only after review
+and a verified backup by adding `--apply --backup-reference <existing-backup-reference>`.
+The reference attests to a backup; it does not create or verify one. Completed
+mappings fail the old-ID precondition on replay; do not blindly retry an uncertain
+commit. See the [relink runbook](scripts/auth-migration/README.md) for validation
+and rollback prerequisites. Never substitute a production seed.
+
+### Supabase Auth setup
+
+In the Supabase dashboard, enable email/password and Google, keep email
+confirmation enabled, and disable **Allow new users to sign up**, **Allow
+anonymous sign-ins** and **Allow manual linking**. The last setting concerns
+Supabase identity linking, not the operator-controlled app-user relink.
+
+Custom SMTP is essential before client invitations or recovery: the default
+sender only delivers to project team addresses and currently allows two messages
+per hour. Configure the Site URL, exact redirect allowlist and custom invite and
+recovery templates in the [deployment guide](docs/infomaniak-deployment.md#supabase-auth-configuration).
+Use a separate development project with Site URL `http://localhost:18205` and
+the corresponding `/auth/callback`, `/auth/invite` and `/auth/recovery` URLs.
 
 Seed skips demo Academy courses by default so placeholder YouTube/example.com content is not published. Set `SEED_DEMO_ACADEMY=true` only for a demo database. CRM/revenue/support demo records are skipped outside explicit development unless `SEED_DEMO_DATA=true`.
 
@@ -120,7 +177,7 @@ pnpm run build
 pnpm --filter @workspace/scripts run check-academy-launch
 ```
 
-`check-academy-launch` loads the root `.env` when present, checks database access, published academy content, production Clerk keys, the HTTPS public URL and real Bunny playback restrictions. It prints no credentials, performs no writes, and exits nonzero while a launch prerequisite is missing. A successful build alone is not evidence that Supabase or Bunny works.
+`check-academy-launch` loads the root `.env` when present, checks database access, published academy content, the presence of Supabase Auth configuration, the HTTPS public URL and real Bunny playback restrictions. It prints no credentials, performs no writes, and exits nonzero while a launch prerequisite is missing. It does not prove email delivery, Google login or account migration; a successful build alone is not evidence that Supabase or Bunny works.
 
 `GET /api/healthz` is process liveness. Use `GET /api/readyz` for database readiness: it returns JSON 503 with `code: DATABASE_UNAVAILABLE` within two seconds when the DB cannot be reached. A Supabase `tenant/user not found` response requires checking the project status and the current connection string in Supabase; setting a local flag cannot repair it.
 
@@ -137,8 +194,9 @@ npm start
 ```
 
 `npm run build:hosting` also runs the hosting build. Do not use `npm install`.
-Export the live `VITE_CLERK_PUBLISHABLE_KEY` in the build environment; the script
-rejects a missing or blank key. It typechecks shared libraries and the real
+Export `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` for the intended
+production project in the build environment. The frontend has no public signup form.
+The script validates the public key and hosted project URL. It typechecks shared libraries and the real
 frontend/API, then builds only those applications, excluding the mockup sandbox.
 No schema pushes or seeds run automatically.
 

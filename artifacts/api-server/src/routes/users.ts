@@ -2,7 +2,8 @@ import { Router, type IRouter, type Request, type Response } from "express";
 import { randomUUID } from "node:crypto";
 import { and, desc, eq, ilike, or, sql } from "drizzle-orm";
 import { db, usersTable, userDashboardPreferences, userConsentEvents } from "@workspace/db";
-import { getAuth } from "@clerk/express";
+import { getSupabaseAdmin, invitationRedirectUrl } from "../lib/supabase";
+import { normalizeProfileEmail, isPlaceholderEmail } from "../lib/supabaseProfile";
 import { requireAuth } from "../middlewares/requireAuth";
 import { getOrCreateUser } from "../lib/userSync";
 import { userConsentStatus } from "../lib/userCompliance";
@@ -80,7 +81,7 @@ function requireAdmin(
   user: typeof usersTable.$inferSelect | null | undefined,
   res: Response,
 ): user is typeof usersTable.$inferSelect {
-  if (!user) {
+  if (!user || !user.isActive) {
     res.status(401).json({ error: "Unauthorized" });
     return false;
   }
@@ -92,6 +93,9 @@ function requireAdmin(
 }
 
 const USER_ROLES = ["admin", "client", "coach", "sales_rep"] as const;
+const inviteCooldowns = new Map<string, number>();
+const inviteInFlight = new Set<string>();
+const INVITE_COOLDOWN_MS = 60_000;
 const LANGUAGES = ["en", "fr", "es", "de", "it", "pl", "pt", "nl"] as const;
 
 function isUserRole(value: unknown): value is (typeof USER_ROLES)[number] {
@@ -389,7 +393,7 @@ router.post(
       [created] = await db
         .insert(usersTable)
         .values({
-          clerkId: `manual_${randomUUID()}`,
+          authId: `manual_${randomUUID()}`,
           email: normalizedEmail,
           fullName: fullName.trim(),
           firstName: firstName?.trim() || null,
@@ -415,6 +419,49 @@ router.post(
     res.status(201).json(created);
   },
 );
+
+router.post("/users/:id/invite", requireAuth, async (req, res): Promise<void> => {
+  const currentUser = await getOrCreateUser(req);
+  if (!requireAdmin(currentUser, res)) return;
+  const id = String(req.params.id);
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)) {
+    res.status(404).json({ error: "User not found" }); return;
+  }
+  const [target] = await db.select().from(usersTable).where(eq(usersTable.id, id));
+  if (!target) { res.status(404).json({ error: "User not found" }); return; }
+  const email = normalizeProfileEmail(target.email);
+  if (!target.isActive || !target.authId.startsWith("manual_") || !email || isPlaceholderEmail(email)) {
+    res.status(409).json({ error: "User is not eligible for an invitation" }); return;
+  }
+  const now = Date.now();
+  for (const [key, until] of inviteCooldowns) if (until <= now) inviteCooldowns.delete(key);
+  if (inviteInFlight.has(id) || inviteCooldowns.has(id) || inviteCooldowns.size >= 10000) {
+    res.setHeader("Retry-After", "60");
+    res.status(429).json({ error: "Please wait before sending another invitation" }); return;
+  }
+  inviteInFlight.add(id);
+  try {
+    const redirectTo = invitationRedirectUrl();
+    const admin = getSupabaseAdmin();
+    inviteCooldowns.set(id, now + INVITE_COOLDOWN_MS);
+    const { data, error } = await admin.auth.admin.inviteUserByEmail(email, { redirectTo });
+    if (error || !data?.user) {
+      if (error?.code === "email_exists" || error?.code === "user_already_exists") {
+        res.status(409).json({ error: "An authentication account already exists for this email" }); return;
+      }
+      if (error?.status === 429) {
+        res.setHeader("Retry-After", "60");
+        res.status(429).json({ error: "Please wait before sending another invitation" }); return;
+      }
+      res.status(503).json({ error: "Invitation could not be sent" }); return;
+    }
+    res.json({ sent: true });
+  } catch {
+    res.status(503).json({ error: "Invitation could not be sent" });
+  } finally {
+    inviteInFlight.delete(id);
+  }
+});
 
 // GET /users/:id (admin only)
 router.get(

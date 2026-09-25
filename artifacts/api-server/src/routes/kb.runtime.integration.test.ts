@@ -87,7 +87,7 @@ test("real local PostgreSQL KB routes and private PDF publication", {
   });
   await pool.query("SELECT 1");
   baseline = await snapshot();
-  await db.insert(usersTable).values({ id: userId, clerkId: userId, email: `${userId}@example.invalid`, role: "admin" });
+  await db.insert(usersTable).values({ id: userId, authId: userId, email: `${userId}@example.invalid`, role: "admin" });
   await db.insert(kbCategories).values([
     { id: frCategory, name: `Runtime FR ${run}`, slug: `runtime-fr-${run}`, language: "fr", order: -100000 },
     { id: enCategory, name: `Runtime EN ${run}`, slug: `runtime-en-${run}`, language: "en", order: -100000 },

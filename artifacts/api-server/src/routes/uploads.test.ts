@@ -20,7 +20,7 @@ function isolatedModule(source: URL, dependencies: Record<string, unknown>) {
     format: "cjs",
   }).code;
   const module = { exports: {} as Record<string, unknown> };
-  // Strict dependency isolation prevents tests from opening a DB or Clerk connection.
+  // Strict dependency isolation prevents tests from opening a DB or Supabase connection.
   new Function("require", "module", "exports", code)(
     (name: string) => {
       assert.ok(
@@ -77,7 +77,7 @@ test("upload/file routes enforce auth, metadata, containment and private caching
   const requireAuth = isolatedModule(
     new URL("../middlewares/requireAuth.ts", import.meta.url),
     {
-      "@clerk/express": {
+      "../middlewares/supabaseAuth": {
         getAuth: (req: Request) => ({
           userId: req.headers["x-test-auth"] ? "test-user" : null,
         }),

@@ -12,7 +12,7 @@
     "seed-automation": "tsx ./src/seed-automation.ts",
     "seed-contract-templates": "tsx ./src/seed-contract-templates.ts",
     "import-corrected-content": "tsx ./src/import-corrected-content.ts",
-    "test": "node --import tsx --test content/*.test.ts original-content/*.test.ts",
+    "test": "node --import tsx --test content/*.test.ts original-content/*.test.ts auth-migration/*.test.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p original-content/tsconfig.json --noEmit"
   },
   "dependencies": {

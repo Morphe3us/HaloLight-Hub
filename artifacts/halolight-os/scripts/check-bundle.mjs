@@ -64,7 +64,7 @@ try {
     }, { raw: 0, gzip: 0, brotli: 0 });
   }
   console.log(JSON.stringify({
-    note: "JS bytes; gzip/Brotli are per-file compressed payload estimates, excluding HTTP headers and external Clerk assets",
+    note: "JS bytes; gzip/Brotli are per-file compressed payload estimates, excluding HTTP headers",
     modulepreloads: preloads.map((file) => ({ file, ...sizes([file]) })),
     initial: { files: initial.size, ...sizes(initial) },
     landing: { files: landingFiles.size, ...sizes(landingFiles) },

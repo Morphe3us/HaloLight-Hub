@@ -62,8 +62,8 @@ export async function startKbPreview(port = 0) {
     root, configFile: false, envFile: false, cacheDir: await mkdtemp(join(tmpdir(), "kb-preview-cache-")),
     plugins: [{
       name: "kb-preview-only", enforce: "pre",
-      resolveId(id) { if (id === "/kb-preview-entry.js") return id; if (id === "@clerk/react") return "\0kb-clerk-fixture"; },
-      load(id) { if (id === "/kb-preview-entry.js") return entry; if (id === "\0kb-clerk-fixture") return "export const useClerk = () => ({ signOut() {} });"; },
+      resolveId(id) { if (id === "/kb-preview-entry.js") return id; if (id === "@/auth/AuthProvider") return "\0kb-auth-fixture"; },
+      load(id) { if (id === "/kb-preview-entry.js") return entry; if (id === "\0kb-auth-fixture") return "export const useAuth = () => ({ signOut() {} });"; },
       configureServer(server) {
         server.middlewares.use(async (req, res, next) => {
           const url = new URL(req.url, "http://localhost");
@@ -102,7 +102,7 @@ export async function startKbPreview(port = 0) {
       },
     }, react(), tailwindcss()],
     resolve: { alias: { "@": `${root}/src` }, dedupe: ["react", "react-dom"] },
-    optimizeDeps: { exclude: ["@clerk/react"] },
+    optimizeDeps: { exclude: ["@/auth/AuthProvider"] },
     server: { host: "127.0.0.1", port },
   });
   await server.listen();

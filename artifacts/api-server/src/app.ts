@@ -1,11 +1,7 @@
 import express, { type Express } from "express";
 import cors from "cors";
 import pinoHttp from "pino-http";
-import { clerkMiddleware } from "@clerk/express";
-import {
-  CLERK_PROXY_PATH,
-  clerkProxyMiddleware,
-} from "./middlewares/clerkProxyMiddleware";
+import { supabaseAuth } from "./middlewares/supabaseAuth";
 import router from "./routes";
 import { logger } from "./lib/logger";
 import { getAllowedCorsOrigins, isCorsOriginAllowed } from "./lib/corsPolicy";
@@ -38,9 +34,6 @@ app.use(
   }),
 );
 
-// Clerk proxy must be mounted before body parsers (streams raw bytes)
-app.use(CLERK_PROXY_PATH, clerkProxyMiddleware());
-
 const allowedCorsOrigins = getAllowedCorsOrigins();
 app.use(
   cors({
@@ -58,7 +51,7 @@ if (process.env.NODE_ENV === "production") {
 app.use(express.json({ limit: "25mb" }));
 app.use(express.urlencoded({ extended: true, limit: "25mb" }));
 
-app.use(clerkMiddleware());
+app.use(supabaseAuth);
 
 // This exact read-only route independently requires an existing active admin.
 app.use("/api", (req, res, next) => {

@@ -36,28 +36,28 @@ function shouldSeedDemoData(): boolean {
   return isExplicitDevelopment();
 }
 
-function resolveSeedAdminConfig(): { clerkId: string; email: string } {
-  const explicitClerkId = process.env.SEED_ADMIN_CLERK_ID?.trim();
+function resolveSeedAdminConfig(): { authId: string; email: string } {
+  const explicitAuthId = process.env.SEED_ADMIN_AUTH_ID?.trim();
   const explicitEmail = process.env.SEED_ADMIN_EMAIL?.trim();
 
-  if (!isExplicitDevelopment() && !explicitClerkId && !explicitEmail) {
+  if (!isExplicitDevelopment() && !explicitAuthId && !explicitEmail) {
     throw new Error(
-      "Seed requires SEED_ADMIN_CLERK_ID or SEED_ADMIN_EMAIL unless NODE_ENV=development.",
+      "Seed requires SEED_ADMIN_AUTH_ID or SEED_ADMIN_EMAIL unless NODE_ENV=development.",
     );
   }
 
   return {
-    clerkId: explicitClerkId || "manual_seed_admin_001",
+    authId: explicitAuthId || "manual_seed_admin_001",
     email: explicitEmail || "admin@halolight.local",
   };
 }
 
 async function ensureSeedUser() {
-  const { clerkId, email } = resolveSeedAdminConfig();
+  const { authId, email } = resolveSeedAdminConfig();
   const [existing] = await db
     .select()
     .from(usersTable)
-    .where(eq(usersTable.clerkId, clerkId));
+    .where(eq(usersTable.authId, authId));
   if (existing) {
     console.log(`  - Skipped existing seed user: ${existing.email}`);
     return existing.id;
@@ -66,7 +66,7 @@ async function ensureSeedUser() {
   const [created] = await db
     .insert(usersTable)
     .values({
-      clerkId,
+      authId,
       email,
       fullName: "HaloLight Demo Admin",
       companyName: "HaloLight",

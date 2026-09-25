@@ -66,16 +66,17 @@ test("consent gate, identity-bound evidence and dashboard persistence across fre
   const compliance = load<{ userConsentStatus: (id: string) => Promise<any> }>(new URL("../lib/userCompliance.ts", import.meta.url), {
     "drizzle-orm": drizzle, "@workspace/db": { db, userConsentEvents }, "./userConsentPolicy": policyDependency,
   });
-  const userSync = { getOrCreateUser: async (req: express.Request) => req.headers["x-user"] ? { id: req.headers["x-user"], role: req.headers["x-role"] ?? "client" } : null };
+  const userSync = { getOrCreateUser: async (req: express.Request) => req.headers["x-user"] ? { id: req.headers["x-user"], isActive: true, role: req.headers["x-role"] ?? "client" } : null };
   const auth = { getAuth: (req: express.Request) => ({ userId: req.headers["x-user"] }) };
   const gate = load<{ consentGate: express.RequestHandler; isConsentBootstrap: (method: string, path: string) => boolean }>(new URL("../middlewares/consentGate.ts", import.meta.url), {
-    "@clerk/express": auth, "../lib/userSync": userSync, "../lib/userConsentPolicy": policyDependency, "../lib/userCompliance": compliance,
+    "../middlewares/supabaseAuth": auth, "../lib/userSync": userSync, "../lib/userConsentPolicy": policyDependency, "../lib/userCompliance": compliance,
   });
   const router = load<{ default: express.Router }>(new URL("./users.ts", import.meta.url), {
     express, "node:crypto": crypto, "drizzle-orm": drizzle,
-    "@workspace/db": { db, usersTable, userConsentEvents, userDashboardPreferences }, "@clerk/express": auth,
+    "@workspace/db": { db, usersTable, userConsentEvents, userDashboardPreferences }, "../middlewares/supabaseAuth": auth,
     "../lib/userSync": userSync, "../lib/userConsentPolicy": policyDependency,
     "../lib/userCompliance": compliance, "../lib/userDashboardPreferences": preferences,
+    "../lib/supabase": {}, "../lib/supabaseProfile": {},
     "../middlewares/requireAuth": { requireAuth: (req: express.Request, res: express.Response, next: express.NextFunction) => {
       if (!req.headers["x-user"]) { res.sendStatus(401); return; } next();
     } },

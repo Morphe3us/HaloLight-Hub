@@ -105,10 +105,9 @@ async function checkBunny() {
 }
 
 async function main() {
-  const secret = process.env.CLERK_SECRET_KEY ?? "";
-  const publicKey = process.env.VITE_CLERK_PUBLISHABLE_KEY ?? "";
-  report("Clerk production", secret.startsWith("sk_live_") && publicKey.startsWith("pk_live_"),
-    "Hosted production requires live keys from the same Clerk application");
+  const publicKey = process.env.VITE_SUPABASE_PUBLISHABLE_KEY ?? "";
+  report("Supabase Auth configuration", Boolean(process.env.SUPABASE_URL && publicKey && process.env.SUPABASE_SECRET_KEY),
+    "Requires matching Supabase project configuration, a public frontend key and a private admin key; this is not an authentication smoke test");
   let publicUrlOk = false;
   try {
     const url = new URL(process.env.APP_PUBLIC_URL ?? "");

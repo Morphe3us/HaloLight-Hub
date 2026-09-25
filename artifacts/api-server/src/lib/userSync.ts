@@ -1,23 +1,23 @@
-import { getAuth } from "@clerk/express";
+import { getAuth } from "../middlewares/supabaseAuth";
 import { type Request } from "express";
 import { db, usersTable } from "@workspace/db";
 import { and, eq, sql } from "drizzle-orm";
 import { logger } from "./logger";
 import {
-  buildClerkUserProfile,
-  fetchClerkUserProfile,
+  buildSupabaseUserProfile,
+  fetchSupabaseUserProfile,
   isPlaceholderEmail,
   isPlaceholderProfileName,
-  needsClerkProfileRepair,
-  type ClerkUserProfile,
-} from "./clerkProfile";
-import { isExplicitDevelopment, parseBooleanEnv } from "./env";
+  needsSupabaseProfileRepair,
+  type SupabaseUserProfile,
+} from "./supabaseProfile";
+import { parseBooleanEnv } from "./env";
 
 type User = typeof usersTable.$inferSelect;
-const CLERK_PROFILE_REFRESH_TTL_MS = 5 * 60 * 1000;
-const CLERK_PROFILE_RETRY_TTL_MS = 15 * 1000;
-const clerkProfileRefreshCache = new Map<string, number>();
-const clerkProfileInFlight = new Map<string, Promise<ClerkUserProfile>>();
+const SUPABASE_PROFILE_REFRESH_TTL_MS = 5 * 60 * 1000;
+const SUPABASE_PROFILE_RETRY_TTL_MS = 15 * 1000;
+const supabaseProfileRefreshCache = new Map<string, number>();
+const supabaseProfileInFlight = new Map<string, Promise<SupabaseUserProfile>>();
 const localUserSyncInFlight = new Map<string, Promise<User | null>>();
 
 function valueOrExisting<T extends string | null>(
@@ -29,7 +29,7 @@ function valueOrExisting<T extends string | null>(
 
 function profileUpdateForExisting(
   existing: User,
-  profile: ClerkUserProfile,
+  profile: SupabaseUserProfile,
 ): Partial<typeof usersTable.$inferInsert> {
   const updates: Partial<typeof usersTable.$inferInsert> = {};
   const hasVerifiedRealProfileEmail =
@@ -84,7 +84,7 @@ function profileUpdateForExisting(
 
 async function refreshExistingUser(
   existing: User,
-  profile: ClerkUserProfile,
+  profile: SupabaseUserProfile,
 ): Promise<User | null> {
   if (!existing.isActive) return null;
 
@@ -99,7 +99,7 @@ async function refreshExistingUser(
     if (conflicts.some((conflict) => conflict.id !== existing.id)) {
       logger.warn(
         { userId: existing.id },
-        "Refusing to repair Clerk placeholder email because another user already owns it",
+        "Refusing to repair Supabase placeholder email because another user already owns it",
       );
       delete updates.email;
       if (
@@ -117,7 +117,7 @@ async function refreshExistingUser(
       .set(updates)
       .where(and(
           eq(usersTable.id, existing.id),
-          eq(usersTable.clerkId, existing.clerkId),
+          eq(usersTable.authId, existing.authId),
           eq(usersTable.isActive, true),
       ))
       .returning();
@@ -125,7 +125,7 @@ async function refreshExistingUser(
     if (isUniqueViolation(error) && updates.email) {
       logger.warn(
         { userId: existing.id },
-        "Refusing to repair Clerk placeholder email after unique conflict",
+        "Refusing to repair Supabase placeholder email after unique conflict",
       );
       const { email: _email, ...safeUpdates } = updates;
       if (
@@ -138,7 +138,7 @@ async function refreshExistingUser(
         .set(safeUpdates)
         .where(and(
           eq(usersTable.id, existing.id),
-          eq(usersTable.clerkId, existing.clerkId),
+          eq(usersTable.authId, existing.authId),
           eq(usersTable.isActive, true),
         ))
         .returning();
@@ -150,48 +150,53 @@ async function refreshExistingUser(
   return updated?.isActive ? updated : null;
 }
 
-function shouldFetchClerkProfile(clerkId: string): boolean {
-  const nextAllowedAt = clerkProfileRefreshCache.get(clerkId) ?? 0;
+function shouldFetchSupabaseProfile(authId: string): boolean {
+  const nextAllowedAt = supabaseProfileRefreshCache.get(authId) ?? 0;
   return nextAllowedAt <= Date.now();
 }
 
-function markClerkProfileFetch(clerkId: string, ttlMs: number): void {
-  clerkProfileRefreshCache.set(
-    clerkId,
+function markSupabaseProfileFetch(authId: string, ttlMs: number): void {
+  if (supabaseProfileRefreshCache.size >= 10000) {
+    const oldest = supabaseProfileRefreshCache.keys().next().value;
+    if (oldest) supabaseProfileRefreshCache.delete(oldest);
+  }
+  supabaseProfileRefreshCache.set(
+    authId,
     Date.now() + ttlMs,
   );
 }
 
-async function getFreshClerkProfile(
-  clerkId: string,
+async function getFreshSupabaseProfile(
+  authId: string,
   claims: Record<string, unknown> | undefined,
-): Promise<ClerkUserProfile> {
-  const existing = clerkProfileInFlight.get(clerkId);
+  accessToken: string,
+): Promise<SupabaseUserProfile> {
+  const existing = supabaseProfileInFlight.get(authId);
   if (existing) return existing;
 
   const request = (async () => {
     try {
-      const apiProfile = await fetchClerkUserProfile(clerkId);
-      markClerkProfileFetch(
-        clerkId,
-        apiProfile ? CLERK_PROFILE_REFRESH_TTL_MS : CLERK_PROFILE_RETRY_TTL_MS,
+      const apiProfile = await fetchSupabaseUserProfile(authId, accessToken);
+      markSupabaseProfileFetch(
+        authId,
+        apiProfile ? SUPABASE_PROFILE_REFRESH_TTL_MS : SUPABASE_PROFILE_RETRY_TTL_MS,
       );
-      return buildClerkUserProfile(clerkId, claims, apiProfile ?? {});
+      return buildSupabaseUserProfile(authId, claims, apiProfile ?? {});
     } catch {
-      markClerkProfileFetch(clerkId, CLERK_PROFILE_RETRY_TTL_MS);
-      logger.warn({ clerkId }, "Unable to fetch Clerk user profile");
-      return buildClerkUserProfile(clerkId, claims);
+      markSupabaseProfileFetch(authId, SUPABASE_PROFILE_RETRY_TTL_MS);
+      logger.warn({ authId }, "Unable to fetch Supabase user profile");
+      return buildSupabaseUserProfile(authId, claims);
     }
   })().finally(() => {
-    clerkProfileInFlight.delete(clerkId);
+    supabaseProfileInFlight.delete(authId);
   });
 
-  clerkProfileInFlight.set(clerkId, request);
+  supabaseProfileInFlight.set(authId, request);
   return request;
 }
 
 function isManualInviteUser(user: User): boolean {
-  return user.clerkId.startsWith("manual_");
+  return user.authId.startsWith("manual_");
 }
 
 function normalizeEmail(value: string): string {
@@ -213,24 +218,23 @@ function isUniqueViolation(error: unknown): boolean {
 }
 
 function allowPublicSignups(): boolean {
-  const configured = parseBooleanEnv(process.env.ALLOW_PUBLIC_SIGNUPS);
-  if (configured !== null) return configured;
-  return isExplicitDevelopment();
+  return parseBooleanEnv(process.env.ALLOW_PUBLIC_SIGNUPS) === true;
 }
 
 async function syncLocalUser(
-  clerkId: string,
+  authId: string,
   claims: Record<string, unknown> | undefined,
-  sessionProfile: ClerkUserProfile,
+  sessionProfile: SupabaseUserProfile,
+  accessToken: string,
 ): Promise<User | null> {
   const [existing] = await db
     .select()
     .from(usersTable)
-    .where(eq(usersTable.clerkId, clerkId));
+    .where(eq(usersTable.authId, authId));
 
   if (existing) {
     if (!existing.isActive) return null;
-    if (!needsClerkProfileRepair(existing)) {
+    if (!needsSupabaseProfileRepair(existing)) {
       return existing;
     }
 
@@ -239,12 +243,12 @@ async function syncLocalUser(
       sessionProfile,
     );
     if (!updatedFromSession) return null;
-    if (!needsClerkProfileRepair(updatedFromSession)) {
+    if (!needsSupabaseProfileRepair(updatedFromSession)) {
       return updatedFromSession;
     }
-    if (!shouldFetchClerkProfile(clerkId)) return updatedFromSession;
+    if (!shouldFetchSupabaseProfile(authId)) return updatedFromSession;
 
-    const freshProfile = await getFreshClerkProfile(clerkId, claims);
+    const freshProfile = await getFreshSupabaseProfile(authId, claims, accessToken);
     const refreshed = await refreshExistingUser(
       updatedFromSession,
       freshProfile,
@@ -252,10 +256,8 @@ async function syncLocalUser(
     return refreshed;
   }
 
-  const verifiedProfile =
-    needsClerkProfileRepair(sessionProfile) || !sessionProfile.emailVerified
-      ? await getFreshClerkProfile(clerkId, claims)
-      : sessionProfile;
+  const verifiedProfile = await getFreshSupabaseProfile(authId, claims, accessToken);
+  if (!verifiedProfile.emailVerified || isPlaceholderEmail(verifiedProfile.email)) return null;
 
   const existingByEmail = await db
     .select()
@@ -273,12 +275,12 @@ async function syncLocalUser(
     ) {
       logger.warn(
         {
-          clerkId,
+          authId,
           matchCount: existingByEmail.length,
           activeMatchCount: activeMatches.length,
           manualMatchCount: manualMatches.length,
         },
-        "Refusing to link or duplicate Clerk user by unsafe email match",
+        "Refusing to link or duplicate Supabase user by unsafe email match",
       );
       return null;
     } else {
@@ -289,7 +291,7 @@ async function syncLocalUser(
         [linked] = await db
           .update(usersTable)
           .set({
-            clerkId,
+            authId,
             firstName: existingByEmail.firstName ?? verifiedProfile.firstName,
             lastName: existingByEmail.lastName ?? verifiedProfile.lastName,
             fullName: existingByEmail.fullName ?? verifiedProfile.fullName,
@@ -297,7 +299,7 @@ async function syncLocalUser(
           })
           .where(and(
             eq(usersTable.id, existingByEmail.id),
-            eq(usersTable.clerkId, existingByEmail.clerkId),
+            eq(usersTable.authId, existingByEmail.authId),
             eq(usersTable.isActive, true),
             emailEqualsNormalized(verifiedProfile.email),
           ))
@@ -310,13 +312,13 @@ async function syncLocalUser(
         const [winner] = await db
           .select()
           .from(usersTable)
-          .where(eq(usersTable.clerkId, clerkId));
+          .where(eq(usersTable.authId, authId));
         return winner?.isActive ? winner : null;
       }
 
       logger.info(
-        { clerkId, userId: linked.id },
-        "Linked Clerk user to existing manual local user by email",
+        { authId, userId: linked.id },
+        "Linked Supabase user to existing manual local user by email",
       );
       return linked;
     }
@@ -324,7 +326,7 @@ async function syncLocalUser(
 
   if (!allowPublicSignups()) {
     logger.warn(
-      { clerkId },
+      { authId },
       "Refusing to JIT provision public signup without matching manual invite",
     );
     return null;
@@ -332,7 +334,7 @@ async function syncLocalUser(
 
   if (!verifiedProfile.emailVerified) {
     logger.warn(
-      { clerkId },
+      { authId },
       "Refusing to JIT provision user without verified primary email",
     );
     return null;
@@ -342,7 +344,7 @@ async function syncLocalUser(
     const [created] = await db
       .insert(usersTable)
       .values({
-        clerkId,
+        authId,
         email: verifiedProfile.email,
         firstName: verifiedProfile.firstName,
         lastName: verifiedProfile.lastName,
@@ -350,14 +352,14 @@ async function syncLocalUser(
       })
       .returning();
 
-    logger.info({ clerkId, userId: created.id }, "JIT provisioned new user");
+    logger.info({ authId, userId: created.id }, "JIT provisioned new user");
     return created;
   } catch (error) {
     if (!isUniqueViolation(error)) throw error;
     const [raceWinner] = await db
       .select()
       .from(usersTable)
-      .where(eq(usersTable.clerkId, clerkId));
+      .where(eq(usersTable.authId, authId));
 
     if (raceWinner) {
       const refreshed = await refreshExistingUser(raceWinner, verifiedProfile);
@@ -370,7 +372,7 @@ async function syncLocalUser(
       .where(emailEqualsNormalized(verifiedProfile.email));
     if (emailRaceWinner) {
       logger.warn(
-        { clerkId },
+        { authId },
         "Refusing to JIT provision user after email uniqueness race",
       );
       return null;
@@ -381,22 +383,22 @@ async function syncLocalUser(
 }
 
 /**
- * Get or create a local user record from the authenticated Clerk session.
+ * Get or create a local user record from the authenticated Supabase session.
  * Performs just-in-time (JIT) provisioning on first login.
  */
 export async function getOrCreateUser(req: Request) {
   const auth = getAuth(req);
   if (!auth?.userId) return null;
 
-  const clerkId = auth.userId;
+  const authId = auth.userId;
   const claims = auth.sessionClaims as Record<string, unknown> | undefined;
-  const sessionProfile = buildClerkUserProfile(clerkId, claims);
-  const existing = localUserSyncInFlight.get(clerkId);
+  const sessionProfile = buildSupabaseUserProfile(authId, claims);
+  const existing = localUserSyncInFlight.get(authId);
   if (existing) return existing;
 
-  const request = syncLocalUser(clerkId, claims, sessionProfile).finally(() => {
-    localUserSyncInFlight.delete(clerkId);
+  const request = syncLocalUser(authId, claims, sessionProfile, auth.accessToken).finally(() => {
+    localUserSyncInFlight.delete(authId);
   });
-  localUserSyncInFlight.set(clerkId, request);
+  localUserSyncInFlight.set(authId, request);
   return request;
 }

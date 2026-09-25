@@ -5,10 +5,7 @@ import { ArrowRight, BarChart3, GraduationCap, Users, CheckCircle2, Monitor, Spa
 
 export default function Landing() {
   const { t } = useTranslation();
-  const signupHref =
-    import.meta.env.DEV || import.meta.env.VITE_ALLOW_PUBLIC_SIGNUPS === "true"
-      ? "/sign-up"
-      : "/sign-in";
+  const signupHref = "/sign-in";
 
   const features = [
     { icon: BarChart3,    color: "bg-accent/15 text-foreground",   title: t("landing.f1_title"), desc: t("landing.f1_desc") },

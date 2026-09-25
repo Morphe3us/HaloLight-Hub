@@ -72,7 +72,7 @@ test("four roles: owner-scoped CRM HTTP and real document-link validation", asyn
   };
   const database = { ...schema, db };
   const auth = { getAuth: (req: express.Request) => ({ userId: req.headers["x-identity"] }) };
-  const requireAuth = load(new URL("../middlewares/requireAuth.ts", import.meta.url), { "@clerk/express": auth });
+  const requireAuth = load(new URL("../middlewares/requireAuth.ts", import.meta.url), { "../middlewares/supabaseAuth": auth });
   const ownership = load<{ validateOwnedLinks: (id: string, links: Record<string, unknown>) => Promise<{ ok: boolean; status?: number }> }>(new URL("../lib/ownership.ts", import.meta.url), { "@workspace/db": database, "drizzle-orm": orm });
   const dependencies: Record<string, unknown> = {
     express, "drizzle-orm": orm, "@workspace/db": database,

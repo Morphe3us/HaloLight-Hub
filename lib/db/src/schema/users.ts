@@ -34,7 +34,8 @@ export const usersTable = pgTable(
     id: text("id")
       .primaryKey()
       .$defaultFn(() => crypto.randomUUID()),
-    clerkId: text("clerk_id").notNull().unique(),
+    // Preserve the physical legacy column during the provider cutover for rollback.
+    authId: text("clerk_id").notNull().unique(),
     email: text("email").notNull(),
 
     // Core profile

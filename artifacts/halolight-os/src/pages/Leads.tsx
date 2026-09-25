@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "wouter";
 import { useTranslation } from "react-i18next";
-import { useListLeads, useCreateLead, useDeleteLead } from "@workspace/api-client-react";
+import { customFetch, useListLeads, useCreateLead, useDeleteLead } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -81,9 +81,7 @@ export default function Leads() {
 
   const handleExportCsv = async () => {
     try {
-      const res = await fetch("/api/exports/csv/leads", { credentials: "include" });
-      if (!res.ok) throw new Error("Export failed");
-      const blob = await res.blob();
+      const blob = await customFetch<Blob>("/api/exports/csv/leads", { responseType: "blob" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;

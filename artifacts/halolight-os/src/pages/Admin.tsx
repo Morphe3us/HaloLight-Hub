@@ -55,6 +55,7 @@ import {
 } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { AdminConsentProof } from "@/components/AdminConsentProof";
+import { InviteUserButton } from "@/components/InviteUserButton";
 
 const ROLES = ["admin", "client", "coach", "sales_rep"] as const;
 const LANGUAGES = ["en", "fr", "de", "nl", "es", "it", "pt", "pl"] as const;
@@ -384,6 +385,7 @@ export default function Admin() {
                       </TableCell>
                       <TableCell>
                         <div className="flex justify-end gap-1">
+                          <InviteUserButton user={user} />
                           <Button
                             variant="ghost"
                             size="icon"

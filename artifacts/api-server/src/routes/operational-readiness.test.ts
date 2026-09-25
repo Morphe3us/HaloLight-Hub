@@ -15,7 +15,7 @@ test("readiness GET performs only active-admin lookup and sanitizes failures", a
   let user: { role: string; isActive: boolean } | undefined;
   const dependencies: Record<string, unknown> = {
     express, "drizzle-orm": orm,
-    "@clerk/express": { getAuth: (req: express.Request) => ({ userId: req.headers["x-clerk"] }) },
+    "../middlewares/supabaseAuth": { getAuth: (req: express.Request) => ({ userId: req.headers["x-auth"] }) },
     "@workspace/db": { usersTable, db: {
       select(fields: Record<string, unknown>) {
         reads++; assert.deepEqual(fields, { role: usersTable.role, isActive: usersTable.isActive });
@@ -23,7 +23,7 @@ test("readiness GET performs only active-admin lookup and sanitizes failures", a
           assert.equal(table, usersTable);
           return { where(condition: orm.SQL) {
             const query = new PgDialect().sqlToQuery(condition);
-            assert.match(query.sql, /"users"\."clerk_id" = \$1/); assert.deepEqual(query.params, ["clerk-fixture"]);
+            assert.match(query.sql, /"users"\."clerk_id" = \$1/); assert.deepEqual(query.params, ["auth-fixture"]);
             return { async limit(limit: number) {
               assert.equal(limit, 1);
               if (fail) throw new Error("secret-db-url-sentinel");
@@ -46,7 +46,7 @@ test("readiness GET performs only active-admin lookup and sanitizes failures", a
   const server = app.listen(0, "127.0.0.1"); await once(server, "listening");
   t.after(() => new Promise<void>((resolve) => { server.close(() => resolve()); server.closeAllConnections(); }));
   const base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
-  const request = (authenticated = true, method = "GET", path = "/admin/operational-readiness") => fetch(base + path, { method, headers: authenticated ? { "x-clerk": "clerk-fixture" } : {} });
+  const request = (authenticated = true, method = "GET", path = "/admin/operational-readiness") => fetch(base + path, { method, headers: authenticated ? { "x-auth": "auth-fixture" } : {} });
   assert.equal((await request(false)).status, 401); assert.equal(reads, 0);
   for (const candidate of [undefined, { role: "admin", isActive: false }, ...["client", "coach", "sales_rep"].map(role => ({ role, isActive: true }))]) {
     user = candidate; const response = await request();
@@ -74,7 +74,7 @@ test("exact readiness GET before consent gate does not exempt adjacent routes or
     client: { role: "client", isActive: true }, coach: { role: "coach", isActive: true },
     sales_rep: { role: "sales_rep", isActive: true },
   };
-  const getAuth = (req: express.Request) => ({ userId: req.headers["x-clerk"] as string | undefined });
+  const getAuth = (req: express.Request) => ({ userId: req.headers["x-auth"] as string | undefined });
   function load<T>(path: string, dependencies: Record<string, unknown>): T {
     const module = { exports: {} };
     const code = transformSync(readFileSync(new URL(path, import.meta.url), "utf8"), { loader: "ts", format: "cjs" }).code;
@@ -84,7 +84,7 @@ test("exact readiness GET before consent gate does not exempt adjacent routes or
     return module.exports as T;
   }
   const readiness = load<{ default: express.Router }>("./operational-readiness.ts", {
-    express, "drizzle-orm": orm, "@clerk/express": { getAuth },
+    express, "drizzle-orm": orm, "../middlewares/supabaseAuth": { getAuth },
     "@workspace/db": { usersTable, db: {
       select() { return { from() { return { where(condition: orm.SQL) {
         const id = String(new PgDialect().sqlToQuery(condition).params[0]);
@@ -97,7 +97,7 @@ test("exact readiness GET before consent gate does not exempt adjacent routes or
     "../lib/operationalReadiness": { operationalReadiness: () => operationalReadiness({ NODE_ENV: "production" }) },
   }).default;
   const gate = load<{ consentGate: express.RequestHandler }>("../middlewares/consentGate.ts", {
-    "@clerk/express": { getAuth },
+    "../middlewares/supabaseAuth": { getAuth },
     "../lib/userSync": { getOrCreateUser: async () => { syncCalls++; return { id: "local-user" }; } },
     "../lib/userConsentPolicy": {
       legalConsentEnabled: () => true,
@@ -116,7 +116,7 @@ test("exact readiness GET before consent gate does not exempt adjacent routes or
   const server = app.listen(0, "127.0.0.1"); await once(server, "listening");
   t.after(() => new Promise<void>((resolve) => { server.close(() => resolve()); server.closeAllConnections(); }));
   const base = `http://127.0.0.1:${(server.address() as AddressInfo).port}/api`;
-  const request = (path = "/admin/operational-readiness", id = "admin", method = "GET") => fetch(base + path, { method, headers: id ? { "x-clerk": id } : {} });
+  const request = (path = "/admin/operational-readiness", id = "admin", method = "GET") => fetch(base + path, { method, headers: id ? { "x-auth": id } : {} });
   for (const state of ["malformed", "unaccepted"] as const) {
     legalState = state;
     const before = syncCalls;

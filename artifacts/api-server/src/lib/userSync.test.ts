@@ -7,24 +7,24 @@ import ts from "typescript";
 import { PgDialect } from "drizzle-orm/pg-core";
 import type { SQL } from "drizzle-orm";
 import { usersTable, type User } from "@workspace/db/schema";
-import * as clerkProfile from "./clerkProfile";
+import * as supabaseProfile from "./supabaseProfile";
 import * as env from "./env";
 
-// Compile the real sync module with an in-memory DB and Clerk transport. Never
+// Compile the real sync module with an in-memory DB and Supabase transport. Never
 // import @workspace/db's connection initializer or use the developer's env.
 const compiled = ts.transpileModule(readFileSync(new URL("./userSync.ts", import.meta.url), "utf8"), {
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
 }).outputText;
 const require = createRequire(import.meta.url);
 const dialect = new PgDialect();
-const profile: clerkProfile.ClerkUserProfile = {
+const profile: supabaseProfile.SupabaseUserProfile = {
   email: "ada@example.com", emailVerified: true,
   firstName: "Ada", lastName: "Lovelace", fullName: "Ada Lovelace",
 };
 
 function user(overrides: Partial<User> = {}): User {
   return {
-    id: "local_1", clerkId: "manual_invite", email: profile.email,
+    id: "local_1", authId: "manual_invite", email: profile.email,
     firstName: null, lastName: null, fullName: null,
     role: "admin", isActive: true, language: "fr",
     ...overrides,
@@ -33,7 +33,7 @@ function user(overrides: Partial<User> = {}): User {
 
 function matches(row: User, condition: SQL): boolean {
   const { sql, params } = dialect.sqlToQuery(condition);
-  const columns = { id: "id", clerk_id: "clerkId", is_active: "isActive", email: "email" } as const;
+  const columns = { id: "id", clerk_id: "authId", is_active: "isActive", email: "email" } as const;
   for (const match of sql.matchAll(/"users"\."(id|clerk_id|is_active|email)" = \$(\d+)/g)) {
     if (row[columns[match[1] as keyof typeof columns]] !== params[Number(match[2]) - 1]) return false;
   }
@@ -42,9 +42,10 @@ function matches(row: User, condition: SQL): boolean {
 }
 
 function harness(initial: User[], options: {
-  apiProfile?: Partial<clerkProfile.ClerkUserProfile> | null;
+  apiProfile?: Partial<supabaseProfile.SupabaseUserProfile> | null;
   apiError?: boolean;
   publicSignups?: boolean;
+  nodeEnv?: string;
   beforeUpdate?: (rows: User[], updates: Partial<User>) => void;
 } = {}) {
   const rows = initial.map((row) => ({ ...row }));
@@ -72,15 +73,15 @@ function harness(initial: User[], options: {
   runInNewContext(compiled, {
     module, exports: module.exports,
     Date: class extends Date { static now() { return now; } },
-    process: { env: { NODE_ENV: "production", ALLOW_PUBLIC_SIGNUPS: String(options.publicSignups ?? false) } },
+    process: { env: { NODE_ENV: options.nodeEnv ?? "production", ALLOW_PUBLIC_SIGNUPS: options.publicSignups === undefined ? undefined : String(options.publicSignups) } },
     require: (id: string) => {
       if (id === "@workspace/db") return { db, usersTable };
-      if (id === "@clerk/express") return { getAuth: (req: unknown) => req };
+      if (id === "../middlewares/supabaseAuth") return { getAuth: (req: unknown) => req };
       if (id === "./logger") return { logger: { warn() {}, info() {} } };
       if (id === "./env") return { ...env, isExplicitDevelopment: () => false };
-      if (id === "./clerkProfile") return {
-        ...clerkProfile,
-        fetchClerkUserProfile: async () => {
+      if (id === "./supabaseProfile") return {
+        ...supabaseProfile,
+        fetchSupabaseUserProfile: async () => {
           fetches++;
           if (options.apiError) throw new Error("upstream unavailable");
           return options.apiProfile === undefined ? profile : options.apiProfile;
@@ -91,7 +92,7 @@ function harness(initial: User[], options: {
     },
   });
   const sync = (id = "user_google", claims: Record<string, unknown> = {}) => module.exports.getOrCreateUser({
-    userId: id, sessionClaims: claims,
+    userId: id, sessionClaims: claims, accessToken: "verified-token",
   } as unknown as Parameters<typeof module.exports.getOrCreateUser>[0]);
   return {
     sync, rows, advanceClock: (ms: number) => { now += ms; },
@@ -102,7 +103,7 @@ function harness(initial: User[], options: {
 test("Google login without custom claims links exactly one verified manual invite", async () => {
   const h = harness([user()]);
   const linked = await h.sync();
-  assert.equal(linked?.clerkId, "user_google");
+  assert.equal(linked?.authId, "user_google");
   assert.equal(linked?.fullName, "Ada Lovelace");
   assert.equal(linked?.role, "admin");
   assert.equal(linked?.language, "fr");
@@ -113,10 +114,10 @@ test("concurrent identities cannot steal an invite claimed by the other", async 
   const h = harness([user()]);
   const results = await Promise.all([h.sync("user_a"), h.sync("user_b")]);
   assert.equal(results.filter(Boolean).length, 1);
-  assert.equal(h.rows[0].clerkId, results.find(Boolean)?.clerkId);
+  assert.equal(h.rows[0].authId, results.find(Boolean)?.authId);
 });
 
-test("concurrent requests for one Clerk identity share the sync", async () => {
+test("concurrent requests for one Supabase identity share the sync", async () => {
   const h = harness([user()]);
   const results = await Promise.all([h.sync(), h.sync(), h.sync()]);
   assert.ok(results.every((result) => result?.id === "local_1"));
@@ -127,20 +128,20 @@ test("concurrent requests for one Clerk identity share the sync", async () => {
 test("an invite disabled between lookup and claim cannot authenticate", async () => {
   const h = harness([user()], { beforeUpdate: (rows) => { rows[0].isActive = false; } });
   assert.equal(await h.sync(), null);
-  assert.equal(h.rows[0].clerkId, "manual_invite");
+  assert.equal(h.rows[0].authId, "manual_invite");
 });
 
 test("an invite whose email changes between lookup and claim cannot authenticate", async () => {
   const h = harness([user()], { beforeUpdate: (rows) => { rows[0].email = "another@example.com"; } });
   assert.equal(await h.sync(), null);
-  assert.equal(h.rows[0].clerkId, "manual_invite");
+  assert.equal(h.rows[0].authId, "manual_invite");
 });
 
 test("existing linked, disabled, ambiguous and unverified email matches fail closed", async () => {
   for (const rows of [
-    [user({ clerkId: "user_elsewhere" })],
+    [user({ authId: "user_elsewhere" })],
     [user({ isActive: false })],
-    [user(), user({ id: "local_2", clerkId: "manual_other" })],
+    [user(), user({ id: "local_2", authId: "manual_other" })],
   ]) {
     const h = harness(rows);
     assert.equal(await h.sync(), null);
@@ -158,6 +159,29 @@ test("no manual invite means public provisioning stays off in production", async
   assert.equal(h.writes, 0);
 });
 
+test("invitation-only remains the default in development too", async () => {
+  const h = harness([], { nodeEnv: "development" });
+  assert.equal(await h.sync(), null);
+  assert.equal(h.writes, 0);
+});
+
+test("complete local profiles do not fetch provider profiles and later deactivation is honored", async () => {
+  const h = harness([user({ authId: "user_google", ...profile })]);
+  assert.equal((await h.sync())?.id, "local_1");
+  assert.equal((await h.sync())?.id, "local_1");
+  assert.equal(h.fetches, 0); assert.equal(h.writes, 0);
+  h.rows[0].isActive = false;
+  assert.equal(await h.sync(), null);
+  assert.equal(h.fetches, 0);
+});
+
+test("old provider identities require explicit migration even with a trusted matching email", async () => {
+  const h = harness([user({ authId: "user_old_provider" })], { publicSignups: true });
+  assert.equal(await h.sync(), null);
+  assert.equal(h.rows[0].authId, "user_old_provider");
+  assert.equal(h.writes, 0);
+});
+
 test("explicit public provisioning still requires verified real email", async () => {
   const allowed = harness([], { publicSignups: true });
   assert.equal((await allowed.sync())?.role, "client");
@@ -166,16 +190,17 @@ test("explicit public provisioning still requires verified real email", async ()
   assert.equal(denied.writes, 0);
 });
 
-test("missing Clerk transport preserves usable signed email claims for linking", async () => {
+test("missing Supabase transport never trusts signed email or metadata for linking", async () => {
   const h = harness([user()], { apiProfile: null });
-  assert.equal((await h.sync("user_google", {
-    email: profile.email, email_verified: true, name: profile.fullName,
-  }))?.clerkId, "user_google");
+  assert.equal(await h.sync("user_google", {
+    email: profile.email, email_verified: true, user_metadata: { email: profile.email, email_verified: true },
+  }), null);
+  assert.equal(h.writes, 0);
 });
 
 test("existing profile repair does not change local names, role, or preferences", async () => {
   const h = harness([user({
-    clerkId: "user_google", email: "user_google@placeholder.com",
+    authId: "user_google", email: "user_google@placeholder.com",
     fullName: "Local Owner", firstName: "Local", lastName: "Owner",
   })]);
   const repaired = await h.sync();
@@ -186,7 +211,7 @@ test("existing profile repair does not change local names, role, or preferences"
 });
 
 test("a disabled local account is never repaired or provisioned", async () => {
-  const h = harness([user({ clerkId: "user_google", isActive: false })]);
+  const h = harness([user({ authId: "user_google", isActive: false })]);
   assert.equal(await h.sync(), null);
   assert.equal(h.fetches, 0);
   assert.equal(h.writes, 0);
@@ -194,7 +219,7 @@ test("a disabled local account is never repaired or provisioned", async () => {
 
 test("single-name Google profiles do not retain a generated Member surname", async () => {
   const h = harness([user({
-    clerkId: "user_google", firstName: "User", lastName: "Member", fullName: "User Member",
+    authId: "user_google", firstName: "User", lastName: "Member", fullName: "User Member",
   })], { apiProfile: { ...profile, firstName: "Ada", lastName: null, fullName: "Ada" } });
   const repaired = await h.sync();
   assert.equal(repaired?.firstName, "Ada");
@@ -203,16 +228,16 @@ test("single-name Google profiles do not retain a generated Member surname", asy
 });
 
 test("deactivation during profile repair fails closed without a second repair", async () => {
-  const h = harness([user({ clerkId: "user_google" })], {
+  const h = harness([user({ authId: "user_google" })], {
     beforeUpdate: (rows) => { rows[0].isActive = false; },
   });
-  assert.equal(await h.sync("user_google", { given_name: "Ada" }), null);
+  assert.equal(await h.sync("user_google", { user_metadata: { given_name: "Ada" } }), null);
   assert.equal(h.fetches, 0);
 });
 
 test("profile repair recognizes Drizzle-wrapped email uniqueness conflicts", async () => {
   let attempted = false;
-  const h = harness([user({ clerkId: "user_google", email: "user_google@placeholder.com" })], {
+  const h = harness([user({ authId: "user_google", email: "user_google@placeholder.com" })], {
     beforeUpdate: (_rows, updates) => {
       if (updates.email && !attempted) {
         attempted = true;
@@ -225,8 +250,8 @@ test("profile repair recognizes Drizzle-wrapped email uniqueness conflicts", asy
   assert.equal(repaired?.fullName, profile.fullName);
 });
 
-test("unavailable Clerk API does not lock out an existing active local user", async () => {
-  const h = harness([user({ clerkId: "user_google" })], { apiError: true });
+test("unavailable Supabase API does not lock out an existing active local user", async () => {
+  const h = harness([user({ authId: "user_google" })], { apiError: true });
   assert.equal((await h.sync())?.id, "local_1");
   assert.equal((await h.sync())?.id, "local_1");
   assert.equal(h.fetches, 1);
@@ -234,7 +259,7 @@ test("unavailable Clerk API does not lock out an existing active local user", as
 
 test("failed profile refresh retries after 15 seconds, without a request per navigation", async () => {
   const options = { apiError: true };
-  const h = harness([user({ clerkId: "user_google", email: "user_google@placeholder.com" })], options);
+  const h = harness([user({ authId: "user_google", email: "user_google@placeholder.com" })], options);
   assert.equal((await h.sync())?.email, "user_google@placeholder.com");
   h.advanceClock(14_999);
   await h.sync();
@@ -247,7 +272,7 @@ test("failed profile refresh retries after 15 seconds, without a request per nav
 });
 
 test("successful incomplete profiles retain the five-minute refresh cooldown", async () => {
-  const h = harness([user({ clerkId: "user_google" })], {
+  const h = harness([user({ authId: "user_google" })], {
     apiProfile: { ...profile, lastName: null, fullName: "Ada" },
   });
   await h.sync();

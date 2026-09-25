@@ -1,15 +1,14 @@
 type ApiUserIdentity = {
-  clerkId?: string | null;
+  authId?: string | null;
   email?: string | null;
   firstName?: string | null;
   lastName?: string | null;
   fullName?: string | null;
 };
 
-type ClerkUserIdentity = {
+type AuthUserIdentity = {
   id?: string | null;
-  emailAddresses?: Array<{ emailAddress?: string | null }> | null;
-  primaryEmailAddress?: { emailAddress?: string | null } | null;
+  email?: string | null;
   firstName?: string | null;
   lastName?: string | null;
   fullName?: string | null;
@@ -39,10 +38,9 @@ function fullNameFromParts(
   return [clean(firstName), clean(lastName)].filter(Boolean).join(" ").trim();
 }
 
-function clerkEmail(clerkUser: ClerkUserIdentity | null | undefined): string {
+function authEmail(authUser: AuthUserIdentity | null | undefined): string {
   return (
-    clean(clerkUser?.primaryEmailAddress?.emailAddress) ||
-    clean(clerkUser?.emailAddresses?.[0]?.emailAddress)
+    clean(authUser?.email)
   );
 }
 
@@ -58,27 +56,27 @@ function emailName(email: string): string {
 
 export function resolveCurrentUserIdentity(
   apiUser: ApiUserIdentity | null | undefined,
-  clerkUser: ClerkUserIdentity | null | undefined,
+  authUser: AuthUserIdentity | null | undefined,
 ) {
-  if (apiUser?.clerkId && clerkUser?.id && apiUser.clerkId !== clerkUser.id) {
+  if (!apiUser?.authId || !authUser?.id || apiUser.authId !== authUser.id) {
     apiUser = null;
   }
   const apiFullName = clean(apiUser?.fullName);
   const apiPartsName = fullNameFromParts(apiUser?.firstName, apiUser?.lastName);
-  const clerkFullName =
-    clean(clerkUser?.fullName) ||
-    fullNameFromParts(clerkUser?.firstName, clerkUser?.lastName) ||
-    clean(clerkUser?.username);
+  const authFullName =
+    clean(authUser?.fullName) ||
+    fullNameFromParts(authUser?.firstName, authUser?.lastName) ||
+    clean(authUser?.username);
   const email = !isPlaceholderEmail(apiUser?.email)
     ? clean(apiUser?.email)
-    : clerkEmail(clerkUser);
+    : authEmail(authUser);
 
   const displayName = !isPlaceholderDisplayName(apiFullName)
     ? apiFullName
     : !isPlaceholderDisplayName(apiPartsName)
       ? apiPartsName
-      : !isPlaceholderDisplayName(clerkFullName)
-        ? clerkFullName
+      : !isPlaceholderDisplayName(authFullName)
+        ? authFullName
         : emailName(email) || "User";
 
   const initialsSource = displayName !== "User" ? displayName : email;

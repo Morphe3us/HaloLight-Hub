@@ -36,7 +36,7 @@ const server = await createServer({
       enforce: "pre",
       resolveId(id) {
         if (id === "/sidebar-preview-entry.js") return id;
-        if (["@workspace/api-client-react", "@clerk/react"].includes(id)) return `\0sidebar-fixture:${id}`;
+        if (["@workspace/api-client-react", "@/auth/AuthProvider"].includes(id)) return `\0sidebar-fixture:${id}`;
       },
       load(id) {
         if (id === "/sidebar-preview-entry.js") return entry;
@@ -44,7 +44,7 @@ const server = await createServer({
           export const useGetCurrentUser = () => ({ data: { role: new URLSearchParams(location.search).get("role") || "client" } });
           export const useGetUnreadNotificationCount = () => ({ data: { count: 3 } });
         `;
-        if (id === "\0sidebar-fixture:@clerk/react") return `export const useClerk = () => ({ signOut() {} });`;
+        if (id === "\0sidebar-fixture:@/auth/AuthProvider") return `export const useAuth = () => ({ signOut() {} });`;
       },
       configureServer(server) {
         server.middlewares.use(async (req, res, next) => {
@@ -60,7 +60,7 @@ const server = await createServer({
     tailwindcss(),
   ],
   resolve: { alias: { "@": `${root}/src` } },
-  optimizeDeps: { exclude: ["@workspace/api-client-react", "@clerk/react"] },
+  optimizeDeps: { exclude: ["@workspace/api-client-react", "@/auth/AuthProvider"] },
   server: { host: "127.0.0.1", port: 18215 },
 });
 await server.listen();

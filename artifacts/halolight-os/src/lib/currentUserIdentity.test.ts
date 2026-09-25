@@ -13,16 +13,18 @@ import {
 } from "./currentUserIdentity";
 
 describe("resolveCurrentUserIdentity", () => {
-  it("uses Clerk profile when the API user is still a placeholder", () => {
+  it("uses Auth profile when the API user is still a placeholder", () => {
     const identity = resolveCurrentUserIdentity(
       {
+        authId: "user_fixture",
         email: "user_123@placeholder.com",
         firstName: null,
         lastName: null,
         fullName: null,
       },
       {
-        primaryEmailAddress: { emailAddress: "info@example.com" },
+        id: "user_fixture",
+        email: "info@example.com",
         firstName: "info",
         lastName: "halolight",
         fullName: "info halolight",
@@ -36,19 +38,21 @@ describe("resolveCurrentUserIdentity", () => {
     });
   });
 
-  it("keeps complete API profile over Clerk fallback", () => {
+  it("keeps complete API profile over Auth fallback", () => {
     const identity = resolveCurrentUserIdentity(
       {
+        authId: "user_fixture",
         email: "owner@example.com",
         firstName: "Owner",
         lastName: "Local",
         fullName: "Owner Local",
       },
       {
-        primaryEmailAddress: { emailAddress: "clerk@example.com" },
-        firstName: "Clerk",
+        id: "user_fixture",
+        email: "auth@example.com",
+        firstName: "Auth",
         lastName: "User",
-        fullName: "Clerk User",
+        fullName: "Auth User",
       },
     );
 
@@ -64,68 +68,112 @@ describe("resolveCurrentUserIdentity", () => {
   });
 
   it("does not rebuild User Member from placeholder first and last names", () => {
-    const identity = resolveCurrentUserIdentity({
-      email: "user_google@placeholder.com",
-      firstName: "User", lastName: "Member", fullName: "User Member",
-    }, {
-      firstName: "Ada", lastName: "Lovelace",
-      primaryEmailAddress: { emailAddress: "ada@example.com" },
-    });
+    const identity = resolveCurrentUserIdentity(
+      {
+        authId: "user_fixture",
+        email: "user_google@placeholder.com",
+        firstName: "User",
+        lastName: "Member",
+        fullName: "User Member",
+      },
+      {
+        id: "user_fixture",
+        firstName: "Ada",
+        lastName: "Lovelace",
+        email: "ada@example.com",
+      },
+    );
     assert.equal(identity.displayName, "Ada Lovelace");
     assert.equal(identity.initials, "AL");
   });
 
   it("discards another account's cached API name and email", () => {
-    const identity = resolveCurrentUserIdentity({
-      clerkId: "user_previous", fullName: "Previous Admin", email: "admin@example.com",
-    }, {
-      id: "user_current", fullName: "Current Member",
-      primaryEmailAddress: { emailAddress: "member@example.com" },
-    });
+    const identity = resolveCurrentUserIdentity(
+      {
+        authId: "user_previous",
+        fullName: "Previous Admin",
+        email: "admin@example.com",
+      },
+      {
+        id: "user_current",
+        fullName: "Current Member",
+        email: "member@example.com",
+      },
+    );
     assert.deepEqual(identity, {
-      displayName: "Current Member", email: "member@example.com", initials: "CM",
+      displayName: "Current Member",
+      email: "member@example.com",
+      initials: "CM",
     });
   });
 
   it("uses the real email when both name sources contain placeholders", () => {
-    assert.equal(resolveCurrentUserIdentity({
-      fullName: "User", firstName: "User", email: "ada.lovelace@example.com",
-    }, { fullName: "User Member" }).displayName, "Ada Lovelace");
+    assert.equal(
+      resolveCurrentUserIdentity(
+        {
+          authId: "user_fixture",
+          fullName: "User",
+          firstName: "User",
+          email: "ada.lovelace@example.com",
+        },
+        { id: "user_fixture", fullName: "User Member" },
+      ).displayName,
+      "Ada Lovelace",
+    );
   });
 });
 
-// Exercise App's actual session boundary without a browser, Clerk network calls,
+// Exercise App's actual session boundary without a browser, Auth network calls,
 // or new test dependencies. Hook state/effect ordering is driven explicitly.
 const require = createRequire(import.meta.url);
 const { matchRoute } = require("wouter");
 const { parse } = createRequire(require.resolve("wouter"))("regexparam");
 const appSource = readFileSync(new URL("../App.tsx", import.meta.url), "utf8");
-const compiledRoutes = ts.transpileModule(readFileSync(new URL("./pageRoutes.ts", import.meta.url), "utf8"), {
-  compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
-}).outputText;
-const compiledApp = ts.transpileModule(`${appSource}\nexport { ClerkSession, ClerkSessionBoundary, LocalUserGate, AdminRouteContent, ClerkProviderWithRoutes, RequestedRoutePreloader, ProtectedRoutes };`, {
-  compilerOptions: {
-    module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX,
+const compiledRoutes = ts.transpileModule(
+  readFileSync(new URL("./pageRoutes.ts", import.meta.url), "utf8"),
+  {
+    compilerOptions: {
+      module: ts.ModuleKind.CommonJS,
+      target: ts.ScriptTarget.ES2022,
+    },
   },
-  transformers: { before: [(context) => (root) => {
-    const visit = (node: ts.Node): ts.VisitResult<ts.Node> => {
-      if (ts.isPropertyAccessExpression(node) && ts.isMetaProperty(node.expression) && node.name.text === "env") {
-        return ts.factory.createIdentifier("__env");
-      }
-      return ts.visitEachChild(node, visit, context);
-    };
-    return ts.visitNode(root, visit) as ts.SourceFile;
-  }] },
-}).outputText;
+).outputText;
+const compiledApp = ts.transpileModule(
+  `${appSource}\nexport { AuthSession, AuthSessionBoundary, LocalUserGate, AdminRouteContent, AuthRoutes, RequestedRoutePreloader, ProtectedRoutes };`,
+  {
+    compilerOptions: {
+      module: ts.ModuleKind.CommonJS,
+      target: ts.ScriptTarget.ES2022,
+      jsx: ts.JsxEmit.ReactJSX,
+    },
+    transformers: {
+      before: [
+        (context) => (root) => {
+          const visit = (node: ts.Node): ts.VisitResult<ts.Node> => {
+            if (
+              ts.isPropertyAccessExpression(node) &&
+              ts.isMetaProperty(node.expression) &&
+              node.name.text === "env"
+            ) {
+              return ts.factory.createIdentifier("__env");
+            }
+            return ts.visitEachChild(node, visit, context);
+          };
+          return ts.visitNode(root, visit) as ts.SourceFile;
+        },
+      ],
+    },
+  },
+).outputText;
 
-function appHarness(key = "pk_test_fixture") {
+function appHarness() {
   let tokenGetter: null | (() => Promise<string | null>) = null;
   let auth = { isLoaded: true, userId: "user_a", sessionId: "session_a" };
   let token = async () => "token_a";
   let result: Record<string, unknown> = {};
   let hookIndex = 0;
   let states: unknown[] = [];
-  let effects: Array<() => (() => void)> = [];
+  let effects: Array<() => () => void> = [];
   let scheduleEffects = true;
   let location = "/";
   let signedIn = true;
@@ -135,58 +183,107 @@ function appHarness(key = "pk_test_fixture") {
   let userQueries = 0;
   let preloadDeps: unknown[] | undefined;
   let renderingPreloader = false;
-  const clerk = {
-    get user() { return { id: auth.userId }; },
-    get session() { return { id: auth.sessionId }; },
-    signOut() {},
-  };
   const pass = ({ children }: { children: unknown }) => children;
   const redirect = () => null;
   const module = { exports: {} as Record<string, (props?: any) => any> };
   runInNewContext(compiledApp, {
-    module, exports: module.exports,
+    module,
+    exports: module.exports,
     window: { location: { origin: "https://app.example.com", reload() {} } },
-    __env: { VITE_CLERK_PUBLISHABLE_KEY: key, VITE_CLERK_PROXY_URL: "/api/__clerk", BASE_URL: "/", DEV: false },
+    __env: { BASE_URL: "/", DEV: false },
     require: (id: string) => {
-      if (id === "react") return {
-        lazy: () => pass, Suspense: pass,
-        useState: (init: unknown) => {
-          const index = hookIndex++;
-          if (!(index in states)) states[index] = typeof init === "function" ? init() : init;
-          return [states[index], (value: unknown) => { states[index] = value; }];
-        },
-        useEffect: (effect: () => () => void, deps: unknown[]) => {
-          if (renderingPreloader) {
-            if (!preloadDeps || deps.some((value, index) => !Object.is(value, preloadDeps![index]))) {
-              effects.push(effect);
-            }
-            preloadDeps = deps;
-          } else if (scheduleEffects) effects.push(effect);
-        },
-      };
+      if (id === "react")
+        return {
+          lazy: () => pass,
+          Suspense: pass,
+          useState: (init: unknown) => {
+            const index = hookIndex++;
+            if (!(index in states))
+              states[index] = typeof init === "function" ? init() : init;
+            return [
+              states[index],
+              (value: unknown) => {
+                states[index] = value;
+              },
+            ];
+          },
+          useEffect: (effect: () => () => void, deps: unknown[]) => {
+            if (renderingPreloader) {
+              if (
+                !preloadDeps ||
+                deps.some(
+                  (value, index) => !Object.is(value, preloadDeps![index]),
+                )
+              ) {
+                effects.push(effect);
+              }
+              preloadDeps = deps;
+            } else if (scheduleEffects) effects.push(effect);
+          },
+        };
       if (id === "react/jsx-runtime") return require(id);
-      if (id === "react-i18next") return { useTranslation: () => ({ t: (key: string) => key }) };
-      if (id === "@clerk/react") return {
-        useAuth: () => ({ ...auth, isSignedIn: signedIn, getToken: () => token() }), useClerk: () => clerk,
-        ClerkProvider: pass, ClerkLoading: pass, ClerkFailed: pass, Show: pass,
-      };
-      if (id === "@workspace/api-client-react") return {
-        setAuthTokenGetter: (getter: typeof tokenGetter) => { tokenGetter = getter; },
-        useGetCurrentUser: () => { userQueries++; return result; },
-      };
-      if (id === "@tanstack/react-query") return { QueryClient, QueryClientProvider };
-      if (id === "./lib/queryClient") return { queryClient: new QueryClient({ defaultOptions: { queries: { retry: 1 } } }) };
+      if (id === "react-i18next")
+        return { useTranslation: () => ({ t: (key: string) => key }) };
+      if (id === "./auth/AuthProvider")
+        return {
+          useAuth: () => {
+            const expected = JSON.stringify(auth);
+            return {
+              status: !auth.isLoaded
+                ? "loading"
+                : signedIn
+                  ? "signed-in"
+                  : "signed-out",
+              user: { id: auth.userId },
+              sessionKey: JSON.stringify([auth.userId, auth.sessionId]),
+              requiresPassword: false,
+              signOut() {},
+              getToken: async () => {
+                const value = await token();
+                if (JSON.stringify(auth) !== expected)
+                  throw new Error("Authentication session changed");
+                return value;
+              },
+            };
+          },
+          AuthProvider: pass,
+        };
+      if (id === "./pages/Auth") return { AuthPage: pass };
+      if (id === "@workspace/api-client-react")
+        return {
+          setAuthTokenGetter: (getter: typeof tokenGetter) => {
+            tokenGetter = getter;
+          },
+          useGetCurrentUser: () => {
+            userQueries++;
+            return result;
+          },
+        };
+      if (id === "@tanstack/react-query")
+        return { QueryClient, QueryClientProvider };
+      if (id === "./lib/queryClient")
+        return {
+          queryClient: new QueryClient({
+            defaultOptions: { queries: { retry: 1 } },
+          }),
+        };
       if (id === "./lib/pageRoutes") {
         const routes = { exports: {} };
         runInNewContext(compiledRoutes, {
-          module: routes, exports: routes.exports,
+          module: routes,
+          exports: routes.exports,
           require: (name: string) => {
             if (name === "react") return { lazy: () => pass };
             if (name === "./pageLoader") return { retryablePageLoader };
             if (name.startsWith("../pages/")) {
               imports.push(name.replace("../pages/", "./pages/"));
               if (failImport) throw new Error("Chunk unavailable");
-              return { default: () => { pageMounts++; return null; } };
+              return {
+                default: () => {
+                  pageMounts++;
+                  return null;
+                },
+              };
             }
             throw new Error(`Unexpected route dependency: ${name}`);
           },
@@ -194,11 +291,15 @@ function appHarness(key = "pk_test_fixture") {
         return routes.exports;
       }
       if (id === "./lib/apiErrorMessage") return { apiErrorStatus };
-      if (id === "@clerk/themes") return { shadcn: {} };
-      if (id === "wouter") return {
-        Redirect: redirect, useLocation: () => [location, () => {}],
-        useRouter: () => ({ parser: parse }), matchRoute, Route: pass, Switch: pass,
-      };
+      if (id === "wouter")
+        return {
+          Redirect: redirect,
+          useLocation: () => [location, () => {}],
+          useRouter: () => ({ parser: parse }),
+          matchRoute,
+          Route: pass,
+          Switch: pass,
+        };
       if (id === "./components/theme-provider") return { ThemeProvider: pass };
       if (id === "./components/layout/AppShell") return { AppShell: pass };
       if (id === "./components/LanguageSync") return { LanguageSync: pass };
@@ -208,37 +309,70 @@ function appHarness(key = "pk_test_fixture") {
       if (id.startsWith("./pages/")) {
         imports.push(id);
         if (failImport) throw new Error("Chunk unavailable");
-        return { default: () => { pageMounts++; return null; } };
+        return {
+          default: () => {
+            pageMounts++;
+            return null;
+          },
+        };
       }
       throw new Error(`Unexpected dependency: ${id}`);
     },
   });
   return {
-    components: module.exports, redirect,
+    components: module.exports,
+    redirect,
     imports,
-    get pageMounts() { return pageMounts; },
-    get userQueries() { return userQueries; },
-    setLocation: (next: string) => { location = next; },
-    setSignedIn: (next: boolean) => { signedIn = next; },
-    setImportFailure: (next: boolean) => { failImport = next; },
+    get pageMounts() {
+      return pageMounts;
+    },
+    get userQueries() {
+      return userQueries;
+    },
+    setLocation: (next: string) => {
+      location = next;
+    },
+    setSignedIn: (next: boolean) => {
+      signedIn = next;
+    },
+    setImportFailure: (next: boolean) => {
+      failImport = next;
+    },
     preload: async () => {
-      effects = []; scheduleEffects = true;
+      effects = [];
+      scheduleEffects = true;
       renderingPreloader = true;
       module.exports.RequestedRoutePreloader();
       renderingPreloader = false;
       effects.forEach((effect) => effect());
       await new Promise<void>((resolve) => setImmediate(resolve));
     },
-    get getter() { return tokenGetter!; },
-    setAuth: (next: typeof auth) => { auth = next; },
-    setToken: (next: typeof token) => { token = next; },
-    setResult: (next: typeof result) => { result = next; },
+    get getter() {
+      return tokenGetter!;
+    },
+    setAuth: (next: typeof auth) => {
+      auth = next;
+    },
+    setToken: (next: typeof token) => {
+      token = next;
+    },
+    setResult: (next: typeof result) => {
+      result = next;
+    },
     mountSession: () => {
-      states = []; effects = []; hookIndex = 0; scheduleEffects = true;
-      const initial = module.exports.ClerkSession({ children: "protected content" });
+      states = [];
+      effects = [];
+      hookIndex = 0;
+      scheduleEffects = true;
+      const initial = module.exports.AuthSession({
+        children: "protected content",
+      });
       const cleanup = effects.map((effect) => effect());
-      scheduleEffects = false; hookIndex = 0;
-      const ready = module.exports.ClerkSession({ children: "protected content" });
+      scheduleEffects = false;
+      hookIndex = 0;
+      const ready = module.exports.AuthSession({
+        children: "protected content",
+      });
       return { initial, ready, cleanup: () => cleanup.forEach((fn) => fn()) };
     },
   };
@@ -247,9 +381,24 @@ function appHarness(key = "pk_test_fixture") {
 describe("auth loading and session isolation", () => {
   it("all auth loading and recovery labels exist in all eight locales", () => {
     for (const language of ["en", "fr", "es", "de", "it", "pl", "pt", "nl"]) {
-      const locale = JSON.parse(readFileSync(new URL(`../i18n/locales/${language}.json`, import.meta.url), "utf8"));
-      for (const [group, key] of [["common", "loading"], ["common", "error"], ["common", "access_not_validated"], ["common", "retry"], ["nav", "sign_out"]]) {
-        assert.equal(typeof locale[group]?.[key], "string", `${language}: ${group}.${key}`);
+      const locale = JSON.parse(
+        readFileSync(
+          new URL(`../i18n/locales/${language}.json`, import.meta.url),
+          "utf8",
+        ),
+      );
+      for (const [group, key] of [
+        ["common", "loading"],
+        ["common", "error"],
+        ["common", "access_not_validated"],
+        ["common", "retry"],
+        ["nav", "sign_out"],
+      ]) {
+        assert.equal(
+          typeof locale[group]?.[key],
+          "string",
+          `${language}: ${group}.${key}`,
+        );
         assert.ok(locale[group][key].trim());
       }
     }
@@ -269,23 +418,34 @@ describe("auth loading and session isolation", () => {
     const a = h.mountSession();
     const oldClient = a.ready.props.client as QueryClient;
     oldClient.setQueryData(["/api/users/me"], { role: "admin" });
-    const oldKey = h.components.ClerkSessionBoundary({ children: "content" }).key;
+    const oldKey = h.components.AuthSessionBoundary({
+      children: "content",
+    }).key;
     h.setAuth({ isLoaded: true, userId: "user_b", sessionId: "session_b" });
     a.cleanup();
     const b = h.mountSession();
     const newClient = b.ready.props.client as QueryClient;
-    assert.notEqual(h.components.ClerkSessionBoundary({ children: "content" }).key, oldKey);
+    assert.notEqual(
+      h.components.AuthSessionBoundary({ children: "content" }).key,
+      oldKey,
+    );
     assert.notEqual(newClient, oldClient);
     // A completion callback retaining the previous client's reference is harmless.
     oldClient.setQueryData(["/api/users/me"], { role: "admin" });
     assert.equal(newClient.getQueryData(["/api/users/me"]), undefined);
-    b.cleanup(); oldClient.clear();
+    b.cleanup();
+    oldClient.clear();
   });
 
-  it("rejects a token that resolves after Clerk switches sessions", async () => {
+  it("rejects a token that resolves after Auth switches sessions", async () => {
     const h = appHarness();
     let resolve!: (token: string) => void;
-    h.setToken(() => new Promise<string>((done) => { resolve = done; }));
+    h.setToken(
+      () =>
+        new Promise<string>((done) => {
+          resolve = done;
+        }),
+    );
     const a = h.mountSession();
     const pending = h.getter();
     h.setAuth({ isLoaded: true, userId: "user_b", sessionId: "session_b" });
@@ -294,39 +454,60 @@ describe("auth loading and session isolation", () => {
     a.cleanup();
   });
 
-  it("does not mount the session subtree while Clerk is loading", () => {
+  it("does not mount the session subtree while Auth is loading", () => {
     const h = appHarness();
     h.setAuth({ isLoaded: false, userId: "user_a", sessionId: "session_a" });
-    assert.notEqual(h.components.ClerkSessionBoundary({ children: "content" }).type, h.components.ClerkSession);
+    assert.notEqual(
+      h.components.AuthSessionBoundary({ children: "content" }).type,
+      h.components.AuthSession,
+    );
   });
 
   it("blocks protected content for API errors, disabled users and mismatched identities", () => {
     const h = appHarness();
     for (const result of [
-      { isError: true, data: { isActive: true, clerkId: "user_a" } },
-      { data: { isActive: false, clerkId: "user_a" } },
-      { data: { isActive: true, clerkId: "user_b" } },
+      { isError: true, data: { isActive: true, authId: "user_a" } },
+      { data: { isActive: false, authId: "user_a" } },
+      { data: { isActive: true, authId: "user_b" } },
+      { data: { isActive: true } },
+      { data: { isActive: true, authId: "" } },
     ]) {
       h.setResult(result);
-      assert.equal(h.components.LocalUserGate({ children: "protected" }).props.role, "alert");
+      assert.equal(
+        h.components.LocalUserGate({ children: "protected" }).props.role,
+        "alert",
+      );
     }
-    h.setResult({ data: { isActive: true, clerkId: "user_a" } });
-    assert.equal(h.components.LocalUserGate({ children: "protected" }), "protected");
+    h.setResult({ data: { isActive: true, authId: "user_a" } });
+    assert.equal(
+      h.components.LocalUserGate({ children: "protected" }),
+      "protected",
+    );
   });
 
   it("explains access validation failures without exposing API diagnostics", () => {
     const h = appHarness();
     for (const result of [
-      { isError: true, error: { status: 401, data: { error: "Internal identity diagnostic" } } },
+      {
+        isError: true,
+        error: { status: 401, data: { error: "Internal identity diagnostic" } },
+      },
       { isError: true, error: { status: 403 } },
-      { isError: true, error: { status: 401 }, data: { isActive: true, clerkId: "user_a" } },
-      { data: { isActive: false, clerkId: "user_a" } },
-      { data: { isActive: true, clerkId: "user_b" } },
+      {
+        isError: true,
+        error: { status: 401 },
+        data: { isActive: true, authId: "user_a" },
+      },
+      { data: { isActive: false, authId: "user_a" } },
+      { data: { isActive: true, authId: "user_b" } },
     ]) {
       h.setResult(result);
       const alert = h.components.LocalUserGate({ children: "protected" });
       assert.equal(alert.props.role, "alert");
-      assert.equal(alert.props.children[0].props.children, "common.access_not_validated");
+      assert.equal(
+        alert.props.children[0].props.children,
+        "common.access_not_validated",
+      );
       const buttons = alert.props.children[1].props.children;
       assert.equal(buttons[0].props.children, "common.retry");
       assert.equal(buttons[1].props.children, "nav.sign_out");
@@ -335,8 +516,19 @@ describe("auth loading and session isolation", () => {
 
   it("keeps network, server and other errors generic even without valid user data", () => {
     const h = appHarness();
-    for (const error of [new Error("Failed to fetch"), { status: 500 }, { status: 503 }, { status: 404 }, { status: "401" }, null]) {
-      for (const data of [undefined, { isActive: false, clerkId: "user_b" }, { isActive: true, clerkId: "user_a" }]) {
+    for (const error of [
+      new Error("Failed to fetch"),
+      { status: 500 },
+      { status: 503 },
+      { status: 404 },
+      { status: "401" },
+      null,
+    ]) {
+      for (const data of [
+        undefined,
+        { isActive: false, authId: "user_b" },
+        { isActive: true, authId: "user_a" },
+      ]) {
         h.setResult({ isError: true, error, data });
         const alert = h.components.LocalUserGate({ children: "protected" });
         assert.equal(alert.props.role, "alert");
@@ -355,12 +547,15 @@ describe("auth loading and session isolation", () => {
   it("does not render admin content for a non-admin", () => {
     const h = appHarness();
     h.setResult({ data: { role: "client" } });
-    assert.equal(h.components.AdminRouteContent({ component: () => "admin" }).type, h.redirect);
+    assert.equal(
+      h.components.AdminRouteContent({ component: () => "admin" }).type,
+      h.redirect,
+    );
   });
 
-  it("ignores the proxy for development keys in production builds", () => {
-    assert.equal(appHarness().components.ClerkProviderWithRoutes().props.proxyUrl, undefined);
-    assert.equal(appHarness("pk_live_fixture").components.ClerkProviderWithRoutes().props.proxyUrl, "/api/__clerk");
+  it("does not expose public signup", () => {
+    assert.ok(!appSource.includes("ALLOW_PUBLIC_SIGNUPS"));
+    assert.ok(appSource.includes('<Redirect to="/sign-in" />'));
   });
 });
 
@@ -382,15 +577,18 @@ describe("requested route code preloading", () => {
       assert.deepEqual(h.imports, [`./pages/${page}`]);
       assert.equal(h.userQueries, 0);
       assert.equal(h.pageMounts, 0);
-      assert.equal(h.components.LocalUserGate({ children: "protected" }).type().props.role, "status");
+      assert.equal(
+        h.components.LocalUserGate({ children: "protected" }).type().props.role,
+        "status",
+      );
     }
   });
 
   it("does not burst-prefetch or unblock content when local authorization fails", async () => {
     for (const result of [
       { isError: true, error: { status: 403 } },
-      { data: { isActive: false, clerkId: "user_a" } },
-      { data: { isActive: true, clerkId: "user_b" } },
+      { data: { isActive: false, authId: "user_a" } },
+      { data: { isActive: true, authId: "user_b" } },
     ]) {
       const h = appHarness();
       h.setLocation("/academy/course-1/lesson-2");
@@ -398,7 +596,10 @@ describe("requested route code preloading", () => {
       await h.preload();
       await h.preload();
       assert.deepEqual(h.imports, ["./pages/AcademyLesson"]);
-      assert.equal(h.components.LocalUserGate({ children: "protected" }).props.role, "alert");
+      assert.equal(
+        h.components.LocalUserGate({ children: "protected" }).props.role,
+        "alert",
+      );
       assert.equal(h.pageMounts, 0);
     }
   });
@@ -409,7 +610,14 @@ describe("requested route code preloading", () => {
     h.setLocation("/admin/academy");
     await h.preload();
     h.setSignedIn(true);
-    for (const path of ["/", "/sign-in", "/sign-in/factor-one", "/sign-up", "/missing", "/academy/a/b/extra"]) {
+    for (const path of [
+      "/",
+      "/sign-in",
+      "/sign-in/factor-one",
+      "/sign-up",
+      "/missing",
+      "/academy/a/b/extra",
+    ]) {
       h.setLocation(path);
       await h.preload();
     }
@@ -423,11 +631,14 @@ describe("requested route code preloading", () => {
     await h.preload();
     h.setSignedIn(true);
     await h.preload();
-    h.setResult({ data: { isActive: true, clerkId: "user_a" } });
+    h.setResult({ data: { isActive: true, authId: "user_a" } });
     await h.preload();
     h.setLocation("/academy/course-1/lesson-2");
     await h.preload();
-    assert.deepEqual(h.imports, ["./pages/AcademyCourse", "./pages/AcademyLesson"]);
+    assert.deepEqual(h.imports, [
+      "./pages/AcademyCourse",
+      "./pages/AcademyLesson",
+    ]);
   });
 
   it("handles speculative import failures without bypassing admin authorization", async () => {
@@ -436,15 +647,19 @@ describe("requested route code preloading", () => {
     h.setImportFailure(true);
     await h.preload();
     h.setResult({ data: { role: "client" } });
-    assert.equal(h.components.AdminRouteContent({ component: () => "admin" }).type, h.redirect);
+    assert.equal(
+      h.components.AdminRouteContent({ component: () => "admin" }).type,
+      h.redirect,
+    );
     assert.deepEqual(h.imports, ["./pages/AdminAcademy"]);
     assert.equal(h.pageMounts, 0);
   });
 
   it("keeps the application shell and route switch inside LocalUserGate", () => {
     const h = appHarness();
-    const signedIn = h.components.ProtectedRoutes().props.children[0];
-    assert.equal(signedIn.props.when, "signed-in");
-    assert.equal(signedIn.props.children.type, h.components.LocalUserGate);
+    assert.equal(
+      h.components.ProtectedRoutes().type,
+      h.components.LocalUserGate,
+    );
   });
 });

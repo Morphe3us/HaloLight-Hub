@@ -12,7 +12,7 @@ import {
   seedDaysAgo,
   seedMonthsAgo as monthsAgo,
   seedMonthsFromNow as monthsFromNow,
-  SEED_DEMO_CLIENT_CLERK_IDS,
+  SEED_DEMO_CLIENT_AUTH_IDS,
 } from "./seed-utils";
 
 const PRODUCT_MODELS = [
@@ -131,14 +131,14 @@ export async function seedPhase6(seedClientIds?: string[]) {
   // ─── Get Demo Clients ──────────────────────────────────────────────────────
   const clientKeys = seedClientIds?.length
     ? seedClientIds
-    : [...SEED_DEMO_CLIENT_CLERK_IDS];
+    : [...SEED_DEMO_CLIENT_AUTH_IDS];
   const clientFilter = seedClientIds?.length
     ? inArray(usersTable.id, seedClientIds)
-    : inArray(usersTable.clerkId, [...SEED_DEMO_CLIENT_CLERK_IDS]);
+    : inArray(usersTable.authId, [...SEED_DEMO_CLIENT_AUTH_IDS]);
   const clientRows = await db
     .select({
       id: usersTable.id,
-      clerkId: usersTable.clerkId,
+      authId: usersTable.authId,
       email: usersTable.email,
       fullName: usersTable.fullName,
     })
@@ -148,7 +148,7 @@ export async function seedPhase6(seedClientIds?: string[]) {
   const clients: SeedClient[] = clientKeys
     .map((key) =>
       clientRows.find((client) =>
-        seedClientIds?.length ? client.id === key : client.clerkId === key,
+        seedClientIds?.length ? client.id === key : client.authId === key,
       ),
     )
     .filter((client): client is SeedClient => Boolean(client));

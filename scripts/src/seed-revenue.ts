@@ -11,7 +11,7 @@ import {
   deterministicRange,
   seedDaysFromNow,
   seedMonthsAgo,
-  SEED_DEMO_CLIENT_CLERK_IDS,
+  SEED_DEMO_CLIENT_AUTH_IDS,
 } from "./seed-utils";
 
 // Spread demo revenue across 12 months so charts look interesting
@@ -47,17 +47,17 @@ export async function seedRevenueData(seedClientIds?: string[]) {
   console.log("\nSeeding Revenue Intelligence demo data...");
 
   // Use explicit demo client IDs from Phase 5 when running the main seed. Standalone
-  // execution is also limited to the known demo Clerk IDs.
+  // Execution is also limited to the known demo authentication IDs.
   const clientKeys = seedClientIds?.length
     ? seedClientIds
-    : [...SEED_DEMO_CLIENT_CLERK_IDS];
+    : [...SEED_DEMO_CLIENT_AUTH_IDS];
   const clientFilter = seedClientIds?.length
     ? inArray(usersTable.id, seedClientIds)
-    : inArray(usersTable.clerkId, [...SEED_DEMO_CLIENT_CLERK_IDS]);
+    : inArray(usersTable.authId, [...SEED_DEMO_CLIENT_AUTH_IDS]);
   const clientRows = await db
     .select({
       id: usersTable.id,
-      clerkId: usersTable.clerkId,
+      authId: usersTable.authId,
       email: usersTable.email,
       fullName: usersTable.fullName,
       companyName: usersTable.companyName,
@@ -68,7 +68,7 @@ export async function seedRevenueData(seedClientIds?: string[]) {
   const clients: SeedClient[] = clientKeys
     .map((key) =>
       clientRows.find((client) =>
-        seedClientIds?.length ? client.id === key : client.clerkId === key,
+        seedClientIds?.length ? client.id === key : client.authId === key,
       ),
     )
     .filter((client): client is SeedClient => Boolean(client));

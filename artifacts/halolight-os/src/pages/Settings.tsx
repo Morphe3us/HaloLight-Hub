@@ -48,7 +48,7 @@ import { syncLanguageCaches } from "@/lib/languageQueries";
 import { useTheme } from "@/components/theme-provider";
 import { useState } from "react";
 import { getAuthToken } from "@workspace/api-client-react";
-import { useUser } from "@clerk/react";
+import { useAuth } from "@/auth/AuthProvider";
 import { isPlaceholderEmail, resolveCurrentUserIdentity } from "@/lib/currentUserIdentity";
 
 const profileSchema = z.object({
@@ -240,17 +240,18 @@ export default function Settings() {
   const queryClient = useQueryClient();
   const { theme, setTheme } = useTheme();
   const { data: user, isLoading: isLoadingUser } = useGetCurrentUser();
-  const { user: clerkUser, isLoaded: isClerkLoaded } = useUser();
+  const { user: authUser, status: authStatus } = useAuth();
+  const isAuthLoaded = authStatus !== "loading";
   useEffect(() => {
     const scrollToLogo = () => {
-      if (!isLoadingUser && isClerkLoaded && window.location.hash === "#company-logo") {
+      if (!isLoadingUser && isAuthLoaded && window.location.hash === "#company-logo") {
         document.getElementById("company-logo")?.scrollIntoView({ block: "start" });
       }
     };
     scrollToLogo();
     window.addEventListener("hashchange", scrollToLogo);
     return () => window.removeEventListener("hashchange", scrollToLogo);
-  }, [isLoadingUser, isClerkLoaded]);
+  }, [isLoadingUser, isAuthLoaded]);
   const updateUser = useUpdateCurrentUser();
   const sigInitRef = useRef(false);
   const [sigForm, setSigForm] = useState({
@@ -318,15 +319,15 @@ export default function Settings() {
   }, [user]);
 
   useEffect(() => {
-    if (!user || !isClerkLoaded) return;
+    if (!user || !isAuthLoaded) return;
     const u = user as any;
     const userId = filledString(u.id, "current-user");
     const isSameUser = initializedProfileUserIdRef.current === userId;
     if (isSameUser && isDirty) return;
 
     reset({
-      firstName: filledString(u.firstName, clerkUser?.firstName ?? ""),
-      lastName: filledString(u.lastName, clerkUser?.lastName ?? ""),
+      firstName: filledString(u.firstName, authUser?.firstName ?? ""),
+      lastName: filledString(u.lastName, authUser?.lastName ?? ""),
       companyName: filledString(u.companyName),
       companyAddress: filledString(u.companyAddress),
       phone: filledString(u.phone),
@@ -349,9 +350,9 @@ export default function Settings() {
     });
     initializedProfileUserIdRef.current = userId;
   }, [
-    clerkUser?.firstName,
-    clerkUser?.lastName,
-    isClerkLoaded,
+    authUser?.firstName,
+    authUser?.lastName,
+    isAuthLoaded,
     isDirty,
     reset,
     user,
@@ -460,7 +461,7 @@ export default function Settings() {
   };
 
   const u = user as any;
-  const identity = resolveCurrentUserIdentity(user, clerkUser);
+  const identity = resolveCurrentUserIdentity(user, authUser);
   const displayEmail = isPlaceholderEmail(u?.email) ? identity.email : u?.email ?? "";
   const isMissingRequired =
     u &&
@@ -469,7 +470,7 @@ export default function Settings() {
       !filledString(u.companyName) ||
       !filledString(u.phone));
 
-  if (isLoadingUser || !isClerkLoaded) {
+  if (isLoadingUser || !isAuthLoaded) {
     return (
       <div className="max-w-3xl mx-auto space-y-6">
         <Skeleton className="h-10 w-64" />
@@ -554,7 +555,7 @@ export default function Settings() {
                 />
                 <p className="text-xs text-muted-foreground">
                   {t("settings.email_managed", {
-                    defaultValue: "Managed via Clerk",
+                    defaultValue: "Managed by your account administrator",
                   })}
                 </p>
               </div>

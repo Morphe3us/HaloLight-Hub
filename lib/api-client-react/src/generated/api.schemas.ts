@@ -86,7 +86,7 @@ export const UserLanguage = {
 
 export interface User {
   id: string;
-  clerkId: string;
+  authId: string;
   email: string;
   /** @nullable */
   firstName?: string | null;
@@ -3460,6 +3460,10 @@ export interface ConsumableUsageResult {
   /** @nullable */
   monthsRemaining: number | null;
 }
+
+export type InviteUser200 = {
+  sent: true;
+};
 
 export type ReadinessCheck503Code = typeof ReadinessCheck503Code[keyof typeof ReadinessCheck503Code];
 

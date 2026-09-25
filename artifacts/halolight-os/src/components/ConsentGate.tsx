@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { useClerk } from "@clerk/react";
+import { useAuth } from "@/auth/AuthProvider";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useGetCurrentUser } from "@workspace/api-client-react";
@@ -58,7 +58,7 @@ export function ConsentForm({ status, userId, onSaved }: { status: ConsentStatus
 export function ConsentGate({ children }: { children: ReactNode }) {
   const { data: user } = useGetCurrentUser();
   const { t } = useTranslation();
-  const { signOut } = useClerk();
+  const { signOut } = useAuth();
   const client = useQueryClient();
   const query = useQuery({ queryKey: consentKey(user?.id ?? ""), queryFn: ({ signal }) => getConsent(signal), enabled: !!user, staleTime: 0, refetchOnWindowFocus: true });
   useEffect(() => {

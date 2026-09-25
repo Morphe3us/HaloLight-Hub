@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Search, X, Loader2, AlertCircle, User, FileText, FileSignature, ReceiptText } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { customFetch } from "@workspace/api-client-react";
 
 export interface CustomerSuggestion {
   id: string;
@@ -82,13 +83,10 @@ export default function CustomerSearchCombobox({
     if (q.length < 2) { setSuggestions([]); setOpen(false); return; }
     setLoading(true);
     try {
-      const res = await fetch(`/api/sales/search?q=${encodeURIComponent(q)}`, { credentials: "include" });
-      if (res.ok) {
-        const data = await res.json();
-        setSuggestions(data.items ?? []);
-        setOpen(true);
-        setActiveIndex(-1);
-      }
+      const data = await customFetch<{ items: CustomerSuggestion[] }>(`/api/sales/search?q=${encodeURIComponent(q)}`);
+      setSuggestions(data.items ?? []);
+      setOpen(true);
+      setActiveIndex(-1);
     } catch {
       setSuggestions([]);
     } finally {

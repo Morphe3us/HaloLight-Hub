@@ -5,7 +5,7 @@ import {
   Bell, ChevronRight, LogOut, Menu, ChevronDown, Sun, Moon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useClerk } from "@clerk/react";
+import { useAuth } from "@/auth/AuthProvider";
 import { useId, useState } from "react";
 import { useTheme } from "@/components/theme-provider";
 import { Button } from "@/components/ui/button";
@@ -105,7 +105,7 @@ export function Sidebar() {
   const [location] = useLocation();
   const { t } = useTranslation();
   const { data: user } = useGetCurrentUser();
-  const { signOut } = useClerk();
+  const { signOut } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const isAdmin = user?.role === "admin";
@@ -121,7 +121,7 @@ export function Sidebar() {
   const allItems: NavItem[] = [...navItems, ...adminItems];
 
   const handleSignOut = () => {
-    signOut({ redirectUrl: "/" });
+    void signOut();
   };
 
   const renderSidebarContent = (onClose?: () => void) => (

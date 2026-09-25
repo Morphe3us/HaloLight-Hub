@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { customFetch } from "@workspace/api-client-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -76,16 +77,7 @@ type ImportResult = {
 };
 
 async function apiFetch(path: string, opts?: RequestInit) {
-  const res = await fetch(`/api${path}`, {
-    ...opts,
-    headers: { "Content-Type": "application/json", ...(opts?.headers ?? {}) },
-    credentials: "include",
-  });
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
-    throw new Error(body.error ?? `HTTP ${res.status}`);
-  }
-  return res.json();
+  return customFetch<any>(`/api${path}`, { ...opts, responseType: "json" });
 }
 
 function fmtDuration(s: number) {

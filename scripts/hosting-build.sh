@@ -8,12 +8,36 @@ node --env-file-if-exists=.env --input-type=module -e '
     console.error("Hosting build requires Node.js 24 or newer.");
     process.exit(1);
   }
-  if (!process.env.VITE_CLERK_PUBLISHABLE_KEY?.trim()) {
-    console.error("Hosting build aborted: VITE_CLERK_PUBLISHABLE_KEY is missing or blank. Set it in the private root .env file or build environment, then rebuild. Never use CLERK_SECRET_KEY or any secret under a VITE_ name.");
+  const key = process.env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim();
+  if (!key) {
+    console.error("Hosting build aborted: VITE_SUPABASE_PUBLISHABLE_KEY is missing. Set a public Supabase key in the private root .env or build environment.");
     process.exit(1);
   }
-  if (!/^pk_(test|live)_/.test(process.env.VITE_CLERK_PUBLISHABLE_KEY)) {
-    console.error("VITE_CLERK_PUBLISHABLE_KEY must be a Clerk publishable key (pk_test_ or pk_live_), never a secret key.");
+  let url;
+  try {
+    const projectUrl = (value) => {
+      if (typeof value !== "string" || !/^https:\/\/[a-z0-9]{20}\.supabase\.co\/?$/.test(value)) throw new Error();
+      return new URL(value);
+    };
+    url = projectUrl(process.env.VITE_SUPABASE_URL);
+    if (process.env.SUPABASE_URL !== undefined && projectUrl(process.env.SUPABASE_URL).origin !== url.origin) throw new Error();
+  } catch {
+    console.error("VITE_SUPABASE_URL must be the hosted Supabase project HTTPS URL and match SUPABASE_URL. Use https://<20-character-project-ref>.supabase.co without credentials, ports, paths, queries or fragments.");
+    process.exit(1);
+  }
+  let publicKey = /^sb_publishable_[A-Za-z0-9_-]+$/.test(key);
+  try {
+    const parts = key.split(".");
+    if (parts.length === 3 && parts.every((part) => /^[A-Za-z0-9_-]+$/.test(part))) {
+      const header = JSON.parse(Buffer.from(parts[0], "base64url").toString());
+      const payload = JSON.parse(Buffer.from(parts[1], "base64url").toString());
+      // This checks legacy key metadata, not its signature; modern keys are opaque.
+      publicKey = header.alg === "HS256" && payload.role === "anon" &&
+        payload.ref === url.hostname.split(".")[0];
+    }
+  } catch { /* Reject malformed legacy keys. */ }
+  if (!publicKey) {
+    console.error("VITE_SUPABASE_PUBLISHABLE_KEY must be a publishable or legacy anon key for the configured Supabase project, never a secret key or service_role key.");
     process.exit(1);
   }
 '

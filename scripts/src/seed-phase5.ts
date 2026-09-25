@@ -26,7 +26,7 @@ import {
 
 const DEMO_CLIENTS = [
   {
-    clerkId: "demo_champion_001",
+    authId: "demo_champion_001",
     email: "sarah.johnson@luxebooth.com",
     fullName: "Sarah Johnson",
     companyName: "Luxe Photo Booth Co.",
@@ -46,7 +46,7 @@ const DEMO_CLIENTS = [
     tickets: 2,
   },
   {
-    clerkId: "demo_healthy_001",
+    authId: "demo_healthy_001",
     email: "marcus.r@captureevents.io",
     fullName: "Marcus Rodriguez",
     companyName: "Capture Events LLC",
@@ -65,7 +65,7 @@ const DEMO_CLIENTS = [
     tickets: 1,
   },
   {
-    clerkId: "demo_developing_001",
+    authId: "demo_developing_001",
     email: "aisha.k@shinebooth.com",
     fullName: "Aisha Kamara",
     companyName: "Shine Photo Booth",
@@ -84,7 +84,7 @@ const DEMO_CLIENTS = [
     tickets: 1,
   },
   {
-    clerkId: "demo_at_risk_001",
+    authId: "demo_at_risk_001",
     email: "tom.w@flashbooth.net",
     fullName: "Tom Wallace",
     companyName: "Flash Booth Rentals",
@@ -103,7 +103,7 @@ const DEMO_CLIENTS = [
     tickets: 1,
   },
   {
-    clerkId: "demo_developing_002",
+    authId: "demo_developing_002",
     email: "priya.s@momentbooth.com",
     fullName: "Priya Sharma",
     companyName: "Moment Booth Studios",
@@ -143,7 +143,7 @@ export async function seedPhase5() {
     const existing = await db
       .select()
       .from(usersTable)
-      .where(eq(usersTable.clerkId, demo.clerkId));
+      .where(eq(usersTable.authId, demo.authId));
     let userId: string;
 
     const lastActive = seedDaysAgo(demo.daysAgo);
@@ -155,7 +155,7 @@ export async function seedPhase5() {
       const [created] = await db
         .insert(usersTable)
         .values({
-          clerkId: demo.clerkId,
+          authId: demo.authId,
           email: demo.email,
           fullName: demo.fullName,
           companyName: demo.companyName,

@@ -10,15 +10,22 @@ An all-in-one SaaS customer portal for HaloLight — a professional photobooth a
 - `pnpm run build` — typecheck + build all packages
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- `pnpm --filter @workspace/scripts run seed` — seed demo/onboarding data
+- `pnpm --filter @workspace/scripts run seed` — seed a disposable development DB only; never production
 - Required env: `DATABASE_URL` — Postgres connection string
-- Required env: `CLERK_SECRET_KEY`, `CLERK_PUBLISHABLE_KEY`, `VITE_CLERK_PUBLISHABLE_KEY` — auto-provisioned by Replit Clerk
+- Required server env: `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY` (admin operations only; never expose to the browser)
+- Required frontend build env: `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY` (same Supabase project)
+- App origin: `APP_PUBLIC_URL`; private access: `ALLOW_PUBLIC_SIGNUPS=false` and Supabase public signups disabled
+
+Supabase Auth migration is underway; this is current implementation guidance,
+not a production rollout claim. Deployment remains with the parent task/operator.
+Retain the old live release until email, Google, client-role access and actual
+video playback pass the [cutover checks](docs/infomaniak-deployment.md#release-and-verification).
 
 ## Stack
 
 - pnpm workspaces, Node.js 24, TypeScript 5.9
 - Frontend: React + Vite, TailwindCSS v4, shadcn/ui, Wouter, TanStack Query, Framer Motion
-- Auth: Clerk (Replit-managed, auto-provisioned)
+- Auth: Supabase Auth (email/password, Google PKCE; invite-only access)
 - API: Express 5
 - DB: PostgreSQL + Drizzle ORM
 - Validation: Zod (`zod/v4`), `drizzle-zod`
@@ -33,23 +40,31 @@ An all-in-one SaaS customer portal for HaloLight — a professional photobooth a
   - `notifications.ts` — notifications and notification_preferences tables
   - `onboarding.ts` — onboarding_steps and user_onboarding_progress tables
 - `artifacts/api-server/src/routes/` — Express route handlers
-  - `users.ts` — /users/me, /users (admin), /users/:id
+  - `users.ts` — /users/me, /users (admin), /users/:id, POST /users/:id/invite (admin)
   - `notifications.ts` — /notifications, /notifications/preferences
   - `onboarding.ts` — /onboarding/steps, /onboarding/summary
-- `artifacts/api-server/src/middlewares/` — Clerk proxy and requireAuth middleware
-- `artifacts/api-server/src/lib/userSync.ts` — JIT user provisioning (creates local user on first Clerk login)
+- `artifacts/api-server/src/middlewares/` — Supabase bearer authentication and requireAuth middleware
+- `artifacts/api-server/src/lib/userSync.ts` — existing binding lookup and guarded verified-email linking for active manual app users
+- `artifacts/halolight-os/src/auth/` — Supabase session handling and auth callbacks
+- `scripts/src/supabase-auth-relink.ts` — operator-only exact one-account migration, dry-run by default
 - `artifacts/halolight-os/src/` — React frontend
 - `scripts/src/seed.ts` — demo data seeder
 
 ## Architecture decisions
 
 - **OpenAPI-first**: All API contracts defined in `lib/api-spec/openapi.yaml`; hooks and Zod schemas generated automatically via Orval
-- **JIT user provisioning**: Local users are created automatically in the DB on first Clerk login using `getOrCreateUser()` — no manual registration step
-- **Clerk-managed auth**: Replit provisions Clerk keys; proxy middleware at `/api/__clerk` routes Clerk traffic through the Express server
+- **Private account provisioning**: Keep both signup flags `false`; authentication alone does not create an app account. Verified-email auto-linking is restricted to a unique active `manual_*` app user. Existing provider-bound users require an explicit relink.
+- **Supabase-managed auth**: Browser sessions use public project configuration; API middleware validates bearer tokens. `SUPABASE_SECRET_KEY` is restricted to server-side admin operations. Google uses PKCE at `/auth/callback`; invite and recovery email templates target `/auth/invite` and `/auth/recovery` with `token_hash` and the corresponding type. These flows must be smoke-tested before release.
+- **Identity compatibility**: The logical API/ORM field `authId` replaces `clerkId`, but the physical `users.clerk_id` column is intentionally retained for reversible cutover. Relinking preserves the local user ID, role and ownership; code rollback alone does not restore changed auth bindings.
+- **Admin invitations**: `POST /users/{id}/invite` (under `/api`) sends to active manual app users only; row creation does not itself send an email. It is not the existing-account migration mechanism.
+- **Auth operations**: In Supabase, enable Google and email/password with email confirmation; disable new public signups, anonymous sign-ins and manual identity linking. Custom SMTP is required for real clients (default sender: team addresses only, currently two messages/hour). Configure exact redirects and templates using the [deployment guide](docs/infomaniak-deployment.md#supabase-auth-configuration).
 - **Role-based access**: User roles (admin, client, coach, sales_rep) stored in local DB; checked in route handlers; admin routes gated by `user.role === 'admin'`
 - **Notification system as backbone**: Notification types are string constants; the delivery layer (email, push) is architected but channels can be wired up in later phases
 
 ## Product — Implemented Phases
+
+Historical implementation records follow. Clerk references in completed phases
+describe what shipped at that time, not the current Supabase setup above.
 
 ### Phase 1 — Foundation (complete)
 - Clerk authentication (sign in, sign up, sign out) with branded pages
@@ -178,16 +193,16 @@ See architecture document for full 30-module scope.
 
 ## Gotchas
 
-- After schema changes: always run `pnpm --filter @workspace/db run push`
+- After schema changes: use `pnpm --filter @workspace/db run push` only on development databases; production changes require a separate reviewed operation and backup
 - After OpenAPI spec changes: always run `pnpm --filter @workspace/api-spec run codegen`
-- To make a user an admin: update role directly in DB after their first login (JIT provisions them as 'client')
-- Clerk dev keys log a warning in console — expected in development, not a bug
+- Existing admins migrate with `scripts/src/supabase-auth-relink.ts`: exact local ID, expected old auth ID and new Supabase UUID; dry-run first, then explicit apply with a verified backup reference. Never seed production to recreate an admin.
+- Keep `authId` separate from the stable local user ID, and retain the physical legacy `clerk_id` column during cutover
 - The `scripts` package needs workspace deps explicitly added to its package.json
 
 ## Pointers
 
 - See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details
-- See `.local/skills/clerk-auth/references/setup-and-customization.md` for Clerk wiring details
+- See [README setup](README.md), the [Supabase relink runbook](scripts/auth-migration/README.md) and [deployment guide](docs/infomaniak-deployment.md) for current auth wiring and cutover requirements
 
 ## Maintenance log (notes for the next AI)
 

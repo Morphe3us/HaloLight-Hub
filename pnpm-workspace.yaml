@@ -5,7 +5,7 @@ packages:
   - scripts
 
 allowBuilds:
-  '@clerk/shared': true
+  '@clerk/shared': set this to true or false
   esbuild: true
 
 autoInstallPeers: false

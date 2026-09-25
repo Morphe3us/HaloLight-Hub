@@ -1,8 +1,19 @@
 import { lazy, Suspense, useEffect, useState, type ReactNode } from "react";
-import { ClerkProvider, ClerkLoading, ClerkFailed, SignIn, SignUp, Show, useClerk, useAuth } from '@clerk/react';
-import { setAuthTokenGetter, useGetCurrentUser } from "@workspace/api-client-react";
-import { shadcn } from '@clerk/themes';
-import { Switch, Route, useLocation, useRouter, matchRoute, Router as WouterRouter, Redirect } from 'wouter';
+import { AuthProvider, useAuth } from "./auth/AuthProvider";
+import { AuthPage } from "./pages/Auth";
+import {
+  setAuthTokenGetter,
+  useGetCurrentUser,
+} from "@workspace/api-client-react";
+import {
+  Switch,
+  Route,
+  useLocation,
+  useRouter,
+  matchRoute,
+  Router as WouterRouter,
+  Redirect,
+} from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
 import { protectedPages } from "./lib/pageRoutes";
@@ -10,7 +21,6 @@ import { ConsentGate } from "./components/ConsentGate";
 import { apiErrorStatus } from "./lib/apiErrorMessage";
 import { ThemeProvider } from "./components/theme-provider";
 import { useTranslation } from "react-i18next";
-
 import { AppShell } from "./components/layout/AppShell";
 import { LanguageSync } from "./components/LanguageSync";
 import { Toaster } from "@/components/ui/toaster";
@@ -18,210 +28,89 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 
 const Landing = lazy(() => import("./pages/Landing"));
 const NotFound = lazy(() => import("@/pages/not-found"));
-
-const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
-// Development Clerk instances cannot use the FAPI proxy, even in a production build.
-const clerkProxyUrl = clerkPubKey?.startsWith("pk_live_")
-  ? import.meta.env.VITE_CLERK_PROXY_URL || undefined
-  : undefined;
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
-const allowPublicSignups =
-  import.meta.env.DEV || import.meta.env.VITE_ALLOW_PUBLIC_SIGNUPS === "true";
-
-function stripBase(path: string): string {
-  return basePath && path.startsWith(basePath)
-    ? path.slice(basePath.length) || "/"
-    : path;
-}
 
 function PageFallback() {
   const { t } = useTranslation();
   return (
-    <div role="status" className="py-16 text-center text-sm text-muted-foreground">
+    <div
+      role="status"
+      className="py-16 text-center text-sm text-muted-foreground"
+    >
       {t("common.loading")}
     </div>
   );
 }
 
-if (!clerkPubKey) {
-  throw new Error('Missing VITE_CLERK_PUBLISHABLE_KEY');
-}
-
-function ClerkSession({ children }: { children: ReactNode }) {
-  const { getToken, userId, sessionId } = useAuth();
-  const clerk = useClerk();
-  const [client] = useState(() => new QueryClient({
-    defaultOptions: queryClient.getDefaultOptions(),
-  }));
+function AuthSession({ children }: { children: ReactNode }) {
+  const { getToken } = useAuth();
+  const [client] = useState(
+    () => new QueryClient({ defaultOptions: queryClient.getDefaultOptions() }),
+  );
   const [tokenReady, setTokenReady] = useState(false);
-
   useEffect(() => {
     let active = true;
-    const assertCurrentSession = () => {
-      if (!active || (clerk.user?.id ?? null) !== userId ||
-          (clerk.session?.id ?? null) !== sessionId) {
-        throw new Error("Authentication session changed");
-      }
-    };
     setAuthTokenGetter(async () => {
-      assertCurrentSession();
+      if (!active) throw new Error("Authentication session changed");
       const token = await getToken();
-      assertCurrentSession();
+      if (!active) throw new Error("Authentication session changed");
       return token;
     });
     setTokenReady(true);
     return () => {
       active = false;
       setAuthTokenGetter(null);
+      void client.cancelQueries();
       client.clear();
     };
-  }, [clerk, client, getToken, userId, sessionId]);
-
-  // Mount queries only after the bearer-token getter is installed. Each session
-  // owns its cache so late mutations cannot repopulate the next account's data.
-  return tokenReady
-    ? <QueryClientProvider client={client}>{children}</QueryClientProvider>
-    : <PageFallback />;
+  }, [client, getToken]);
+  // Late mutations retain only the discarded session's client.
+  return tokenReady ? (
+    <QueryClientProvider client={client}>{children}</QueryClientProvider>
+  ) : (
+    <PageFallback />
+  );
 }
 
-function ClerkSessionBoundary({ children }: { children: ReactNode }) {
-  const { t } = useTranslation();
-  const { isLoaded, userId, sessionId } = useAuth();
-  if (!isLoaded) {
-    return (
-      <>
-        <ClerkLoading><PageFallback /></ClerkLoading>
-        <ClerkFailed>
-          <div role="alert" className="py-16 text-center text-sm">
-            <p>{t("common.error")}</p>
-            <button className="mt-4 underline" onClick={() => window.location.reload()}>{t("common.retry")}</button>
-          </div>
-        </ClerkFailed>
-      </>
-    );
-  }
-  return <ClerkSession key={JSON.stringify([userId, sessionId])}>{children}</ClerkSession>;
+function AuthSessionBoundary({ children }: { children: ReactNode }) {
+  const { status, sessionKey } = useAuth();
+  if (status === "loading") return <PageFallback />;
+  if (status === "error") return <AuthPage mode="error" />;
+  return <AuthSession key={sessionKey ?? "signed-out"}>{children}</AuthSession>;
 }
 
 function RequestedRoutePreloader() {
-  const { isSignedIn } = useAuth();
+  const { status, requiresPassword } = useAuth();
   const [location] = useLocation();
   const { parser } = useRouter();
-  const page = protectedPages.find(({ path }) => matchRoute(parser, path, location)[0]);
-
+  const page = protectedPages.find(
+    ({ path }) => matchRoute(parser, path, location)[0],
+  );
   useEffect(() => {
-    if (!isSignedIn || !page) return;
-    // Load code while /users/me validates access; never mount the page or its queries.
-    // A failed speculative import must not prevent lazy rendering from retrying.
+    if (status !== "signed-in" || requiresPassword || !page) return;
     void page.load().catch(() => {});
-  }, [isSignedIn, page]);
-
+  }, [status, requiresPassword, page]);
   return null;
 }
 
-const clerkAppearance = {
-  theme: shadcn,
-  cssLayerName: "clerk",
-  options: {
-    logoPlacement: "inside" as const,
-    logoLinkUrl: basePath || "/",
-    logoImageUrl: `${window.location.origin}${basePath}/logo-hub-light-orig.png`,
-  },
-  variables: {
-    colorPrimary: "hsl(0 0% 7%)",
-    colorForeground: "hsl(0 0% 7%)",
-    colorMutedForeground: "hsl(0 0% 44%)",
-    colorDanger: "hsl(0 48% 57%)",
-    colorBackground: "hsl(36 22% 97%)",
-    colorInput: "hsl(37 24% 89%)",
-    colorInputForeground: "hsl(0 0% 7%)",
-    colorNeutral: "hsl(37 24% 89%)",
-    fontFamily: "'Plus Jakarta Sans', 'Inter', sans-serif",
-    borderRadius: "0.75rem",
-  },
-  elements: {
-    rootBox: "w-full flex justify-center",
-    cardBox:
-      "bg-white dark:bg-card rounded-[16px] w-[440px] max-w-full overflow-hidden shadow-xl border border-[hsl(37,24%,89%)] dark:border-card-border",
-    card: "!shadow-none !border-0 !bg-transparent !rounded-none",
-    footer: "!shadow-none !border-0 !bg-transparent !rounded-none",
-    headerTitle:
-      "text-2xl font-semibold text-[hsl(0,0%,7%)] dark:text-card-foreground",
-    headerSubtitle: "text-[hsl(0,0%,44%)] dark:text-muted-foreground",
-    socialButtonsBlockButtonText:
-      "font-medium text-[hsl(0,0%,7%)] dark:text-card-foreground",
-    socialButtonsBlockButton:
-      "border-[hsl(37,24%,89%)] bg-white text-[hsl(0,0%,7%)] hover:bg-[hsl(36,22%,97%)] dark:border-border dark:bg-background dark:text-card-foreground dark:hover:bg-muted",
-    formFieldLabel:
-      "text-sm font-medium text-[hsl(0,0%,7%)] dark:text-card-foreground",
-    formFieldInput:
-      "rounded-[8px] border-[hsl(37,24%,82%)] bg-white text-[hsl(0,0%,7%)] placeholder:text-[hsl(0,0%,44%)] focus:border-accent focus:ring-accent/20 dark:border-border dark:bg-background dark:text-card-foreground dark:placeholder:text-muted-foreground",
-    formFieldInputShowPasswordButton:
-      "text-[hsl(0,0%,44%)] dark:text-muted-foreground",
-    footerActionLink:
-      "font-semibold text-[hsl(0,0%,7%)] hover:text-[hsl(0,0%,18%)] dark:text-card-foreground dark:hover:text-accent",
-    footerActionText: "text-[hsl(0,0%,44%)] dark:text-muted-foreground",
-    dividerText: "text-sm text-[hsl(0,0%,44%)] dark:text-muted-foreground",
-    identityPreviewEditButton:
-      "text-[hsl(0,0%,7%)] hover:text-[hsl(0,0%,18%)] dark:text-card-foreground dark:hover:text-accent",
-    formFieldSuccessText: "text-success",
-    alertText: "text-destructive",
-    logoBox: "flex items-center justify-center py-2",
-    logoImage:
-      "w-[132px] h-auto object-contain dark:brightness-0 dark:invert",
-    formButtonPrimary:
-      "bg-[hsl(0,0%,7%)] hover:bg-[hsl(0,0%,18%)] text-white shadow-sm transition-all dark:bg-card-foreground dark:text-background dark:hover:bg-accent",
-    footerAction: "bg-[hsl(36,22%,97%)] py-4 dark:bg-background/65",
-    dividerLine: "bg-[hsl(37,24%,82%)] dark:bg-border",
-    alert: "bg-destructive/8 border border-destructive/20",
-    otpCodeFieldInput:
-      "border-[hsl(37,24%,82%)] bg-white text-[hsl(0,0%,7%)] focus:border-accent focus:ring-accent/20 dark:border-border dark:bg-background dark:text-card-foreground",
-    formFieldRow: "gap-4",
-    main: "gap-6",
-  },
-};
-
-function SignInPage() {
-  return (
-    <div className="flex min-h-[100dvh] items-center justify-center bg-background px-4" data-testid="page-signin">
-      <SignIn
-        fallback={<PageFallback />}
-        routing="path"
-        path={`${basePath}/sign-in`}
-        signUpUrl={allowPublicSignups ? `${basePath}/sign-up` : undefined}
-      />
-    </div>
-  );
-}
-
-function SignUpPage() {
-  if (!allowPublicSignups) {
-    return <Redirect to="/sign-in" />;
-  }
-
-  return (
-    <div className="flex min-h-[100dvh] items-center justify-center bg-background px-4" data-testid="page-signup">
-      <SignUp fallback={<PageFallback />} routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in`} />
-    </div>
-  );
-}
-
 function HomeRedirect() {
-  return (
-    <>
-      <Show when="signed-in">
-        <Redirect to="/dashboard" />
-      </Show>
-      <Show when="signed-out">
-        <Suspense fallback={<PageFallback />}>
-          <Landing />
-        </Suspense>
-      </Show>
-    </>
+  const { status } = useAuth();
+  return status === "signed-in" ? (
+    <Redirect to="/dashboard" />
+  ) : (
+    <Suspense fallback={<PageFallback />}>
+      <Landing />
+    </Suspense>
   );
 }
 
-function PageRoute({ component: Component, path }: { component: any, path: string }) {
+function PageRoute({
+  component: Component,
+  path,
+}: {
+  component: any;
+  path: string;
+}) {
   return (
     <Route path={path}>
       {() => (
@@ -235,15 +124,8 @@ function PageRoute({ component: Component, path }: { component: any, path: strin
 
 function AdminRouteContent({ component: Component }: { component: any }) {
   const { data: user, isLoading } = useGetCurrentUser();
-
-  if (isLoading) {
-    return <PageFallback />;
-  }
-
-  if (user?.role !== "admin") {
-    return <Redirect to="/dashboard" />;
-  }
-
+  if (isLoading) return <PageFallback />;
+  if (user?.role !== "admin") return <Redirect to="/dashboard" />;
   return (
     <Suspense fallback={<PageFallback />}>
       <Component />
@@ -251,7 +133,13 @@ function AdminRouteContent({ component: Component }: { component: any }) {
   );
 }
 
-function AdminPageRoute({ component: Component, path }: { component: any, path: string }) {
+function AdminPageRoute({
+  component: Component,
+  path,
+}: {
+  component: any;
+  path: string;
+}) {
   return (
     <Route path={path}>
       {() => <AdminRouteContent component={Component} />}
@@ -261,21 +149,40 @@ function AdminPageRoute({ component: Component, path }: { component: any, path: 
 
 function LocalUserGate({ children }: { children: ReactNode }) {
   const { t } = useTranslation();
-  const { userId } = useAuth();
-  const { signOut } = useClerk();
-  const { data: user, isPending, isError, error, refetch } = useGetCurrentUser();
+  const { user: authUser, signOut } = useAuth();
+  const {
+    data: user,
+    isPending,
+    isError,
+    error,
+    refetch,
+  } = useGetCurrentUser();
   if (isPending) return <PageFallback />;
-  if (isError || !user?.isActive || user.clerkId !== userId) {
+  if (
+    isError ||
+    !user?.isActive ||
+    !authUser?.id ||
+    !user.authId ||
+    user.authId !== authUser.id
+  ) {
     const status = apiErrorStatus(error);
     const accessNotValidated = isError
       ? status === 401 || status === 403
-      : !!user && (!user.isActive || user.clerkId !== userId);
+      : !!user;
     return (
       <div role="alert" className="py-16 text-center text-sm">
-        <p>{t(accessNotValidated ? "common.access_not_validated" : "common.error")}</p>
+        <p>
+          {t(
+            accessNotValidated ? "common.access_not_validated" : "common.error",
+          )}
+        </p>
         <div className="mt-4 flex justify-center gap-4">
-          <button className="underline" onClick={() => void refetch()}>{t("common.retry")}</button>
-          <button className="underline" onClick={() => void signOut({ redirectUrl: `${basePath}/sign-in` })}>{t("nav.sign_out")}</button>
+          <button className="underline" onClick={() => void refetch()}>
+            {t("common.retry")}
+          </button>
+          <button className="underline" onClick={() => void signOut()}>
+            {t("nav.sign_out")}
+          </button>
         </div>
       </div>
     );
@@ -284,17 +191,21 @@ function LocalUserGate({ children }: { children: ReactNode }) {
 }
 
 function ProtectedRoutes() {
+  const { status, requiresPassword } = useAuth();
+  if (status !== "signed-in") return <Redirect to="/sign-in" />;
+  if (requiresPassword) return <Redirect to="/set-password" />;
   return (
-    <>
-      <Show when="signed-in">
-        <LocalUserGate>
-        <ConsentGate>
+    <LocalUserGate>
+      <LanguageSync />
+      <ConsentGate>
         <AppShell>
           <Switch>
             {protectedPages.map(({ path, component, admin }) =>
-              admin
-                ? <AdminPageRoute key={path} path={path} component={component} />
-                : <PageRoute key={path} path={path} component={component} />
+              admin ? (
+                <AdminPageRoute key={path} path={path} component={component} />
+              ) : (
+                <PageRoute key={path} path={path} component={component} />
+              ),
             )}
             <Route>
               {() => (
@@ -305,68 +216,51 @@ function ProtectedRoutes() {
             </Route>
           </Switch>
         </AppShell>
-        </ConsentGate>
-        </LocalUserGate>
-      </Show>
-      <Show when="signed-out">
-        <Redirect to="/" />
-      </Show>
-    </>
+      </ConsentGate>
+    </LocalUserGate>
   );
 }
 
-function ClerkProviderWithRoutes() {
-  const [, setLocation] = useLocation();
-
+function AuthRoutes() {
   return (
-    <ClerkProvider
-      publishableKey={clerkPubKey}
-      proxyUrl={clerkProxyUrl}
-      appearance={clerkAppearance}
-      signInUrl={`${basePath}/sign-in`}
-      signUpUrl={allowPublicSignups ? `${basePath}/sign-up` : undefined}
-      localization={{
-        signIn: {
-          start: {
-            title: "Welcome back",
-            subtitle: "Sign in to access your account",
-          },
-        },
-        signUp: {
-          start: {
-            title: "Create your account",
-            subtitle: "Get started today",
-          },
-        },
-      }}
-      routerPush={(to) => setLocation(stripBase(to))}
-      routerReplace={(to) => setLocation(stripBase(to), { replace: true })}
-    >
-      <ClerkSessionBoundary>
-        <RequestedRoutePreloader />
-        <LanguageSync />
-        <TooltipProvider>
-          <Switch>
-            <Route path="/" component={HomeRedirect} />
-            <Route path="/sign-in/*?" component={SignInPage} />
-            <Route path="/sign-up/*?" component={SignUpPage} />
-            <Route>{() => <ProtectedRoutes />}</Route>
-          </Switch>
-          <Toaster />
-        </TooltipProvider>
-      </ClerkSessionBoundary>
-    </ClerkProvider>
+    <AuthSessionBoundary>
+      <RequestedRoutePreloader />
+      <TooltipProvider>
+        <Switch>
+          <Route path="/" component={HomeRedirect} />
+          <Route path="/sign-in/*?">{() => <AuthPage mode="sign-in" />}</Route>
+          <Route path="/sign-up/*?">{() => <Redirect to="/sign-in" />}</Route>
+          <Route path="/forgot-password">
+            {() => <AuthPage mode="reset" />}
+          </Route>
+          <Route path="/auth/callback">
+            {() => <AuthPage mode="callback" />}
+          </Route>
+          <Route path="/auth/invite">
+            {() => <AuthPage mode="callback" />}
+          </Route>
+          <Route path="/auth/recovery">
+            {() => <AuthPage mode="callback" />}
+          </Route>
+          <Route path="/set-password">
+            {() => <AuthPage mode="password" />}
+          </Route>
+          <Route>{() => <ProtectedRoutes />}</Route>
+        </Switch>
+        <Toaster />
+      </TooltipProvider>
+    </AuthSessionBoundary>
   );
 }
 
-function App() {
+export default function App() {
   return (
     <ThemeProvider defaultTheme="light" storageKey="halolight-theme">
       <WouterRouter base={basePath}>
-        <ClerkProviderWithRoutes />
+        <AuthProvider>
+          <AuthRoutes />
+        </AuthProvider>
       </WouterRouter>
     </ThemeProvider>
   );
 }
-
-export default App;
