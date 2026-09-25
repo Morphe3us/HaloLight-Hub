@@ -11,6 +11,7 @@ import { useTheme } from "@/components/theme-provider";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { createAdminNavigation, createClientNavigation, hasNotificationBadge, isNavItemActive, type NavItem } from "./sidebarNavigation";
+import { preloadSidebarPage } from "@/lib/pageRoutes";
 
 function NavLink({
   item,
@@ -72,6 +73,9 @@ function NavLink({
 
   return (
     <Link href={item.href} onClick={onClose} aria-current={isActive ? "page" : undefined}
+        onMouseEnter={() => preloadSidebarPage(item.href)}
+        onFocus={() => preloadSidebarPage(item.href)}
+        onTouchStart={() => preloadSidebarPage(item.href)}
         className={cn(
           "flex items-center justify-between gap-2 px-3 py-2 min-h-10 rounded-lg text-sm font-medium transition-all duration-150 cursor-pointer group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
           isActive

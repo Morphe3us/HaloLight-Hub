@@ -5,6 +5,7 @@ import { createRequire } from "node:module";
 import { runInNewContext } from "node:vm";
 import ts from "typescript";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { retryablePageLoader } from "./pageLoader";
 import { apiErrorStatus } from "./apiErrorMessage";
 import {
   isPlaceholderDisplayName,
@@ -99,6 +100,9 @@ const require = createRequire(import.meta.url);
 const { matchRoute } = require("wouter");
 const { parse } = createRequire(require.resolve("wouter"))("regexparam");
 const appSource = readFileSync(new URL("../App.tsx", import.meta.url), "utf8");
+const compiledRoutes = ts.transpileModule(readFileSync(new URL("./pageRoutes.ts", import.meta.url), "utf8"), {
+  compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+}).outputText;
 const compiledApp = ts.transpileModule(`${appSource}\nexport { ClerkSession, ClerkSessionBoundary, LocalUserGate, AdminRouteContent, ClerkProviderWithRoutes, RequestedRoutePreloader, ProtectedRoutes };`, {
   compilerOptions: {
     module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX,
@@ -172,6 +176,23 @@ function appHarness(key = "pk_test_fixture") {
       };
       if (id === "@tanstack/react-query") return { QueryClient, QueryClientProvider };
       if (id === "./lib/queryClient") return { queryClient: new QueryClient({ defaultOptions: { queries: { retry: 1 } } }) };
+      if (id === "./lib/pageRoutes") {
+        const routes = { exports: {} };
+        runInNewContext(compiledRoutes, {
+          module: routes, exports: routes.exports,
+          require: (name: string) => {
+            if (name === "react") return { lazy: () => pass };
+            if (name === "./pageLoader") return { retryablePageLoader };
+            if (name.startsWith("../pages/")) {
+              imports.push(name.replace("../pages/", "./pages/"));
+              if (failImport) throw new Error("Chunk unavailable");
+              return { default: () => { pageMounts++; return null; } };
+            }
+            throw new Error(`Unexpected route dependency: ${name}`);
+          },
+        });
+        return routes.exports;
+      }
       if (id === "./lib/apiErrorMessage") return { apiErrorStatus };
       if (id === "@clerk/themes") return { shadcn: {} };
       if (id === "wouter") return {

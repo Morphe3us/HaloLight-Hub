@@ -76,7 +76,7 @@ describe("client navigation", () => {
 
 // Exercise the actual component's disclosure handlers without credentials or network calls.
 const require = createRequire(import.meta.url);
-function navHarness() {
+function navHarness(preloadSidebarPage = (_href: string) => {}) {
   let state: unknown;
   const source = readFileSync(new URL("../components/layout/Sidebar.tsx", import.meta.url), "utf8");
   const output = ts.transpileModule(`${source}\nexport { NavLink };`, {
@@ -96,6 +96,7 @@ function navHarness() {
       if (id === "./sidebarNavigation") return { createClientNavigation, hasNotificationBadge, isNavItemActive };
       if (id === "@/lib/utils") return { cn: (...args: string[]) => args.filter(Boolean).join(" ") };
       if (id === "wouter") return { Link: "a" };
+      if (id === "@/lib/pageRoutes") return { preloadSidebarPage };
       if (id.startsWith("@")) return {};
       return require(id);
     },
@@ -104,6 +105,33 @@ function navHarness() {
 }
 
 describe("sidebar disclosures", () => {
+  it("preloads only the intended leaf on hover, focus or touch without navigating", () => {
+    for (const event of ["onMouseEnter", "onFocus", "onTouchStart"]) {
+      const imports: string[] = [];
+      let closed = false;
+      const render = navHarness((href) => imports.push(href));
+      const equipment = items[5].children![3].children![0];
+      const link = render("/dashboard", equipment, () => { closed = true; });
+      assert.deepEqual(imports, []);
+      link.props[event]();
+      assert.deepEqual(imports, ["/equipment"]);
+      assert.equal(closed, false);
+      link.props.onClick();
+      assert.equal(closed, true);
+    }
+  });
+
+  it("does not preload routes on disclosure intent or expansion", () => {
+    const imports: string[] = [];
+    const render = navHarness((href) => imports.push(href));
+    const button = render("/dashboard").props.children[0];
+    for (const event of ["onMouseEnter", "onFocus", "onTouchStart"]) {
+      assert.equal(button.props[event], undefined);
+    }
+    button.props.onClick();
+    assert.deepEqual(imports, []);
+  });
+
   it("provides native keyboard buttons, controlled panels and recursive children", () => {
     const render = navHarness();
     const [button, panel] = render("/equipment/unit-1").props.children;

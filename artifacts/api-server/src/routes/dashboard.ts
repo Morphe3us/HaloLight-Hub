@@ -10,6 +10,7 @@ import {
   ne,
   or,
   sql,
+  type SQLWrapper,
 } from "drizzle-orm";
 import {
   consumableCatalog,
@@ -39,6 +40,10 @@ import { getOrCreateUser } from "../lib/userSync";
 
 const router: IRouter = Router();
 
+function scalarCount(query: SQLWrapper) {
+  return sql<number>`${query}`.mapWith(Number);
+}
+
 router.get(
   "/dashboard/summary",
   requireAuth,
@@ -54,115 +59,130 @@ router.get(
     const thirtyDaysOut = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
     const fourteenDaysOut = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
 
-    const [
-      unreadNotifResult,
-      allStepsCountResult,
-      doneStepsCountResult,
-      catalog,
-      upcomingCountResult,
-      totalEventsCountResult,
-      equipmentAlertsResult,
-      lowStockCountResult,
-      openTicketsResult,
-      leadsCountResult,
-      quotesCountResult,
-      contractsCountResult,
-      invoicesCountResult,
-    ] = await Promise.all([
+    // One count statement uses one pool slot, independently of catalog loading.
+    const [countsResult, catalog] = await Promise.all([
       db
-        .select({ value: count() })
-        .from(notificationsTable)
-        .where(
-          and(
-            eq(notificationsTable.userId, user.id),
-            eq(notificationsTable.isRead, false),
+        .select({
+          unreadNotifications: scalarCount(
+            db
+              .select({ value: count() })
+              .from(notificationsTable)
+              .where(
+                and(
+                  eq(notificationsTable.userId, user.id),
+                  eq(notificationsTable.isRead, false),
+                ),
+              ),
           ),
-        ),
-      db.select({ value: count() }).from(onboardingStepsTable),
-      db
-        .select({ value: count() })
-        .from(userOnboardingProgressTable)
-        .where(
-          and(
-            eq(userOnboardingProgressTable.userId, user.id),
-            sql`${userOnboardingProgressTable.completedAt} IS NOT NULL`,
+          allSteps: scalarCount(
+            db.select({ value: count() }).from(onboardingStepsTable),
           ),
-        ),
+          doneSteps: scalarCount(
+            db
+              .select({ value: count() })
+              .from(userOnboardingProgressTable)
+              .where(
+                and(
+                  eq(userOnboardingProgressTable.userId, user.id),
+                  sql`${userOnboardingProgressTable.completedAt} IS NOT NULL`,
+                ),
+              ),
+          ),
+          upcomingEventsCount: scalarCount(
+            db
+              .select({ value: count() })
+              .from(events)
+              .where(
+                and(
+                  eq(events.userId, user.id),
+                  eq(events.status, "upcoming"),
+                  gt(events.eventDate, now),
+                ),
+              ),
+          ),
+          totalEventsCount: scalarCount(
+            db
+              .select({ value: count() })
+              .from(events)
+              .where(eq(events.userId, user.id)),
+          ),
+          equipmentAlerts: scalarCount(
+            db
+              .select({ value: count() })
+              .from(equipment)
+              .where(
+                and(
+                  eq(equipment.userId, user.id),
+                  ne(equipment.status, "retired"),
+                  or(
+                    and(
+                      isNotNull(equipment.warrantyExpiration),
+                      lte(equipment.warrantyExpiration, thirtyDaysOut),
+                    ),
+                    and(
+                      isNotNull(equipment.nextMaintenanceDate),
+                      lte(equipment.nextMaintenanceDate, fourteenDaysOut),
+                    ),
+                  ),
+                ),
+              ),
+          ),
+          lowStockCount: scalarCount(
+            db
+              .select({ value: count() })
+              .from(consumableStock)
+              .innerJoin(
+                consumableCatalog,
+                eq(consumableStock.catalogItemId, consumableCatalog.id),
+              )
+              .where(
+                and(
+                  eq(consumableStock.userId, user.id),
+                  sql`${consumableStock.currentQuantity} <= ${consumableCatalog.reorderThreshold}`,
+                ),
+              ),
+          ),
+          openTicketsCount: scalarCount(
+            db
+              .select({ value: count() })
+              .from(supportTickets)
+              .where(
+                and(
+                  eq(supportTickets.userId, user.id),
+                  or(
+                    eq(supportTickets.status, "open"),
+                    eq(supportTickets.status, "in_progress"),
+                  ),
+                ),
+              ),
+          ),
+          leadsCount: scalarCount(
+            db
+              .select({ value: count() })
+              .from(leads)
+              .where(eq(leads.userId, user.id)),
+          ),
+          quotesCount: scalarCount(
+            db
+              .select({ value: count() })
+              .from(quotes)
+              .where(eq(quotes.userId, user.id)),
+          ),
+          contractsCount: scalarCount(
+            db
+              .select({ value: count() })
+              .from(contracts)
+              .where(eq(contracts.userId, user.id)),
+          ),
+          invoicesCount: scalarCount(
+            db
+              .select({ value: count() })
+              .from(invoices)
+              .where(eq(invoices.userId, user.id)),
+          ),
+        })
+        .from(sql`(select 1) as dashboard_counts`),
       getPublishedAcademyCatalog(),
-      db
-        .select({ value: count() })
-        .from(events)
-        .where(
-          and(
-            eq(events.userId, user.id),
-            eq(events.status, "upcoming"),
-            gt(events.eventDate, now),
-          ),
-        ),
-      db
-        .select({ value: count() })
-        .from(events)
-        .where(eq(events.userId, user.id)),
-      db
-        .select({ value: count() })
-        .from(equipment)
-        .where(
-          and(
-            eq(equipment.userId, user.id),
-            ne(equipment.status, "retired"),
-            or(
-              and(
-                isNotNull(equipment.warrantyExpiration),
-                lte(equipment.warrantyExpiration, thirtyDaysOut),
-              ),
-              and(
-                isNotNull(equipment.nextMaintenanceDate),
-                lte(equipment.nextMaintenanceDate, fourteenDaysOut),
-              ),
-            ),
-          ),
-        ),
-      db
-        .select({ value: count() })
-        .from(consumableStock)
-        .innerJoin(
-          consumableCatalog,
-          eq(consumableStock.catalogItemId, consumableCatalog.id),
-        )
-        .where(
-          and(
-            eq(consumableStock.userId, user.id),
-            sql`${consumableStock.currentQuantity} <= ${consumableCatalog.reorderThreshold}`,
-          ),
-        ),
-      db
-        .select({ value: count() })
-        .from(supportTickets)
-        .where(
-          and(
-            eq(supportTickets.userId, user.id),
-            or(
-              eq(supportTickets.status, "open"),
-              eq(supportTickets.status, "in_progress"),
-            ),
-          ),
-        ),
-      db
-        .select({ value: count() })
-        .from(leads)
-        .where(eq(leads.userId, user.id)),
-      db
-        .select({ value: count() })
-        .from(quotes)
-        .where(eq(quotes.userId, user.id)),
-      db
-        .select({ value: count() })
-        .from(contracts)
-        .where(eq(contracts.userId, user.id)),
-      db
-        .select({ value: count() })
-        .from(invoices)
-        .where(eq(invoices.userId, user.id)),
     ]);
 
     const allCourses = catalog.courses;
@@ -259,11 +279,12 @@ router.get(
       break;
     }
 
-    const allStepsCount = allStepsCountResult[0]?.value ?? 0;
-    const doneStepsCount = doneStepsCountResult[0]?.value ?? 0;
+    const counts = countsResult[0];
+    const allStepsCount = counts?.allSteps ?? 0;
+    const doneStepsCount = counts?.doneSteps ?? 0;
 
     res.json({
-      unreadNotifications: unreadNotifResult[0]?.value ?? 0,
+      unreadNotifications: counts?.unreadNotifications ?? 0,
       onboardingPercent:
         allStepsCount > 0
           ? Math.round((doneStepsCount / allStepsCount) * 100)
@@ -271,15 +292,15 @@ router.get(
       academyCoursesCompleted,
       academyLessonsCompleted: completedLessonIds.size,
       academyTotalLessons: visibleLessons.length,
-      upcomingEventsCount: upcomingCountResult[0]?.value ?? 0,
-      totalEventsCount: totalEventsCountResult[0]?.value ?? 0,
-      equipmentAlerts: equipmentAlertsResult[0]?.value ?? 0,
-      lowStockCount: lowStockCountResult[0]?.value ?? 0,
-      openTicketsCount: openTicketsResult[0]?.value ?? 0,
-      leadsCount: leadsCountResult[0]?.value ?? 0,
-      quotesCount: quotesCountResult[0]?.value ?? 0,
-      contractsCount: contractsCountResult[0]?.value ?? 0,
-      invoicesCount: invoicesCountResult[0]?.value ?? 0,
+      upcomingEventsCount: counts?.upcomingEventsCount ?? 0,
+      totalEventsCount: counts?.totalEventsCount ?? 0,
+      equipmentAlerts: counts?.equipmentAlerts ?? 0,
+      lowStockCount: counts?.lowStockCount ?? 0,
+      openTicketsCount: counts?.openTicketsCount ?? 0,
+      leadsCount: counts?.leadsCount ?? 0,
+      quotesCount: counts?.quotesCount ?? 0,
+      contractsCount: counts?.contractsCount ?? 0,
+      invoicesCount: counts?.invoicesCount ?? 0,
       nextLesson,
     });
   },
