@@ -37,6 +37,7 @@ import {
   sortAcademyLessons,
 } from "../lib/academyLanguage";
 import { getOrCreateUser } from "../lib/userSync";
+import { signBunnyThumbnailUrl } from "../lib/bunnyThumbnail";
 
 const router: IRouter = Router();
 
@@ -48,6 +49,7 @@ router.get(
   "/dashboard/summary",
   requireAuth,
   async (req: Request, res: Response): Promise<void> => {
+    res.setHeader("Cache-Control", "private, no-store");
     const user = await getOrCreateUser(req);
     if (!user) {
       res.status(401).json({ error: "Unauthorized" });
@@ -271,7 +273,7 @@ router.get(
         lessonTitle: resolveLocale(lang, lesson.title),
         courseId: course.id,
         courseTitle: resolveLocale(lang, course.title),
-        courseThumbnailUrl: course.thumbnailUrl,
+        courseThumbnailUrl: signBunnyThumbnailUrl(course.thumbnailUrl),
         moduleTitle: resolveLocale(lang, module.title),
         durationSeconds: lesson.durationSeconds,
         watchPercent: progress?.watchPercent ?? 0,

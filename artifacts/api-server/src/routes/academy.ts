@@ -26,6 +26,7 @@ import {
   thumbnailOnlyVideoAssets,
 } from "../lib/bunnySecurity";
 import { localizedLessonPlayback } from "../lib/localizedPlayback";
+import { signBunnyThumbnailUrl } from "../lib/bunnyThumbnail";
 
 const router: IRouter = Router();
 router.use("/academy", (_req, res, next) => {
@@ -159,7 +160,7 @@ router.get(
         category: c.category,
         level: c.level,
         order: c.order,
-        thumbnailUrl: c.thumbnailUrl,
+        thumbnailUrl: signBunnyThumbnailUrl(c.thumbnailUrl),
         moduleCount: visibleMods.length,
         lessonCount,
         totalDurationSeconds,
@@ -255,7 +256,7 @@ router.get(
             durationSeconds: l.durationSeconds,
             order: l.order,
             isPublished: l.isPublished,
-            thumbnailUrl: l.thumbnailUrl ?? null,
+            thumbnailUrl: l.thumbnailUrl ? signBunnyThumbnailUrl(l.thumbnailUrl) : null,
             videoAssets: thumbnailOnlyVideoAssets(l.videoAssets),
             completedAt: p?.completedAt?.toISOString() ?? null,
             watchPercent: p?.watchPercent ?? null,
@@ -280,7 +281,7 @@ router.get(
       category: course.category,
       level: course.level,
       order: course.order,
-      thumbnailUrl: course.thumbnailUrl,
+      thumbnailUrl: signBunnyThumbnailUrl(course.thumbnailUrl),
       completedLessons,
       lessonCount,
       totalDurationSeconds,
@@ -352,7 +353,7 @@ router.get(
       title: resolveLocale(lang, lesson.title),
       videoUrl: playback.videoUrl,
       videoUrls: playback.videoUrls,
-      thumbnailUrl: lesson.thumbnailUrl ?? null,
+      thumbnailUrl: lesson.thumbnailUrl ? signBunnyThumbnailUrl(lesson.thumbnailUrl) : null,
       videoAssets: playback.videoAssets,
       durationSeconds: lesson.durationSeconds,
       order: lesson.order,
@@ -717,7 +718,7 @@ router.get(
           lessonTitle: resolveLocale(lang, lesson.title),
           courseId: course.id,
           courseTitle: resolveLocale(lang, course.title),
-          courseThumbnailUrl: course.thumbnailUrl,
+          courseThumbnailUrl: signBunnyThumbnailUrl(course.thumbnailUrl),
           moduleTitle: resolveLocale(lang, mod.title),
           durationSeconds: lesson.durationSeconds,
           watchPercent: p?.watchPercent ?? 0,
@@ -736,7 +737,7 @@ router.get(
         lessonTitle: resolveLocale(lang, firstLesson.title),
         courseId: course?.id ?? "",
         courseTitle: resolveLocale(lang, course?.title ?? {}),
-        courseThumbnailUrl: course?.thumbnailUrl ?? "",
+        courseThumbnailUrl: signBunnyThumbnailUrl(course?.thumbnailUrl ?? ""),
         moduleTitle: resolveLocale(lang, mod?.title ?? {}),
         durationSeconds: firstLesson.durationSeconds,
         watchPercent: 100,

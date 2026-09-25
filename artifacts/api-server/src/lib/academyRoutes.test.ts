@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHmac } from "node:crypto";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import { transformSync } from "esbuild";
@@ -14,6 +15,7 @@ import * as academyAccess from "./academyAccess";
 import * as academyLanguage from "./academyLanguage";
 import * as localizedPlayback from "./localizedPlayback";
 import * as bunnySecurity from "./bunnySecurity";
+import * as bunnyThumbnail from "./bunnyThumbnail";
 import type { PublishedAcademyCatalog } from "./academyCatalog";
 
 const lessonId = "11111111-1111-4111-8111-111111111111";
@@ -30,7 +32,7 @@ const endpoints = [
     body: { answers: [0] },
   },
 ] as const;
-type Endpoint = (typeof endpoints)[number];
+type Endpoint = { method: string; path: string; body?: unknown };
 type Request = {
   params: { id: string };
   query: { lang: string };
@@ -186,6 +188,7 @@ function setupRoutes(
     "../lib/academyAccess": academyAccess,
     "../lib/academyLanguage": academyLanguage,
     "../lib/localizedPlayback": localizedPlayback,
+    "../lib/bunnyThumbnail": bunnyThumbnail,
     "../lib/academyCatalog": {
       getPublishedAcademyCatalog: async () => {
         const index = Math.min(catalogReads++, snapshots.length - 1);
@@ -198,7 +201,7 @@ function setupRoutes(
         playbackCalls++;
         return signPlayback(playback);
       },
-      thumbnailOnlyVideoAssets: () => null,
+      thumbnailOnlyVideoAssets: bunnySecurity.thumbnailOnlyVideoAssets,
     },
   };
   const module = { exports: {} };
@@ -226,7 +229,7 @@ function setupRoutes(
     },
     async request(
       endpoint: Endpoint,
-      options: { body?: unknown; lang?: string } = {},
+      options: { body?: unknown; lang?: string; id?: string } = {},
     ) {
       const response: Response = {
         statusCode: 200,
@@ -245,7 +248,7 @@ function setupRoutes(
         },
       };
       const request: Request = {
-        params: { id: lessonId },
+        params: { id: options.id ?? lessonId },
         query: { lang: options.lang ?? "en" },
         body: Object.hasOwn(options, "body") ? options.body : endpoint.body,
         log: { warn: () => {} },
@@ -268,6 +271,53 @@ function setupRoutes(
     },
   };
 }
+
+test("academy responses sign thumbnails after access checks without mutating the catalog", async (t) => {
+  const names = ["BUNNY_STREAM_CDN_HOSTNAME", "BUNNY_STREAM_TOKEN_AUTH_KEY"];
+  const original = names.map((name) => process.env[name]);
+  t.after(() => names.forEach((name, index) => {
+    const value = original[index];
+    if (value === undefined) delete process.env[name];
+    else process.env[name] = value;
+  }));
+  process.env.BUNNY_STREAM_CDN_HOSTNAME = "vz-test.b-cdn.net";
+  process.env.BUNNY_STREAM_TOKEN_AUTH_KEY = "thumbnail-test-key";
+  t.mock.method(globalThis, "fetch", async () => assert.fail("signing must not fetch remotely"));
+  const raw = `https://vz-test.b-cdn.net/${lessonId}/thumbnail.jpg`;
+  const catalog = publishedCatalog();
+  catalog.courses[0]!.thumbnailUrl = raw;
+  catalog.lessons[0]!.thumbnailUrl = raw;
+  catalog.lessons[0]!.videoAssets = { en: { thumbnailUrl: raw } };
+  const before = structuredClone(catalog);
+  const check = (value: unknown) => {
+    assert.equal(typeof value, "string");
+    const url = new URL(value as string);
+    assert.equal(url.origin + url.pathname, raw);
+    const expires = url.searchParams.get("expires")!;
+    assert.ok(Number(expires) > Date.now() / 1000);
+    assert.equal(url.searchParams.get("token"), "HS256-" + createHmac("sha256", "thumbnail-test-key")
+      .update(url.pathname + expires).digest("base64url"));
+  };
+  for (const role of ["client", "admin"]) {
+    const routes = setupRoutes([catalog], role);
+    const list = await routes.request({ method: "GET", path: "/academy/courses" });
+    check((list.body!.items as Array<{ thumbnailUrl: string }>)[0]!.thumbnailUrl);
+    const course = await routes.request({ method: "GET", path: "/academy/courses/:id" }, { id: "course" });
+    check(course.body!.thumbnailUrl);
+    const modules = course.body!.modules as Array<{ lessons: Array<{ thumbnailUrl: string; videoAssets: { en: { thumbnailUrl: string } } }> }>;
+    check(modules[0]!.lessons[0]!.thumbnailUrl);
+    check(modules[0]!.lessons[0]!.videoAssets.en.thumbnailUrl);
+    const lesson = await routes.request(endpoints[0]);
+    check(lesson.body!.thumbnailUrl);
+    const next = await routes.request({ method: "GET", path: "/academy/progress/next-lesson" });
+    check(next.body!.courseThumbnailUrl);
+  }
+  const denied = setupRoutes([catalog], null);
+  const response = await denied.request({ method: "GET", path: "/academy/courses" });
+  assert.equal(response.statusCode, 401);
+  assert.equal(denied.catalogReads, 0);
+  assert.deepEqual(catalog, before);
+});
 
 test("published Bunny lessons return signed playback without a remote verification dependency", async (t) => {
   const names = ["NODE_ENV", "BUNNY_STREAM_LIBRARY_ID", "BUNNY_STREAM_TOKEN_AUTH_KEY", "BUNNY_PLAYBACK_SECURITY_CONFIRMED"];

@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { isExplicitDevelopment, parseBooleanEnv } from "./env";
+import { signBunnyThumbnailUrl } from "./bunnyThumbnail";
 import type { localizedLessonPlayback } from "./localizedPlayback";
 
 export function bunnyPlaybackSecurityConfirmed(): boolean {
@@ -111,7 +112,7 @@ export function thumbnailOnlyVideoAssets(
         return [lang, typeof thumbnail === "string" ? thumbnail.trim() : ""] as const;
       })
       .filter((entry): entry is readonly [string, string] => Boolean(entry[1]))
-      .map(([lang, thumbnailUrl]) => [lang, { thumbnailUrl }]),
+      .map(([lang, thumbnailUrl]) => [lang, { thumbnailUrl: signBunnyThumbnailUrl(thumbnailUrl) }]),
   );
 
   return Object.keys(sanitized).length > 0 ? sanitized : null;
@@ -175,7 +176,7 @@ export function secureLessonPlayback(
             ? buildBunnyPlaybackAsset({ libraryId, videoId: asset.videoId }).embedUrl
             : undefined);
           return [lang, {
-            ...(asset.thumbnailUrl ? { thumbnailUrl: asset.thumbnailUrl } : {}),
+            ...(asset.thumbnailUrl ? { thumbnailUrl: signBunnyThumbnailUrl(asset.thumbnailUrl, nowSeconds) } : {}),
             ...(rawUrl ? { embedUrl: sign(rawUrl) } : {}),
           }];
         }))

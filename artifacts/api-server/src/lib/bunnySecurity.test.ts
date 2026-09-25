@@ -15,11 +15,13 @@ const originalNodeEnv = process.env.NODE_ENV;
 const originalConfirmed = process.env.BUNNY_PLAYBACK_SECURITY_CONFIRMED;
 const originalToken = process.env.BUNNY_STREAM_TOKEN_AUTH_KEY;
 const originalLibrary = process.env.BUNNY_STREAM_LIBRARY_ID;
+const originalCdn = process.env.BUNNY_STREAM_CDN_HOSTNAME;
 
 test.afterEach(() => {
   for (const [name, value] of Object.entries({
     BUNNY_STREAM_TOKEN_AUTH_KEY: originalToken,
     BUNNY_STREAM_LIBRARY_ID: originalLibrary,
+    BUNNY_STREAM_CDN_HOSTNAME: originalCdn,
   })) {
     if (value === undefined) delete process.env[name];
     else process.env[name] = value;
@@ -35,6 +37,26 @@ test.afterEach(() => {
   } else {
     process.env.BUNNY_PLAYBACK_SECURITY_CONFIRMED = originalConfirmed;
   }
+});
+
+test("lesson playback signs thumbnail assets without changing embed protection", () => {
+  process.env.NODE_ENV = "production";
+  process.env.BUNNY_STREAM_LIBRARY_ID = "123";
+  process.env.BUNNY_STREAM_TOKEN_AUTH_KEY = "test-signing-key";
+  process.env.BUNNY_STREAM_CDN_HOSTNAME = "vz-test.b-cdn.net";
+  const videoId = "11111111-1111-4111-8111-111111111111";
+  const thumbnailUrl = `https://vz-test.b-cdn.net/${videoId}/thumbnail.jpg`;
+  const input = {
+    videoUrl: `https://iframe.mediadelivery.net/embed/123/${videoId}`,
+    videoUrls: null,
+    videoAssets: { en: { videoId, thumbnailUrl } },
+  };
+  const result = secureLessonPlayback(input, 1_800_000_000);
+  assert.match(new URL(result.videoUrl).searchParams.get("token")!, /^[a-f0-9]{64}$/);
+  const thumbnail = new URL(result.videoAssets!.en!.thumbnailUrl!);
+  assert.match(thumbnail.searchParams.get("token")!, /^HS256-[\w-]{43}$/);
+  assert.equal(thumbnail.searchParams.get("expires"), "1800003600");
+  assert.equal(input.videoAssets.en.thumbnailUrl, thumbnailUrl);
 });
 
 test("bunnyPlaybackSecurityConfirmed fails closed outside explicit development", () => {

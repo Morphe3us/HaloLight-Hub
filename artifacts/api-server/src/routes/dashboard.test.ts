@@ -8,6 +8,7 @@ import { drizzle } from "drizzle-orm/pg-proxy";
 import * as schema from "@workspace/db/schema";
 import { createDatabasePool } from "@workspace/db/poolConfig";
 import * as academyLanguage from "../lib/academyLanguage";
+import * as bunnyThumbnail from "../lib/bunnyThumbnail";
 import type { PublishedAcademyCatalog } from "../lib/academyCatalog";
 
 const now = new Date("2026-09-25T12:00:00.000Z");
@@ -80,6 +81,7 @@ function harness(
       },
     },
     "../lib/academyLanguage": academyLanguage,
+    "../lib/bunnyThumbnail": bunnyThumbnail,
   };
   const module = { exports: {} };
   new Function("require", "module", "exports", "Date", code)(
@@ -101,8 +103,11 @@ function harness(
       return catalogReads;
     },
     async request(id: string | null = userId, lang?: string, role = "client") {
-      const response = { statusCode: 200, body: {} as Record<string, unknown> };
+      const response = { statusCode: 200, body: {} as Record<string, unknown>, headers: {} as Record<string, string> };
       const res = {
+        setHeader(name: string, value: string) {
+          response.headers[name.toLowerCase()] = value;
+        },
         status(value: number) {
           response.statusCode = value;
           return res;
@@ -118,6 +123,7 @@ function harness(
         } as unknown as Request,
         res as unknown as Response,
       );
+      assert.equal(response.headers["cache-control"], "private, no-store");
       return response;
     },
   };
@@ -220,6 +226,7 @@ test("empty dashboard stays numeric and unauthorized requests do no data work", 
   assert.deepEqual(await h.request(null), {
     statusCode: 401,
     body: { error: "Unauthorized" },
+    headers: { "cache-control": "private, no-store" },
   });
   assert.equal(h.queries.length, 0);
   assert.equal(h.catalogReads, 0);
