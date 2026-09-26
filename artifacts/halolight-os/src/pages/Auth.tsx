@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { Link, Redirect } from "wouter";
 import { useTranslation } from "react-i18next";
 import { LogIn, Loader2, Mail, KeyRound } from "lucide-react";
+import { FcGoogle } from "react-icons/fc";
 import { useAuth } from "@/auth/AuthProvider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -213,12 +214,14 @@ export function AuthPage({ mode }: { mode: Mode }) {
             {mode === "sign-in" && (
               <div className="mt-4 space-y-4 text-center">
                 <Button
+                  type="button"
                   variant="outline"
                   disabled={pending}
-                  className="w-full whitespace-normal"
+                  className="min-h-11 w-full gap-3 whitespace-normal bg-background text-foreground hover:bg-muted [&_svg]:size-5"
                   onClick={() => void run(auth.signInWithGoogle)}
                 >
-                  {tr("google", "Continue with Google")}
+                  <FcGoogle aria-hidden="true" focusable="false" />
+                  <span>{tr("google", "Continue with Google")}</span>
                 </Button>
                 <Link
                   className="block text-sm underline"
