@@ -14,7 +14,7 @@ An all-in-one SaaS customer portal for HaloLight — a professional photobooth a
 - Required env: `DATABASE_URL` — Postgres connection string
 - Required server env: `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY` (admin operations only; never expose to the browser)
 - Required frontend build env: `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY` (same Supabase project)
-- App origin: `APP_PUBLIC_URL`; private access: `ALLOW_PUBLIC_SIGNUPS=false` and Supabase public signups disabled
+- App origin: `APP_PUBLIC_URL`; invitation-only: `ALLOW_PUBLIC_SIGNUPS=false`. Public registration with manual approval uses `true` plus Supabase signups enabled only after the approval gate is deployed.
 
 Supabase Auth migration is underway; this is current implementation guidance,
 not a production rollout claim. Deployment remains with the parent task/operator.
@@ -25,7 +25,7 @@ video playback pass the [cutover checks](docs/infomaniak-deployment.md#release-a
 
 - pnpm workspaces, Node.js 24, TypeScript 5.9
 - Frontend: React + Vite, TailwindCSS v4, shadcn/ui, Wouter, TanStack Query, Framer Motion
-- Auth: Supabase Auth (email/password, Google PKCE; invite-only access)
+- Auth: Supabase Auth (email/password, Google PKCE; admin-approved Hub access)
 - API: Express 5
 - DB: PostgreSQL + Drizzle ORM
 - Validation: Zod (`zod/v4`), `drizzle-zod`
@@ -53,12 +53,13 @@ video playback pass the [cutover checks](docs/infomaniak-deployment.md#release-a
 ## Architecture decisions
 
 - **OpenAPI-first**: All API contracts defined in `lib/api-spec/openapi.yaml`; hooks and Zod schemas generated automatically via Orval
-- **Private account provisioning**: Keep both signup flags `false`; authentication alone does not create an app account. Verified-email auto-linking is restricted to a unique active `manual_*` app user. Existing provider-bound users require an explicit relink.
+- **Account provisioning**: With both signup flags disabled, access is invitation-only. Public signup may be enabled after deploying the approval gate; verified newcomers become pending clients. Verified-email auto-linking is restricted to a unique active, approved `manual_*` app user. Existing provider-bound users require an explicit relink.
 - **Supabase-managed auth**: Browser sessions use public project configuration; API middleware validates bearer tokens. `SUPABASE_SECRET_KEY` is restricted to server-side admin operations. Google uses PKCE at `/auth/callback`; invite and recovery email templates target `/auth/invite` and `/auth/recovery` with `token_hash` and the corresponding type. These flows must be smoke-tested before release.
 - **Identity compatibility**: The logical API/ORM field `authId` replaces `clerkId`, but the physical `users.clerk_id` column is intentionally retained for reversible cutover. Relinking preserves the local user ID, role and ownership; code rollback alone does not restore changed auth bindings.
 - **Admin invitations**: `POST /users/{id}/invite` (under `/api`) sends to active manual app users only; row creation does not itself send an email. It is not the existing-account migration mechanism.
-- **Auth operations**: In Supabase, enable Google and email/password with email confirmation; disable new public signups, anonymous sign-ins and manual identity linking. Custom SMTP is required for real clients (default sender: team addresses only, currently two messages/hour). Configure exact redirects and templates using the [deployment guide](docs/infomaniak-deployment.md#supabase-auth-configuration).
+- **Auth operations**: In Supabase, enable Google and email/password with email confirmation; keep anonymous sign-ins and manual identity linking disabled. Enable public signups only with the deployed approval gate and matching API flag. Custom SMTP is required for real clients. Configure exact redirects and templates using the [deployment guide](docs/infomaniak-deployment.md#supabase-auth-configuration).
 - **Role-based access**: User roles (admin, client, coach, sales_rep) stored in local DB; checked in route handlers; admin routes gated by `user.role === 'admin'`
+- **Account approval**: `users.accessStatus` is independent of role and activation. Public JIT writes `pending` and `client`; existing accounts and explicit admin invitations remain approved. All authenticated API requests except own access status pass the approval gate before consent/business routing. Never auto-approve after the displayed 12-hour manual review window.
 - **Notification system as backbone**: Notification types are string constants; the delivery layer (email, push) is architected but channels can be wired up in later phases
 
 ## Product — Implemented Phases

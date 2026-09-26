@@ -66,7 +66,7 @@ test("consent gate, identity-bound evidence and dashboard persistence across fre
   const compliance = load<{ userConsentStatus: (id: string) => Promise<any> }>(new URL("../lib/userCompliance.ts", import.meta.url), {
     "drizzle-orm": drizzle, "@workspace/db": { db, userConsentEvents }, "./userConsentPolicy": policyDependency,
   });
-  const userSync = { getOrCreateUser: async (req: express.Request) => req.headers["x-user"] ? { id: req.headers["x-user"], isActive: true, role: req.headers["x-role"] ?? "client" } : null };
+  const userSync = { getOrCreateUser: async (req: express.Request) => req.headers["x-user"] ? { id: req.headers["x-user"], isActive: true, accessStatus: "approved", role: req.headers["x-role"] ?? "client" } : null };
   const auth = { getAuth: (req: express.Request) => ({ userId: req.headers["x-user"] }) };
   const gate = load<{ consentGate: express.RequestHandler; isConsentBootstrap: (method: string, path: string) => boolean }>(new URL("../middlewares/consentGate.ts", import.meta.url), {
     "../middlewares/supabaseAuth": auth, "../lib/userSync": userSync, "../lib/userConsentPolicy": policyDependency, "../lib/userCompliance": compliance,

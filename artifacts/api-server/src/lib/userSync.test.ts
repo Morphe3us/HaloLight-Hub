@@ -26,15 +26,15 @@ function user(overrides: Partial<User> = {}): User {
   return {
     id: "local_1", authId: "manual_invite", email: profile.email,
     firstName: null, lastName: null, fullName: null,
-    role: "admin", isActive: true, language: "fr",
+    role: "admin", isActive: true, accessStatus: "approved", language: "fr",
     ...overrides,
   } as User;
 }
 
 function matches(row: User, condition: SQL): boolean {
   const { sql, params } = dialect.sqlToQuery(condition);
-  const columns = { id: "id", clerk_id: "authId", is_active: "isActive", email: "email" } as const;
-  for (const match of sql.matchAll(/"users"\."(id|clerk_id|is_active|email)" = \$(\d+)/g)) {
+  const columns = { id: "id", clerk_id: "authId", is_active: "isActive", email: "email", access_status: "accessStatus" } as const;
+  for (const match of sql.matchAll(/"users"\."(id|clerk_id|is_active|email|access_status)" = \$(\d+)/g)) {
     if (row[columns[match[1] as keyof typeof columns]] !== params[Number(match[2]) - 1]) return false;
   }
   const email = sql.match(/lower\("users"\."email"\) = \$(\d+)/);
@@ -51,10 +51,11 @@ function harness(initial: User[], options: {
   const rows = initial.map((row) => ({ ...row }));
   let fetches = 0;
   let writes = 0;
+  let queries = 0;
   let now = 1_000_000;
   const db = {
-    select: () => ({ from: () => ({ where: async (condition: SQL) =>
-      rows.filter((row) => matches(row, condition)).map((row) => ({ ...row })) }) }),
+    select: () => ({ from: () => ({ where: async (condition: SQL) => {
+      queries++; return rows.filter((row) => matches(row, condition)).map((row) => ({ ...row })); } }) }),
     update: () => ({ set: (updates: Partial<User>) => ({ where: (condition: SQL) => ({
       returning: async () => {
         writes++;
@@ -95,7 +96,9 @@ function harness(initial: User[], options: {
     userId: id, sessionClaims: claims, accessToken: "verified-token",
   } as unknown as Parameters<typeof module.exports.getOrCreateUser>[0]);
   return {
-    sync, rows, advanceClock: (ms: number) => { now += ms; },
+    sync, rows, resolve: module.exports.resolveAccountUser, approved: module.exports.getOrCreateUser,
+    advanceClock: (ms: number) => { now += ms; },
+    get queries() { return queries; },
     get fetches() { return fetches; }, get writes() { return writes; },
   };
 }
@@ -184,10 +187,46 @@ test("old provider identities require explicit migration even with a trusted mat
 
 test("explicit public provisioning still requires verified real email", async () => {
   const allowed = harness([], { publicSignups: true });
-  assert.equal((await allowed.sync())?.role, "client");
+  assert.equal(await allowed.sync(), null);
+  assert.equal(allowed.rows[0].role, "client");
+  assert.equal(allowed.rows[0].accessStatus, "pending");
   const denied = harness([], { publicSignups: true, apiProfile: { ...profile, emailVerified: false } });
   assert.equal(await denied.sync(), null);
   assert.equal(denied.writes, 0);
+});
+
+test("raw access lookup preserves rejected, pending and disabled accounts without repair", async () => {
+  for (const patch of [{ accessStatus: "pending" as const }, { accessStatus: "rejected" as const }, { isActive: false }]) {
+    const h = harness([user({ authId: "user_google", ...patch })], { publicSignups: true });
+    const req = { userId: "user_google", accessToken: "token", sessionClaims: { user_metadata: { role: "admin", accessStatus: "approved" } } } as unknown as Parameters<typeof h.resolve>[0];
+    assert.equal((await h.resolve(req))?.accessStatus, patch.accessStatus ?? "approved");
+    assert.equal(await h.approved(req), null);
+    assert.equal(h.queries, 1); assert.equal(h.writes, 0); assert.equal(h.fetches, 0);
+  }
+});
+
+test("gate and handler share one request lookup, but next request sees rejection", async () => {
+  const h = harness([user({ authId: "user_google", ...profile })]);
+  const req = { userId: "user_google", accessToken: "token" } as unknown as Parameters<typeof h.resolve>[0];
+  await h.resolve(req); await h.approved(req); await h.approved(req);
+  assert.equal(h.queries, 1);
+  h.rows[0].accessStatus = "rejected";
+  assert.equal(await h.sync(), null); assert.equal(h.queries, 2);
+});
+
+test("pending and rejected manual invites cannot link; concurrent rejection defeats claim CAS", async () => {
+  for (const accessStatus of ["pending", "rejected"] as const) {
+    const h = harness([user({ accessStatus })], { publicSignups: true });
+    assert.equal(await h.sync(), null); assert.equal(h.writes, 0);
+  }
+  const h = harness([user()], { beforeUpdate: rows => { rows[0].accessStatus = "rejected"; } });
+  assert.equal(await h.sync(), null); assert.equal(h.rows[0].authId, "manual_invite");
+});
+
+test("metadata cannot approve or promote a publicly provisioned account", async () => {
+  const h = harness([], { publicSignups: true });
+  assert.equal(await h.sync("user_google", { role: "admin", user_metadata: { role: "admin", accessStatus: "approved", isActive: true } }), null);
+  assert.equal(h.rows[0].role, "client"); assert.equal(h.rows[0].accessStatus, "pending");
 });
 
 test("missing Supabase transport never trusts signed email or metadata for linking", async () => {

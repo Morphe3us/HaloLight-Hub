@@ -6,6 +6,7 @@ import {
   pgEnum,
   integer,
   uniqueIndex,
+  check,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
@@ -51,6 +52,8 @@ export const usersTable = pgTable(
     // Preferences
     role: userRoleEnum("role").notNull().default("client"),
     isActive: boolean("is_active").notNull().default(true),
+    accessStatus: text("access_status", { enum: ["pending", "approved", "rejected"] })
+      .notNull().default("approved"),
     language: languageEnum("language").notNull().default("en"),
     currency: text("currency").notNull().default("EUR"),
 
@@ -85,7 +88,10 @@ export const usersTable = pgTable(
       .defaultNow()
       .$onUpdate(() => new Date()),
   },
-  (t) => [uniqueIndex("users_email_lower_unique").on(sql`lower(${t.email})`)],
+  (t) => [
+    uniqueIndex("users_email_lower_unique").on(sql`lower(${t.email})`),
+    check("users_access_status_check", sql`${t.accessStatus} IN ('pending', 'approved', 'rejected')`),
+  ],
 );
 
 export const insertUserSchema = createInsertSchema(usersTable).omit({

@@ -42,6 +42,59 @@ tags:
     description: Community channels, posts, and replies
 
 paths:
+  /users/me/access:
+    get:
+      operationId: getMyAccess
+      tags: [users]
+      summary: Read own approval status without accessing Hub data
+      responses:
+        "200":
+          description: Authenticated account access status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountAccess"
+        "401":
+          description: Authentication required
+        "403":
+          description: Account cannot be provisioned
+  /users/{id}/access:
+    post:
+      operationId: reviewUserAccess
+      tags: [users]
+      summary: Approve or reject a pending client account (approved admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [decision]
+              properties:
+                decision:
+                  type: string
+                  enum: [approved, rejected]
+      responses:
+        "200":
+          description: Decision saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          description: Authentication required
+        "403":
+          description: Approved administrator required
+        "409":
+          description: Account is not an active pending client
+        "400":
+          description: Invalid decision
   /users/{id}/invite:
     post:
       operationId: inviteUser
@@ -252,6 +305,11 @@ paths:
       tags: [users]
       summary: List all users (admin only)
       parameters:
+        - in: query
+          name: accessStatus
+          schema:
+            type: string
+            enum: [pending, approved, rejected]
         - in: query
           name: role
           schema:
@@ -3815,6 +3873,15 @@ components:
           type: string
 
     # ─── Users ─────────────────────────────────────────────────────────────
+    AccountAccess:
+      type: object
+      required: [status, email]
+      properties:
+        status:
+          type: string
+          enum: [pending, approved, rejected, disabled]
+        email:
+          type: string
     User:
       type: object
       required:
@@ -3847,6 +3914,9 @@ components:
           enum: [admin, client, coach, sales_rep]
         isActive:
           type: boolean
+        accessStatus:
+          type: string
+          enum: [pending, approved, rejected]
         language:
           type: string
           enum: [en, fr, es, de, it, pl, pt, nl]

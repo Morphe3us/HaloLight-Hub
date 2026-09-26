@@ -150,6 +150,20 @@ test("OAuth code is exchanged once with credentials stripped first", async () =>
   assert.deepEqual(h.calls, [["code", "oauth-code"]]);
 });
 
+test("signup email token hash creates a normal session without requiring password setup", async () => {
+  const h = callbackHarness();
+  const result = await h.run("/auth/callback?token_hash=fixture&type=email");
+  assert.equal(result.requiresPassword, false);
+  assert.deepEqual(h.calls, [["otp", { token_hash: "fixture", type: "email" }]]);
+});
+
+test("signup callback rejects mixed or incorrect credential types", async () => {
+  for (const path of ["/auth/callback?token_hash=fixture&type=signup", "/auth/callback?token_hash=fixture&type=invite",
+    "/auth/callback?token_hash=fixture&type=email&code=code", "/auth/callback?type=email", "/auth/callback?token_hash=fixture"]) {
+    const h = callbackHarness(); await assert.rejects(h.run(path)); assert.equal(h.calls.length, 0);
+  }
+});
+
 test("invite and recovery use token hash verification and require password setup", async () => {
   for (const type of ["invite", "recovery"]) {
     const h = callbackHarness();

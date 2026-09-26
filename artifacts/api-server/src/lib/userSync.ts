@@ -19,6 +19,12 @@ const SUPABASE_PROFILE_RETRY_TTL_MS = 15 * 1000;
 const supabaseProfileRefreshCache = new Map<string, number>();
 const supabaseProfileInFlight = new Map<string, Promise<SupabaseUserProfile>>();
 const localUserSyncInFlight = new Map<string, Promise<User | null>>();
+const requestUsers = new WeakMap<Request, Promise<User | null>>();
+const requestApprovedUsers = new WeakMap<Request, Promise<User | null>>();
+
+function isApproved(user: User | null | undefined): user is User {
+  return Boolean(user?.isActive && user.accessStatus === "approved");
+}
 
 function valueOrExisting<T extends string | null>(
   existingValue: T,
@@ -86,7 +92,7 @@ async function refreshExistingUser(
   existing: User,
   profile: SupabaseUserProfile,
 ): Promise<User | null> {
-  if (!existing.isActive) return null;
+  if (!isApproved(existing)) return null;
 
   const updates = profileUpdateForExisting(existing, profile);
   if (Object.keys(updates).length === 0) return existing;
@@ -119,6 +125,7 @@ async function refreshExistingUser(
           eq(usersTable.id, existing.id),
           eq(usersTable.authId, existing.authId),
           eq(usersTable.isActive, true),
+          eq(usersTable.accessStatus, "approved"),
       ))
       .returning();
   } catch (error) {
@@ -140,6 +147,7 @@ async function refreshExistingUser(
           eq(usersTable.id, existing.id),
           eq(usersTable.authId, existing.authId),
           eq(usersTable.isActive, true),
+          eq(usersTable.accessStatus, "approved"),
         ))
         .returning();
     } else {
@@ -147,7 +155,7 @@ async function refreshExistingUser(
     }
   }
 
-  return updated?.isActive ? updated : null;
+  return isApproved(updated) ? updated : null;
 }
 
 function shouldFetchSupabaseProfile(authId: string): boolean {
@@ -196,7 +204,7 @@ async function getFreshSupabaseProfile(
 }
 
 function isManualInviteUser(user: User): boolean {
-  return user.authId.startsWith("manual_");
+  return isApproved(user) && user.authId.startsWith("manual_");
 }
 
 function normalizeEmail(value: string): string {
@@ -224,7 +232,6 @@ function allowPublicSignups(): boolean {
 async function syncLocalUser(
   authId: string,
   claims: Record<string, unknown> | undefined,
-  sessionProfile: SupabaseUserProfile,
   accessToken: string,
 ): Promise<User | null> {
   const [existing] = await db
@@ -233,27 +240,7 @@ async function syncLocalUser(
     .where(eq(usersTable.authId, authId));
 
   if (existing) {
-    if (!existing.isActive) return null;
-    if (!needsSupabaseProfileRepair(existing)) {
-      return existing;
-    }
-
-    const updatedFromSession = await refreshExistingUser(
-      existing,
-      sessionProfile,
-    );
-    if (!updatedFromSession) return null;
-    if (!needsSupabaseProfileRepair(updatedFromSession)) {
-      return updatedFromSession;
-    }
-    if (!shouldFetchSupabaseProfile(authId)) return updatedFromSession;
-
-    const freshProfile = await getFreshSupabaseProfile(authId, claims, accessToken);
-    const refreshed = await refreshExistingUser(
-      updatedFromSession,
-      freshProfile,
-    );
-    return refreshed;
+    return existing;
   }
 
   const verifiedProfile = await getFreshSupabaseProfile(authId, claims, accessToken);
@@ -301,6 +288,7 @@ async function syncLocalUser(
             eq(usersTable.id, existingByEmail.id),
             eq(usersTable.authId, existingByEmail.authId),
             eq(usersTable.isActive, true),
+            eq(usersTable.accessStatus, "approved"),
             emailEqualsNormalized(verifiedProfile.email),
           ))
           .returning();
@@ -313,7 +301,7 @@ async function syncLocalUser(
           .select()
           .from(usersTable)
           .where(eq(usersTable.authId, authId));
-        return winner?.isActive ? winner : null;
+        return winner ?? null;
       }
 
       logger.info(
@@ -345,6 +333,8 @@ async function syncLocalUser(
       .insert(usersTable)
       .values({
         authId,
+        role: "client",
+        accessStatus: "pending",
         email: verifiedProfile.email,
         firstName: verifiedProfile.firstName,
         lastName: verifiedProfile.lastName,
@@ -362,8 +352,7 @@ async function syncLocalUser(
       .where(eq(usersTable.authId, authId));
 
     if (raceWinner) {
-      const refreshed = await refreshExistingUser(raceWinner, verifiedProfile);
-      return refreshed;
+      return raceWinner;
     }
 
     const [emailRaceWinner] = await db
@@ -386,19 +375,40 @@ async function syncLocalUser(
  * Get or create a local user record from the authenticated Supabase session.
  * Performs just-in-time (JIT) provisioning on first login.
  */
-export async function getOrCreateUser(req: Request) {
+export async function resolveAccountUser(req: Request): Promise<User | null> {
+  const cached = requestUsers.get(req);
+  if (cached) return cached;
   const auth = getAuth(req);
   if (!auth?.userId) return null;
 
   const authId = auth.userId;
   const claims = auth.sessionClaims as Record<string, unknown> | undefined;
-  const sessionProfile = buildSupabaseUserProfile(authId, claims);
   const existing = localUserSyncInFlight.get(authId);
-  if (existing) return existing;
+  if (existing) { requestUsers.set(req, existing); return existing; }
 
-  const request = syncLocalUser(authId, claims, sessionProfile, auth.accessToken).finally(() => {
+  const request = syncLocalUser(authId, claims, auth.accessToken).finally(() => {
     localUserSyncInFlight.delete(authId);
   });
   localUserSyncInFlight.set(authId, request);
+  requestUsers.set(req, request);
+  return request;
+}
+
+/** Approved-only resolver. Permission results are reused within a request, never across requests. */
+export async function getOrCreateUser(req: Request): Promise<User | null> {
+  const cached = requestApprovedUsers.get(req);
+  if (cached) return cached;
+  const request = (async () => {
+    const existing = await resolveAccountUser(req);
+    if (!isApproved(existing)) return null;
+    if (!needsSupabaseProfileRepair(existing)) return existing;
+    const auth = getAuth(req);
+    if (!auth) return null;
+    const claims = auth.sessionClaims as Record<string, unknown> | undefined;
+    const updated = await refreshExistingUser(existing, buildSupabaseUserProfile(auth.userId, claims));
+    if (!updated || !needsSupabaseProfileRepair(updated) || !shouldFetchSupabaseProfile(auth.userId)) return updated;
+    return refreshExistingUser(updated, await getFreshSupabaseProfile(auth.userId, claims, auth.accessToken));
+  })();
+  requestApprovedUsers.set(req, request);
   return request;
 }

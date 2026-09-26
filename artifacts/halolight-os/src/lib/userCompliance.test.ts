@@ -66,5 +66,6 @@ test("dashboard transport scopes keys to user, patches one widget, and never rea
   assert.ok(!dashboard.includes("localStorage"));
   assert.ok(dashboard.includes("dashboardPreferencesKey(user?.id"));
   const app = readFileSync(new URL("../App.tsx", import.meta.url), "utf8");
-  assert.match(app, /<LocalUserGate>\s*<LanguageSync \/>\s*<ConsentGate>\s*<AppShell>/);
+  assert.match(app, /<AccountAccessGate>\s*<LocalUserGate>\s*<RequestedRoutePreloader \/>\s*<LanguageSync \/>\s*<ConsentGate>\s*<AppShell>\s*<Switch>/);
+  assert.match(app, /<\/Switch>\s*<\/AppShell>\s*<\/ConsentGate>\s*<\/LocalUserGate>\s*<\/AccountAccessGate>/);
 });

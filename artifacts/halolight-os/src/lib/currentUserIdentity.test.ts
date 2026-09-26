@@ -177,6 +177,7 @@ function appHarness() {
   let scheduleEffects = true;
   let location = "/";
   let signedIn = true;
+  let accessStatus = "approved";
   let failImport = false;
   const imports: string[] = [];
   let pageMounts = 0;
@@ -184,6 +185,7 @@ function appHarness() {
   let preloadDeps: unknown[] | undefined;
   let renderingPreloader = false;
   const pass = ({ children }: { children: unknown }) => children;
+  const accessGate = ({ children }: { children: unknown }) => accessStatus === "approved" ? children : null;
   const redirect = () => null;
   const module = { exports: {} as Record<string, (props?: any) => any> };
   runInNewContext(compiledApp, {
@@ -304,6 +306,7 @@ function appHarness() {
       if (id === "./components/layout/AppShell") return { AppShell: pass };
       if (id === "./components/LanguageSync") return { LanguageSync: pass };
       if (id === "./components/ConsentGate") return { ConsentGate: pass };
+      if (id === "./components/AccountAccessGate") return { AccountAccessGate: accessGate };
       if (id === "@/components/ui/toaster") return { Toaster: pass };
       if (id === "@/components/ui/tooltip") return { TooltipProvider: pass };
       if (id.startsWith("./pages/")) {
@@ -322,6 +325,7 @@ function appHarness() {
   return {
     components: module.exports,
     redirect,
+    accessGate,
     imports,
     get pageMounts() {
       return pageMounts;
@@ -335,12 +339,19 @@ function appHarness() {
     setSignedIn: (next: boolean) => {
       signedIn = next;
     },
+    setAccessStatus: (next: string) => { accessStatus = next; },
     setImportFailure: (next: boolean) => {
       failImport = next;
     },
     preload: async () => {
       effects = [];
       scheduleEffects = true;
+      const protectedTree = module.exports.ProtectedRoutes();
+      if (protectedTree.type !== accessGate) return;
+      const localGate = accessGate(protectedTree.props) as any;
+      if (!localGate) return;
+      const children = localGate.type(localGate.props);
+      if (!Array.isArray(children) || !children.some((child: any) => child?.type === module.exports.RequestedRoutePreloader)) return;
       renderingPreloader = true;
       module.exports.RequestedRoutePreloader();
       renderingPreloader = false;
@@ -553,14 +564,14 @@ describe("auth loading and session isolation", () => {
     );
   });
 
-  it("does not expose public signup", () => {
+  it("exposes signup without using a frontend flag to grant application access", () => {
     assert.ok(!appSource.includes("ALLOW_PUBLIC_SIGNUPS"));
-    assert.ok(appSource.includes('<Redirect to="/sign-in" />'));
+    assert.match(appSource, /<Route path="\/sign-up\/\*\?">\{\(\) => <AuthPage mode="sign-up" \/>\}<\/Route>/);
   });
 });
 
 describe("requested route code preloading", () => {
-  it("preloads only the requested academy or admin module during local validation", async () => {
+  it("preloads only the requested module after approval and local validation", async () => {
     for (const [path, page] of [
       ["/academy", "Academy"],
       ["/academy/course-1", "AcademyCourse"],
@@ -574,13 +585,16 @@ describe("requested route code preloading", () => {
       h.setLocation(path);
       h.setResult({ isPending: true });
       await h.preload();
-      assert.deepEqual(h.imports, [`./pages/${page}`]);
-      assert.equal(h.userQueries, 0);
+      assert.deepEqual(h.imports, []);
+      assert.equal(h.userQueries, 1);
       assert.equal(h.pageMounts, 0);
       assert.equal(
         h.components.LocalUserGate({ children: "protected" }).type().props.role,
         "status",
       );
+      h.setResult({ data: { isActive: true, authId: "user_a" } });
+      await h.preload();
+      assert.deepEqual(h.imports, [`./pages/${page}`]);
     }
   });
 
@@ -595,7 +609,7 @@ describe("requested route code preloading", () => {
       h.setResult(result);
       await h.preload();
       await h.preload();
-      assert.deepEqual(h.imports, ["./pages/AcademyLesson"]);
+      assert.deepEqual(h.imports, []);
       assert.equal(
         h.components.LocalUserGate({ children: "protected" }).props.role,
         "alert",
@@ -606,6 +620,7 @@ describe("requested route code preloading", () => {
 
   it("skips signed-out, public and unmatched paths", async () => {
     const h = appHarness();
+    h.setResult({ data: { isActive: true, authId: "user_a" } });
     h.setSignedIn(false);
     h.setLocation("/admin/academy");
     await h.preload();
@@ -631,6 +646,7 @@ describe("requested route code preloading", () => {
     await h.preload();
     h.setSignedIn(true);
     await h.preload();
+    assert.deepEqual(h.imports, []);
     h.setResult({ data: { isActive: true, authId: "user_a" } });
     await h.preload();
     h.setLocation("/academy/course-1/lesson-2");
@@ -645,6 +661,7 @@ describe("requested route code preloading", () => {
     const h = appHarness();
     h.setLocation("/admin/academy");
     h.setImportFailure(true);
+    h.setResult({ data: { isActive: true, authId: "user_a", role: "client" } });
     await h.preload();
     h.setResult({ data: { role: "client" } });
     assert.equal(
@@ -655,11 +672,26 @@ describe("requested route code preloading", () => {
     assert.equal(h.pageMounts, 0);
   });
 
-  it("keeps the application shell and route switch inside LocalUserGate", () => {
+  it("pending, rejected, disabled and failed approval never mount local queries or preloads", async () => {
     const h = appHarness();
-    assert.equal(
-      h.components.ProtectedRoutes().type,
-      h.components.LocalUserGate,
-    );
+    h.setLocation("/academy");
+    h.setResult({ data: { isActive: true, authId: "user_a" } });
+    for (const status of ["pending", "rejected", "disabled", "error", "loading"]) {
+      h.setAccessStatus(status);
+      await h.preload();
+      assert.equal(h.userQueries, 0);
+      assert.deepEqual(h.imports, []);
+    }
+    h.setAccessStatus("approved");
+    await h.preload();
+    assert.equal(h.userQueries, 1);
+    assert.deepEqual(h.imports, ["./pages/Academy"]);
+  });
+
+  it("keeps local validation, shell and route switch inside the approval gate", () => {
+    const h = appHarness();
+    const root = h.components.ProtectedRoutes();
+    assert.equal(root.type, h.accessGate);
+    assert.equal(root.props.children.type, h.components.LocalUserGate);
   });
 });

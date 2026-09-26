@@ -18,6 +18,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
 import { protectedPages } from "./lib/pageRoutes";
 import { ConsentGate } from "./components/ConsentGate";
+import { AccountAccessGate } from "./components/AccountAccessGate";
 import { apiErrorStatus } from "./lib/apiErrorMessage";
 import { ThemeProvider } from "./components/theme-provider";
 import { useTranslation } from "react-i18next";
@@ -195,41 +196,43 @@ function ProtectedRoutes() {
   if (status !== "signed-in") return <Redirect to="/sign-in" />;
   if (requiresPassword) return <Redirect to="/set-password" />;
   return (
-    <LocalUserGate>
-      <LanguageSync />
-      <ConsentGate>
-        <AppShell>
-          <Switch>
-            {protectedPages.map(({ path, component, admin }) =>
-              admin ? (
-                <AdminPageRoute key={path} path={path} component={component} />
-              ) : (
-                <PageRoute key={path} path={path} component={component} />
-              ),
-            )}
-            <Route>
-              {() => (
-                <Suspense fallback={<PageFallback />}>
-                  <NotFound />
-                </Suspense>
+    <AccountAccessGate>
+      <LocalUserGate>
+        <RequestedRoutePreloader />
+        <LanguageSync />
+        <ConsentGate>
+          <AppShell>
+            <Switch>
+              {protectedPages.map(({ path, component, admin }) =>
+                admin ? (
+                  <AdminPageRoute key={path} path={path} component={component} />
+                ) : (
+                  <PageRoute key={path} path={path} component={component} />
+                ),
               )}
-            </Route>
-          </Switch>
-        </AppShell>
-      </ConsentGate>
-    </LocalUserGate>
+              <Route>
+                {() => (
+                  <Suspense fallback={<PageFallback />}>
+                    <NotFound />
+                  </Suspense>
+                )}
+              </Route>
+            </Switch>
+          </AppShell>
+        </ConsentGate>
+      </LocalUserGate>
+    </AccountAccessGate>
   );
 }
 
 function AuthRoutes() {
   return (
     <AuthSessionBoundary>
-      <RequestedRoutePreloader />
       <TooltipProvider>
         <Switch>
           <Route path="/" component={HomeRedirect} />
           <Route path="/sign-in/*?">{() => <AuthPage mode="sign-in" />}</Route>
-          <Route path="/sign-up/*?">{() => <Redirect to="/sign-in" />}</Route>
+          <Route path="/sign-up/*?">{() => <AuthPage mode="sign-up" />}</Route>
           <Route path="/forgot-password">
             {() => <AuthPage mode="reset" />}
           </Route>

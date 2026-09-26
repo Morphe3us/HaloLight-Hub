@@ -100,6 +100,34 @@ database access, Supabase authentication, storage durability or Bunny security.
 
 ## Supabase Auth configuration
 
+### Public registration with approval
+
+For the approval-based rollout, first apply the additive `users.access_status`
+migration and deploy the API approval gate and signup UI. Existing users remain
+approved. Only then set `ALLOW_PUBLIC_SIGNUPS=true` on the API and enable **Allow
+new users to sign up** in Supabase. Keep email confirmation enabled, anonymous
+sign-ins and manual linking disabled. Never enable signup against an older API
+that automatically grants access to newly created users.
+
+New verified registrations become pending clients. Authentication alone grants
+no Hub access. `/api/users/me/access` exposes only the caller's status and email;
+other API routes remain blocked until an approved active administrator accepts
+the request through Users. Rejection does not delete the authentication identity.
+The 12-hour message is a manual review commitment, not automatic approval.
+
+Use this **Confirm signup** email action for cross-browser confirmation:
+
+```html
+<a href="{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&amp;type=email">Confirm your email</a>
+```
+
+Verify signup, email confirmation, pending access denial (including direct video
+and download URLs), admin approval/rejection, and existing-account access before
+client rollout. Do not grant Supabase `anon`/`authenticated` direct access to the
+application tables; business access remains behind the Express approval gate.
+
+### Invitation-only alternative
+
 These are operator actions, not settings applied by a build or this documentation
 update. In the Supabase dashboard, enable **Email/password** and **Google**, keep
 email confirmation enabled, and disable **Allow new users to sign up**, **Allow

@@ -60,6 +60,21 @@ export interface HealthStatus {
   status: string;
 }
 
+export type AccountAccessStatus = typeof AccountAccessStatus[keyof typeof AccountAccessStatus];
+
+
+export const AccountAccessStatus = {
+  pending: 'pending',
+  approved: 'approved',
+  rejected: 'rejected',
+  disabled: 'disabled',
+} as const;
+
+export interface AccountAccess {
+  status: AccountAccessStatus;
+  email: string;
+}
+
 export type UserRole = typeof UserRole[keyof typeof UserRole];
 
 
@@ -68,6 +83,15 @@ export const UserRole = {
   client: 'client',
   coach: 'coach',
   sales_rep: 'sales_rep',
+} as const;
+
+export type UserAccessStatus = typeof UserAccessStatus[keyof typeof UserAccessStatus];
+
+
+export const UserAccessStatus = {
+  pending: 'pending',
+  approved: 'approved',
+  rejected: 'rejected',
 } as const;
 
 export type UserLanguage = typeof UserLanguage[keyof typeof UserLanguage];
@@ -106,6 +130,7 @@ export interface User {
   city?: string | null;
   role: UserRole;
   isActive: boolean;
+  accessStatus?: UserAccessStatus;
   language: UserLanguage;
   currency: string;
   /** @nullable */
@@ -3461,6 +3486,18 @@ export interface ConsumableUsageResult {
   monthsRemaining: number | null;
 }
 
+export type ReviewUserAccessBodyDecision = typeof ReviewUserAccessBodyDecision[keyof typeof ReviewUserAccessBodyDecision];
+
+
+export const ReviewUserAccessBodyDecision = {
+  approved: 'approved',
+  rejected: 'rejected',
+} as const;
+
+export type ReviewUserAccessBody = {
+  decision: ReviewUserAccessBodyDecision;
+};
+
 export type InviteUser200 = {
   sent: true;
 };
@@ -3482,12 +3519,22 @@ videoId?: string;
 };
 
 export type ListUsersParams = {
+accessStatus?: ListUsersAccessStatus;
 role?: string;
 active?: boolean;
 q?: string;
 limit?: number;
 offset?: number;
 };
+
+export type ListUsersAccessStatus = typeof ListUsersAccessStatus[keyof typeof ListUsersAccessStatus];
+
+
+export const ListUsersAccessStatus = {
+  pending: 'pending',
+  approved: 'approved',
+  rejected: 'rejected',
+} as const;
 
 export type UpdateUserParams = {
 lang?: string;

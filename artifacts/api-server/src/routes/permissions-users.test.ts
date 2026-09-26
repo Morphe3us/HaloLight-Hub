@@ -23,7 +23,7 @@ function load<T>(file: URL, dependencies: Record<string, unknown>): T {
 test("four roles: real auth/sync, disabled users, profile privilege injection and admin role changes", async t => {
   const roles = ["admin", "client", "coach", "sales_rep"] as const;
   const rows: Record<string, any>[] = roles.flatMap(role => [true, false].map(isActive => ({
-    id: `${role}-${isActive}`, authId: `auth-${role}-${isActive}`, role, isActive,
+    id: `${role}-${isActive}`, authId: `auth-${role}-${isActive}`, role, isActive, accessStatus: "approved",
     email: `${role}-${isActive}@example.invalid`, fullName: "Fixture User", companyName: "Fixture",
     language: "en", currency: "EUR", createdAt: new Date("2026-01-01"),
   })));
@@ -33,7 +33,7 @@ test("four roles: real auth/sync, disabled users, profile privilege injection an
   function matches(row: Record<string, any>, condition?: orm.SQL) {
     if (!condition) return true;
     const query = dialect.sqlToQuery(condition);
-    const fields: Record<string, string> = { id: "id", clerk_id: "authId", role: "role", is_active: "isActive" };
+    const fields: Record<string, string> = { id: "id", clerk_id: "authId", role: "role", is_active: "isActive", access_status: "accessStatus" };
     let evaluated = 0;
     const result = Array.from(query.sql.matchAll(/"users"\."(\w+)" = \$(\d+)/g)).every(match => {
       assert.ok(fields[match[1]], `Unsupported predicate ${query.sql}`);

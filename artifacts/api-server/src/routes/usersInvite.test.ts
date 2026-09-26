@@ -33,7 +33,7 @@ test("explicit admin invitation validates local eligibility, sanitizes provider 
     "../middlewares/requireAuth": { requireAuth: (req: express.Request, res: express.Response, next: express.NextFunction) => {
       if (!req.headers["x-role"]) { res.status(401).json({ error: "Unauthorized" }); return; } next();
     } },
-    "../lib/userSync": { getOrCreateUser: async (req: express.Request) => ({ id: "local-admin", role: req.headers["x-role"], isActive: req.headers["x-active"] !== "false" }) },
+    "../lib/userSync": { getOrCreateUser: async (req: express.Request) => ({ id: "local-admin", role: req.headers["x-role"], accessStatus: "approved", isActive: req.headers["x-active"] !== "false" }) },
     "../lib/userConsentPolicy": {}, "../lib/userCompliance": {}, "../lib/userDashboardPreferences": {},
     "../lib/supabaseProfile": { normalizeProfileEmail, isPlaceholderEmail },
     "../lib/supabase": {
@@ -61,7 +61,7 @@ test("explicit admin invitation validates local eligibility, sanitizes provider 
     method: "POST", headers: { "content-type": "application/json", ...(role ? { "x-role": role } : {}), ...headers },
     body: JSON.stringify({ email: "attacker@example.com", redirectTo: "https://evil.example.com", role: "admin" }),
   });
-  const eligible = () => ({ id: targetId, authId: "manual_fixture", isActive: true, email: "Invite@Example.com", role: "client" });
+  const eligible = () => ({ id: targetId, authId: "manual_fixture", isActive: true, accessStatus: "approved", email: "Invite@Example.com", role: "client" });
   target = eligible();
   assert.equal((await request("")).status, 401);
   for (const role of ["client", "coach", "sales_rep"]) assert.equal((await request(role)).status, 403);
@@ -69,7 +69,7 @@ test("explicit admin invitation validates local eligibility, sanitizes provider 
   assert.equal(queries, 0); assert.equal(sends, 0);
   assert.equal((await request("admin", "not-a-local-uuid")).status, 404); assert.equal(queries, 0);
   target = undefined; assert.equal((await request()).status, 404);
-  for (const patch of [{ isActive: false }, { authId: "user_legacy" }, { authId: targetId }, { email: "bad" }, { email: "user@placeholder.com" }]) {
+  for (const patch of [{ accessStatus: "pending" }, { accessStatus: "rejected" }, { isActive: false }, { authId: "user_legacy" }, { authId: targetId }, { email: "bad" }, { email: "user@placeholder.com" }]) {
     target = { ...eligible(), ...patch }; assert.equal((await request()).status, 409);
   }
   assert.equal(sends, 0); assert.equal(writes, 0);

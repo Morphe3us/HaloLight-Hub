@@ -25,6 +25,7 @@ import type {
   AIKnowledgeDocList,
   AcademyProgressSummary,
   AcceptUserConsentBody,
+  AccountAccess,
   Activity,
   ActivityInput,
   AdminAnalytics,
@@ -184,6 +185,7 @@ import type {
   ResourceList,
   RestockConsumableInput,
   RevenueIntelligence,
+  ReviewUserAccessBody,
   SearchSalesCustomers200,
   SearchSalesCustomersParams,
   ServiceRecord,
@@ -241,6 +243,155 @@ type AwaitedInput<T> = PromiseLike<T> | T;
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 
+
+export const getGetMyAccessUrl = () => {
+
+
+
+
+  return `/api/users/me/access`
+}
+
+/**
+ * @summary Read own approval status without accessing Hub data
+ */
+export const getMyAccess = async ( options?: RequestInit): Promise<AccountAccess> => {
+
+  return customFetch<AccountAccess>(getGetMyAccessUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetMyAccessQueryKey = () => {
+    return [
+    `/api/users/me/access`
+    ] as const;
+    }
+
+
+export const getGetMyAccessQueryOptions = <TData = Awaited<ReturnType<typeof getMyAccess>>, TError = ErrorType<void>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMyAccess>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetMyAccessQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMyAccess>>> = ({ signal }) => getMyAccess({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getMyAccess>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetMyAccessQueryResult = NonNullable<Awaited<ReturnType<typeof getMyAccess>>>
+export type GetMyAccessQueryError = ErrorType<void>
+
+
+/**
+ * @summary Read own approval status without accessing Hub data
+ */
+
+export function useGetMyAccess<TData = Awaited<ReturnType<typeof getMyAccess>>, TError = ErrorType<void>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMyAccess>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetMyAccessQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getReviewUserAccessUrl = (id: string,) => {
+
+
+
+
+  return `/api/users/${id}/access`
+}
+
+/**
+ * @summary Approve or reject a pending client account (approved admin only)
+ */
+export const reviewUserAccess = async (id: string,
+    reviewUserAccessBody: ReviewUserAccessBody, options?: RequestInit): Promise<User> => {
+
+  return customFetch<User>(getReviewUserAccessUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      reviewUserAccessBody,)
+  }
+);}
+
+
+
+
+export const getReviewUserAccessMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reviewUserAccess>>, TError,{id: string;data: BodyType<ReviewUserAccessBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof reviewUserAccess>>, TError,{id: string;data: BodyType<ReviewUserAccessBody>}, TContext> => {
+
+const mutationKey = ['reviewUserAccess'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof reviewUserAccess>>, {id: string;data: BodyType<ReviewUserAccessBody>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  reviewUserAccess(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReviewUserAccessMutationResult = NonNullable<Awaited<ReturnType<typeof reviewUserAccess>>>
+    export type ReviewUserAccessMutationBody = BodyType<ReviewUserAccessBody>
+    export type ReviewUserAccessMutationError = ErrorType<void>
+
+    /**
+ * @summary Approve or reject a pending client account (approved admin only)
+ */
+export const useReviewUserAccess = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reviewUserAccess>>, TError,{id: string;data: BodyType<ReviewUserAccessBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof reviewUserAccess>>,
+        TError,
+        {id: string;data: BodyType<ReviewUserAccessBody>},
+        TContext
+      > => {
+      return useMutation(getReviewUserAccessMutationOptions(options));
+    }
 
 export const getInviteUserUrl = (id: string,) => {
 

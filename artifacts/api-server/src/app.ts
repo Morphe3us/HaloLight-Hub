@@ -10,6 +10,8 @@ import healthRouter from "./routes/health";
 import operationalReadinessRouter from "./routes/operational-readiness";
 import { createFrontendHandler } from "./lib/frontend";
 import { consentGate } from "./middlewares/consentGate";
+import { accountAccessGate } from "./middlewares/accountAccessGate";
+import accountAccessRouter from "./routes/accountAccess";
 
 const app: Express = express();
 
@@ -52,6 +54,11 @@ app.use(express.json({ limit: "25mb" }));
 app.use(express.urlencoded({ extended: true, limit: "25mb" }));
 
 app.use(supabaseAuth);
+app.use("/api", accountAccessGate);
+app.use("/api", (req, res, next) => {
+  if (req.method === "GET" && req.path === "/users/me/access") accountAccessRouter(req, res, next);
+  else next();
+});
 
 // This exact read-only route independently requires an existing active admin.
 app.use("/api", (req, res, next) => {
@@ -62,6 +69,7 @@ app.use("/api", (req, res, next) => {
   }
 });
 app.use("/api", consentGate);
+app.use("/api", accountAccessRouter);
 app.use("/api", router);
 
 app.use(createApiErrorHandler(logger));

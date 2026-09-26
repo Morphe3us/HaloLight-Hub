@@ -9,6 +9,65 @@ import * as zod from 'zod';
 
 
 /**
+ * @summary Read own approval status without accessing Hub data
+ */
+export const GetMyAccessResponse = zod.object({
+  "status": zod.enum(['pending', 'approved', 'rejected', 'disabled']),
+  "email": zod.string()
+})
+
+
+/**
+ * @summary Approve or reject a pending client account (approved admin only)
+ */
+export const ReviewUserAccessParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const ReviewUserAccessBody = zod.object({
+  "decision": zod.enum(['approved', 'rejected'])
+})
+
+export const reviewUserAccessResponseCurrencyDefault = `EUR`;
+
+export const ReviewUserAccessResponse = zod.object({
+  "id": zod.string(),
+  "authId": zod.string(),
+  "email": zod.string(),
+  "firstName": zod.string().nullish(),
+  "lastName": zod.string().nullish(),
+  "fullName": zod.string().nullish(),
+  "companyName": zod.string().nullish(),
+  "companyAddress": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "country": zod.string().nullish(),
+  "city": zod.string().nullish(),
+  "role": zod.enum(['admin', 'client', 'coach', 'sales_rep']),
+  "isActive": zod.boolean(),
+  "accessStatus": zod.enum(['pending', 'approved', 'rejected']).optional(),
+  "language": zod.enum(['en', 'fr', 'es', 'de', 'it', 'pl', 'pt', 'nl']),
+  "currency": zod.string().default(reviewUserAccessResponseCurrencyDefault),
+  "birthday": zod.string().nullish(),
+  "website": zod.string().nullish(),
+  "instagram": zod.string().nullish(),
+  "facebook": zod.string().nullish(),
+  "pinterest": zod.string().nullish(),
+  "tiktok": zod.string().nullish(),
+  "linkedin": zod.string().nullish(),
+  "businessType": zod.string().nullish(),
+  "mainMarket": zod.string().nullish(),
+  "taxId": zod.string().nullish(),
+  "photobooths": zod.number().nullish(),
+  "businessGoal": zod.string().nullish(),
+  "providerSignature": zod.string().nullish(),
+  "providerSignerTitle": zod.string().nullish(),
+  "logoUrl": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date().optional()
+})
+
+
+/**
  * @summary Send an invitation to an active manually provisioned user (admin only)
  */
 export const InviteUserParams = zod.object({
@@ -187,6 +246,7 @@ export const GetCurrentUserResponse = zod.object({
   "city": zod.string().nullish(),
   "role": zod.enum(['admin', 'client', 'coach', 'sales_rep']),
   "isActive": zod.boolean(),
+  "accessStatus": zod.enum(['pending', 'approved', 'rejected']).optional(),
   "language": zod.enum(['en', 'fr', 'es', 'de', 'it', 'pl', 'pt', 'nl']),
   "currency": zod.string().default(getCurrentUserResponseCurrencyDefault),
   "birthday": zod.string().nullish(),
@@ -256,6 +316,7 @@ export const UpdateCurrentUserResponse = zod.object({
   "city": zod.string().nullish(),
   "role": zod.enum(['admin', 'client', 'coach', 'sales_rep']),
   "isActive": zod.boolean(),
+  "accessStatus": zod.enum(['pending', 'approved', 'rejected']).optional(),
   "language": zod.enum(['en', 'fr', 'es', 'de', 'it', 'pl', 'pt', 'nl']),
   "currency": zod.string().default(updateCurrentUserResponseCurrencyDefault),
   "birthday": zod.string().nullish(),
@@ -285,6 +346,7 @@ export const listUsersQueryLimitDefault = 50;
 export const listUsersQueryOffsetDefault = 0;
 
 export const ListUsersQueryParams = zod.object({
+  "accessStatus": zod.enum(['pending', 'approved', 'rejected']).optional(),
   "role": zod.coerce.string().optional(),
   "active": zod.coerce.boolean().optional(),
   "q": zod.coerce.string().optional(),
@@ -309,6 +371,7 @@ export const ListUsersResponse = zod.object({
   "city": zod.string().nullish(),
   "role": zod.enum(['admin', 'client', 'coach', 'sales_rep']),
   "isActive": zod.boolean(),
+  "accessStatus": zod.enum(['pending', 'approved', 'rejected']).optional(),
   "language": zod.enum(['en', 'fr', 'es', 'de', 'it', 'pl', 'pt', 'nl']),
   "currency": zod.string().default(listUsersResponseItemsItemCurrencyDefault),
   "birthday": zod.string().nullish(),
@@ -373,6 +436,7 @@ export const GetUserResponse = zod.object({
   "city": zod.string().nullish(),
   "role": zod.enum(['admin', 'client', 'coach', 'sales_rep']),
   "isActive": zod.boolean(),
+  "accessStatus": zod.enum(['pending', 'approved', 'rejected']).optional(),
   "language": zod.enum(['en', 'fr', 'es', 'de', 'it', 'pl', 'pt', 'nl']),
   "currency": zod.string().default(getUserResponseCurrencyDefault),
   "birthday": zod.string().nullish(),
@@ -437,6 +501,7 @@ export const UpdateUserResponse = zod.object({
   "city": zod.string().nullish(),
   "role": zod.enum(['admin', 'client', 'coach', 'sales_rep']),
   "isActive": zod.boolean(),
+  "accessStatus": zod.enum(['pending', 'approved', 'rejected']).optional(),
   "language": zod.enum(['en', 'fr', 'es', 'de', 'it', 'pl', 'pt', 'nl']),
   "currency": zod.string().default(updateUserResponseCurrencyDefault),
   "birthday": zod.string().nullish(),

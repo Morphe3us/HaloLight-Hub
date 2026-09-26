@@ -74,6 +74,7 @@ type AuthContextValue = Snapshot & {
   getToken: () => Promise<string | null>;
   signOut: () => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   requestPasswordReset: (email: string) => Promise<void>;
   setPassword: (password: string) => Promise<void>;
@@ -215,16 +216,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (callback) {
           callbackAttempt.current ??= (async () => {
             const passwordCallback = url.pathname !== `${base}/auth/callback`;
+            const tokenCallback = passwordCallback || url.searchParams.has("token_hash");
             const result = await consumeAuthCallback(
-              passwordCallback ? getVerificationClient().auth : supabase.auth,
+              tokenCallback ? getVerificationClient().auth : supabase.auth,
               url,
               () => window.history.replaceState(null, "", url.pathname),
             );
-            if (result.requiresPassword) {
+            if (tokenCallback) {
               const identity = sessionIdentity(result.session);
               if (!identity) throw new Error("Invalid authentication session");
               // Publish the durable requirement before the SDK persists/broadcasts this session.
-              setupStore.require(identity);
+              if (result.requiresPassword) setupStore.require(identity);
               const published = await supabase.auth.setSession({
                 access_token: result.session.access_token,
                 refresh_token: result.session.refresh_token,
@@ -313,6 +315,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         },
       });
       if (error) throw error;
+    },
+    async signUp(email, password) {
+      const { data, error } = await getVerificationClient().auth.signUp({
+        email: email.trim(), password,
+        options: { emailRedirectTo: `${window.location.origin}${base}/auth/callback` },
+      });
+      // Registration must never publish a session before email confirmation.
+      if (error || data.session) throw new Error("Unable to register");
     },
     async requestPasswordReset(email) {
       const { error } = await getClient().auth.resetPasswordForEmail(email, {

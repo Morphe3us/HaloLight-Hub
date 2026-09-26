@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 const base = import.meta.env.BASE_URL.replace(/\/$/, "");
-type Mode = "sign-in" | "reset" | "callback" | "password" | "error";
+type Mode = "sign-in" | "sign-up" | "reset" | "callback" | "password" | "error";
 
 export function AuthPage({ mode }: { mode: Mode }) {
   const { t } = useTranslation();
@@ -27,7 +27,7 @@ export function AuthPage({ mode }: { mode: Mode }) {
     : auth.redirectTo.slice(base.length) || "/dashboard";
   if (
     auth.status === "signed-in" &&
-    (mode === "sign-in" ||
+    (mode === "sign-in" || mode === "sign-up" ||
       (mode === "callback" && auth.callbackComplete) ||
       (mode === "password" && !auth.requiresPassword))
   )
@@ -45,7 +45,9 @@ export function AuthPage({ mode }: { mode: Mode }) {
         ? tr("reset_title", "Reset your password")
         : mode === "password"
           ? tr("password_title", "Set your password")
-          : tr("sign_in_title", "Welcome back");
+          : mode === "sign-up"
+            ? sent ? tr("check_email_title", "Check your email") : tr("sign_up_title", "Create your account")
+            : tr("sign_in_title", "Welcome back");
   const run = async (action: () => Promise<void>) => {
     if (pending) return;
     setPending(true);
@@ -73,6 +75,10 @@ export function AuthPage({ mode }: { mode: Mode }) {
       if (mode === "reset") {
         await auth.requestPasswordReset(email);
         setSent(true);
+      } else if (mode === "sign-up") {
+        await auth.signUp(email, password);
+        setPassword("");
+        setSent(true);
       } else if (mode === "password") await auth.setPassword(password);
       else await auth.signIn(email, password);
     });
@@ -95,9 +101,9 @@ export function AuthPage({ mode }: { mode: Mode }) {
           />
         </Link>
         <h1 className="text-center text-2xl font-semibold">{title}</h1>
-        {mode === "sign-in" && (
+        {(mode === "sign-in" || mode === "sign-up") && !sent && (
           <p className="mt-2 text-center text-sm text-muted-foreground">
-            {tr("invite_only", "Access is by invitation only.")}
+            {tr("purchase_email_hint", "Use the email address used for your HaloLight purchase.")}
           </p>
         )}
         {invalid ? (
@@ -123,7 +129,7 @@ export function AuthPage({ mode }: { mode: Mode }) {
         ) : sent ? (
           <div className="mt-6 space-y-4 text-center">
             <p role="status" className="text-sm">
-              {tr(
+              {mode === "sign-up" ? tr("check_email_message", "Check your inbox for a confirmation link. After confirming your email, your access will be reviewed.") : tr(
                 "reset_sent",
                 "If an account exists for this email, you will receive a password reset link.",
               )}
@@ -158,9 +164,9 @@ export function AuthPage({ mode }: { mode: Mode }) {
                     id="auth-password"
                     type="password"
                     autoComplete={
-                      mode === "password" ? "new-password" : "current-password"
+                      mode === "password" || mode === "sign-up" ? "new-password" : "current-password"
                     }
-                    minLength={mode === "password" ? 8 : undefined}
+                    minLength={mode === "password" || mode === "sign-up" ? 8 : undefined}
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
@@ -208,10 +214,10 @@ export function AuthPage({ mode }: { mode: Mode }) {
                   ? tr("send_reset", "Send reset link")
                   : mode === "password"
                     ? tr("save_password", "Save password")
-                    : tr("sign_in", "Sign in")}
+                    : mode === "sign-up" ? tr("sign_up", "Create account") : tr("sign_in", "Sign in")}
               </Button>
             </form>
-            {mode === "sign-in" && (
+            {(mode === "sign-in" || mode === "sign-up") && (
               <div className="mt-4 space-y-4 text-center">
                 <Button
                   type="button"
@@ -223,11 +229,14 @@ export function AuthPage({ mode }: { mode: Mode }) {
                   <FcGoogle aria-hidden="true" focusable="false" />
                   <span>{tr("google", "Continue with Google")}</span>
                 </Button>
-                <Link
+                {mode === "sign-in" && <Link
                   className="block text-sm underline"
                   href="/forgot-password"
                 >
                   {tr("forgot_password", "Forgot password?")}
+                </Link>}
+                <Link className="block text-sm underline" href={mode === "sign-up" ? "/sign-in" : "/sign-up"}>
+                  {mode === "sign-up" ? tr("already_registered", "Already registered? Sign in") : tr("register_link", "Create an account")}
                 </Link>
               </div>
             )}

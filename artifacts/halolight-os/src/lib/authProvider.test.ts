@@ -98,7 +98,7 @@ function harness(path = "/", storage = new Map<string, string>()) {
             "https://fixture.supabase.co",
           )
           .read(sessions.sessionIdentity(stored)),
-        "required",
+        path.startsWith("/auth/callback") ? null : "required",
         "setup must be durable before SDK session publication",
       );
       assert.equal(tokens.access_token, stored.access_token);
@@ -111,6 +111,10 @@ function harness(path = "/", storage = new Map<string, string>()) {
     },
   };
   const verificationAuth: any = {
+    signUp: async (input: unknown) => {
+      calls.push(["signup", input]);
+      return { data: { session: null }, error: null };
+    },
     verifyOtp: async (input: unknown) => {
       calls.push(["otp", input]);
       return result(stored);
@@ -247,6 +251,32 @@ function harness(path = "/", storage = new Map<string, string>()) {
     },
   };
 }
+
+test("signup token hash verifies in isolation then publishes a normal session without password setup", async () => {
+  const h = harness("/auth/callback?token_hash=signup-fixture&type=email");
+  h.mount(); await tick();
+  assert.equal(h.render().status, "signed-in");
+  assert.equal(h.render().callbackComplete, true);
+  assert.equal(h.render().requiresPassword, false);
+  assert.deepEqual(JSON.parse(JSON.stringify(h.calls.filter(call => call[0] === "otp"))), [["otp", { token_hash: "signup-fixture", type: "email" }]]);
+  assert.equal(h.calls.filter(call => call[0] === "publish").length, 1);
+  assert.equal(h.storage.size, 0);
+  h.cleanup();
+});
+
+test("signup requests confirmation without publishing a session and fails closed on autoconfirm", async () => {
+  const h = harness(); h.mount(); await tick(); h.emit("SIGNED_OUT", null);
+  await h.render().signUp(" purchase@example.com ", "private-password");
+  assert.deepEqual(JSON.parse(JSON.stringify(h.calls.find(call => call[0] === "signup"))), ["signup", {
+    email: "purchase@example.com", password: "private-password", options: { emailRedirectTo: "https://hub.example/auth/callback" },
+  }]);
+  assert.equal(h.render().status, "signed-out");
+  h.verificationAuth.signUp = async () => result(fixture());
+  await assert.rejects(h.render().signUp("purchase@example.com", "private-password"), /Unable to register/);
+  assert.equal(h.render().status, "signed-out");
+  assert.equal(h.calls.filter(call => call[0] === "publish").length, 0);
+  h.cleanup();
+});
 
 test("provider ignores stale bootstrap result after a cross-tab logout", async () => {
   const h = harness();

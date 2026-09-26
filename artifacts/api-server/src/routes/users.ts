@@ -81,7 +81,7 @@ function requireAdmin(
   user: typeof usersTable.$inferSelect | null | undefined,
   res: Response,
 ): user is typeof usersTable.$inferSelect {
-  if (!user || !user.isActive) {
+  if (!user || !user.isActive || user.accessStatus !== "approved") {
     res.status(401).json({ error: "Unauthorized" });
     return false;
   }
@@ -292,11 +292,16 @@ router.get(
 
     const role = req.query.role as string | undefined;
     const active = req.query.active as string | undefined;
+    const accessStatus = req.query.accessStatus;
+    if (accessStatus !== undefined && accessStatus !== "pending" && accessStatus !== "approved" && accessStatus !== "rejected") {
+      res.status(400).json({ error: "Invalid access status" }); return;
+    }
     const q = (req.query.q as string | undefined)?.trim();
     const limit = parseInt(req.query.limit as string) || 50;
     const offset = parseInt(req.query.offset as string) || 0;
 
     const conditions = [];
+    if (accessStatus !== undefined) conditions.push(eq(usersTable.accessStatus, accessStatus));
     if (role && isUserRole(role)) {
       conditions.push(eq(usersTable.role, role));
     }
@@ -401,6 +406,7 @@ router.post(
           companyName: companyName?.trim() || null,
           phone: phone?.trim() || null,
           role,
+          accessStatus: "approved",
           isActive: isActive ?? true,
           language: isLanguage(language) ? language : "en",
           currency: currency?.trim() || "EUR",
@@ -430,7 +436,7 @@ router.post("/users/:id/invite", requireAuth, async (req, res): Promise<void> =>
   const [target] = await db.select().from(usersTable).where(eq(usersTable.id, id));
   if (!target) { res.status(404).json({ error: "User not found" }); return; }
   const email = normalizeProfileEmail(target.email);
-  if (!target.isActive || !target.authId.startsWith("manual_") || !email || isPlaceholderEmail(email)) {
+  if (!target.isActive || target.accessStatus !== "approved" || !target.authId.startsWith("manual_") || !email || isPlaceholderEmail(email)) {
     res.status(409).json({ error: "User is not eligible for an invitation" }); return;
   }
   const now = Date.now();
@@ -525,6 +531,12 @@ router.patch(
     }
 
     const updates: Partial<typeof usersTable.$inferInsert> = {};
+    if (req.body.accessStatus !== undefined || req.body.authId !== undefined) {
+      res.status(400).json({ error: "Identity and access status require dedicated operations" }); return;
+    }
+    if (target.accessStatus !== "approved" && (email !== undefined || role !== undefined)) {
+      res.status(409).json({ error: "Unapproved accounts cannot change email or role" }); return;
+    }
     if (typeof email === "string") updates.email = email.trim().toLowerCase();
     if (typeof fullName === "string")
       updates.fullName = fullName.trim() || null;
@@ -571,7 +583,7 @@ router.patch(
       [updated] = await db
         .update(usersTable)
         .set({ ...updates, updatedAt: new Date() })
-        .where(eq(usersTable.id, id))
+        .where(and(eq(usersTable.id, id), eq(usersTable.accessStatus, target.accessStatus)))
         .returning();
     } catch (error) {
       if (isUniqueViolation(error)) {
@@ -583,6 +595,7 @@ router.patch(
       throw error;
     }
 
+    if (!updated) { res.status(409).json({ error: "Account changed; reload before editing" }); return; }
     res.json(updated);
   },
 );

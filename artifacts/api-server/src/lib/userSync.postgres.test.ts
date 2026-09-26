@@ -216,25 +216,31 @@ if (process.argv.includes("--user-sync-postgres-worker")) {
         assert.equal(rows[0].clerk_id, successful[0].authId); await checkOwned();
       });
 
-      for (const active of [true, false]) await t.test(`real 23505 during invite claim ${active ? "recovers the active" : "rejects the inactive"} committed winner`, async () => {
+      for (const { active, status } of [
+        { active: true, status: "approved" }, { active: false, status: "approved" },
+        { active: true, status: "pending" }, { active: true, status: "rejected" },
+      ]) await t.test(`real 23505 invite claim recovery honors active=${active}, status=${status}`, async () => {
         await reset();
         const [inviteBefore] = await snapshot();
         const claimant = start({ authId: authA });
         const creator = start({ authId: authA, email: "changed@example.invalid", publicSignups: true });
         await Promise.all([claimant.ready, creator.ready]);
         creator.release(); const created = await creator.result; await creator.exited;
-        assert.ok(created.user); assert.equal(created.user.role, "client");
-        assert.notEqual(created.user.id, localId);
-        await client.query("UPDATE users SET role = 'coach', language = 'de', is_active = $1 WHERE id = $2", [active, created.user.id]);
+        assert.equal(created.user, null);
+        const [createdRow] = (await client.query("SELECT * FROM users WHERE clerk_id = $1", [authA])).rows;
+        assert.equal(createdRow.role, "client"); assert.equal(createdRow.access_status, "pending");
+        assert.notEqual(createdRow.id, localId);
+        await client.query("UPDATE users SET role = 'coach', language = 'de', access_status = $3, is_active = $1 WHERE id = $2", [active, createdRow.id, status]);
         claimant.release(); const recovered = await claimant.result; await claimant.exited;
         assert.notEqual(recovered.pid, created.pid);
         assert.deepEqual(recovered.errors, ["23505"]);
         assert.deepEqual(recovered.constraints, ["users_clerk_id_key"]);
-        if (active) {
-          assert.equal(recovered.user?.id, created.user.id); assert.equal(recovered.user?.role, "coach");
+        if (active && status === "approved") {
+          assert.equal(recovered.user?.id, createdRow.id); assert.equal(recovered.user?.role, "coach");
           assert.equal(recovered.user?.language, "de"); assert.equal(recovered.user?.isActive, true);
         } else assert.equal(recovered.user, null);
         const rows = await snapshot(); assert.equal(rows.length, 2);
+        assert.equal(rows.find((row: { id: string }) => row.id === createdRow.id).access_status, status);
         assert.deepEqual(rows.find((row: { id: string }) => row.id === localId), inviteBefore);
         await checkOwned();
       });
@@ -249,10 +255,9 @@ if (process.argv.includes("--user-sync-postgres-worker")) {
         assert.deepEqual(results.flatMap(value => value.constraints), [sameIdentity ? "users_clerk_id_key" : "users_email_lower_unique"]);
         const rows = await snapshot(); assert.equal(rows.length, 1);
         const successful = results.flatMap(value => value.user ? [value.user] : []);
-        assert.equal(successful.length, sameIdentity ? 2 : 1);
-        for (const user of successful) {
-          assert.equal(user.id, rows[0].id); assert.equal(user.role, "client"); assert.equal(user.isActive, true);
-        }
+        assert.equal(successful.length, 0);
+        assert.equal(rows[0].access_status, "pending"); assert.equal(rows[0].role, "client");
+        assert.equal(rows[0].is_active, true);
       });
 
       await t.test("deactivation committed after both lookups blocks both claims and preserves the local owner", async () => {

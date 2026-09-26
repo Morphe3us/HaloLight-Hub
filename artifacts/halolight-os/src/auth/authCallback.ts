@@ -15,6 +15,8 @@ export async function consumeAuthCallback(
   let requiresPassword = false;
   if (url.pathname.endsWith("/auth/callback") && code && !tokenHash && !type) {
     result = await auth.exchangeCodeForSession(code);
+  } else if (url.pathname.endsWith("/auth/callback") && type === "email" && tokenHash && !code) {
+    result = await auth.verifyOtp({ token_hash: tokenHash, type: "email" });
   } else if (
     (url.pathname.endsWith("/auth/invite") && type === "invite") ||
     (url.pathname.endsWith("/auth/recovery") && type === "recovery")
