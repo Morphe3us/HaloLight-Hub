@@ -293,7 +293,7 @@ export default function AcademyCourse() {
                           <Link key={lesson.id} href={`/academy/${course.id}/${lesson.id}`}>
                             <div className="flex items-center gap-4 px-5 py-3.5 hover:bg-muted transition-colors cursor-pointer group">
                               {thumb ? (
-                                <div className="h-10 w-16 rounded-md overflow-hidden flex-shrink-0 bg-muted relative">
+                                <div key={thumb} className="h-10 w-16 rounded-md overflow-hidden flex-shrink-0 bg-muted relative">
                                   <img
                                     src={thumb}
                                     alt={lesson.title}

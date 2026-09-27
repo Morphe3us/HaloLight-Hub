@@ -58,6 +58,7 @@ test("pending screen shows exact account and maximum review window, never protec
   assert.match(text(view), /HaloLight purchase/);
   assert.doesNotMatch(text(view), /PROTECTED_CONTENT/);
   assert.equal(h.options.query.refetchInterval, 30_000);
+  assert.equal(h.options.query.staleTime, 0);
   assert.equal(h.options.query.refetchOnWindowFocus, "always");
   assert.equal(h.options.query.retry, false);
 });
