@@ -1,3 +1,18 @@
-<svg width="180" height="180" viewBox="0 0 180 180" fill="none" xmlns="http://www.w3.org/2000/svg">
-<rect width="180" height="180" rx="36" fill="#FF3C00"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#2a2522"/>
+      <stop offset="1" stop-color="#121212"/>
+    </linearGradient>
+    <linearGradient id="glyph" x1="12" y1="12" x2="52" y2="52" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#f1d3bd"/>
+      <stop offset="1" stop-color="#ddb398"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="15" fill="url(#bg)"/>
+  <g transform="translate(1.6 1.6) scale(1.9)" stroke="url(#glyph)" stroke-width="2.8" stroke-linecap="round">
+    <path d="M9.2 13.2a7 7 0 0 1 13.6 0"/>
+    <path d="M9.2 18.8a7 7 0 0 0 13.6 0"/>
+  </g>
+  <rect x="11" y="29.4" width="42" height="5.2" rx="2.6" fill="#ddb398" opacity="0.8"/>
 </svg>

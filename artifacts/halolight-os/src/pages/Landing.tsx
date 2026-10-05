@@ -1,224 +1,126 @@
 import { useTranslation } from "react-i18next";
 import { Link } from "wouter";
-import { Button } from "@/components/ui/button";
-import {
-  ArrowRight,
-  BarChart3,
-  Bell,
-  CalendarDays,
-  CheckCircle2,
-  GraduationCap,
-  LayoutDashboard,
-  LifeBuoy,
-  Monitor,
-  Sparkles,
-  Users,
-} from "lucide-react";
+import { ArrowRight, Headset, ShieldCheck, Zap } from "lucide-react";
+import { cn } from "@/lib/utils";
+import HubHero, { HubGlyph, HubLogo } from "@/components/landing/HubHero";
+import ProductTour from "@/components/landing/ProductTour";
+import FeatureBento from "@/components/landing/FeatureBento";
+import AiAssistantSection from "@/components/landing/AiAssistantSection";
 
-/** Aperçu statique du tableau de bord : illustre le produit sans appel réseau. */
-function ProductPreview() {
-  const { t } = useTranslation();
-  const nav = [
-    { icon: LayoutDashboard, label: t("nav.dashboard"), active: true },
-    { icon: GraduationCap, label: t("nav.academy") },
-    { icon: CalendarDays, label: t("nav.events") },
-    { icon: Monitor, label: t("nav.equipment") },
-    { icon: LifeBuoy, label: t("nav.support") },
-    { icon: Sparkles, label: t("nav.ai_assistant") },
-  ];
-  const stats = [
-    { label: t("dashboard.kpi_lessons"), value: "18", suffix: "/ 24", progress: 75 },
-    { label: t("dashboard.kpi_events"), value: "6" },
-    { label: t("dashboard.kpi_equipment_alerts"), value: "0", hint: t("dashboard.equipment_ok"), dot: true },
-  ];
-  const pipeline = [
-    { label: t("nav.leads"), value: "32", width: 92 },
-    { label: t("nav.quotes"), value: "14", width: 58 },
-    { label: t("nav.contracts"), value: "9", width: 40 },
-    { label: t("nav.invoices"), value: "7", width: 30 },
-  ];
+/*
+ * Public landing page. Sections adapted from Aceternity Pro blocks (hero with hub,
+ * tabbed product tour, illustrated bento, accordion with image), re-skinned to the
+ * Hub brand. The page keeps its own light palette regardless of the app theme.
+ */
 
-  return (
-    <div
-      aria-hidden="true"
-      className="rounded-2xl border border-border bg-card overflow-hidden select-none pointer-events-none"
-    >
-      <div className="flex items-center gap-1.5 border-b border-border px-4 h-10">
-        <span className="h-2.5 w-2.5 rounded-full bg-border" />
-        <span className="h-2.5 w-2.5 rounded-full bg-border" />
-        <span className="h-2.5 w-2.5 rounded-full bg-border" />
-        <span className="ml-3 text-[11px] text-muted-foreground font-mono">hub.halolightbooth.com</span>
-      </div>
-      <div className="flex">
-        <div className="hidden sm:flex w-44 shrink-0 flex-col gap-0.5 border-r border-border bg-background/60 p-3">
-          {nav.map(({ icon: Icon, label, active }) => (
-            <div
-              key={label}
-              className={
-                "flex items-center gap-2 rounded-md px-2 py-1.5 text-[12px] " +
-                (active ? "bg-muted text-foreground font-medium" : "text-muted-foreground")
-              }
-            >
-              <Icon className="h-3.5 w-3.5 stroke-[1.75]" />
-              <span className="truncate">{label}</span>
-            </div>
-          ))}
-        </div>
-        <div className="flex-1 min-w-0 p-5 md:p-6 space-y-5">
-          <div className="flex items-center justify-between">
-            <p className="text-[15px] font-semibold tracking-tight text-foreground">{t("nav.dashboard")}</p>
-            <Bell className="h-3.5 w-3.5 text-muted-foreground stroke-[1.75]" />
-          </div>
-          <div className="grid grid-cols-3 rounded-xl border border-border overflow-hidden">
-            {stats.map((s) => (
-              <div key={s.label} className="p-3 md:p-4 min-h-[92px] flex flex-col justify-between gap-3 shadow-[1px_1px_0_0_hsl(var(--border))]">
-                <div className="flex items-start justify-between gap-1">
-                  <span className="text-[11px] leading-snug text-muted-foreground line-clamp-2">{s.label}</span>
-                  {s.dot && <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-success" />}
-                </div>
-                <div>
-                  <p className="text-lg md:text-xl font-semibold tracking-tight tabular-nums text-foreground">
-                    {s.value}
-                    {s.suffix && <span className="ml-1 text-[11px] font-normal text-muted-foreground">{s.suffix}</span>}
-                  </p>
-                  {s.hint && <p className="text-[10px] text-muted-foreground">{s.hint}</p>}
-                  {s.progress !== undefined && (
-                    <div className="mt-1.5 h-1 rounded-full bg-muted overflow-hidden">
-                      <div className="h-full rounded-full bg-foreground/80" style={{ width: `${s.progress}%` }} />
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-          <div>
-            <p className="text-[12px] font-medium text-foreground mb-2">{t("dashboard.sales_overview")}</p>
-            <div className="space-y-2">
-              {pipeline.map((p, i) => (
-                <div key={p.label} className="flex items-center gap-3 text-[11px]">
-                  <span className="w-5 font-mono text-muted-foreground">0{i + 1}</span>
-                  <span className="w-20 truncate text-muted-foreground">{p.label}</span>
-                  <div className="flex-1 h-1 rounded-full bg-muted overflow-hidden">
-                    <div className="h-full rounded-full bg-foreground/70" style={{ width: `${p.width}%` }} />
-                  </div>
-                  <span className="w-6 text-right tabular-nums text-foreground">{p.value}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
+const SIGN_IN = "/sign-in";
+
+const TOKENS = cn(
+  "[--hub-paper:#f9f8f6] [--hub-card:#ffffff] [--hub-panel:#f2efea] [--hub-chip:#ebe7e1]",
+  "[--hub-ink:#121212] [--hub-muted:#6b6b6b] [--hub-line:#d6d0c7] [--hub-line-soft:oklch(0_0_0/0.07)]",
+  "[--hub-accent:#ddb398] [--hub-accent-strong:#a8714d]",
+  "[--hub-win:#ffffff] [--hub-win-side:#faf9f7] [--hub-win-line:oklch(0_0_0/0.08)]",
+);
 
 export default function Landing() {
   const { t } = useTranslation();
-  const signupHref = "/sign-in";
-
-  const features = [
-    { icon: BarChart3, title: t("landing.f1_title"), desc: t("landing.f1_desc") },
-    { icon: GraduationCap, title: t("landing.f2_title"), desc: t("landing.f2_desc") },
-    { icon: Users, title: t("landing.f3_title"), desc: t("landing.f3_desc") },
-    { icon: Monitor, title: t("landing.f4_title"), desc: t("landing.f4_desc") },
-    { icon: Sparkles, title: t("landing.f5_title"), desc: t("landing.f5_desc") },
-    { icon: CheckCircle2, title: t("landing.f6_title"), desc: t("landing.f6_desc") },
+  const values = [
+    { icon: Zap, title: t("landing.v2.value1_title"), body: t("landing.v2.value1_body") },
+    { icon: Headset, title: t("landing.v2.value2_title"), body: t("landing.v2.value2_body") },
+    { icon: ShieldCheck, title: t("landing.v2.value3_title"), body: t("landing.v2.value3_body") },
   ];
+  const steps = [1, 2, 3, 4].map((n) => ({ title: t(`landing.v2.ob_step${n}_title`), body: t(`landing.v2.ob_step${n}_body`) }));
 
   return (
-    <div className="min-h-screen bg-background flex flex-col" data-testid="page-landing">
-      <header className="sticky top-0 z-50 border-b border-border bg-background/85 backdrop-blur-md">
-        <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4 md:px-6">
-          <Link href="/" className="flex items-center" aria-label="HaloLight Hub">
-            <img src="/hub-logo-light.webp" alt="HaloLight Hub" width={480} height={270} className="w-[96px] h-auto dark:hidden" style={{ mixBlendMode: "multiply" }} />
-            <img src="/hub-logo-dark.webp" alt="HaloLight Hub" width={480} height={270} className="w-[96px] h-auto hidden dark:block" style={{ mixBlendMode: "screen" }} />
-          </Link>
-          <div className="flex items-center gap-1.5">
-            <Button asChild variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground" data-testid="button-landing-signin">
-              <Link href="/sign-in">{t("landing.nav_sign_in")}</Link>
-            </Button>
-            <Button asChild size="sm" data-testid="button-landing-signup">
-              <Link href={signupHref}>{t("landing.nav_get_started")}</Link>
-            </Button>
+    <div
+      className={cn(TOKENS, "min-h-screen scroll-smooth bg-(--hub-paper) font-sans text-(--hub-ink) antialiased [color-scheme:light]")}
+      data-testid="page-landing"
+    >
+      <HubHero signInHref={SIGN_IN} />
+
+      <section aria-label={t("landing.v2.values_label")} className="border-y border-black/5 bg-(--hub-card)">
+        <ul className="mx-auto grid max-w-6xl gap-px bg-black/5 sm:grid-cols-3">
+          {values.map(({ icon: Icon, title, body }) => (
+            <li key={title} className="flex items-start gap-3 bg-(--hub-card) px-5 py-5 sm:px-6">
+              <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-(--hub-accent)/25 text-(--hub-accent-strong)">
+                <Icon className="size-5 stroke-[1.75]" />
+              </span>
+              <span>
+                <span className="block text-sm font-bold">{title}</span>
+                <span className="block text-sm text-(--hub-muted)">{body}</span>
+              </span>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <ProductTour />
+      <FeatureBento />
+      <AiAssistantSection ctaHref={SIGN_IN} />
+
+      <section id="onboarding" className="scroll-mt-20 px-4 pb-16 sm:px-6 sm:pb-24">
+        <div className="relative mx-auto max-w-6xl overflow-hidden rounded-[2rem] bg-(--hub-ink) px-6 py-14 text-white sm:px-12 sm:py-16">
+          <div aria-hidden className="pointer-events-none absolute -top-24 -right-24 size-80 rounded-full bg-(--hub-accent)/20 blur-3xl" />
+          <p className="text-sm font-semibold text-(--hub-accent)">{t("landing.f6_title")}</p>
+          <h2 className="mt-3 max-w-xl text-[2rem] leading-[1.08] font-extrabold tracking-[-0.035em] text-balance sm:text-5xl">{t("landing.v2.ob_title")}</h2>
+          <p className="mt-4 max-w-lg text-white/65">{t("landing.v2.ob_desc")}</p>
+          <ol className="relative mt-12 grid gap-8 md:grid-cols-4 md:gap-6">
+            <span aria-hidden className="absolute top-5 right-[12%] left-[12%] hidden h-px bg-gradient-to-r from-(--hub-accent) via-white/25 to-white/10 md:block" />
+            {steps.map((s, i) => (
+              <li key={s.title} className="relative">
+                <span
+                  className={cn(
+                    "relative z-10 grid size-10 place-items-center rounded-full text-sm font-bold ring-4 ring-(--hub-ink)",
+                    i === 0 ? "bg-(--hub-accent) text-(--hub-ink)" : "bg-white/10 text-white",
+                  )}
+                >
+                  {i + 1}
+                </span>
+                <h3 className="mt-4 font-bold">{s.title}</h3>
+                <p className="mt-1.5 text-sm leading-6 text-white/60">{s.body}</p>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </section>
+
+      <section className="px-4 pb-20 sm:px-6 sm:pb-28">
+        <div className="relative mx-auto flex max-w-4xl flex-col items-center overflow-hidden rounded-[2rem] bg-(--hub-card) px-6 py-14 text-center ring-1 ring-black/5 sm:py-20">
+          <div aria-hidden className="pointer-events-none absolute inset-x-0 -top-40 h-80 bg-[radial-gradient(50%_50%_at_50%_100%,rgba(221,179,152,0.45),transparent)]" />
+          <span className="relative grid size-16 place-items-center rounded-2xl bg-(--hub-ink) text-(--hub-accent) shadow-[0_20px_40px_-16px_rgba(0,0,0,0.6)]">
+            <HubGlyph className="size-10" />
+          </span>
+          <h2 className="relative mt-8 max-w-2xl text-[2.1rem] leading-[1.05] font-extrabold tracking-[-0.035em] text-balance sm:text-5xl">{t("landing.cta_title")}</h2>
+          <p className="relative mt-4 max-w-lg text-(--hub-muted) sm:text-lg">{t("landing.cta_subtitle")}</p>
+          <div className="relative mt-8 flex w-full flex-col justify-center gap-2.5 sm:w-auto sm:flex-row">
+            <Link
+              href={SIGN_IN}
+              className="group inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-(--hub-ink) px-6 text-[0.9375rem] font-semibold text-white hover:bg-black"
+            >
+              {t("landing.cta_btn")}
+              <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+            </Link>
+            <Link href={SIGN_IN} className="inline-flex min-h-11 items-center justify-center rounded-full px-6 text-[0.9375rem] font-semibold ring-1 ring-black/10 hover:ring-black/20">
+              {t("landing.hero_login")}
+            </Link>
           </div>
         </div>
-      </header>
+      </section>
 
-      <main className="flex-1">
-        <section className="mx-auto w-full max-w-6xl px-4 md:px-6 pt-16 pb-16 md:pt-24 md:pb-24">
-          <div className="max-w-3xl animate-in fade-in slide-in-from-bottom-2 duration-700 motion-reduce:animate-none">
-            <p className="mb-6 inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1 text-[13px] text-muted-foreground">
-              <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-              {t("landing.hero_badge")}
-            </p>
-            <h1 className="text-[40px] leading-[1.05] md:text-[64px] font-semibold tracking-[-0.035em] text-foreground text-balance">
-              {t("landing.hero_title")}{" "}
-              <span className="text-muted-foreground">{t("landing.hero_highlight")}</span>
-            </h1>
-            <p className="mt-6 max-w-2xl text-lg leading-relaxed text-muted-foreground text-pretty">
-              {t("landing.hero_subtitle")}
-            </p>
-            <div className="mt-8 flex flex-col sm:flex-row gap-3">
-              <Button asChild size="lg" className="h-11 px-5 group">
-                <Link href={signupHref}>
-                  {t("landing.hero_cta")}
-                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-                </Link>
-              </Button>
-              <Button asChild size="lg" variant="outline" className="h-11 px-5">
-                <Link href="/sign-in">{t("landing.hero_login")}</Link>
-              </Button>
-            </div>
-          </div>
-
-          <div className="mt-14 md:mt-20 rounded-[22px] bg-accent/30 dark:bg-accent/10 p-2 md:p-3 animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-150 fill-mode-both motion-reduce:animate-none">
-            <ProductPreview />
-          </div>
-        </section>
-
-        <section className="border-t border-border">
-          <div className="mx-auto w-full max-w-6xl px-4 md:px-6 py-16 md:py-24">
-            <div className="max-w-2xl mb-10 md:mb-14">
-              <h2 className="text-3xl md:text-4xl font-semibold tracking-[-0.03em] text-foreground text-balance">
-                {t("landing.features_title")}
-              </h2>
-              <p className="mt-3 text-lg text-muted-foreground">{t("landing.features_subtitle")}</p>
-            </div>
-
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 rounded-2xl border border-border bg-card overflow-hidden">
-              {features.map(({ icon: Icon, title, desc }) => (
-                <div key={title} className="p-6 md:p-8 shadow-[1px_1px_0_0_hsl(var(--border))]">
-                  <Icon className="h-5 w-5 text-foreground stroke-[1.5]" />
-                  <h3 className="mt-5 text-[15px] font-medium text-foreground">{title}</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{desc}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="border-t border-border">
-          <div className="mx-auto w-full max-w-6xl px-4 md:px-6 py-16 md:py-24 flex flex-col md:flex-row md:items-end md:justify-between gap-8">
-            <div className="max-w-xl">
-              <h2 className="text-3xl md:text-4xl font-semibold tracking-[-0.03em] text-foreground text-balance">
-                {t("landing.cta_title")}
-              </h2>
-              <p className="mt-3 text-lg text-muted-foreground text-pretty">{t("landing.cta_subtitle")}</p>
-            </div>
-            <Button asChild size="lg" className="h-11 px-5 shrink-0 group self-start md:self-auto">
-              <Link href={signupHref}>
-                {t("landing.cta_btn")}
-                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-              </Link>
-            </Button>
-          </div>
-        </section>
-      </main>
-
-      <footer className="border-t border-border">
-        <div className="mx-auto flex w-full max-w-6xl flex-col sm:flex-row items-start sm:items-center justify-between gap-3 px-4 md:px-6 py-8 text-[13px] text-muted-foreground">
-          <img src="/hub-logo-light.webp" alt="HaloLight Hub" width={480} height={270} loading="lazy" className="w-[72px] h-auto opacity-80 dark:hidden" style={{ mixBlendMode: "multiply" }} />
-          <img src="/hub-logo-dark.webp" alt="HaloLight Hub" width={480} height={270} loading="lazy" className="w-[72px] h-auto opacity-80 hidden dark:block" style={{ mixBlendMode: "screen" }} />
+      <footer className="border-t border-black/5 px-4 py-8 sm:px-6">
+        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 text-sm text-(--hub-muted) sm:flex-row">
+          <HubLogo className="w-[84px] opacity-80" />
+          <nav aria-label="Footer" className="flex gap-6">
+            <a href="#tour" className="hover:text-(--hub-ink)">
+              {t("landing.v2.nav_product")}
+            </a>
+            <a href="#features" className="hover:text-(--hub-ink)">
+              {t("landing.v2.nav_features")}
+            </a>
+            <Link href={SIGN_IN} className="hover:text-(--hub-ink)">
+              {t("landing.nav_sign_in")}
+            </Link>
+          </nav>
           <p>{t("landing.footer_copy", { year: new Date().getFullYear() })}</p>
         </div>
       </footer>
