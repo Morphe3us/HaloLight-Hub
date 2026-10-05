@@ -1,109 +1,128 @@
 import { useTranslation } from "react-i18next";
 import { Link } from "wouter";
-import { Button } from "@/components/ui/button";
-import { ArrowRight, BarChart3, GraduationCap, Users, CheckCircle2, Monitor, Sparkles } from "lucide-react";
+import { ArrowRight, Headset, ShieldCheck, Zap } from "lucide-react";
+import { cn } from "@/lib/utils";
+import HubHero, { HubGlyph, HubLogo } from "@/components/landing/HubHero";
+import ProductTour from "@/components/landing/ProductTour";
+import FeatureBento from "@/components/landing/FeatureBento";
+import AiAssistantSection from "@/components/landing/AiAssistantSection";
+
+/*
+ * Public landing page. Sections adapted from Aceternity Pro blocks (hero with hub,
+ * tabbed product tour, illustrated bento, accordion with image), re-skinned to the
+ * Hub brand. The page keeps its own light palette regardless of the app theme.
+ */
+
+const SIGN_IN = "/sign-in";
+
+const TOKENS = cn(
+  "[--hub-paper:#f9f8f6] [--hub-card:#ffffff] [--hub-panel:#f2efea] [--hub-chip:#ebe7e1]",
+  "[--hub-ink:#121212] [--hub-muted:#6b6b6b] [--hub-line:#d6d0c7] [--hub-line-soft:oklch(0_0_0/0.07)]",
+  "[--hub-accent:#ddb398] [--hub-accent-strong:#a8714d]",
+  "[--hub-win:#ffffff] [--hub-win-side:#faf9f7] [--hub-win-line:oklch(0_0_0/0.08)]",
+);
 
 export default function Landing() {
   const { t } = useTranslation();
-  const signupHref = "/sign-in";
-
-  const features = [
-    { icon: BarChart3,    color: "bg-accent/15 text-foreground",   title: t("landing.f1_title"), desc: t("landing.f1_desc") },
-    { icon: GraduationCap, color: "bg-info/15 text-foreground",    title: t("landing.f2_title"), desc: t("landing.f2_desc") },
-    { icon: Users,        color: "bg-success/15 text-foreground",  title: t("landing.f3_title"), desc: t("landing.f3_desc") },
-    { icon: Monitor,      color: "bg-warning/15 text-foreground",  title: t("landing.f4_title"), desc: t("landing.f4_desc") },
-    { icon: Sparkles,     color: "bg-accent/15 text-foreground",   title: t("landing.f5_title"), desc: t("landing.f5_desc") },
-    { icon: CheckCircle2, color: "bg-success/15 text-foreground",  title: t("landing.f6_title"), desc: t("landing.f6_desc") },
+  const values = [
+    { icon: Zap, title: t("landing.v2.value1_title"), body: t("landing.v2.value1_body") },
+    { icon: Headset, title: t("landing.v2.value2_title"), body: t("landing.v2.value2_body") },
+    { icon: ShieldCheck, title: t("landing.v2.value3_title"), body: t("landing.v2.value3_body") },
   ];
+  const steps = [1, 2, 3, 4].map((n) => ({ title: t(`landing.v2.ob_step${n}_title`), body: t(`landing.v2.ob_step${n}_body`) }));
 
   return (
-    <div className="min-h-screen bg-background flex flex-col font-sans" data-testid="page-landing">
-      <header className="bg-background/80 backdrop-blur-md border-b border-border px-6 py-4 flex items-center justify-between sticky top-0 z-50">
-        <div className="flex items-center gap-3">
-          <img src="/logo-hub-light-orig.png" alt="HaloLight Hub" className="w-[120px] h-auto object-contain dark:hidden" style={{ mixBlendMode: "multiply" }} />
-          <img src="/logo-hub-dark-orig.png" alt="HaloLight Hub" className="w-[120px] h-auto object-contain hidden dark:block" style={{ mixBlendMode: "screen" }} />
+    <div
+      className={cn(TOKENS, "min-h-screen scroll-smooth bg-(--hub-paper) font-sans text-(--hub-ink) antialiased [color-scheme:light]")}
+      data-testid="page-landing"
+    >
+      <HubHero signInHref={SIGN_IN} />
+
+      <section aria-label={t("landing.v2.values_label")} className="border-y border-black/5 bg-(--hub-card)">
+        <ul className="mx-auto grid max-w-6xl gap-px bg-black/5 sm:grid-cols-3">
+          {values.map(({ icon: Icon, title, body }) => (
+            <li key={title} className="flex items-start gap-3 bg-(--hub-card) px-5 py-5 sm:px-6">
+              <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-(--hub-accent)/25 text-(--hub-accent-strong)">
+                <Icon className="size-5 stroke-[1.75]" />
+              </span>
+              <span>
+                <span className="block text-sm font-bold">{title}</span>
+                <span className="block text-sm text-(--hub-muted)">{body}</span>
+              </span>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <ProductTour />
+      <FeatureBento />
+      <AiAssistantSection ctaHref={SIGN_IN} />
+
+      <section id="onboarding" className="scroll-mt-20 px-4 pb-16 sm:px-6 sm:pb-24">
+        <div className="relative mx-auto max-w-6xl overflow-hidden rounded-[2rem] bg-(--hub-ink) px-6 py-14 text-white sm:px-12 sm:py-16">
+          <div aria-hidden className="pointer-events-none absolute -top-24 -right-24 size-80 rounded-full bg-(--hub-accent)/20 blur-3xl" />
+          <p className="text-sm font-semibold text-(--hub-accent)">{t("landing.f6_title")}</p>
+          <h2 className="mt-3 max-w-xl text-[2rem] leading-[1.08] font-extrabold tracking-[-0.035em] text-balance sm:text-5xl">{t("landing.v2.ob_title")}</h2>
+          <p className="mt-4 max-w-lg text-white/65">{t("landing.v2.ob_desc")}</p>
+          <ol className="relative mt-12 grid gap-8 md:grid-cols-4 md:gap-6">
+            <span aria-hidden className="absolute top-5 right-[12%] left-[12%] hidden h-px bg-gradient-to-r from-(--hub-accent) via-white/25 to-white/10 md:block" />
+            {steps.map((s, i) => (
+              <li key={s.title} className="relative">
+                <span
+                  className={cn(
+                    "relative z-10 grid size-10 place-items-center rounded-full text-sm font-bold ring-4 ring-(--hub-ink)",
+                    i === 0 ? "bg-(--hub-accent) text-(--hub-ink)" : "bg-white/10 text-white",
+                  )}
+                >
+                  {i + 1}
+                </span>
+                <h3 className="mt-4 font-bold">{s.title}</h3>
+                <p className="mt-1.5 text-sm leading-6 text-white/60">{s.body}</p>
+              </li>
+            ))}
+          </ol>
         </div>
-        <div className="flex items-center gap-3">
-          <Link href="/sign-in">
-            <Button variant="ghost" className="font-medium text-muted-foreground hover:text-foreground" data-testid="button-landing-signin">
+      </section>
+
+      <section className="px-4 pb-20 sm:px-6 sm:pb-28">
+        <div className="relative mx-auto flex max-w-4xl flex-col items-center overflow-hidden rounded-[2rem] bg-(--hub-card) px-6 py-14 text-center ring-1 ring-black/5 sm:py-20">
+          <div aria-hidden className="pointer-events-none absolute inset-x-0 -top-40 h-80 bg-[radial-gradient(50%_50%_at_50%_100%,rgba(221,179,152,0.45),transparent)]" />
+          <span className="relative grid size-16 place-items-center rounded-2xl bg-(--hub-ink) text-(--hub-accent) shadow-[0_20px_40px_-16px_rgba(0,0,0,0.6)]">
+            <HubGlyph className="size-10" />
+          </span>
+          <h2 className="relative mt-8 max-w-2xl text-[2.1rem] leading-[1.05] font-extrabold tracking-[-0.035em] text-balance sm:text-5xl">{t("landing.cta_title")}</h2>
+          <p className="relative mt-4 max-w-lg text-(--hub-muted) sm:text-lg">{t("landing.cta_subtitle")}</p>
+          <div className="relative mt-8 flex w-full flex-col justify-center gap-2.5 sm:w-auto sm:flex-row">
+            <Link
+              href={SIGN_IN}
+              className="group inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-(--hub-ink) px-6 text-[0.9375rem] font-semibold text-white hover:bg-black"
+            >
+              {t("landing.cta_btn")}
+              <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+            </Link>
+            <Link href={SIGN_IN} className="inline-flex min-h-11 items-center justify-center rounded-full px-6 text-[0.9375rem] font-semibold ring-1 ring-black/10 hover:ring-black/20">
+              {t("landing.hero_login")}
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      <footer className="border-t border-black/5 px-4 py-8 sm:px-6">
+        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 text-sm text-(--hub-muted) sm:flex-row">
+          <HubLogo className="w-[84px] opacity-80" />
+          <nav aria-label="Footer" className="flex gap-6">
+            <a href="#tour" className="hover:text-(--hub-ink)">
+              {t("landing.v2.nav_product")}
+            </a>
+            <a href="#features" className="hover:text-(--hub-ink)">
+              {t("landing.v2.nav_features")}
+            </a>
+            <Link href={SIGN_IN} className="hover:text-(--hub-ink)">
               {t("landing.nav_sign_in")}
-            </Button>
-          </Link>
-          <Link href={signupHref}>
-            <Button className="font-medium shadow-sm" data-testid="button-landing-signup">
-              {t("landing.nav_get_started")}
-            </Button>
-          </Link>
+            </Link>
+          </nav>
+          <p>{t("landing.footer_copy", { year: new Date().getFullYear() })}</p>
         </div>
-      </header>
-
-      <main className="flex-1 flex flex-col items-center">
-        <section className="w-full max-w-5xl mx-auto px-6 py-24 md:py-32 flex flex-col items-center text-center">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-accent/20 text-foreground font-semibold text-sm mb-8 border border-accent/30">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-accent"></span>
-            </span>
-            {t("landing.hero_badge")}
-          </div>
-          <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-foreground mb-6 max-w-4xl leading-[1.1]">
-            {t("landing.hero_title")}{" "}
-            <span style={{ color: "#DDB398" }}>{t("landing.hero_highlight")}</span>.
-          </h1>
-          <p className="text-xl text-muted-foreground mb-10 max-w-2xl leading-relaxed">
-            {t("landing.hero_subtitle")}
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4">
-            <Link href={signupHref}>
-              <Button size="lg" className="h-14 px-8 text-lg font-medium shadow-md group">
-                {t("landing.hero_cta")} <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
-              </Button>
-            </Link>
-            <Link href="/sign-in">
-              <Button size="lg" variant="outline" className="h-14 px-8 text-lg font-medium">
-                {t("landing.hero_login")}
-              </Button>
-            </Link>
-          </div>
-        </section>
-
-        <section className="w-full bg-card border-y border-border py-24">
-          <div className="max-w-6xl mx-auto px-6">
-            <div className="text-center mb-16">
-              <h2 className="text-3xl font-bold text-foreground mb-4">{t("landing.features_title")}</h2>
-              <p className="text-lg text-muted-foreground">{t("landing.features_subtitle")}</p>
-            </div>
-
-            <div className="grid md:grid-cols-3 gap-6">
-              {features.map(({ icon: Icon, color, title, desc }) => (
-                <div key={title} className="p-8 rounded-2xl bg-background border border-border hover:border-accent/40 hover:shadow-md transition-all duration-200 group">
-                  <div className={`w-12 h-12 rounded-xl ${color} flex items-center justify-center mb-5 group-hover:scale-105 transition-transform duration-200`}>
-                    <Icon className="h-6 w-6" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-foreground mb-2">{title}</h3>
-                  <p className="text-muted-foreground leading-relaxed text-sm">{desc}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="w-full max-w-4xl mx-auto px-6 py-24 text-center">
-          <div className="bg-foreground rounded-3xl p-12 relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-1 bg-accent rounded-t-3xl"></div>
-            <h2 className="text-3xl font-bold text-background mb-4">{t("landing.cta_title")}</h2>
-            <p className="text-background/80 text-lg mb-8 max-w-xl mx-auto">{t("landing.cta_subtitle")}</p>
-            <Link href={signupHref}>
-              <Button size="lg" className="h-12 px-8 text-base font-semibold bg-accent text-foreground hover:bg-accent/90 border-0 shadow-none">
-                {t("landing.cta_btn")}
-              </Button>
-            </Link>
-          </div>
-        </section>
-      </main>
-
-      <footer className="bg-card border-t border-border py-8 text-center text-sm text-muted-foreground">
-        <p>{t("landing.footer_copy", { year: new Date().getFullYear() })}</p>
       </footer>
     </div>
   );
