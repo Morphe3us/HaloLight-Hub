@@ -3,8 +3,6 @@ import { useTranslation } from "react-i18next";
 import { Link } from "wouter";
 import { useGetEquipment, useCreateEquipment } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,10 +15,11 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import {
-  Monitor, Wrench, AlertTriangle, CheckCircle2, Clock,
-  ChevronRight, Package, ShieldCheck, ShieldAlert,
-  ShieldX, Plus, Info, Loader2,
+  Monitor, AlertTriangle,
+  ChevronRight, ShieldCheck, ShieldAlert,
+  ShieldX, Plus, Loader2,
 } from "lucide-react";
+import { EmptyState, Notice, PageHeader, Stat, StatGrid } from "@/components/page";
 
 type EquipmentItem = {
   id: string;
@@ -39,11 +38,11 @@ type EquipmentItem = {
 
 type TFn = (key: string, opts?: Record<string, unknown>) => string;
 
-const STATUS_CONFIG: Record<string, { color: string; icon: React.ComponentType<{ className?: string }> }> = {
-  active:     { color: "bg-success/15 text-success",          icon: CheckCircle2 },
-  inactive:   { color: "bg-muted text-muted-foreground",      icon: Package },
-  in_service: { color: "bg-info/15 text-info",               icon: Wrench },
-  retired:    { color: "bg-destructive/15 text-destructive",  icon: AlertTriangle },
+const STATUS_CONFIG: Record<string, { dot: string }> = {
+  active:     { dot: "bg-success" },
+  inactive:   { dot: "bg-muted-foreground/50" },
+  in_service: { dot: "bg-info" },
+  retired:    { dot: "bg-destructive" },
 };
 
 function warrantyStatus(expiry: string | null, t: TFn): { label: string; color: string; icon: React.ComponentType<{ className?: string }> } {
@@ -140,7 +139,7 @@ function RegisterModal({
               <Label htmlFor="productModel">{t("equipment.model_label")} <span className="text-destructive">*</span></Label>
               <Input
                 id="productModel"
-                placeholder="e.g. HaloLight Pro X1"
+                placeholder={t("equipment.placeholder_model")}
                 value={form.productModel}
                 onChange={(e) => set("productModel")(e.target.value)}
                 required
@@ -178,7 +177,7 @@ function RegisterModal({
               <Label htmlFor="vendorName">{t("equipment.vendor_label")}</Label>
               <Input
                 id="vendorName"
-                placeholder="e.g. HaloLight Direct"
+                placeholder={t("equipment.placeholder_vendor")}
                 value={form.vendorName}
                 onChange={(e) => set("vendorName")(e.target.value)}
               />
@@ -199,7 +198,7 @@ function RegisterModal({
               <Label htmlFor="maintenanceNotes">{t("equipment.maintenance_notes_label")}</Label>
               <Textarea
                 id="maintenanceNotes"
-                placeholder="Any notes about this unit…"
+                placeholder={t("equipment.placeholder_notes")}
                 rows={2}
                 value={form.maintenanceNotes}
                 onChange={(e) => set("maintenanceNotes")(e.target.value)}
@@ -239,143 +238,108 @@ export default function Equipment() {
 
   if (isLoading) {
     return (
-      <div className="max-w-4xl mx-auto space-y-4">
-        <div className="h-8 w-56 bg-border rounded animate-pulse" />
+      <div className="max-w-4xl space-y-4">
+        <div className="h-8 w-56 bg-muted rounded-md animate-pulse" />
         {[1, 2, 3].map(i => <div key={i} className="h-36 bg-muted rounded-xl animate-pulse" />)}
       </div>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-4xl space-y-8">
       <RegisterModal open={registerOpen} onClose={() => setRegisterOpen(false)} />
 
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">{t("equipment.my_equipment")}</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">{t("equipment.track_subtitle")}</p>
-        </div>
-        <Button variant="outline" size="sm" className="gap-1.5 shrink-0 self-start sm:self-auto" onClick={() => setRegisterOpen(true)}>
-          <Plus className="w-4 h-4" />
-          {t("equipment.register_equipment", { defaultValue: "Register Equipment" })}
-        </Button>
-      </div>
+      <PageHeader
+        title={t("equipment.my_equipment")}
+        description={t("equipment.track_subtitle")}
+        actions={
+          <Button variant="outline" size="sm" className="gap-1.5 shrink-0" onClick={() => setRegisterOpen(true)}>
+            <Plus className="w-4 h-4" />
+            {t("equipment.register_equipment", { defaultValue: "Register Equipment" })}
+          </Button>
+        }
+      />
 
       {/* Alert Banner */}
       {alerts.length > 0 && (
-        <div className="bg-warning/8 border border-warning/30 rounded-xl p-4 flex items-start gap-3">
-          <AlertTriangle className="w-5 h-5 text-warning shrink-0 mt-0.5" />
-          <div>
-            <p className="text-sm font-semibold text-warning">
-              {t("equipment.alert_banner", { count: alerts.length })}
-            </p>
-            <p className="text-xs text-warning mt-0.5">
-              {alerts.map(a => a.productModel).join(", ")} — {t("equipment.check_status")}
-            </p>
-          </div>
-        </div>
+        <Notice tone="warning" icon={AlertTriangle} title={t("equipment.alert_banner", { count: alerts.length })}>
+          {alerts.map(a => a.productModel).join(", ")} — {t("equipment.check_status")}
+        </Notice>
       )}
 
       {/* Summary Cards */}
       {items.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {[
-            { label: t("equipment.total_units"),      value: items.length,                                         color: "text-foreground" },
-            { label: t("equipment.status_active"),    value: items.filter(e => e.status === "active").length,      color: "text-success" },
-            { label: t("equipment.status_in_service"), value: items.filter(e => e.status === "in_service").length, color: "text-info" },
-            { label: t("equipment.alerts"),           value: alerts.length,                                         color: "text-warning" },
-          ].map(s => (
-            <Card key={s.label}>
-              <CardContent className="p-4 text-center">
-                <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">{s.label}</p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        <StatGrid className="grid-cols-2 md:grid-cols-4">
+          <Stat label={t("equipment.total_units")} value={items.length} />
+          <Stat label={t("equipment.status_active")} value={items.filter(e => e.status === "active").length} tone="success" />
+          <Stat label={t("equipment.status_in_service")} value={items.filter(e => e.status === "in_service").length} />
+          <Stat label={t("equipment.alerts")} value={alerts.length} tone={alerts.length > 0 ? "warning" : undefined} />
+        </StatGrid>
       )}
 
       {/* Equipment List */}
       {items.length === 0 ? (
-        <Card>
-          <CardContent className="py-16 text-center">
-            <Monitor className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
-            <p className="text-muted-foreground font-medium">{t("equipment.no_equipment_empty")}</p>
-            <p className="text-sm text-muted-foreground mt-1 mb-4">{t("equipment.no_equipment_desc")}</p>
-            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setRegisterOpen(true)}>
-              <Plus className="w-4 h-4" />
-              {t("equipment.register_first_unit")}
-            </Button>
-          </CardContent>
-        </Card>
+        <EmptyState icon={Monitor} text={t("equipment.no_equipment_empty")}>
+          <p className="text-[13px] text-muted-foreground -mt-2 mb-4">{t("equipment.no_equipment_desc")}</p>
+          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setRegisterOpen(true)}>
+            <Plus className="w-4 h-4" />
+            {t("equipment.register_first_unit")}
+          </Button>
+        </EmptyState>
       ) : (
-        <div className="space-y-4">
+        <ul className="rounded-xl border border-border bg-card divide-y divide-border overflow-hidden">
           {items.map((item) => {
             const statusCfg = STATUS_CONFIG[item.status] ?? STATUS_CONFIG.active!;
-            const StatusIcon = statusCfg.icon;
             const w = warrantyStatus(item.warrantyExpiration ?? null, t);
-            const WarrantyIcon = w.icon;
             const m = maintenanceStatus(item.nextMaintenanceDate ?? null, t);
 
             return (
-              <Link key={item.id} href={`/equipment/${item.id}`}>
-                <Card className="hover:shadow-md transition-all cursor-pointer group">
-                  <CardContent className="p-5">
-                    <div className="flex items-start gap-4">
-                      <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                        <Monitor className="w-6 h-6 text-primary" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <h3 className="font-semibold text-foreground text-base">{item.productModel}</h3>
-                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium flex items-center gap-1 ${statusCfg.color}`}>
-                            <StatusIcon className="w-3 h-3" />
-                            {t(`equipment.status_${item.status}`, item.status.replace('_', ' '))}
-                          </span>
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-0.5">{t("equipment.sn_prefix")} {item.serialNumber}</p>
-
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3">
-                          <div>
-                            <p className="text-xs text-muted-foreground">{t("equipment.purchased")}</p>
-                            <p className="text-xs font-medium text-foreground">{fmtDate(item.purchaseDate)}</p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-muted-foreground">{t("equipment.warranty_label")}</p>
-                            <p className={`text-xs font-medium flex items-center gap-1 ${w.color}`}>
-                              <WarrantyIcon className="w-3 h-3" />
-                              {w.label}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-muted-foreground">{t("equipment.last_service_label")}</p>
-                            <p className="text-xs font-medium text-foreground">{fmtDate(item.lastMaintenanceDate)}</p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-muted-foreground">{t("equipment.next_service_label")}</p>
-                            <p className={`text-xs font-medium flex items-center gap-1 ${m.urgent ? "text-warning" : "text-foreground"}`}>
-                              {m.urgent && <AlertTriangle className="w-3 h-3" />}
-                              {m.label}
-                            </p>
-                          </div>
-                        </div>
-
-                        {item.maintenanceNotes && (
-                          <div className="mt-3 bg-muted rounded-lg px-3 py-2 flex items-start gap-2">
-                            <Info className="w-3.5 h-3.5 text-muted-foreground mt-0.5 shrink-0" />
-                            <p className="text-xs text-muted-foreground line-clamp-2">{item.maintenanceNotes}</p>
-                          </div>
-                        )}
-                      </div>
-                      <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0 mt-1" />
+              <li key={item.id}>
+                <Link href={`/equipment/${item.id}`} className="group flex items-start gap-4 p-5 hover:bg-muted/50 transition-colors">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-x-3 gap-y-1 flex-wrap">
+                      <h3 className="text-[15px] font-medium text-foreground">{item.productModel}</h3>
+                      <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <span className={`h-1.5 w-1.5 rounded-full ${statusCfg.dot}`} />
+                        {t(`equipment.status_${item.status}`, item.status.replace('_', ' '))}
+                      </span>
                     </div>
-                  </CardContent>
-                </Card>
-              </Link>
+                    <p className="text-xs text-muted-foreground font-mono mt-0.5">{t("equipment.sn_prefix")} {item.serialNumber}</p>
+
+                    <dl className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
+                      <div>
+                        <dt className="text-xs text-muted-foreground">{t("equipment.purchased")}</dt>
+                        <dd className="text-[13px] text-foreground tabular-nums mt-0.5">{fmtDate(item.purchaseDate)}</dd>
+                      </div>
+                      <div>
+                        <dt className="text-xs text-muted-foreground">{t("equipment.warranty_label")}</dt>
+                        <dd className={`text-[13px] tabular-nums mt-0.5 ${w.color === "text-success" ? "text-foreground" : w.color}`}>
+                          {w.label}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="text-xs text-muted-foreground">{t("equipment.last_service_label")}</dt>
+                        <dd className="text-[13px] text-foreground tabular-nums mt-0.5">{fmtDate(item.lastMaintenanceDate)}</dd>
+                      </div>
+                      <div>
+                        <dt className="text-xs text-muted-foreground">{t("equipment.next_service_label")}</dt>
+                        <dd className={`text-[13px] tabular-nums mt-0.5 ${m.urgent ? "text-warning" : "text-foreground"}`}>
+                          {m.label}
+                        </dd>
+                      </div>
+                    </dl>
+
+                    {item.maintenanceNotes && (
+                      <p className="mt-3 text-xs text-muted-foreground line-clamp-2 border-l-2 border-border pl-3">{item.maintenanceNotes}</p>
+                    )}
+                  </div>
+                  <ChevronRight className="w-4 h-4 stroke-[1.75] text-muted-foreground/60 group-hover:text-foreground transition-colors shrink-0 mt-1" />
+                </Link>
+              </li>
             );
           })}
-        </div>
+        </ul>
       )}
     </div>
   );

@@ -70,4 +70,4 @@ export const leadActivities = pgTable("lead_activities", {
   title: text("title").notNull(),
   description: text("description"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
-});
+}, (t) => [index("lead_activities_lead_idx").on(t.leadId)]);

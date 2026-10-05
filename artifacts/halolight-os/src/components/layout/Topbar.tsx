@@ -6,10 +6,9 @@ import {
 } from "@workspace/api-client-react";
 import { useAuth } from "@/auth/AuthProvider";
 import { useQueryClient } from "@tanstack/react-query";
-import { Bell, Sun, Moon, Home, Globe, ChevronDown } from "lucide-react";
+import { Bell, Sun, Moon, Globe, ChevronDown } from "lucide-react";
 import { Link } from "wouter";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
 import { useTheme } from "@/components/theme-provider";
 import { useTranslation } from "react-i18next";
 import { setAppLanguage } from "@/i18n";
@@ -33,11 +32,11 @@ const LANGUAGES: Array<{ code: UserUpdateLanguage; label: string }> = [
   { code: "nl", label: "Nederlands" },
 ];
 
-const ROLE_LABELS: Record<string, string> = {
-  admin: "Administrator",
-  client: "Member",
-  coach: "Coach",
-  sales_rep: "Sales Rep",
+const ROLE_LABEL_KEYS: Record<string, string> = {
+  admin: "nav.role_admin",
+  client: "nav.role_client",
+  coach: "nav.role_coach",
+  sales_rep: "nav.role_sales_rep",
 };
 
 export function Topbar() {
@@ -68,15 +67,17 @@ export function Topbar() {
     }
   };
 
+  const iconButton = "h-8 w-8 inline-flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors";
+
   return (
-    <header className="hidden md:flex h-16 border-b border-border bg-background items-center justify-between px-8 sticky top-0 z-10">
+    <header className="hidden md:flex h-16 border-b border-border bg-background/85 backdrop-blur-md items-center justify-between px-8 sticky top-0 z-10">
       <div className="flex-1" />
 
-      <div className="flex items-center gap-5">
+      <div className="flex items-center gap-1">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted px-2.5 py-1.5 rounded-md hover:text-foreground hover:bg-muted/80 transition-colors cursor-pointer select-none">
-              <Globe className="w-3 h-3" />
+            <button className="h-8 flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase px-2 rounded-md hover:text-foreground hover:bg-muted transition-colors cursor-pointer select-none">
+              <Globe className="w-3.5 h-3.5 stroke-[1.75]" />
               {currentLang}
               <ChevronDown className="w-3 h-3 opacity-50" />
             </button>
@@ -86,7 +87,7 @@ export function Topbar() {
               <DropdownMenuItem
                 key={code}
                 onClick={() => handleLangChange(code)}
-                className={currentLang === code ? "font-semibold text-foreground" : ""}
+                className={currentLang === code ? "font-medium text-foreground" : ""}
               >
                 <span className="text-xs uppercase text-muted-foreground w-7 inline-block shrink-0">{code}</span>
                 {label}
@@ -95,47 +96,42 @@ export function Topbar() {
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <Link href="/dashboard" className="text-muted-foreground hover:text-foreground transition-colors" aria-label={t("nav.dashboard")}>
-          <Home className="w-4 h-4" />
-        </Link>
-
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8 text-muted-foreground hover:text-foreground"
+        <button
+          type="button"
+          className={iconButton}
           onClick={() => setTheme(isDark ? "light" : "dark")}
           aria-label={t("nav.toggle_theme")}
         >
-          {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-        </Button>
+          {isDark ? <Sun className="h-4 w-4 stroke-[1.75]" /> : <Moon className="h-4 w-4 stroke-[1.75]" />}
+        </button>
 
-        <Link href="/notifications" className="relative text-muted-foreground hover:text-foreground transition-colors" data-testid="link-topbar-notifications" aria-label={t("nav.notifications")}>
-          <Bell className="w-5 h-5" />
+        <Link href="/notifications" className={`${iconButton} relative`} data-testid="link-topbar-notifications" aria-label={t("nav.notifications")}>
+          <Bell className="w-4 h-4 stroke-[1.75]" />
           {!!unreadData?.count && unreadData.count > 0 && (
-            <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground border-2 border-background">
-              {unreadData.count}
+            <span className="absolute top-1 right-1 flex h-4 min-w-4 px-1 items-center justify-center rounded-full bg-foreground text-[10px] font-medium text-background tabular-nums ring-2 ring-background">
+              {unreadData.count > 9 ? "9+" : unreadData.count}
             </span>
           )}
         </Link>
 
-        <div className="flex items-center gap-3 border-l border-border pl-5">
-          <div className="text-right">
-            <div className="text-sm font-medium text-foreground">
+        <div className="h-5 w-px bg-border mx-2" aria-hidden="true" />
+
+        <Link href="/settings" className="flex items-center gap-2.5 rounded-md pl-1 pr-2 py-1 hover:bg-muted transition-colors">
+          <Avatar className="h-7 w-7" data-testid="avatar-topbar">
+            <AvatarImage src={authUser?.avatarUrl ?? undefined} alt={identity.displayName} />
+            <AvatarFallback className="bg-muted text-foreground font-medium text-[11px]">
+              {identity.initials}
+            </AvatarFallback>
+          </Avatar>
+          <div className="text-left leading-tight">
+            <div className="text-[13px] font-medium text-foreground">
               {identity.displayName}
             </div>
-            <div className="text-xs text-muted-foreground">
-              {ROLE_LABELS[user?.role ?? ""] ?? user?.role?.replace("_", " ") ?? ""}
+            <div className="text-[11px] text-muted-foreground">
+              {ROLE_LABEL_KEYS[user?.role ?? ""] ? t(ROLE_LABEL_KEYS[user?.role ?? ""]) : (user?.role?.replace("_", " ") ?? "")}
             </div>
           </div>
-          <Link href="/settings">
-            <Avatar className="h-9 w-9 cursor-pointer hover:ring-2 hover:ring-accent transition-all" data-testid="avatar-topbar">
-              <AvatarImage src={authUser?.avatarUrl ?? undefined} alt={identity.displayName} />
-              <AvatarFallback className="bg-accent/20 text-foreground font-semibold text-sm">
-                {identity.initials}
-              </AvatarFallback>
-            </Avatar>
-          </Link>
-        </div>
+        </Link>
       </div>
     </header>
   );

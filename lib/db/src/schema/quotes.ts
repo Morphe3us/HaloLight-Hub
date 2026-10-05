@@ -1,4 +1,4 @@
-import { pgTable, text, uuid, timestamp, pgEnum, numeric, integer, boolean, json, uniqueIndex } from "drizzle-orm/pg-core";
+import { pgTable, text, uuid, timestamp, pgEnum, numeric, integer, boolean, json, uniqueIndex, index } from "drizzle-orm/pg-core";
 import { usersTable } from "./users";
 import { leads } from "./crm";
 
@@ -74,4 +74,4 @@ export const quoteItems = pgTable("quote_items", {
   unitPrice: numeric("unit_price", { precision: 12, scale: 2 }).notNull().default("0"),
   total: numeric("total", { precision: 12, scale: 2 }).notNull().default("0"),
   order: integer("order").notNull().default(0),
-});
+}, (t) => [index("quote_items_quote_idx").on(t.quoteId)]);

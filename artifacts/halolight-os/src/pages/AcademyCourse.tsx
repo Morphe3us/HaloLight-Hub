@@ -1,12 +1,11 @@
 import { useTranslation } from "react-i18next";
 import { useParams, Link } from "wouter";
 import { useGetCourse } from "@workspace/api-client-react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { AlertCircle, ArrowLeft, Clock, BookOpen, CheckCircle2, PlayCircle, RefreshCw, Video } from "lucide-react";
+import { AlertCircle, ArrowLeft, CheckCircle2, PlayCircle, RefreshCw, Video } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { academyErrorMessage } from "@/lib/apiErrorMessage";
 
@@ -19,10 +18,10 @@ function formatDuration(seconds: number): string {
 
 const THUMB_FALLBACK = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='450' viewBox='0 0 800 450'%3E%3Crect width='800' height='450' fill='%23DDB398' opacity='0.25'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='48' fill='%23DDB398'%3E▶%3C/text%3E%3C/svg%3E";
 
-const LEVEL_COLORS: Record<string, string> = {
-  beginner: "bg-success/15 text-success border-success/30",
-  intermediate: "bg-info/15 text-info border-info/30",
-  advanced: "bg-muted text-foreground border-border",
+const LEVEL_DOT: Record<string, string> = {
+  beginner: "bg-success",
+  intermediate: "bg-info",
+  advanced: "bg-muted-foreground",
 };
 
 /**
@@ -111,11 +110,17 @@ export default function AcademyCourse() {
   } = useGetCourse(courseId!, { lang });
   if (isLoadingCourse) {
     return (
-      <div className="space-y-8">
-        <Skeleton className="h-8 w-48" />
-        <Skeleton className="h-48 w-full rounded-2xl" />
-        <div className="space-y-4">
-          {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-16 rounded-xl" />)}
+      <div className="space-y-10">
+        <Skeleton className="h-4 w-40" />
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
+          <div className="lg:col-span-3 space-y-3">
+            <Skeleton className="h-8 w-72" />
+            <Skeleton className="h-5 w-full max-w-md" />
+          </div>
+          <Skeleton className="lg:col-span-2 aspect-video rounded-xl" />
+        </div>
+        <div className="space-y-3">
+          {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-14 rounded-xl" />)}
         </div>
       </div>
     );
@@ -123,24 +128,24 @@ export default function AcademyCourse() {
 
   if (isCourseError) {
     return (
-      <div role="alert" className="rounded-xl border border-destructive/20 bg-destructive/8 p-5 text-destructive break-words">
+      <div role="alert" className="rounded-xl border border-border bg-card p-4 break-words">
         <div className="flex items-start gap-3">
-          <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
-          <div>
-            <p className="font-semibold">{t("academy.error_title")}</p>
-            <p className="mt-1 text-sm">
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 stroke-[1.75] text-destructive" />
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-medium text-destructive">{t("academy.error_title")}</p>
+            <p className="mt-1 text-sm text-muted-foreground">
               {academyErrorMessage(courseError, t)}
             </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Button variant="outline" size="sm" disabled={isFetchingCourse} onClick={() => void refetchCourse()}>
+                <RefreshCw className={cn("h-4 w-4", isFetchingCourse && "animate-spin")} />
+                {t("academy.retry")}
+              </Button>
+              <Button variant="outline" size="sm" asChild>
+                <Link href="/academy">{t("academy.back_to_academy")}</Link>
+              </Button>
+            </div>
           </div>
-        </div>
-        <div className="mt-4 flex flex-wrap gap-2">
-          <Button variant="outline" disabled={isFetchingCourse} onClick={() => void refetchCourse()}>
-            <RefreshCw className={cn("mr-2 h-4 w-4", isFetchingCourse && "animate-spin")} />
-            {t("academy.retry")}
-          </Button>
-          <Button variant="outline" asChild>
-            <Link href="/academy">{t("academy.back_to_academy")}</Link>
-          </Button>
         </div>
       </div>
     );
@@ -148,10 +153,10 @@ export default function AcademyCourse() {
 
   if (!course) {
     return (
-      <div className="text-center py-16 text-muted-foreground">
-        <p>{t("academy.course_unavailable")}</p>
+      <div className="rounded-xl border border-dashed border-border px-6 py-10 text-center">
+        <p className="text-sm text-muted-foreground">{t("academy.course_unavailable")}</p>
         <Link href="/academy">
-          <Button variant="outline" className="mt-4">{t("academy.back_to_academy")}</Button>
+          <Button variant="outline" size="sm" className="mt-4">{t("academy.back_to_academy")}</Button>
         </Link>
       </div>
     );
@@ -181,88 +186,85 @@ export default function AcademyCourse() {
   }
 
   return (
-    <div className="space-y-8" data-testid="page-academy-course">
+    <div className="space-y-10" data-testid="page-academy-course">
       {/* Back */}
       <Link href="/academy">
-        <button className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
-          <ArrowLeft className="w-4 h-4" />
+        <button className="flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-foreground transition-colors">
+          <ArrowLeft className="w-3.5 h-3.5 stroke-[1.75]" />
           {t("academy.back_to_academy")}
         </button>
       </Link>
 
       {/* Hero */}
-      <div className="relative rounded-2xl overflow-hidden shadow-sm border border-border">
-        <div className="absolute inset-0">
-          <img
-            src={course.thumbnailUrl || THUMB_FALLBACK}
-            alt={course.title}
-            className="w-full h-full object-cover"
-            onError={(e) => { (e.target as HTMLImageElement).src = THUMB_FALLBACK; }}
-          />
-          <div className="absolute inset-0 bg-gradient-to-r from-foreground/90 via-foreground/70 to-transparent" />
-        </div>
-        <div className="relative p-8 md:p-12 flex flex-col gap-4 min-h-[240px] justify-end">
-          <div className="flex flex-wrap gap-2">
-            <Badge variant="outline" className={cn("text-xs font-medium", LEVEL_COLORS[course.level])}>
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
+        <div className="lg:col-span-3 flex flex-col gap-4 min-w-0">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-muted-foreground">
+            <span className="inline-flex items-center gap-1.5">
+              <span className={cn("h-1.5 w-1.5 rounded-full", LEVEL_DOT[course.level] ?? "bg-muted-foreground")} />
               {t(`academy.level_${course.level}`)}
-            </Badge>
-            <Badge variant="outline" className="text-xs bg-card/10 text-white border-white/20">
-              {course.category}
-            </Badge>
+            </span>
+            <span aria-hidden="true">·</span>
+            <span>{course.category}</span>
           </div>
-          <h1 className="text-3xl md:text-4xl font-bold text-white leading-tight max-w-2xl">
+          <h1 className="text-2xl md:text-[28px] font-semibold tracking-tight text-foreground leading-tight max-w-2xl break-words">
             {course.title}
           </h1>
-          <p className="text-muted-foreground max-w-2xl">{course.description}</p>
-          <div className="flex items-center gap-6 text-sm text-muted-foreground">
-            <span className="flex items-center gap-1.5">
-              <BookOpen className="w-4 h-4" />
-              {totalLessons} {t("academy.lessons")}
-            </span>
-            <span className="flex items-center gap-1.5">
-              <Clock className="w-4 h-4" />
-              {formatDuration(course.totalDurationSeconds)}
-            </span>
+          <p className="text-sm text-muted-foreground max-w-2xl">{course.description}</p>
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+            <span className="tabular-nums">{totalLessons} {t("academy.lessons")}</span>
+            <span aria-hidden="true">·</span>
+            <span className="tabular-nums">{formatDuration(course.totalDurationSeconds)}</span>
             {progress > 0 && (
-              <span className="flex items-center gap-1.5">
-                <CheckCircle2 className="w-4 h-4 text-success" />
-                {progress}% {t("academy.completed")}
-              </span>
+              <>
+                <span aria-hidden="true">·</span>
+                <span className="inline-flex items-center gap-1 text-success">
+                  <CheckCircle2 className="w-3.5 h-3.5 stroke-[1.75]" />
+                  <span className="tabular-nums">{progress}% {t("academy.completed")}</span>
+                </span>
+              </>
             )}
           </div>
           {nextLessonId && (
-            <div className="mt-2">
+            <div className="mt-1">
               <Link href={`/academy/${course.id}/${nextLessonId}`}>
-                <Button size="lg" className="shadow-lg">
-                  <PlayCircle className="w-5 h-5 mr-2" />
+                <Button className="gap-1.5">
+                  <PlayCircle className="w-4 h-4 stroke-[1.75]" />
                   {completedLessons === 0 ? t("academy.start_course") : t("academy.continue")}
                 </Button>
               </Link>
             </div>
           )}
         </div>
+        <div className="lg:col-span-2 aspect-video rounded-xl overflow-hidden border border-border bg-muted">
+          <img
+            src={course.thumbnailUrl || THUMB_FALLBACK}
+            alt={course.title}
+            className="w-full h-full object-cover"
+            onError={(e) => { (e.target as HTMLImageElement).src = THUMB_FALLBACK; }}
+          />
+        </div>
       </div>
 
       {/* Progress bar */}
       {progress > 0 && (
-        <div className="bg-card rounded-xl border border-border shadow-sm p-5">
-          <div className="flex justify-between mb-2">
-            <span className="text-sm font-medium text-foreground">{t("academy.your_progress")}</span>
-            <span className="text-sm font-medium text-primary">{completedLessons} / {totalLessons} {t("academy.lessons")}</span>
+        <div className="rounded-xl border border-border bg-card p-5">
+          <div className="flex items-baseline justify-between gap-4">
+            <span className="text-[13px] text-muted-foreground">{t("academy.your_progress")}</span>
+            <span className="text-sm font-medium tabular-nums text-foreground">{completedLessons} / {totalLessons} {t("academy.lessons")}</span>
           </div>
-          <Progress value={progress} className="h-3" />
+          <Progress value={progress} className="h-1 mt-3" />
         </div>
       )}
 
       {/* Curriculum */}
-      <div>
-        <h2 className="text-xl font-semibold text-foreground mb-4">{t("academy.course_overview")}</h2>
+      <section>
+        <h2 className="text-sm font-medium text-foreground mb-3">{t("academy.course_overview")}</h2>
 
         {visibleModules.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 gap-3 text-muted-foreground bg-card rounded-2xl border border-border">
-            <Video className="w-10 h-10 opacity-30" />
-            <p className="text-sm font-medium">{t("academy.no_content", { defaultValue: "No lessons available yet." })}</p>
-            <p className="text-xs opacity-60">{t("academy.no_content_hint", { defaultValue: "Content will appear here once lessons are added to this course." })}</p>
+          <div className="rounded-xl border border-dashed border-border px-6 py-10 text-center">
+            <Video className="w-5 h-5 mx-auto mb-3 text-muted-foreground/70 stroke-[1.75]" />
+            <p className="text-sm text-muted-foreground">{t("academy.no_content", { defaultValue: "No lessons available yet." })}</p>
+            <p className="text-xs text-muted-foreground/70 mt-1">{t("academy.no_content_hint", { defaultValue: "Content will appear here once lessons are added to this course." })}</p>
           </div>
         ) : (
           <Accordion key={`${courseId}:${lang}`} type="multiple" defaultValue={visibleModules.map((m) => m.id)} className="space-y-3">
@@ -272,18 +274,18 @@ export default function AcademyCourse() {
                 <AccordionItem
                   key={mod.id}
                   value={mod.id}
-                  className="border border-border rounded-xl bg-card shadow-sm overflow-hidden px-0"
+                  className="border border-border rounded-xl bg-card overflow-hidden px-0"
                 >
-                  <AccordionTrigger className="px-5 py-4 hover:no-underline hover:bg-muted transition-colors">
+                  <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-muted/50 transition-colors">
                     <div className="flex items-center justify-between w-full pr-2">
-                      <span className="font-semibold text-foreground text-left">{mod.title}</span>
-                      <span className="text-xs text-muted-foreground font-medium shrink-0 ml-4">
+                      <span className="text-sm font-medium text-foreground text-left">{mod.title}</span>
+                      <span className="text-xs text-muted-foreground tabular-nums shrink-0 ml-4">
                         {modCompleted}/{mod.lessons.length} {t("academy.lessons")}
                       </span>
                     </div>
                   </AccordionTrigger>
                   <AccordionContent className="pb-0">
-                    <div className="divide-y divide-border/50">
+                    <div className="divide-y divide-border border-t border-border">
                       {mod.lessons.map((lesson) => {
                         const isCompleted = !!lesson.completedAt;
                         type VA = { thumbnailUrl?: string };
@@ -291,7 +293,7 @@ export default function AcademyCourse() {
                         const thumb = va?.[lang]?.thumbnailUrl || va?.["en"]?.thumbnailUrl || (lesson as { thumbnailUrl?: string | null }).thumbnailUrl || null;
                         return (
                           <Link key={lesson.id} href={`/academy/${course.id}/${lesson.id}`}>
-                            <div className="flex items-center gap-4 px-5 py-3.5 hover:bg-muted transition-colors cursor-pointer group">
+                            <div className="flex items-center gap-4 px-4 py-3 hover:bg-muted/50 transition-colors cursor-pointer group">
                               {thumb ? (
                                 <div key={thumb} className="h-10 w-16 rounded-md overflow-hidden flex-shrink-0 bg-muted relative">
                                   <img
@@ -301,34 +303,31 @@ export default function AcademyCourse() {
                                     onError={(e) => { (e.target as HTMLImageElement).parentElement!.style.display = "none"; }}
                                   />
                                   {isCompleted && (
-                                    <div className="absolute inset-0 bg-success/40 flex items-center justify-center">
-                                      <CheckCircle2 className="w-4 h-4 text-white" />
+                                    <div className="absolute inset-0 bg-foreground/40 flex items-center justify-center">
+                                      <CheckCircle2 className="w-4 h-4 stroke-[1.75] text-white" />
                                     </div>
                                   )}
                                 </div>
                               ) : (
-                                <div className={cn(
-                                  "h-8 w-8 rounded-full flex items-center justify-center flex-shrink-0 transition-colors",
-                                  isCompleted ? "bg-success/15" : "bg-muted group-hover:bg-primary/10"
-                                )}>
+                                <div className="h-8 w-8 flex items-center justify-center flex-shrink-0">
                                   {isCompleted
-                                    ? <CheckCircle2 className="w-4 h-4 text-success" />
-                                    : <PlayCircle className={cn("w-4 h-4", "text-muted-foreground group-hover:text-primary")} />
+                                    ? <CheckCircle2 className="w-4 h-4 stroke-[1.75] text-success" />
+                                    : <PlayCircle className={cn("w-4 h-4 stroke-[1.75]", "text-muted-foreground group-hover:text-foreground")} />
                                   }
                                 </div>
                               )}
                               <div className="flex-1 min-w-0">
                                 <p className={cn(
-                                  "text-sm font-medium truncate",
-                                  isCompleted ? "text-muted-foreground" : "text-foreground"
+                                  "text-sm truncate",
+                                  isCompleted ? "text-muted-foreground" : "text-foreground font-medium"
                                 )}>
                                   {lesson.title}
                                 </p>
                                 {lesson.watchPercent != null && lesson.watchPercent > 0 && !isCompleted && (
-                                  <p className="text-xs text-primary mt-0.5">{lesson.watchPercent}% {t("academy.watched", { defaultValue: "watched" })}</p>
+                                  <p className="text-xs text-muted-foreground tabular-nums mt-0.5">{lesson.watchPercent}% {t("academy.watched", { defaultValue: "watched" })}</p>
                                 )}
                               </div>
-                              <span className="text-xs text-muted-foreground flex-shrink-0">
+                              <span className="text-xs text-muted-foreground tabular-nums flex-shrink-0">
                                 {formatDuration(lesson.durationSeconds)}
                               </span>
                             </div>
@@ -342,7 +341,7 @@ export default function AcademyCourse() {
             })}
           </Accordion>
         )}
-      </div>
+      </section>
     </div>
   );
 }

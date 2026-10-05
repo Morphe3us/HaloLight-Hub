@@ -107,7 +107,11 @@
     "contract_templates": "Contract Templates",
     "admin_pilotage": "Management",
     "admin_content_ai": "Content & AI",
-    "admin_data_system": "Data & System"
+    "admin_data_system": "Data & System",
+    "role_admin": "Administrator",
+    "role_client": "Member",
+    "role_coach": "Coach",
+    "role_sales_rep": "Sales Rep"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -197,7 +201,12 @@
     "playback_unavailable": "Video playback is temporarily unavailable. Please try again.",
     "database_unavailable": "Academy is temporarily unavailable. Please try again.",
     "course_unavailable": "This course is not available.",
-    "lesson_unavailable": "This lesson is not available in the selected course or language."
+    "lesson_unavailable": "This lesson is not available in the selected course or language.",
+    "module_count_one": "{{count}} module",
+    "module_count_other": "{{count}} modules",
+    "no_content": "No lessons available yet.",
+    "no_content_hint": "Content will appear here once lessons are added to this course.",
+    "watched": "watched"
   },
   "events": {
     "title": "Events",
@@ -309,7 +318,10 @@
     "due_date": "Due {{date}}",
     "alert_banner": "{{count}} item(s) need attention",
     "sn_prefix": "S/N:",
-    "register_equipment": "Register Equipment"
+    "register_equipment": "Register Equipment",
+    "placeholder_model": "e.g. HaloLight Pro X1",
+    "placeholder_vendor": "e.g. HaloLight Direct",
+    "placeholder_notes": "Any notes about this unit…"
   },
   "consumables": {
     "title": "Consumables",
@@ -411,7 +423,13 @@
     "stock_prints": "Current stock (prints)",
     "print_units_required": "Estimates and print restocking are unavailable for this unit. Existing quantities are unchanged.",
     "verified_print_quantity": "Verified remaining prints",
-    "confirm_print_conversion": "I confirm this is the total remaining print capacity. Replace only my stock quantity and unit; do not change the shared catalog."
+    "confirm_print_conversion": "I confirm this is the total remaining print capacity. Replace only my stock quantity and unit; do not change the shared catalog.",
+    "placeholder_supplier": "e.g. HaloLight Direct",
+    "placeholder_purchase_notes": "Any additional notes about this purchase…",
+    "placeholder_item_name": "e.g. 4x6 Glossy Photo Paper",
+    "placeholder_unit_type": "e.g. sheets, rolls, packs",
+    "placeholder_models": "e.g. HaloLight Pro X1, X2",
+    "placeholder_item_notes": "Optional notes about this item…"
   },
   "support": {
     "title": "Support",
@@ -548,7 +566,7 @@
   "ai": {
     "title": "AI Assistant",
     "subtitle": "Get instant answers about your HaloLight equipment and business.",
-    "placeholder": "Ask me anything about your HaloLight system...",
+    "placeholder": "Ask a question…",
     "thinking": "Thinking...",
     "error": "Something went wrong. Please try again.",
     "sources": "Sources",
@@ -590,7 +608,17 @@
     "new_chat": "New chat",
     "send_get_started": "Send a message to get started",
     "escalate_dialog_desc": "A support ticket will be created with a transcript of this conversation so our team can follow up directly. You'll be able to track it in your Support Tickets.",
-    "provider_unavailable": "The AI service is unavailable because its provider is not configured correctly. A HaloLight Hub administrator must configure it before you can receive AI-generated answers."
+    "provider_unavailable": "The AI service is unavailable because its provider is not configured correctly. A HaloLight Hub administrator must configure it before you can receive AI-generated answers.",
+    "pill_install": "How do I install or update the software?",
+    "pill_event": "How do I prepare for an event?",
+    "pill_print": "My printer isn't printing properly",
+    "pill_pricing": "How should I price my photobooth?",
+    "auto_read_on": "Turn off auto-read",
+    "auto_read_off": "Read answers aloud automatically",
+    "read_aloud": "Read aloud",
+    "stop_reading": "Stop reading",
+    "open_history": "Show conversations",
+    "close_history": "Hide conversations"
   },
   "notifications": {
     "title": "Notifications",
@@ -628,7 +656,47 @@
     "page_title": "Partner Setup",
     "steps_of": "{{completed}} of {{total}} steps completed",
     "step_completed": "Step completed!",
-    "step_complete_error": "Please complete the required action first."
+    "step_complete_error": "Please complete the required action first.",
+    "steps": {
+      "complete_profile": {
+        "title": "Complete your profile",
+        "description": "Add your full name, company name, and phone number so we can personalize your experience."
+      },
+      "set_language": {
+        "title": "Choose your language",
+        "description": "Select your preferred language. HaloLight Hub supports English, French, Spanish, German, Italian, Polish, Portuguese, and Dutch."
+      },
+      "explore_academy": {
+        "title": "Explore the Academy",
+        "description": "Browse our video courses and start your first lesson to become a HaloLight expert."
+      },
+      "create_first_event": {
+        "title": "Create your first event",
+        "description": "Add an upcoming event to start tracking your bookings and managing your equipment."
+      },
+      "register_equipment": {
+        "title": "Register your equipment",
+        "description": "Add your HaloLight equipment with serial numbers and purchase dates for warranty tracking."
+      },
+      "invite_team": {
+        "title": "Invite your team",
+        "description": "Add team members or collaborators to your HaloLight Hub workspace."
+      },
+      "setup_notifications": {
+        "title": "Configure notifications",
+        "description": "Set up your notification preferences so you never miss an important update."
+      },
+      "explore_resources": {
+        "title": "Download marketing resources",
+        "description": "Access our library of branded marketing materials, social media templates, and print assets."
+      }
+    },
+    "category_account": "Account",
+    "category_learning": "Learning",
+    "category_operations": "Operations",
+    "category_equipment": "Equipment",
+    "category_marketing": "Marketing",
+    "category_general": "General"
   },
   "backup": {
     "title": "Backup & Export",
@@ -730,7 +798,16 @@
     "theme": "Theme",
     "theme_light": "Light",
     "theme_dark": "Dark",
-    "theme_system": "System"
+    "theme_system": "System",
+    "placeholder_handle_or_url": "@handle or URL",
+    "placeholder_facebook": "URL or page name",
+    "placeholder_handle": "@handle",
+    "placeholder_linkedin": "LinkedIn URL",
+    "placeholder_business_type": "e.g. Photobooth rental, Event photography",
+    "placeholder_main_market": "e.g. United States, UK",
+    "placeholder_business_goal": "e.g. Expand to corporate events, grow to 10 units",
+    "logo_preview_alt": "Logo preview",
+    "placeholder_signer_title": "CEO, Manager, Director…"
   },
   "common": {
     "access_not_validated": "We couldn't validate your access. Sign out and sign in with the account that received your invitation, or contact your administrator.",
@@ -758,7 +835,8 @@
     "updated": "Updated",
     "today": "Today",
     "yesterday": "Yesterday",
-    "remove": "Remove"
+    "remove": "Remove",
+    "export_failed": "Export failed"
   },
   "admin": {
     "console_title": "Admin Console",
@@ -995,7 +1073,9 @@
     "send_quote": "Prepare email",
     "quote_sent": "Email draft prepared",
     "quote_send_failed": "Unable to send quote",
-    "payment_method": "Payment method"
+    "payment_method": "Payment method",
+    "package_placeholder": "Premium",
+    "options_placeholder": "Extra album, GIF booth…"
   },
   "contracts": {
     "title": "Contracts",
@@ -1125,7 +1205,24 @@
     "language_label": "Contract language",
     "balanceAmount": "Balance due",
     "invalid_advance": "Check the advance payment and entered terms.",
-    "legal_review_required": "Legal approval of this template is not verified. Have the terms reviewed before signature."
+    "legal_review_required": "Legal approval of this template is not verified. Have the terms reviewed before signature.",
+    "equipment_empty": "No equipment registered yet. You can add equipment in Hardware.",
+    "template_loaded": "Template loaded — preview updates as you fill the form.",
+    "select_template_preview": "Select a template to see a live preview here.",
+    "placeholder_full_name": "Full name",
+    "placeholder_address": "123 Main St, City, Country",
+    "placeholder_location": "Venue name, City",
+    "placeholder_service_name": "Premium Photobooth Package",
+    "placeholder_duration": "4 hours",
+    "placeholder_prints": "Unlimited",
+    "placeholder_equipment": "Open-air booth, ring light, props",
+    "placeholder_options": "Custom template, digital gallery, USB key…",
+    "placeholder_payment_terms": "50% upfront, 50% on event day",
+    "placeholder_deposit_method": "Bank transfer, cheque…",
+    "placeholder_deposit_conditions": "May be retained in case of damage or loss…",
+    "placeholder_deposit_return": "Returned after equipment inspection…",
+    "placeholder_cancellation": "e.g. Full refund if cancelled 30+ days before event…",
+    "placeholder_signature_place": "Paris"
   },
   "invoices": {
     "title": "Invoices",
@@ -1242,7 +1339,11 @@
     "options_label": "Options",
     "discount_label": "Discount",
     "status_updated": "Status updated",
-    "payment_method": "Payment method"
+    "payment_method": "Payment method",
+    "auto_filled": "Auto-filled",
+    "package_placeholder": "Premium",
+    "options_placeholder": "Extra album, GIF booth…",
+    "placeholder_payment_notes": "Optional notes…"
   },
   "admin_analytics": {
     "title": "Analytics Dashboard",
@@ -1439,7 +1540,13 @@
     "status_needs_review": "Needs Review",
     "status_approved": "Approved",
     "status_published": "Published",
-    "status_missing": "Missing"
+    "status_missing": "Missing",
+    "type_course": "Courses",
+    "type_module": "Modules",
+    "type_lesson": "Lessons",
+    "type_kb_article": "KB Articles",
+    "type_resource": "Resources",
+    "type_ai_knowledge_doc": "AI Knowledge Docs"
   },
   "admin_ai": {
     "title": "AI Knowledge Base",
@@ -1515,7 +1622,19 @@
     "status_draft": "Draft",
     "status_indexed": "Indexed",
     "status_needs_review": "Needs Review",
-    "status_archived": "Archived"
+    "status_archived": "Archived",
+    "placeholder_tags": "tag1, tag2, tag3",
+    "cat_faq": "FAQ",
+    "cat_troubleshooting": "Troubleshooting",
+    "cat_printer_manual": "Printer Manual",
+    "cat_camera_manual": "Camera Manual",
+    "cat_software_guide": "Software Guide",
+    "cat_business_guide": "Business Guide",
+    "cat_pricing_guide": "Pricing Guide",
+    "cat_event_guide": "Event Guide",
+    "cat_product_guide": "Product Guide",
+    "cat_academy_lesson": "Academy Lesson",
+    "cat_support_article": "Support Article"
   },
   "admin_equipment": {
     "title": "Equipment Dashboard",
@@ -1700,7 +1819,8 @@
     "cat_product_manuals": "Product Manuals",
     "cat_ai_knowledge_base": "AI Knowledge Base",
     "cat_support_documentation": "Support Documentation",
-    "toast_open_failed": "Unable to open file"
+    "toast_open_failed": "Unable to open file",
+    "placeholder_file_name": "document.pdf"
   },
   "admin_academy": {
     "title": "Academy Manager",
@@ -1783,7 +1903,15 @@
     "archived_badge": "Archived",
     "archive": "Archive",
     "restore": "Restore",
-    "toast_course_status_updated": "Course status updated"
+    "toast_course_status_updated": "Course status updated",
+    "label_video_assets": "BunnyStream Video Assets",
+    "per_language": "per language",
+    "label_preview_url": "Preview Animation URL",
+    "label_video_id": "Video ID",
+    "video_assets_hint": "Use BunnyStream Embed URL for the player. EN is the fallback for all languages.",
+    "placeholder_category": "e.g. Business, Technical",
+    "placeholder_instructor": "e.g. Marie Dupont",
+    "no_modules_hint": "Click “Add Module” above, then add lessons. Each lesson holds a BunnyStream Embed URL and Thumbnail URL."
   },
   "admin_automation": {
     "title": "Automation Engine",
@@ -1945,13 +2073,13 @@
   "landing": {
     "nav_sign_in": "Sign In",
     "nav_get_started": "Get Started",
-    "hero_badge": "Now Available for Partners",
+    "hero_badge": "Now available for partners",
     "hero_title": "The complete hub for",
     "hero_highlight": "photobooth businesses",
     "hero_subtitle": "HaloLight Hub gives you everything you need to manage your equipment, train your team, and scale your photobooth operations — all in one unified cockpit.",
-    "hero_cta": "Start Building",
+    "hero_cta": "Get started",
     "hero_login": "Partner Login",
-    "features_title": "Everything you need to scale",
+    "features_title": "Everything you need to grow",
     "features_subtitle": "Built specifically for high-volume event professionals.",
     "f1_title": "Performance Tracking",
     "f1_desc": "Monitor equipment utilization, event volume, and business KPIs in real-time from a central dashboard.",
@@ -1962,7 +2090,7 @@
     "f4_title": "Equipment Registry",
     "f4_desc": "Track every unit, warranty status, and maintenance history. Never miss a service window again.",
     "f5_title": "AI Assistant",
-    "f5_desc": "Get instant answers to technical questions, event prep guidance, and business insights — always available.",
+    "f5_desc": "Get instant answers to technical questions, event prep guidance and business insights — available anytime.",
     "f6_title": "Guided Onboarding",
     "f6_desc": "A structured launch plan gets your team productive from day one with step-by-step milestones.",
     "cta_title": "Ready to streamline your business?",
@@ -1995,7 +2123,8 @@
     "template_title_placeholder": "e.g. Photobooth Rental Agreement",
     "template_content_label": "Template Content",
     "content_placeholder": "Enter template content with {{variable}} placeholders...",
-    "unsaved": "Unsaved changes"
+    "unsaved": "Unsaved changes",
+    "loading": "Loading templates…"
   },
   "pipeline": {
     "create_quote": "Create Quote",
@@ -2163,5 +2292,130 @@
     "no_delegation": "Coach and sales representative use the same standard controls as client in the audited routes. No specific client delegation is implemented.",
     "conditions": "Access requires an authenticated session, an active local account and current consent when enabled. API checks remain authoritative.",
     "reviewed": "Policy review: {{date}} · revision {{revision}}"
+  },
+  "not_found": {
+    "title": "404 — Page not found",
+    "description": "The page you are looking for does not exist or has been moved."
+  },
+  "admin_exports": {
+    "title": "Data Exports",
+    "subtitle": "Download workspace data as CSV or ZIP. All exports are logged for audit purposes.",
+    "toast_downloaded": "Export downloaded",
+    "toast_failed": "Export failed",
+    "settings_title": "Export Settings",
+    "settings_desc": "Choose a CSV separator. Use semicolon for European Excel compatibility.",
+    "separator_label": "CSV separator:",
+    "sep_comma": "Comma ( , ) — default",
+    "sep_semicolon": "Semicolon ( ; ) — EU Excel",
+    "workspace_title": "Full Workspace Export",
+    "workspace_desc_prefix": "Download all data as a single ZIP file containing 9 CSV files and a",
+    "workspace_desc_suffix": ". Admin only.",
+    "includes": "Includes: leads, quotes, contracts, invoices, events, support tickets, equipment, consumables, clients",
+    "generating": "Generating…",
+    "download_zip": "Download ZIP",
+    "individual_title": "Individual CSV Exports",
+    "individual_desc": "Download a single entity as a UTF-8 BOM CSV file. Excel-friendly, fully escaped.",
+    "entity_leads": "Leads",
+    "entity_quotes": "Quotes",
+    "entity_contracts": "Contracts",
+    "entity_invoices": "Invoices",
+    "entity_events": "Events",
+    "entity_support_tickets": "Support Tickets",
+    "entity_equipment": "Equipment",
+    "entity_consumables": "Consumables",
+    "entity_clients": "Clients",
+    "audit_title": "Export Audit Log",
+    "audit_desc": "Every export is logged with who exported, what, in which format, and when.",
+    "refresh": "Refresh",
+    "history_failed": "Failed to load export history.",
+    "no_exports": "No exports yet. Download something above to see it logged here.",
+    "col_type": "Type",
+    "col_format": "Format",
+    "col_scope": "Scope",
+    "col_exported_by": "Exported by",
+    "col_records": "Records",
+    "col_when": "When",
+    "scope_workspace": "Workspace",
+    "scope_personal": "Personal"
+  },
+  "admin_bunny": {
+    "title": "BunnyStream Importer",
+    "subtitle": "Browse your BunnyStream library and import videos directly into lessons.",
+    "back": "Back to Academy",
+    "refresh": "Refresh",
+    "status_ready": "ready",
+    "video_id": "Video ID:",
+    "duration": "Duration:",
+    "status": "Status:",
+    "resolution": "Resolution:",
+    "embed_url": "Embed URL",
+    "thumbnail_alt": "Thumbnail",
+    "thumbnail_loaded": "Thumbnail loaded",
+    "close": "Close",
+    "cancel": "Cancel",
+    "confirm_title": "Confirm Import",
+    "import_summary": "Import summary",
+    "summary_text": "You are about to import {{count}} video(s) from collection “{{collection}}” into language {{language}} only.",
+    "rule_only_prefix": "Only",
+    "rule_only_suffix": "will be written",
+    "rule_no_other": "No other language assets will be modified",
+    "rule_untouched": "Existing assets in other languages are untouched",
+    "rule_overwrite_prefix": "If a lesson already has",
+    "rule_overwrite_suffix": " assets, they will be overwritten",
+    "import_btn": "Import {{count}} video(s) → {{lang}}",
+    "toast_only_ready": "Only ready Bunny videos can be imported.",
+    "toast_unmapped": "This collection’s ID is not in the fixed language mapping. Import blocked.",
+    "toast_imported": "Imported {{count}} video(s) → {{lang}} successfully",
+    "toast_imported_errors": "Imported with {{count}} error(s)",
+    "toast_failed": "Import failed: {{message}}",
+    "checking": "Checking BunnyStream connection…",
+    "connected": "Connected to BunnyStream",
+    "library_info": "Library: {{name}} · {{count}} videos · ID: {{id}}",
+    "not_connected": "Not connected",
+    "missing_env": "BUNNY_STREAM_API_KEY or BUNNY_STREAM_LIBRARY_ID missing",
+    "step1_title": "Step 1 — Select a Collection",
+    "loading_collections": "Loading collections…",
+    "no_collections": "No collections found in this library.",
+    "languages_locked": "Languages are locked by collection ID. No guessing, no manual selection.",
+    "col_name": "Collection Name",
+    "collection_id": "Collection ID",
+    "col_videos": "Videos",
+    "col_detected_language": "Detected Language",
+    "unknown_blocked": "Unknown — import blocked",
+    "selected": "Selected",
+    "browse": "Browse",
+    "unknown_warning": "One or more collections have unknown IDs — they are blocked from import. Contact support to add them to the fixed mapping.",
+    "step2_title": "Step 2 — Videos in “{{name}}”",
+    "lang_only": "{{language}} only",
+    "no_language": "No language selected — set it in Step 1",
+    "fetching": "Fetching all pages from BunnyStream…",
+    "fetching_hint": "This may take a moment for large collections.",
+    "no_videos": "No videos in this collection.",
+    "language": "Language",
+    "videos_returned": "Videos returned",
+    "pages_fetched": "Pages fetched",
+    "selected_count": "{{selected}} of {{total}} selected for import",
+    "select_ready": "Select ready",
+    "deselect_all": "Deselect all",
+    "test": "Test",
+    "course": "Course",
+    "select_course": "Select course…",
+    "lesson_name": "Lesson name",
+    "lesson_name_placeholder": "Defaults to video title",
+    "module": "Module",
+    "select_module": "Select module…",
+    "create_module": "+ Create new module…",
+    "new_module_name": "New module name",
+    "assign_lesson": "Assign to existing lesson",
+    "or_create_new": "Or create new…",
+    "create_lesson": "+ Create new lesson",
+    "ready_to_import": "Ready to import {{count}} video(s)",
+    "set_language_first": "Set language in Step 1 before importing",
+    "import_complete": "Import complete",
+    "collection": "Collection",
+    "language_key_written": "Language key written",
+    "lessons_updated": "Lessons updated",
+    "lessons_created": "Lessons created",
+    "errors": "Errors ({{count}})"
   }
 }

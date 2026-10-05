@@ -1,9 +1,10 @@
 import { useTranslation } from "react-i18next";
 import { useListOnboardingSteps, useCompleteOnboardingStep, useGetOnboardingSummary, getListOnboardingStepsQueryKey, getGetOnboardingSummaryQueryKey } from "@workspace/api-client-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CheckCircle2, Circle, Trophy, ArrowRight } from "lucide-react";
+import { CheckCircle2, Circle, ArrowRight } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Meter, PageHeader } from "@/components/page";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 
@@ -32,13 +33,13 @@ export default function Onboarding() {
 
   if (isLoadingSteps || isLoadingSummary) {
     return (
-      <div className="max-w-4xl mx-auto space-y-6">
-        <Skeleton className="h-10 w-64" />
-        <Skeleton className="h-32 w-full rounded-xl" />
-        <div className="space-y-4 mt-8">
-          <Skeleton className="h-24 w-full rounded-xl" />
-          <Skeleton className="h-24 w-full rounded-xl" />
+      <div className="max-w-4xl space-y-10">
+        <div className="space-y-2">
+          <Skeleton className="h-8 w-64" />
+          <Skeleton className="h-4 w-80" />
         </div>
+        <Skeleton className="h-28 w-full rounded-xl" />
+        <Skeleton className="h-64 w-full rounded-xl" />
       </div>
     );
   }
@@ -47,99 +48,90 @@ export default function Onboarding() {
   const isAllComplete = summary?.percentComplete === 100;
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8" data-testid="page-onboarding">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight text-foreground">{t("onboarding.page_title")}</h1>
-        <p className="text-muted-foreground mt-1">{t("onboarding.get_ready")}</p>
+    <div className="max-w-4xl space-y-10" data-testid="page-onboarding">
+      <PageHeader title={t("onboarding.page_title")} description={t("onboarding.get_ready")} />
+
+      <div className="rounded-xl border border-border bg-card p-5">
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-foreground">{t("onboarding.your_progress")}</p>
+            <p className="text-[13px] text-muted-foreground mt-0.5 tabular-nums">
+              {t("onboarding.steps_of", { completed: summary?.completedSteps ?? 0, total: summary?.totalSteps ?? 0 })}
+            </p>
+          </div>
+          <span className="text-2xl font-semibold tracking-tight tabular-nums text-foreground">{summary?.percentComplete}%</span>
+        </div>
+        <Meter value={summary?.percentComplete || 0} className="mt-4" />
+        {isAllComplete && (
+          <p className="text-success text-sm font-medium mt-4 flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 stroke-[1.75]" /> {t("onboarding.all_set")}
+          </p>
+        )}
       </div>
 
-      <Card className="bg-foreground text-background border-border shadow-lg overflow-hidden relative">
-        <div className="absolute top-0 right-0 p-8 opacity-10">
-          <Trophy className="w-32 h-32" />
-        </div>
-        <CardHeader className="relative z-10 pb-4">
-          <CardTitle className="text-2xl text-background">{t("onboarding.your_progress")}</CardTitle>
-          <CardDescription className="text-background/60">
-            {t("onboarding.steps_of", { completed: summary?.completedSteps ?? 0, total: summary?.totalSteps ?? 0 })}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="relative z-10">
-          <div className="flex items-center gap-4 mb-2">
-            <div className="flex-1 h-3 bg-background/20 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-accent transition-all duration-1000 ease-out"
-                style={{ width: `${summary?.percentComplete || 0}%` }}
-              />
-            </div>
-            <span className="font-bold text-background w-12 text-right">{summary?.percentComplete}%</span>
-          </div>
-          {isAllComplete && (
-            <p className="text-accent text-sm font-medium mt-4 flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4" /> {t("onboarding.all_set")}
-            </p>
-          )}
-        </CardContent>
-      </Card>
-
-      <div className="space-y-4">
+      <ul className="rounded-xl border border-border bg-card divide-y divide-border">
         {steps.map((step) => {
           const isCompleted = !!step.completedAt;
 
           return (
-            <Card
+            <li
               key={step.id}
-              className={`transition-all ${isCompleted ? 'bg-muted border-border' : 'bg-card border-border hover:border-primary/50 shadow-sm'}`}
+              className="transition-colors"
               data-testid={`card-step-${step.id}`}
             >
-              <div className="p-6 flex flex-col sm:flex-row sm:items-center gap-6">
-                <div className="shrink-0 flex items-center justify-center">
-                  {isCompleted ? (
-                    <CheckCircle2 className="w-8 h-8 text-success" />
-                  ) : (
-                    <Circle className="w-8 h-8 text-muted-foreground" />
-                  )}
-                </div>
-
-                <div className="flex-1">
-                  <div className="flex flex-wrap items-center gap-3 mb-1">
-                    <h3 className={`text-lg font-bold ${isCompleted ? 'text-muted-foreground line-through' : 'text-foreground'}`}>
-                      {step.title}
-                    </h3>
-                    {step.isRequired && !isCompleted && (
-                      <span className="px-2 py-0.5 rounded text-xs font-semibold bg-destructive/15 text-destructive uppercase tracking-wide">
-                        {t("onboarding.required")}
-                      </span>
+              <div className="px-4 py-4 sm:px-5 flex flex-col sm:flex-row sm:items-center gap-4">
+                <div className="flex flex-1 items-start gap-3 min-w-0">
+                  <div className="shrink-0 pt-0.5">
+                    {isCompleted ? (
+                      <CheckCircle2 className="w-4 h-4 stroke-[1.75] text-success" />
+                    ) : (
+                      <Circle className="w-4 h-4 stroke-[1.75] text-muted-foreground" />
                     )}
-                    <span className="px-2 py-0.5 rounded text-xs font-medium bg-muted text-muted-foreground capitalize">
-                      {step.category}
-                    </span>
                   </div>
-                  <p className="text-sm text-muted-foreground">
-                    {step.description}
-                  </p>
+
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                      <h3 className={cn("text-sm font-medium", isCompleted ? "text-muted-foreground line-through" : "text-foreground")}>
+                        {t(`onboarding.steps.${step.key}.title`, { defaultValue: step.title })}
+                      </h3>
+                      {step.isRequired && !isCompleted && (
+                        <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+                          <span className="h-1.5 w-1.5 rounded-full bg-destructive" />
+                          {t("onboarding.required")}
+                        </span>
+                      )}
+                      <span className="text-xs text-muted-foreground first-letter:uppercase">
+                        {t(`onboarding.category_${step.category}`, { defaultValue: step.category })}
+                      </span>
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-0.5">
+                      {t(`onboarding.steps.${step.key}.description`, { defaultValue: step.description })}
+                    </p>
+                  </div>
                 </div>
 
-                <div className="shrink-0 pt-2 sm:pt-0">
+                <div className="shrink-0 pl-7 sm:pl-0">
                   {!isCompleted ? (
                     <Button
+                      size="sm"
                       onClick={() => handleComplete(step.id)}
                       disabled={completeStep.isPending}
-                      className="w-full sm:w-auto shadow-sm"
+                      className="w-full sm:w-auto gap-1.5"
                       data-testid={`button-complete-step-${step.id}`}
                     >
-                      {t("onboarding.complete_step")} <ArrowRight className="w-4 h-4 ml-2" />
+                      {t("onboarding.complete_step")} <ArrowRight className="w-3.5 h-3.5" />
                     </Button>
                   ) : (
-                    <Button variant="ghost" disabled className="w-full sm:w-auto text-success font-medium">
+                    <Button variant="ghost" size="sm" disabled className="w-full sm:w-auto text-success">
                       {t("onboarding.completed_label")}
                     </Button>
                   )}
                 </div>
               </div>
-            </Card>
+            </li>
           );
         })}
-      </div>
+      </ul>
     </div>
   );
 }

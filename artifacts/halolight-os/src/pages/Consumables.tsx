@@ -6,7 +6,7 @@ import {
   customFetch,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,11 +20,12 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import {
-  Package, AlertTriangle, ShoppingCart, Clock,
-  Layers, Printer, Brush, TrendingDown, RotateCcw,
+  Package, AlertTriangle, ShoppingCart,
+  Layers, Printer, Brush, TrendingDown,
   ChevronDown, ChevronUp, Plus, Loader2, RefreshCw,
-  Calendar, Zap, CheckCircle2, Pencil,
+  CheckCircle2, Pencil,
 } from "lucide-react";
+import { EmptyState, Notice, PageHeader, Section, Stat, StatGrid } from "@/components/page";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -72,19 +73,19 @@ type Order = {
 
 // ─── Config (icons and colors only — labels translated inline) ────────────────
 
-const CATEGORY_CONFIG: Record<string, { icon: React.ComponentType<{ className?: string }>; color: string }> = {
-  paper:     { icon: Layers,   color: "text-info" },
-  ribbon:    { icon: Printer,  color: "text-muted-foreground" },
-  accessory: { icon: Package,  color: "text-warning" },
-  cleaning:  { icon: Brush,    color: "text-teal-600" },
+const CATEGORY_CONFIG: Record<string, { icon: React.ComponentType<{ className?: string }> }> = {
+  paper:     { icon: Layers },
+  ribbon:    { icon: Printer },
+  accessory: { icon: Package },
+  cleaning:  { icon: Brush },
 };
 
-const ORDER_STATUS_COLORS: Record<string, string> = {
-  pending:    "bg-warning/15 text-yellow-700",
-  processing: "bg-info/15 text-info",
-  shipped:    "bg-info/15 text-info",
-  delivered:  "bg-success/15 text-success",
-  cancelled:  "bg-muted text-muted-foreground",
+const ORDER_STATUS_DOT: Record<string, string> = {
+  pending:    "bg-warning",
+  processing: "bg-info",
+  shipped:    "bg-info",
+  delivered:  "bg-success",
+  cancelled:  "bg-muted-foreground/50",
 };
 
 const ORDER_STATUS_KEYS: Record<string, string> = {
@@ -116,9 +117,9 @@ function todayStr() {
 function StockBar({ qty, threshold, isCritical, isLow }: { qty: number; threshold: number; isCritical: boolean; isLow: boolean }) {
   const max = Math.max(qty, threshold * 3, 10);
   const pct = Math.min((qty / max) * 100, 100);
-  const barColor = isCritical ? "bg-destructive" : isLow ? "bg-warning" : "bg-success";
+  const barColor = isCritical ? "bg-destructive" : isLow ? "bg-warning" : "bg-foreground/80";
   return (
-    <div className="h-2 bg-muted rounded-full overflow-hidden">
+    <div className="h-1 bg-muted rounded-full overflow-hidden">
       <div className={`h-full ${barColor} rounded-full transition-all`} style={{ width: `${pct}%` }} />
     </div>
   );
@@ -208,8 +209,7 @@ function RestockModal({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <RefreshCw className="w-4 h-4 text-primary" />
+          <DialogTitle>
             {t("consumables.record_purchase_title")}
           </DialogTitle>
         </DialogHeader>
@@ -259,11 +259,11 @@ function RestockModal({
           </div>
 
           {totalPrints > 0 && (
-            <div className="bg-success/8 border border-success/25 rounded-lg px-3 py-2.5 flex items-center justify-between">
-              <span className="text-sm text-success font-medium">{t("consumables.total_prints_added")}</span>
-              <span className="text-lg font-bold text-success">
+            <div className="rounded-lg border border-border bg-card px-3 py-2.5 flex items-center justify-between">
+              <span className="text-[13px] text-muted-foreground">{t("consumables.total_prints_added")}</span>
+              <span className="text-lg font-semibold tracking-tight tabular-nums text-foreground">
                 +{totalPrints.toLocaleString()}
-                <span className="text-xs font-normal text-success/70 ml-1">
+                <span className="text-xs font-normal text-muted-foreground ml-1">
                   {selectedItem?.unitType ?? "units"}
                 </span>
               </span>
@@ -286,7 +286,7 @@ function RestockModal({
               <Label htmlFor="supplierName">{t("consumables.supplier_label")}</Label>
               <Input
                 id="supplierName"
-                placeholder="e.g. HaloLight Direct"
+                placeholder={t("consumables.placeholder_supplier")}
                 value={form.supplierName}
                 onChange={(e) => set("supplierName")(e.target.value)}
               />
@@ -309,7 +309,7 @@ function RestockModal({
             <Label htmlFor="restockNotes">{t("common.actions", { defaultValue: "Notes" })}</Label>
             <Textarea
               id="restockNotes"
-              placeholder="Any additional notes about this purchase…"
+              placeholder={t("consumables.placeholder_purchase_notes")}
               rows={2}
               value={form.notes}
               onChange={(e) => set("notes")(e.target.value)}
@@ -415,7 +415,7 @@ function AddSupplyModal({
               <Label htmlFor="supplyName">{t("consumables.item_name_label")} <span className="text-destructive">*</span></Label>
               <Input
                 id="supplyName"
-                placeholder="e.g. 4x6 Glossy Photo Paper"
+                placeholder={t("consumables.placeholder_item_name")}
                 value={form.name}
                 onChange={(e) => set("name")(e.target.value)}
                 required
@@ -439,7 +439,7 @@ function AddSupplyModal({
               <Label htmlFor="unitType">{t("consumables.unit_type_label")}</Label>
               <Input
                 id="unitType"
-                placeholder="e.g. sheets, rolls, packs"
+                placeholder={t("consumables.placeholder_unit_type")}
                 value={form.category === "paper" ? "prints" : form.unitType}
                 readOnly={form.category === "paper"}
                 onChange={(e) => set("unitType")(e.target.value)}
@@ -502,7 +502,7 @@ function AddSupplyModal({
               <Label htmlFor="compatibleModels">{t("consumables.compatible_models_label")}</Label>
               <Input
                 id="compatibleModels"
-                placeholder="e.g. HaloLight Pro X1, X2"
+                placeholder={t("consumables.placeholder_models")}
                 value={form.compatibleModels}
                 onChange={(e) => set("compatibleModels")(e.target.value)}
               />
@@ -511,7 +511,7 @@ function AddSupplyModal({
               <Label htmlFor="description">{t("consumables.description_label")}</Label>
               <Textarea
                 id="description"
-                placeholder="Optional notes about this item…"
+                placeholder={t("consumables.placeholder_item_notes")}
                 rows={2}
                 value={form.description}
                 onChange={(e) => set("description")(e.target.value)}
@@ -624,15 +624,20 @@ export default function Consumables() {
   };
 
   if (stockLoading) return (
-    <div className="max-w-4xl mx-auto space-y-4">
-      <div className="h-8 w-48 bg-border rounded animate-pulse" />
+    <div className="max-w-4xl space-y-4">
+      <div className="h-8 w-48 bg-muted rounded-md animate-pulse" />
       {[1, 2, 3].map(i => <div key={i} className="h-28 bg-muted rounded-xl animate-pulse" />)}
     </div>
   );
-  if (stockError) return <div role="alert" className="max-w-4xl mx-auto flex items-center gap-3"><p>{t("common.error")}</p><Button variant="outline" onClick={() => void retryStock()}>{t("common.retry", { defaultValue: "Retry" })}</Button></div>;
+  if (stockError) return (
+    <div className="max-w-4xl">
+      <Notice icon={AlertTriangle} title={t("common.error")}
+        action={<Button variant="outline" size="sm" onClick={() => void retryStock()}>{t("common.retry", { defaultValue: "Retry" })}</Button>} />
+    </div>
+  );
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-4xl space-y-10">
       <AddSupplyModal open={addSupplyOpen} onClose={() => setAddSupplyOpen(false)} />
       {editingUsage && <UsageModal key={editingUsage.id} item={editingUsage} onClose={() => setEditingUsage(null)} />}
       <RestockModal
@@ -643,299 +648,291 @@ export default function Consumables() {
       />
 
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">{t("consumables.title")}</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">{t("consumables.subtitle_short")}</p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2 shrink-0">
-          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setShowOrders(!showOrders)}>
-            <ShoppingCart className="w-4 h-4" />
-            <span className="hidden sm:inline">{t("consumables.purchase_history")}</span>
-            <span className="sm:hidden">{t("consumables.orders", { defaultValue: "Orders" })}</span>
-            {showOrders ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-          </Button>
-          {stock.some(item => item.unitType === "prints") && (
-            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => openRestock()}>
-              <RefreshCw className="w-4 h-4" />
-              {t("consumables.reorder")}
+      <PageHeader
+        title={t("consumables.title")}
+        description={t("consumables.subtitle_short")}
+        actions={
+          <>
+            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setShowOrders(!showOrders)}>
+              <ShoppingCart className="w-4 h-4 stroke-[1.75]" />
+              <span className="hidden sm:inline">{t("consumables.purchase_history")}</span>
+              <span className="sm:hidden">{t("consumables.orders", { defaultValue: "Orders" })}</span>
+              {showOrders ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
             </Button>
-          )}
-          <Button size="sm" className="gap-1.5" onClick={() => setAddSupplyOpen(true)}>
-            <Plus className="w-4 h-4" />
-            {t("consumables.add_supply")}
-          </Button>
-        </div>
-      </div>
+            {stock.some(item => item.unitType === "prints") && (
+              <Button variant="outline" size="sm" className="gap-1.5" onClick={() => openRestock()}>
+                <RefreshCw className="w-4 h-4 stroke-[1.75]" />
+                {t("consumables.reorder")}
+              </Button>
+            )}
+            <Button size="sm" className="gap-1.5" onClick={() => setAddSupplyOpen(true)}>
+              <Plus className="w-4 h-4" />
+              {t("consumables.add_supply")}
+            </Button>
+          </>
+        }
+      />
 
       {/* Alert Banners */}
-      {criticalItems.length > 0 && (
-        <div className="bg-destructive/10 border border-destructive/30 rounded-xl p-4 flex items-start gap-3">
-          <AlertTriangle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
-          <div className="flex-1">
-            <p className="text-sm font-semibold text-destructive">{t("consumables.critical_title")}</p>
-            <p className="text-xs text-destructive mt-0.5">{criticalItems.map(i => i.name).join(", ")} — {t("consumables.critical_desc")}</p>
-          </div>
-          <Button size="sm" variant="outline" className="shrink-0 gap-1.5 border-destructive/30 text-destructive hover:bg-destructive/8"
-            disabled={!criticalItems.some(item => item.unitType === "prints")}
-            onClick={() => openRestock(criticalItems.find(item => item.unitType === "prints")?.id)}>
-            <RefreshCw className="w-3.5 h-3.5" />
-            {t("consumables.reorder")}
-          </Button>
+      {(criticalItems.length > 0 || lowItems.length > 0) && (
+        <div className="space-y-3">
+          {criticalItems.length > 0 && (
+            <Notice
+              tone="destructive"
+              icon={AlertTriangle}
+              title={t("consumables.critical_title")}
+              action={
+                <Button size="sm" variant="outline" className="gap-1.5"
+                  disabled={!criticalItems.some(item => item.unitType === "prints")}
+                  onClick={() => openRestock(criticalItems.find(item => item.unitType === "prints")?.id)}>
+                  <RefreshCw className="w-3.5 h-3.5 stroke-[1.75]" />
+                  {t("consumables.reorder")}
+                </Button>
+              }
+            >
+              {criticalItems.map(i => i.name).join(", ")} — {t("consumables.critical_desc")}
+            </Notice>
+          )}
+          {lowItems.length > 0 && (
+            <Notice
+              tone="warning"
+              icon={TrendingDown}
+              title={t("consumables.low_stock_title")}
+              action={
+                <Button size="sm" variant="outline" className="gap-1.5"
+                  disabled={!lowItems.some(item => item.unitType === "prints")}
+                  onClick={() => openRestock(lowItems.find(item => item.unitType === "prints")?.id)}>
+                  <RefreshCw className="w-3.5 h-3.5 stroke-[1.75]" />
+                  {t("consumables.reorder")}
+                </Button>
+              }
+            >
+              {lowItems.map(i => `${i.name} (${i.currentQuantity} ${i.unitType})`).join(", ")}
+            </Notice>
+          )}
         </div>
       )}
-      {lowItems.length > 0 && (
-        <div className="bg-warning/8 border border-warning/30 rounded-xl p-4 flex items-start gap-3">
-          <TrendingDown className="w-5 h-5 text-warning shrink-0 mt-0.5" />
-          <div className="flex-1">
-            <p className="text-sm font-semibold text-warning">{t("consumables.low_stock_title")}</p>
-            <p className="text-xs text-warning mt-0.5">{lowItems.map(i => `${i.name} (${i.currentQuantity} ${i.unitType})`).join(", ")}</p>
-          </div>
-          <Button size="sm" variant="outline" className="shrink-0 gap-1.5 border-warning/30 text-warning hover:bg-warning/8"
-            disabled={!lowItems.some(item => item.unitType === "prints")}
-            onClick={() => openRestock(lowItems.find(item => item.unitType === "prints")?.id)}>
-            <RefreshCw className="w-3.5 h-3.5" />
-            {t("consumables.reorder")}
-          </Button>
-        </div>
-      )}
+
+      {/* Summary KPIs */}
+      <StatGrid className="grid-cols-2 md:grid-cols-4">
+        <Stat label={t("consumables.kpi_total")} value={stock.length} />
+        <Stat label={t("consumables.kpi_well_stocked")} value={stock.filter(s => !s.isLow).length} />
+        <Stat label={t("consumables.low_stock")} value={lowItems.length} tone={lowItems.length > 0 ? "warning" : undefined} />
+        <Stat label={t("consumables.out_of_stock")} value={criticalItems.length} tone={criticalItems.length > 0 ? "destructive" : undefined} />
+      </StatGrid>
 
       {/* Forecast Card */}
       {forecastEvents.length > 0 && (
-        <Card className={forecastShortage > 0 ? "border-destructive/30 bg-destructive/5" : "border-success/30 bg-success/5"}>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Calendar className={`w-4 h-4 ${forecastShortage > 0 ? "text-destructive" : "text-success"}`} />
-              {t("consumables.forecast_title", { defaultValue: "Print Forecast — Upcoming Events" })}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="grid grid-cols-3 gap-3 text-sm">
-              <div className="text-center">
-                <p className="text-lg font-bold text-foreground">{forecastTotalRequired.toLocaleString()}</p>
-                <p className="text-xs text-muted-foreground">{t("consumables.forecast_required", { defaultValue: "Prints Required" })}</p>
+        <Section
+          title={t("consumables.forecast_title", { defaultValue: "Print Forecast — Upcoming Events" })}
+          actions={
+            <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+              <span className={`h-1.5 w-1.5 rounded-full ${forecastShortage > 0 ? "bg-destructive" : "bg-success"}`} />
+              {forecastShortage > 0
+                ? t("consumables.forecast_shortage", { defaultValue: "Shortage" })
+                : t("consumables.forecast_sufficient", { defaultValue: "Stock Sufficient" })}
+            </span>
+          }
+        >
+          <div className="rounded-xl border border-border bg-card overflow-hidden">
+            <div className="grid grid-cols-3">
+              <div className="p-5 shadow-[1px_1px_0_0_hsl(var(--border))]">
+                <p className="text-[13px] text-muted-foreground">{t("consumables.forecast_required", { defaultValue: "Prints Required" })}</p>
+                <p className="text-2xl font-semibold tracking-tight tabular-nums text-foreground mt-2">{forecastTotalRequired.toLocaleString()}</p>
               </div>
-              <div className="text-center">
-                <p className="text-lg font-bold text-foreground">{forecastTotalAvailable.toLocaleString()}</p>
-                <p className="text-xs text-muted-foreground">{t("consumables.forecast_available", { defaultValue: "Prints Available" })}</p>
+              <div className="p-5 shadow-[1px_1px_0_0_hsl(var(--border))]">
+                <p className="text-[13px] text-muted-foreground">{t("consumables.forecast_available", { defaultValue: "Prints Available" })}</p>
+                <p className="text-2xl font-semibold tracking-tight tabular-nums text-foreground mt-2">{forecastTotalAvailable.toLocaleString()}</p>
               </div>
-              <div className="text-center">
+              <div className="p-5 shadow-[1px_1px_0_0_hsl(var(--border))]">
                 {forecastShortage > 0 ? (
                   <>
-                    <p className="text-lg font-bold text-destructive">-{forecastShortage.toLocaleString()}</p>
-                    <p className="text-xs text-destructive">{t("consumables.forecast_shortage", { defaultValue: "Shortage" })}</p>
+                    <p className="text-[13px] text-muted-foreground">{t("consumables.forecast_shortage", { defaultValue: "Shortage" })}</p>
+                    <p className="text-2xl font-semibold tracking-tight tabular-nums text-destructive mt-2">-{forecastShortage.toLocaleString()}</p>
                   </>
                 ) : (
                   <>
-                    <p className="text-lg font-bold text-success flex items-center justify-center gap-1"><CheckCircle2 className="w-4 h-4" />{t("consumables.forecast_ok", { defaultValue: "OK" })}</p>
-                    <p className="text-xs text-success">{t("consumables.forecast_sufficient", { defaultValue: "Stock Sufficient" })}</p>
+                    <p className="text-[13px] text-muted-foreground">{t("consumables.forecast_sufficient", { defaultValue: "Stock Sufficient" })}</p>
+                    <p className="text-2xl font-semibold tracking-tight text-foreground mt-2 flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 stroke-[1.75] text-success" />{t("consumables.forecast_ok", { defaultValue: "OK" })}</p>
                   </>
                 )}
               </div>
             </div>
             {forecastShortage > 0 && (
-              <div className="flex items-center gap-2">
-                <Zap className="w-3.5 h-3.5 text-destructive shrink-0" />
-                <p className="text-xs text-destructive font-medium">
+              <div className="flex flex-wrap items-center gap-2 px-5 py-3 border-t border-border">
+                <p className="text-[13px] text-destructive">
                   {t("consumables.forecast_reorder_hint", { defaultValue: "Reorder paper before your next event to avoid running short." })}
                 </p>
-                <Button size="sm" variant="outline" className="shrink-0 ml-auto gap-1.5 border-destructive/30 text-destructive hover:bg-destructive/8 text-xs h-7"
+                <Button size="sm" variant="outline" className="shrink-0 ml-auto gap-1.5 text-xs h-7"
                   onClick={() => openRestock()}>
-                  <RefreshCw className="w-3 h-3" /> {t("consumables.reorder")}
+                  <RefreshCw className="w-3 h-3 stroke-[1.75]" /> {t("consumables.reorder")}
                 </Button>
               </div>
             )}
-            <div className="space-y-1.5 pt-1 border-t">
+            <ul className="divide-y divide-border border-t border-border">
               {forecastEvents.slice(0, 5).map(ev => (
-                <div key={ev.id} className="flex items-center justify-between text-xs text-muted-foreground">
-                  <span className="truncate max-w-[60%]">{ev.title}{ev.clientName ? ` — ${ev.clientName}` : ""}</span>
-                  <span className="shrink-0 ml-2">{ev.eventDate ? new Date(ev.eventDate).toLocaleDateString(undefined, { month: "short", day: "numeric" }) : "—"} · {ev.includedPrints} {t("consumables.forecast_prints_label", { defaultValue: "prints" })}</span>
-                </div>
+                <li key={ev.id} className="flex items-center justify-between px-5 py-2.5 text-xs text-muted-foreground">
+                  <span className="truncate max-w-[60%] text-foreground">{ev.title}{ev.clientName ? ` — ${ev.clientName}` : ""}</span>
+                  <span className="shrink-0 ml-2 tabular-nums">{ev.eventDate ? new Date(ev.eventDate).toLocaleDateString(undefined, { month: "short", day: "numeric" }) : "—"} · {ev.includedPrints} {t("consumables.forecast_prints_label", { defaultValue: "prints" })}</span>
+                </li>
               ))}
               {forecastEvents.length > 5 && (
-                <p className="text-xs text-muted-foreground text-center">+{forecastEvents.length - 5} {t("consumables.forecast_more_events", { defaultValue: "more events" })}</p>
+                <li className="px-5 py-2.5 text-xs text-muted-foreground text-center">+{forecastEvents.length - 5} {t("consumables.forecast_more_events", { defaultValue: "more events" })}</li>
               )}
-            </div>
-          </CardContent>
-        </Card>
+            </ul>
+          </div>
+        </Section>
       )}
-
-      {/* Summary KPIs */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {[
-          { label: t("consumables.kpi_total"),        value: stock.length,                       color: "text-foreground" },
-          { label: t("consumables.kpi_well_stocked"), value: stock.filter(s => !s.isLow).length, color: "text-success" },
-          { label: t("consumables.low_stock"),        value: lowItems.length,                    color: "text-warning" },
-          { label: t("consumables.out_of_stock"),     value: criticalItems.length,               color: "text-destructive" },
-        ].map(s => (
-          <Card key={s.label}>
-            <CardContent className="p-4 text-center">
-              <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">{s.label}</p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
 
       {/* Purchase History (collapsible) */}
       {showOrders && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Clock className="w-4 h-4 text-primary" />
-              {t("consumables.orders_section")}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {ordersLoading ? (
-              <div className="space-y-2">{[1, 2, 3].map(i => <div key={i} className="h-12 bg-muted rounded animate-pulse" />)}</div>
-            ) : orders.length === 0 ? (
-              <div className="py-8 text-center text-muted-foreground text-sm">{t("consumables.no_orders")}</div>
-            ) : (
-              <div className="space-y-1">
-                {orders.map(order => {
-                  const statusColor = ORDER_STATUS_COLORS[order.status] ?? ORDER_STATUS_COLORS.pending!;
-                  const statusLabel = t(ORDER_STATUS_KEYS[order.status] ?? "consumables.order_status_pending");
-                  const isRestock = order.status === "delivered" && order.notes?.includes("prints/roll");
-                  return (
-                    <div key={order.id} className="flex items-start gap-3 py-2.5 border-b border-border last:border-0">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <p className="text-sm font-medium text-foreground">{order.name}</p>
-                          {isRestock && (
-                            <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
-                              <RefreshCw className="w-2.5 h-2.5" />
-                              {t("consumables.reorder")}
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                          +{order.quantity.toLocaleString()} {order.unitType}
-                          {Number(order.total) > 0 && ` · $${Number(order.total).toFixed(2)}`}
-                          {` · ${fmtDate(order.orderedAt)}`}
-                        </p>
-                        {order.notes && (
-                          <p className="text-xs text-muted-foreground mt-0.5">{order.notes}</p>
+        <Section title={t("consumables.orders_section")}>
+          {ordersLoading ? (
+            <div className="rounded-xl border border-border bg-card divide-y divide-border">{[1, 2, 3].map(i => <div key={i} className="h-14 px-4 py-3"><div className="h-full bg-muted rounded-md animate-pulse" /></div>)}</div>
+          ) : orders.length === 0 ? (
+            <EmptyState text={t("consumables.no_orders")} className="py-8" />
+          ) : (
+            <ul className="rounded-xl border border-border bg-card divide-y divide-border overflow-hidden">
+              {orders.map(order => {
+                const statusDot = ORDER_STATUS_DOT[order.status] ?? ORDER_STATUS_DOT.pending!;
+                const statusLabel = t(ORDER_STATUS_KEYS[order.status] ?? "consumables.order_status_pending");
+                const isRestock = order.status === "delivered" && order.notes?.includes("prints/roll");
+                return (
+                  <li key={order.id} className="flex items-start gap-3 px-4 py-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-sm font-medium text-foreground">{order.name}</p>
+                        {isRestock && (
+                          <Badge variant="outline" className="text-[11px] font-normal text-muted-foreground px-1.5 py-0">
+                            {t("consumables.reorder")}
+                          </Badge>
                         )}
                       </div>
-                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 mt-0.5 ${statusColor}`}>
-                        {statusLabel}
-                      </span>
+                      <p className="text-xs text-muted-foreground tabular-nums mt-0.5">
+                        +{order.quantity.toLocaleString()} {order.unitType}
+                        {Number(order.total) > 0 && ` · $${Number(order.total).toFixed(2)}`}
+                        {` · ${fmtDate(order.orderedAt)}`}
+                      </p>
+                      {order.notes && (
+                        <p className="text-xs text-muted-foreground mt-0.5">{order.notes}</p>
+                      )}
                     </div>
-                  );
-                })}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                    <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground shrink-0 mt-0.5">
+                      <span className={`h-1.5 w-1.5 rounded-full ${statusDot}`} />
+                      {statusLabel}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </Section>
       )}
 
       {/* Stock by Category */}
       {stock.length === 0 ? (
-        <Card>
-          <CardContent className="py-16 text-center">
-            <Package className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
-            <p className="text-muted-foreground font-medium">{t("consumables.no_stock_empty")}</p>
-            <p className="text-sm text-muted-foreground mt-1 mb-4">{t("consumables.first_supply_desc")}</p>
-            <Button size="sm" className="gap-1.5" onClick={() => setAddSupplyOpen(true)}>
-              <Plus className="w-4 h-4" />
-              {t("consumables.add_first_supply")}
-            </Button>
-          </CardContent>
-        </Card>
+        <EmptyState icon={Package} text={t("consumables.no_stock_empty")}>
+          <p className="text-[13px] text-muted-foreground -mt-2 mb-4">{t("consumables.first_supply_desc")}</p>
+          <Button size="sm" className="gap-1.5" onClick={() => setAddSupplyOpen(true)}>
+            <Plus className="w-4 h-4" />
+            {t("consumables.add_first_supply")}
+          </Button>
+        </EmptyState>
       ) : (
         Object.entries(grouped).map(([category, items]) => {
           const catCfg = CATEGORY_CONFIG[category] ?? CATEGORY_CONFIG.accessory!;
           const CatIcon = catCfg.icon;
           const catLabel = t(CATEGORY_LABEL_KEYS[category] ?? "consumables.category_accessory");
           return (
-            <Card key={category}>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm flex items-center gap-2">
-                  <CatIcon className={`w-4 h-4 ${catCfg.color}`} />
+            <Section
+              key={category}
+              title={
+                <span className="flex items-center gap-2">
+                  <CatIcon className="w-4 h-4 stroke-[1.75] text-muted-foreground" />
                   {catLabel}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-5">
-                  {items.map(item => (
-                    <div key={item.id} className="space-y-2">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <p className="text-sm font-medium text-foreground">{item.name}</p>
-                            {item.isCritical && (
-                              <span className="text-xs px-1.5 py-0.5 rounded-full bg-destructive/15 text-destructive font-medium">
-                                {t("consumables.out_of_stock")}
-                              </span>
-                            )}
-                            {item.isLow && !item.isCritical && (
-                              <span className="text-xs px-1.5 py-0.5 rounded-full bg-warning/15 text-warning font-medium">
-                                {t("consumables.low_stock")}
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-xs text-muted-foreground">{item.sku}</p>
-                          {item.compatibleModels && (
-                            <p className="text-xs text-muted-foreground">{t("consumables.compatible")}: {item.compatibleModels}</p>
+                </span>
+              }
+            >
+              <ul className="rounded-xl border border-border bg-card divide-y divide-border overflow-hidden">
+                {items.map(item => (
+                  <li key={item.id} className="p-5 space-y-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-x-3 gap-y-1 flex-wrap">
+                          <p className="text-sm font-medium text-foreground">{item.name}</p>
+                          {item.isCritical && (
+                            <span className="inline-flex items-center gap-1.5 text-xs text-destructive">
+                              <span className="h-1.5 w-1.5 rounded-full bg-destructive" />
+                              {t("consumables.out_of_stock")}
+                            </span>
+                          )}
+                          {item.isLow && !item.isCritical && (
+                            <span className="inline-flex items-center gap-1.5 text-xs text-warning">
+                              <span className="h-1.5 w-1.5 rounded-full bg-warning" />
+                              {t("consumables.low_stock")}
+                            </span>
                           )}
                         </div>
-                        <div className="flex items-start gap-2 shrink-0">
-                          <div className="text-right">
-                            <p className={`text-lg font-bold ${item.isCritical ? "text-destructive" : item.isLow ? "text-warning" : "text-foreground"}`}>
-                              {item.currentQuantity.toLocaleString()}
-                              <span className="text-xs font-normal text-muted-foreground ml-1">{item.unitType === "prints" ? t("consumables.forecast_prints_label", { defaultValue: "prints" }) : item.unitType}</span>
-                            </p>
-                          </div>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-8 w-8 p-0 text-muted-foreground hover:text-primary hover:bg-primary/8"
-                            title={t("consumables.record_purchase_title")}
-                            disabled={item.unitType !== "prints"}
-                            onClick={() => openRestock(item.id)}
-                          >
-                            <RefreshCw className="w-3.5 h-3.5" />
-                          </Button>
-                          <Button size="icon" variant="ghost" className="h-8 w-8" title={t("consumables.edit_usage", { defaultValue: "Edit event usage" })} aria-label={t("consumables.edit_usage", { defaultValue: "Edit event usage" })} onClick={() => setEditingUsage(item)}><Pencil className="h-3.5 w-3.5" /></Button>
-                        </div>
+                        <p className="text-xs text-muted-foreground font-mono mt-0.5">{item.sku}</p>
+                        {item.compatibleModels && (
+                          <p className="text-xs text-muted-foreground">{t("consumables.compatible")}: {item.compatibleModels}</p>
+                        )}
                       </div>
-                      <StockBar qty={item.currentQuantity} threshold={item.reorderThreshold} isCritical={item.isCritical} isLow={item.isLow} />
-                      {item.unitType !== "prints" ? <p className="text-xs text-muted-foreground">{t("consumables.print_units_required", { defaultValue: "Estimates and print restocking are unavailable for this unit. Existing quantities are unchanged." })}</p> : <dl className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
-                        {[
-                          [t("consumables.average_prints_event", { defaultValue: "Average prints per event" }), item.averagePrintsPerEvent],
-                          [t("consumables.average_events_month", { defaultValue: "Average events per month (optional)" }), item.averageEventsPerMonth == null ? null : Number(item.averageEventsPerMonth)],
-                          [t("consumables.monthly_consumption", { defaultValue: "Estimated prints per month" }), item.monthlyConsumption],
-                          [t("consumables.events_remaining", { defaultValue: "Events remaining" }), item.eventsRemaining],
-                          [t("consumables.months_remaining", { defaultValue: "Months remaining" }), item.monthsRemaining],
-                        ].map(([label, value]) => <div key={String(label)}><dt className="text-muted-foreground">{label}</dt><dd className="font-medium mt-1">{value == null ? t("consumables.usage_unknown", { defaultValue: "Not estimated" }) : typeof value === "number" ? value.toLocaleString() : value}</dd></div>)}
-                      </dl>}
-                      <div className="flex justify-between text-xs text-muted-foreground">
-                        <span>{t("consumables.reorder_threshold", { threshold: item.reorderThreshold, unit: item.unitType })}</span>
-                        <span>{t("consumables.last_restocked", { date: fmtDate(item.lastRestockedAt) })}</span>
-                      </div>
-                      {item.reorderRecommended && item.unitType === "prints" && (
-                        <div className="bg-warning/8 border border-warning/30 rounded-lg p-2.5 flex items-center justify-between">
-                          <p className="text-xs text-warning font-medium flex items-center gap-1.5">
-                            <RotateCcw className="w-3.5 h-3.5" />
-                            {t("consumables.reorder_recommended_msg")}
+                      <div className="flex items-start gap-1 shrink-0">
+                        <div className="text-right mr-1">
+                          <p className={`text-lg font-semibold tracking-tight tabular-nums ${item.isCritical ? "text-destructive" : item.isLow ? "text-warning" : "text-foreground"}`}>
+                            {item.currentQuantity.toLocaleString()}
+                            <span className="text-xs font-normal text-muted-foreground ml-1">{item.unitType === "prints" ? t("consumables.forecast_prints_label", { defaultValue: "prints" }) : item.unitType}</span>
                           </p>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="h-7 text-xs gap-1.5"
-                            onClick={() => openRestock(item.id)}
-                          >
-                            <RefreshCw className="w-3 h-3" />
-                            {t("consumables.reorder")}
-                          </Button>
                         </div>
-                      )}
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+                          title={t("consumables.record_purchase_title")}
+                          disabled={item.unitType !== "prints"}
+                          onClick={() => openRestock(item.id)}
+                        >
+                          <RefreshCw className="w-3.5 h-3.5 stroke-[1.75]" />
+                        </Button>
+                        <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground hover:text-foreground" title={t("consumables.edit_usage", { defaultValue: "Edit event usage" })} aria-label={t("consumables.edit_usage", { defaultValue: "Edit event usage" })} onClick={() => setEditingUsage(item)}><Pencil className="h-3.5 w-3.5 stroke-[1.75]" /></Button>
+                      </div>
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+                    <StockBar qty={item.currentQuantity} threshold={item.reorderThreshold} isCritical={item.isCritical} isLow={item.isLow} />
+                    {item.unitType !== "prints" ? <p className="text-xs text-muted-foreground">{t("consumables.print_units_required", { defaultValue: "Estimates and print restocking are unavailable for this unit. Existing quantities are unchanged." })}</p> : <dl className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
+                      {[
+                        [t("consumables.average_prints_event", { defaultValue: "Average prints per event" }), item.averagePrintsPerEvent],
+                        [t("consumables.average_events_month", { defaultValue: "Average events per month (optional)" }), item.averageEventsPerMonth == null ? null : Number(item.averageEventsPerMonth)],
+                        [t("consumables.monthly_consumption", { defaultValue: "Estimated prints per month" }), item.monthlyConsumption],
+                        [t("consumables.events_remaining", { defaultValue: "Events remaining" }), item.eventsRemaining],
+                        [t("consumables.months_remaining", { defaultValue: "Months remaining" }), item.monthsRemaining],
+                      ].map(([label, value]) => <div key={String(label)}><dt className="text-muted-foreground">{label}</dt><dd className="text-[13px] text-foreground tabular-nums mt-0.5">{value == null ? t("consumables.usage_unknown", { defaultValue: "Not estimated" }) : typeof value === "number" ? value.toLocaleString() : value}</dd></div>)}
+                    </dl>}
+                    <div className="flex flex-wrap justify-between gap-2 text-xs text-muted-foreground tabular-nums">
+                      <span>{t("consumables.reorder_threshold", { threshold: item.reorderThreshold, unit: item.unitType })}</span>
+                      <span>{t("consumables.last_restocked", { date: fmtDate(item.lastRestockedAt) })}</span>
+                    </div>
+                    {item.reorderRecommended && item.unitType === "prints" && (
+                      <div className="rounded-lg border border-border px-3 py-2 flex items-center justify-between gap-2">
+                        <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                          <span className="h-1.5 w-1.5 rounded-full bg-warning shrink-0" />
+                          {t("consumables.reorder_recommended_msg")}
+                        </p>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 text-xs gap-1.5"
+                          onClick={() => openRestock(item.id)}
+                        >
+                          <RefreshCw className="w-3 h-3 stroke-[1.75]" />
+                          {t("consumables.reorder")}
+                        </Button>
+                      </div>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </Section>
           );
         })
       )}

@@ -12,19 +12,20 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, ReceiptText, Trash2, ChevronRight, X, AlertCircle, CheckCircle2, ChevronDown, ChevronUp, Info } from "lucide-react";
+import { Plus, ReceiptText, Trash2, ChevronRight, X, ChevronDown, ChevronUp, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCurrency } from "@/lib/currency";
 import CustomerSearchCombobox from "@/components/CustomerSearchCombobox";
 import { useProspectCreation } from "@/hooks/useProspectCreation";
 import { prospectPrefill } from "@/lib/prospectCreation";
+import { EmptyState, PageHeader, Stat, StatGrid } from "@/components/page";
 
 const STATUS_COLORS: Record<string, string> = {
-  draft: "bg-slate-100 text-slate-700 border-slate-200",
-  sent: "bg-info/10 text-info border-info/30",
-  paid: "bg-success/8 text-success border-success/20",
-  overdue: "bg-destructive/10 text-destructive border-destructive/30",
-  cancelled: "bg-slate-50 text-slate-500 border-slate-200",
+  draft: "bg-muted-foreground/50",
+  sent: "bg-info",
+  paid: "bg-success",
+  overdue: "bg-destructive",
+  cancelled: "bg-muted-foreground/30",
 };
 
 const STATUS_KEYS = ["draft", "sent", "paid", "overdue", "cancelled"];
@@ -223,33 +224,19 @@ export default function Invoices() {
   const hasLinkedDoc = !!(form.quoteId || form.contractId);
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">{t("invoices.title")}</h1>
-          <p className="text-muted-foreground text-sm mt-1">{t("invoices.subtitle")}</p>
-        </div>
-        <Button onClick={() => setShowCreate(true)} className="gap-2 shrink-0"><Plus className="w-4 h-4" /> {t("invoices.new_invoice")}</Button>
-      </div>
+    <div className="space-y-8">
+      <PageHeader
+        title={t("invoices.title")}
+        description={t("invoices.subtitle")}
+        actions={<Button onClick={() => setShowCreate(true)} className="gap-2 shrink-0"><Plus className="w-4 h-4 stroke-[1.75]" /> {t("invoices.new_invoice")}</Button>}
+      />
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="rounded-xl border bg-card p-4">
-          <p className="text-xs text-muted-foreground font-medium">{t("invoices.total_invoices")}</p>
-          <p className="text-xl font-bold mt-1">{invoices.length}</p>
-        </div>
-        <div className="rounded-xl border bg-success/8 border-success/20 p-4">
-          <p className="text-xs text-success font-medium flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> {t("invoices.status_paid")}</p>
-          <p className="text-xl font-bold mt-1 text-success">{formatCurrency(paidTotal)}</p>
-        </div>
-        <div className="rounded-xl border bg-info/10 border-info/30 p-4">
-          <p className="text-xs text-info font-medium">{t("invoices.pending")}</p>
-          <p className="text-xl font-bold mt-1 text-info">{formatCurrency(pendingTotal)}</p>
-        </div>
-        <div className="rounded-xl border bg-destructive/10 border-destructive/30 p-4">
-          <p className="text-xs text-destructive font-medium flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {t("invoices.status_overdue")}</p>
-          <p className="text-xl font-bold mt-1 text-destructive">{formatCurrency(overdueTotal)}</p>
-        </div>
-      </div>
+      <StatGrid className="md:grid-cols-4">
+        <Stat label={t("invoices.total_invoices")} value={invoices.length} />
+        <Stat label={t("invoices.status_paid")} value={formatCurrency(paidTotal)} tone="success" />
+        <Stat label={t("invoices.pending")} value={formatCurrency(pendingTotal)} tone="info" />
+        <Stat label={t("invoices.status_overdue")} value={formatCurrency(overdueTotal)} tone="destructive" />
+      </StatGrid>
 
       <div className="flex gap-2 items-center">
         <Select value={filterStatus} onValueChange={setFilterStatus}>
@@ -262,24 +249,21 @@ export default function Invoices() {
         <span className="text-sm text-muted-foreground">{t("invoices.count", { count: invoices.length })}</span>
       </div>
 
-      <div className="rounded-xl border bg-card overflow-hidden">
+      <div className={cn(!isLoading && invoices.length === 0 ? "" : "rounded-xl border border-border bg-card overflow-hidden")}>
         {isLoading ? (
-          <div className="flex items-center justify-center h-40 text-muted-foreground">{t("invoices.loading")}</div>
+          <div className="flex items-center justify-center h-40 text-sm text-muted-foreground">{t("invoices.loading")}</div>
         ) : invoices.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16">
-            <ReceiptText className="w-10 h-10 text-muted-foreground/30 mb-3" />
-            <p className="font-medium text-muted-foreground">{t("invoices.no_invoices")}</p>
-          </div>
+          <EmptyState icon={ReceiptText} text={t("invoices.no_invoices")} />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm min-w-[520px]">
-              <thead className="bg-muted/40 border-b">
+              <thead className="border-b border-border">
                 <tr>
-                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">{t("invoices.col_invoice_num")}</th>
-                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">{t("invoices.col_client")}</th>
-                  <th className="text-left px-4 py-3 font-medium text-muted-foreground hidden sm:table-cell">{t("common.status")}</th>
-                  <th className="text-left px-4 py-3 font-medium text-muted-foreground hidden md:table-cell">{t("invoices.due_date_label")}</th>
-                  <th className="text-right px-4 py-3 font-medium text-muted-foreground">{t("invoices.col_amount")}</th>
+                  <th className="text-left px-4 py-3 text-[13px] font-normal text-muted-foreground">{t("invoices.col_invoice_num")}</th>
+                  <th className="text-left px-4 py-3 text-[13px] font-normal text-muted-foreground">{t("invoices.col_client")}</th>
+                  <th className="text-left px-4 py-3 text-[13px] font-normal text-muted-foreground hidden sm:table-cell">{t("common.status")}</th>
+                  <th className="text-left px-4 py-3 text-[13px] font-normal text-muted-foreground hidden md:table-cell">{t("invoices.due_date_label")}</th>
+                  <th className="text-right px-4 py-3 text-[13px] font-normal text-muted-foreground">{t("invoices.col_amount")}</th>
                   <th className="px-4 py-3"></th>
                 </tr>
               </thead>
@@ -289,14 +273,14 @@ export default function Invoices() {
                   const effectiveStatus = overdue && inv.status === "sent" ? "overdue" : inv.status;
                   const color = STATUS_COLORS[effectiveStatus] ?? STATUS_COLORS[inv.status];
                   return (
-                    <tr key={inv.id} className={cn("hover:bg-muted/20 transition-colors group", overdue && "bg-destructive/5")}>
+                    <tr key={inv.id} className="hover:bg-muted/40 transition-colors group">
                       <td className="px-4 py-3">
                         <Link href={`/invoices/${inv.id}`}>
-                          <span className="font-mono text-sm font-medium hover:text-primary cursor-pointer">{inv.invoiceNumber}</span>
+                          <span className="font-mono text-sm font-medium hover:underline underline-offset-4 cursor-pointer">{inv.invoiceNumber}</span>
                         </Link>
                         <p className="text-xs text-muted-foreground truncate max-w-[140px]">{inv.title}</p>
                         {(inv as any).packageName && (
-                          <p className="text-xs text-accent-foreground/70">{(inv as any).packageName}</p>
+                          <p className="text-xs text-muted-foreground">{(inv as any).packageName}</p>
                         )}
                       </td>
                       <td className="px-4 py-3">
@@ -314,7 +298,8 @@ export default function Invoices() {
                           })}
                           disabled={statusMutation.isPending}
                         >
-                          <SelectTrigger className={cn("h-7 text-xs w-[110px] border font-medium", color ?? "")}>
+                          <SelectTrigger className="h-7 text-xs w-[120px] gap-1.5 font-medium">
+                            <span className={cn("h-1.5 w-1.5 rounded-full shrink-0", color ?? "bg-muted-foreground/50")} />
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -327,23 +312,23 @@ export default function Invoices() {
                         </Select>
                       </td>
                       <td className="px-4 py-3 hidden md:table-cell text-xs">
-                        <span className={cn(overdue ? "text-destructive font-medium" : "text-muted-foreground")}>{formatDate(inv.dueDate)}</span>
+                        <span className={cn("tabular-nums", overdue ? "text-destructive font-medium" : "text-muted-foreground")}>{formatDate(inv.dueDate)}</span>
                       </td>
                       <td className="px-4 py-3 text-right">
-                        <span className={cn("font-bold", inv.status === "paid" ? "text-success" : overdue ? "text-destructive" : "")}>{formatCurrency(inv.total)}</span>
+                        <span className={cn("font-medium tabular-nums", overdue && inv.status !== "paid" ? "text-destructive" : "")}>{formatCurrency(inv.total)}</span>
                       </td>
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           {inv.status !== "paid" && inv.status !== "cancelled" && (
                             <button
                               onClick={() => statusMutation.mutate({ id: inv.id, data: { status: "paid", paidAmount: inv.total } })}
-                              className="text-xs text-success hover:text-success/80 border border-success/30 rounded px-2 py-0.5 bg-success/8 hover:bg-success/15 transition-colors whitespace-nowrap"
+                              className="text-xs text-foreground border border-border rounded-md px-2 py-0.5 bg-card hover:bg-muted transition-colors whitespace-nowrap"
                             >
                               {t("invoices.mark_paid")}
                             </button>
                           )}
-                          <Link href={`/invoices/${inv.id}`}><Button variant="ghost" size="icon" className="h-7 w-7"><ChevronRight className="w-4 h-4" /></Button></Link>
-                          <button onClick={() => deleteMutation.mutate({ id: inv.id })} className="text-muted-foreground hover:text-destructive p-1"><Trash2 className="w-4 h-4" /></button>
+                          <Link href={`/invoices/${inv.id}`}><Button variant="ghost" size="icon" className="h-7 w-7"><ChevronRight className="w-4 h-4 stroke-[1.75]" /></Button></Link>
+                          <button onClick={() => deleteMutation.mutate({ id: inv.id })} className="text-muted-foreground hover:text-destructive p-1"><Trash2 className="w-4 h-4 stroke-[1.75]" /></button>
                         </div>
                       </td>
                     </tr>
@@ -391,8 +376,8 @@ export default function Invoices() {
 
             {/* Auto-fill banner */}
             {hasLinkedDoc && (
-              <div className="flex items-start gap-2 bg-info/10 border border-info/30 rounded-lg px-3 py-2 text-sm text-info">
-                <Info className="w-4 h-4 mt-0.5 shrink-0" />
+              <div className="flex items-start gap-2 bg-card border border-border rounded-lg px-3 py-2 text-sm text-muted-foreground">
+                <Info className="w-4 h-4 stroke-[1.75] text-info mt-0.5 shrink-0" />
                 <span>
                   {form.contractId
                     ? t("invoices.service_auto_filled_contract")
@@ -450,17 +435,17 @@ export default function Invoices() {
               {showService ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
               {t("invoices.service_section")}
               {hasLinkedDoc && (
-                <span className="ml-auto text-xs text-info font-medium">Auto-filled</span>
+                <span className="ml-auto text-xs text-info font-medium">{t("invoices.auto_filled")}</span>
               )}
               {(form.packageName || form.includedPrints || form.equipmentIds.length > 0) && !hasLinkedDoc && (
-                <span className="ml-auto text-xs text-primary font-medium">
+                <span className="ml-auto text-xs text-foreground font-medium">
                   {[form.packageName, form.includedPrints && `${form.includedPrints} prints`].filter(Boolean).join(" · ")}
                 </span>
               )}
             </button>
 
             {showService && (
-              <div className="border rounded-xl p-4 space-y-4 bg-muted/20">
+              <div className="border border-border rounded-xl p-4 space-y-4 bg-card">
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   <div className="space-y-1.5">
                     <Label>{t("invoices.start_time_label")}</Label>
@@ -476,7 +461,7 @@ export default function Invoices() {
                   </div>
                   <div className="space-y-1.5">
                     <Label>{t("invoices.package_name_label")}</Label>
-                    <Input value={form.packageName} onChange={f("packageName")} placeholder="Premium" />
+                    <Input value={form.packageName} onChange={f("packageName")} placeholder={t("invoices.package_placeholder")} />
                   </div>
                   <div className="space-y-1.5">
                     <Label>{t("invoices.rental_duration_label")}</Label>
@@ -502,7 +487,7 @@ export default function Invoices() {
 
                 <div className="space-y-1.5">
                   <Label>{t("invoices.options_list_label")}</Label>
-                  <Textarea value={form.optionsList} onChange={f("optionsList")} rows={2} placeholder="Extra album, GIF booth…" />
+                  <Textarea value={form.optionsList} onChange={f("optionsList")} rows={2} placeholder={t("invoices.options_placeholder")} />
                 </div>
 
                 <div className="space-y-1.5">
@@ -575,15 +560,15 @@ export default function Invoices() {
               </div>
               <div className="flex items-end pb-1">
                 <div className="text-right w-full">
-                  <p className="text-xs text-muted-foreground">{t("invoices.subtotal_label")}: {formatCurrency(calcSubtotal())}</p>
-                  <p className="text-base font-bold">{t("invoices.total_col")}: {formatCurrency(calcTotal())}</p>
+                  <p className="text-xs text-muted-foreground tabular-nums">{t("invoices.subtotal_label")}: {formatCurrency(calcSubtotal())}</p>
+                  <p className="text-base font-semibold tabular-nums">{t("invoices.total_col")}: {formatCurrency(calcTotal())}</p>
                 </div>
               </div>
             </div>
 
             <div className="space-y-1.5"><Label htmlFor="invoice-payment-method">{t("invoices.payment_method", { defaultValue: "Payment method" })}</Label><Input id="invoice-payment-method" maxLength={200} value={form.paymentMethod} onChange={f("paymentMethod")} /></div>
             <div className="space-y-1.5"><Label>{t("invoices.notes_section")}</Label><Textarea value={form.notes} onChange={f("notes")} rows={2} /></div>
-            <div className="space-y-1.5"><Label>{t("invoices.payment_terms_section")}</Label><Textarea value={form.terms} onChange={f("terms")} rows={2} placeholder="Net 30, etc." /></div>
+            <div className="space-y-1.5"><Label>{t("invoices.payment_terms_section")}</Label><Textarea value={form.terms} onChange={f("terms")} rows={2} placeholder={t("invoices.terms_placeholder")} /></div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={resetDialog}>{t("common.cancel")}</Button>

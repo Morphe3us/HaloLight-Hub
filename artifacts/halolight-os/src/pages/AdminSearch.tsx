@@ -3,12 +3,12 @@ import { useTranslation } from "react-i18next";
 import { Link } from "wouter";
 import { useAdminSearch } from "@workspace/api-client-react";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   Search, Users, GraduationCap, BookOpen, FileText,
   LifeBuoy, Monitor, Loader2, FileCheck,
 } from "lucide-react";
+import { EmptyState, PageHeader } from "@/components/page";
 
 type ResultItem = {
   id: string;
@@ -18,14 +18,14 @@ type ResultItem = {
   href: string;
 };
 
-const TYPE_CONFIG: Record<string, { icon: React.ComponentType<{ className?: string }>; color: string; bg: string }> = {
-  user:      { icon: Users,        color: "text-info",            bg: "bg-info/10" },
-  course:    { icon: GraduationCap, color: "text-primary",        bg: "bg-primary/10" },
-  lesson:    { icon: BookOpen,     color: "text-primary",        bg: "bg-primary/10" },
-  resource:  { icon: FileCheck,    color: "text-success",        bg: "bg-success/10" },
-  article:   { icon: FileText,     color: "text-muted-foreground", bg: "bg-muted" },
-  ticket:    { icon: LifeBuoy,     color: "text-warning",        bg: "bg-warning/10" },
-  equipment: { icon: Monitor,      color: "text-foreground",      bg: "bg-muted" },
+const TYPE_CONFIG: Record<string, { icon: React.ComponentType<{ className?: string }> }> = {
+  user:      { icon: Users },
+  course:    { icon: GraduationCap },
+  lesson:    { icon: BookOpen },
+  resource:  { icon: FileCheck },
+  article:   { icon: FileText },
+  ticket:    { icon: LifeBuoy },
+  equipment: { icon: Monitor },
 };
 
 export default function AdminSearch() {
@@ -64,17 +64,14 @@ export default function AdminSearch() {
   }, {});
 
   return (
-    <div className="max-w-3xl mx-auto space-y-5">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">{t("admin_search.title")}</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">{t("admin_search.subtitle")}</p>
-      </div>
+    <div className="max-w-3xl space-y-8">
+      <PageHeader title={t("admin_search.title")} description={t("admin_search.subtitle")} />
 
       <div className="relative">
-        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 stroke-[1.75] text-muted-foreground pointer-events-none" />
         <Input
           autoFocus
-          className="pl-10 h-12 text-base"
+          className="pl-10 h-11 text-base"
           placeholder={t("admin_search.placeholder")}
           value={query}
           onChange={handleChange}
@@ -85,17 +82,17 @@ export default function AdminSearch() {
       </div>
 
       {debouncedQ.length < 2 && (
-        <div className="py-12 text-center text-muted-foreground">
-          <Search className="w-12 h-12 mx-auto mb-3 opacity-20" />
-          <p className="font-medium">{t("admin_search.type_hint")}</p>
-          <p className="text-sm mt-1 opacity-70">{t("admin_search.type_hint_sub")}</p>
-          <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-xl mx-auto">
+        <div className="rounded-xl border border-dashed border-border px-6 py-10 text-center">
+          <Search className="w-5 h-5 mx-auto mb-3 stroke-[1.75] text-muted-foreground/70" />
+          <p className="text-sm text-foreground">{t("admin_search.type_hint")}</p>
+          <p className="text-[13px] text-muted-foreground mt-1">{t("admin_search.type_hint_sub")}</p>
+          <div className="mt-6 flex flex-wrap justify-center gap-2 max-w-xl mx-auto">
             {Object.entries(TYPE_CONFIG).map(([type, cfg]) => {
               const Icon = cfg.icon;
               return (
-                <div key={type} className={`flex items-center gap-2 px-3 py-2 rounded-lg ${cfg.bg}`}>
-                  <Icon className={`w-4 h-4 ${cfg.color}`} />
-                  <span className={`text-sm font-medium ${cfg.color}`}>{typeLabels[type]}s</span>
+                <div key={type} className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-border bg-card">
+                  <Icon className="w-3.5 h-3.5 stroke-[1.75] text-muted-foreground" />
+                  <span className="text-[13px] text-muted-foreground">{typeLabels[type]}s</span>
                 </div>
               );
             })}
@@ -104,16 +101,14 @@ export default function AdminSearch() {
       )}
 
       {debouncedQ.length >= 2 && !isFetching && results.length === 0 && (
-        <div className="py-12 text-center text-muted-foreground">
-          <Search className="w-10 h-10 mx-auto mb-3 opacity-20" />
-          <p className="font-medium">{t("admin_search.no_results", { query: debouncedQ })}</p>
-          <p className="text-sm mt-1">{t("admin_search.try_keyword")}</p>
-        </div>
+        <EmptyState icon={Search} text={t("admin_search.no_results", { query: debouncedQ })}>
+          <p className="text-[13px] text-muted-foreground">{t("admin_search.try_keyword")}</p>
+        </EmptyState>
       )}
 
       {results.length > 0 && (
-        <>
-          <p className="text-sm text-muted-foreground">
+        <div className="space-y-8">
+          <p className="text-[13px] text-muted-foreground">
             {total === 1
               ? t("admin_search.result_one", { count: total, query: debouncedQ })
               : t("admin_search.results_many", { count: total, query: debouncedQ })}
@@ -125,35 +120,32 @@ export default function AdminSearch() {
             const label = typeLabels[type] ?? type;
             return (
               <div key={type}>
-                <div className="flex items-center gap-2 mb-2">
-                  <Icon className={`w-4 h-4 ${cfg.color}`} />
-                  <h3 className="text-sm font-semibold text-foreground">{label}s</h3>
-                  <Badge variant="outline" className="text-xs">{typeResults.length}</Badge>
+                <div className="flex items-center gap-2 mb-3">
+                  <h3 className="text-sm font-medium text-foreground">{label}s</h3>
+                  <span className="text-[13px] tabular-nums text-muted-foreground">{typeResults.length}</span>
                 </div>
-                <Card>
-                  <CardContent className="p-0">
-                    {typeResults.map((item, idx) => (
-                      <Link key={item.id} href={item.href}>
-                        <div className={`flex items-center gap-3 px-4 py-3 hover:bg-muted/40 transition-colors cursor-pointer ${idx < typeResults.length - 1 ? "border-b border-border" : ""}`}>
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${cfg.bg}`}>
-                            <Icon className={`w-4 h-4 ${cfg.color}`} />
-                          </div>
+                <ul className="rounded-xl border border-border bg-card divide-y divide-border overflow-hidden">
+                  {typeResults.map((item) => (
+                    <li key={item.id}>
+                      <Link href={item.href}>
+                        <div className="flex items-center gap-3 px-4 py-3 hover:bg-muted/40 transition-colors cursor-pointer">
+                          <Icon className="w-4 h-4 stroke-[1.75] text-muted-foreground shrink-0" />
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium text-foreground truncate">{item.title}</p>
-                            <p className="text-xs text-muted-foreground truncate">{item.subtitle}</p>
+                            <p className="text-[13px] text-muted-foreground truncate">{item.subtitle}</p>
                           </div>
-                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${cfg.bg} ${cfg.color}`}>
+                          <Badge variant="outline" className="text-xs font-normal text-muted-foreground shrink-0">
                             {label}
-                          </span>
+                          </Badge>
                         </div>
                       </Link>
-                    ))}
-                  </CardContent>
-                </Card>
+                    </li>
+                  ))}
+                </ul>
               </div>
             );
           })}
-        </>
+        </div>
       )}
     </div>
   );

@@ -16,9 +16,7 @@ import {
   Power,
   PowerOff,
   Search,
-  ShieldAlert,
   UserPlus,
-  Users,
   Check,
   X,
   ChevronLeft,
@@ -26,13 +24,6 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -63,6 +54,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { AdminConsentProof } from "@/components/AdminConsentProof";
 import { InviteUserButton } from "@/components/InviteUserButton";
+import { PageHeader, Section, Stat, StatGrid } from "@/components/page";
 
 const ROLES = ["admin", "client", "coach", "sales_rep"] as const;
 const LANGUAGES = ["en", "fr", "de", "nl", "es", "it", "pt", "pl"] as const;
@@ -248,59 +240,34 @@ export default function Admin() {
   }
 
   return (
-    <div className="space-y-6" data-testid="page-admin">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex items-center gap-3">
-          <div className="rounded-xl bg-primary/10 p-3">
-            <ShieldAlert className="h-8 w-8 text-primary" />
-          </div>
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight text-foreground">
-              {t("admin.console_title")}
-            </h1>
-            <p className="mt-1 text-muted-foreground">
-              {t("admin.console_subtitle")}
-            </p>
-          </div>
-        </div>
-        <Button onClick={openCreate} className="gap-2">
-          <UserPlus className="h-4 w-4" />
-          {t("admin.create_user")}
-        </Button>
-      </div>
+    <div className="space-y-10" data-testid="page-admin">
+      <PageHeader
+        title={t("admin.console_title")}
+        description={t("admin.console_subtitle")}
+        actions={
+          <Button onClick={openCreate} size="sm" className="gap-2">
+            <UserPlus className="h-4 w-4 stroke-[1.75]" />
+            {t("admin.create_user")}
+          </Button>
+        }
+      />
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+      <StatGrid className="md:grid-cols-4">
         {[
           { label: t("admin.total_users"), value: usersData?.total || 0 },
           { label: t("admin.active_users"), value: activeUsers },
           { label: t("admin.inactive_users"), value: inactiveUsers },
           { label: t("admin.admin_users"), value: adminUsers },
         ].map((stat) => (
-          <Card key={stat.label} className="shadow-sm">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                {stat.label}
-              </CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-foreground">
-                {stat.value}
-              </div>
-            </CardContent>
-          </Card>
+          <Stat key={stat.label} label={stat.label} value={stat.value} />
         ))}
-      </div>
+      </StatGrid>
 
-      <Card className="shadow-sm">
-        <CardHeader>
-          <CardTitle>{t("admin.user_directory")}</CardTitle>
-          <CardDescription>{t("admin.user_directory_desc")}</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
+      <Section title={t("admin.user_directory")} description={t("admin.user_directory_desc")}>
+        <div className="space-y-4">
           <div className="flex flex-col gap-3 lg:flex-row">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 stroke-[1.75] text-muted-foreground" />
               <Input
                 className="pl-9"
                 placeholder={t("admin.search_users")}
@@ -350,16 +317,16 @@ export default function Admin() {
             </Select>
           </div>
 
-          <div className="rounded-md border">
+          <div className="rounded-xl border border-border bg-card overflow-hidden">
             <Table>
-              <TableHeader className="bg-muted">
-                <TableRow>
-                  <TableHead>{t("admin.col_user")}</TableHead>
-                  <TableHead>{t("admin.col_email")}</TableHead>
-                  <TableHead>{t("admin.col_role")}</TableHead>
-                  <TableHead>{t("admin.col_status")}</TableHead>
-                  <TableHead>{t("admin.col_joined")}</TableHead>
-                  <TableHead className="text-right">
+              <TableHeader>
+                <TableRow className="hover:bg-transparent">
+                  <TableHead className="text-[13px] font-normal text-muted-foreground">{t("admin.col_user")}</TableHead>
+                  <TableHead className="text-[13px] font-normal text-muted-foreground">{t("admin.col_email")}</TableHead>
+                  <TableHead className="text-[13px] font-normal text-muted-foreground">{t("admin.col_role")}</TableHead>
+                  <TableHead className="text-[13px] font-normal text-muted-foreground">{t("admin.col_status")}</TableHead>
+                  <TableHead className="text-[13px] font-normal text-muted-foreground">{t("admin.col_joined")}</TableHead>
+                  <TableHead className="text-right text-[13px] font-normal text-muted-foreground">
                     {t("admin.col_actions")}
                   </TableHead>
                 </TableRow>
@@ -384,7 +351,7 @@ export default function Admin() {
                   </TableRow>
                 ) : (
                   users.map((user) => (
-                    <TableRow key={user.id} data-testid={`row-user-${user.id}`}>
+                    <TableRow key={user.id} data-testid={`row-user-${user.id}`} className="hover:bg-muted/40">
                       <TableCell className="font-medium text-foreground">
                         {user.fullName || t("admin.unset_name")}
                         {user.companyName && (
@@ -401,8 +368,8 @@ export default function Admin() {
                           variant="outline"
                           className={
                             user.role === "admin"
-                              ? "border-primary/20 bg-primary/10 text-primary"
-                              : ""
+                              ? "font-normal text-foreground"
+                              : "font-normal text-muted-foreground"
                           }
                         >
                           {t(`admin.role_${user.role}`)}
@@ -414,18 +381,15 @@ export default function Admin() {
                         </Badge> :
                         <Badge
                           variant="outline"
-                          className={
-                            user.isActive
-                              ? "border-success/20 bg-success/10 text-success"
-                              : "border-destructive/20 bg-destructive/10 text-destructive"
-                          }
+                          className="gap-1.5 font-normal text-foreground"
                         >
+                          <span className={user.isActive ? "h-1.5 w-1.5 rounded-full bg-success" : "h-1.5 w-1.5 rounded-full bg-destructive"} aria-hidden="true" />
                           {user.isActive
                             ? t("admin.status_active")
                             : t("admin.status_inactive")}
                         </Badge>}
                       </TableCell>
-                      <TableCell className="text-muted-foreground">
+                      <TableCell className="text-muted-foreground tabular-nums">
                         {new Date(user.createdAt).toLocaleDateString()}
                       </TableCell>
                       <TableCell>
@@ -471,16 +435,16 @@ export default function Admin() {
               </TableBody>
             </Table>
           </div>
-          <div className="flex items-center justify-between gap-3 text-sm">
-            <span>{usersData?.total ?? 0} {t("admin.total_users")}</span>
+          <div className="flex items-center justify-between gap-3 text-[13px] text-muted-foreground">
+            <span className="tabular-nums">{usersData?.total ?? 0} {t("admin.total_users")}</span>
             <div className="flex items-center gap-2">
               <Button variant="outline" size="icon" aria-label={t("common.previous", { defaultValue: "Previous page" })} title={t("common.previous", { defaultValue: "Previous page" })} disabled={offset === 0 || isLoadingUsers} onClick={() => setOffset(Math.max(0, offset - 50))}><ChevronLeft className="h-4 w-4" /></Button>
-              <span>{Math.floor(offset / 50) + 1} / {Math.max(1, Math.ceil((usersData?.total ?? 0) / 50))}</span>
+              <span className="tabular-nums">{Math.floor(offset / 50) + 1} / {Math.max(1, Math.ceil((usersData?.total ?? 0) / 50))}</span>
               <Button variant="outline" size="icon" aria-label={t("common.next", { defaultValue: "Next page" })} title={t("common.next", { defaultValue: "Next page" })} disabled={offset + 50 >= (usersData?.total ?? 0) || isLoadingUsers} onClick={() => setOffset(offset + 50)}><ChevronRight className="h-4 w-4" /></Button>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </Section>
 
       <Dialog open={!!review} onOpenChange={(open) => { if (!open && !reviewAccess.isPending) setReview(null); }}>
         <DialogContent>
@@ -623,7 +587,7 @@ export default function Admin() {
                 }
               />
             </div>
-            <div className="flex items-center justify-between rounded-md border px-3 py-2">
+            <div className="flex items-center justify-between rounded-md border border-border px-3 py-2">
               <Label>{t("admin.status_active")}</Label>
               <Switch
                 checked={form.isActive}

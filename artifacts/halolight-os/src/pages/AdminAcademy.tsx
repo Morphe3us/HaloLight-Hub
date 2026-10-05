@@ -17,6 +17,7 @@ import {
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { EmptyState, PageHeader, Stat, StatGrid } from "@/components/page";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -85,9 +86,9 @@ const LANG_LABELS: Record<string, string> = {
 };
 const LEVELS = ["beginner", "intermediate", "advanced"] as const;
 const LEVEL_COLORS: Record<string, string> = {
-  beginner: "bg-success/15 text-success",
-  intermediate: "bg-info/15 text-info",
-  advanced: "bg-warning/15 text-warning",
+  beginner: "bg-success",
+  intermediate: "bg-info",
+  advanced: "bg-warning",
 };
 
 type AdminCourse = {
@@ -289,7 +290,7 @@ function CourseFormModal({
                 key={l}
                 type="button"
                 onClick={() => setForm((f) => ({ ...f, activeLang: l }))}
-                className={`px-2.5 py-1 rounded text-xs font-medium transition-colors ${form.activeLang === l ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}
+                className={`px-2.5 py-1 rounded-md border text-xs transition-colors ${form.activeLang === l ? "border-foreground/20 bg-muted text-foreground font-medium" : "border-border text-muted-foreground hover:text-foreground"}`}
               >
                 {LANG_LABELS[l]}
               </button>
@@ -364,7 +365,7 @@ function CourseFormModal({
                 onChange={(e) =>
                   setForm((f) => ({ ...f, category: e.target.value }))
                 }
-                placeholder="e.g. Business, Technical"
+                placeholder={t("admin_academy.placeholder_category")}
                 required
               />
             </div>
@@ -396,7 +397,7 @@ function CourseFormModal({
                 onChange={(e) =>
                   setForm((f) => ({ ...f, instructorName: e.target.value }))
                 }
-                placeholder="e.g. Marie Dupont"
+                placeholder={t("admin_academy.placeholder_instructor")}
               />
             </div>
             <div className="space-y-1.5">
@@ -655,7 +656,7 @@ function LessonFormModal({
                 key={l}
                 type="button"
                 onClick={() => setForm((f) => ({ ...f, activeLang: l }))}
-                className={`px-2.5 py-1 rounded text-xs font-medium transition-colors ${form.activeLang === l ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}
+                className={`px-2.5 py-1 rounded-md border text-xs transition-colors ${form.activeLang === l ? "border-foreground/20 bg-muted text-foreground font-medium" : "border-border text-muted-foreground hover:text-foreground"}`}
               >
                 {LANG_LABELS[l]}
               </button>
@@ -691,9 +692,9 @@ function LessonFormModal({
           </div>
 
           {/* BunnyStream video assets per language */}
-          <div className="space-y-2 rounded-xl border border-border bg-muted/30 p-3">
+          <div className="space-y-2 rounded-xl border border-border p-3">
             <div className="flex items-center justify-between">
-              <Label className="text-sm font-semibold">
+              <Label className="text-sm font-medium">
                 {t("admin_academy.label_video_assets", {
                   defaultValue: "BunnyStream Video Assets",
                 })}
@@ -717,7 +718,7 @@ function LessonFormModal({
                     onClick={() =>
                       setForm((f) => ({ ...f, activeVideoLang: l }))
                     }
-                    className={`px-2.5 py-1 rounded text-xs font-medium transition-colors ${form.activeVideoLang === l ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}
+                    className={`px-2.5 py-1 rounded-md border text-xs transition-colors ${form.activeVideoLang === l ? "border-foreground/20 bg-muted text-foreground font-medium" : "border-border text-muted-foreground hover:text-foreground"}`}
                   >
                     {LANG_LABELS[l]}
                     {form.activeVideoLang !== l && hasData && (
@@ -730,7 +731,7 @@ function LessonFormModal({
 
             {/* Embed URL */}
             <div className="space-y-1">
-              <Label className="text-sm font-semibold text-foreground">
+              <Label className="text-sm font-medium text-foreground">
                 BunnyStream Embed URL{" "}
                 <span className="text-xs font-normal text-muted-foreground">
                   ({LANG_LABELS[form.activeVideoLang]})
@@ -751,7 +752,7 @@ function LessonFormModal({
 
             {/* Thumbnail URL */}
             <div className="space-y-1">
-              <Label className="text-sm font-semibold text-foreground">
+              <Label className="text-sm font-medium text-foreground">
                 Thumbnail URL{" "}
                 <span className="text-xs font-normal text-muted-foreground">
                   ({LANG_LABELS[form.activeVideoLang]})
@@ -1027,7 +1028,7 @@ function CourseDetailView({
       : t("admin_academy.type_lesson");
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <LessonFormModal
         key={`${lessonModal.lesson?.id ?? "new"}-${String(lessonModal.open)}`}
         open={lessonModal.open}
@@ -1073,16 +1074,16 @@ function CourseDetailView({
       <Button
         variant="ghost"
         size="sm"
-        className="gap-1.5 -ml-1"
+        className="gap-1.5 -ml-2 text-muted-foreground hover:text-foreground"
         onClick={onBack}
       >
-        <ArrowLeft className="w-4 h-4" /> {t("admin_academy.back_to_courses")}
+        <ArrowLeft className="w-4 h-4 stroke-[1.75]" /> {t("admin_academy.back_to_courses")}
       </Button>
 
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-bold text-foreground">{titleEn}</h2>
-          <p className="text-sm text-muted-foreground">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div className="min-w-0">
+          <h2 className="text-xl font-semibold tracking-tight text-foreground">{titleEn}</h2>
+          <p className="text-sm text-muted-foreground mt-1">
             {t("admin_academy.modules_lessons", {
               modules: course.moduleCount,
               lessons: course.lessonCount,
@@ -1094,7 +1095,7 @@ function CourseDetailView({
           className="gap-1.5"
           onClick={() => setAddingModule(true)}
         >
-          <Plus className="w-4 h-4" /> {t("admin_academy.add_module")}
+          <Plus className="w-4 h-4 stroke-[1.75]" /> {t("admin_academy.add_module")}
         </Button>
       </div>
 
@@ -1156,21 +1157,20 @@ function CourseDetailView({
       )}
 
       {(course.modules ?? []).length === 0 ? (
-        <div className="text-center py-12 text-muted-foreground border-2 border-dashed border-border rounded-xl">
-          <BookOpen className="w-8 h-8 mx-auto mb-3 opacity-30" />
-          <p className="font-semibold text-foreground">
+        <div className="text-center px-6 py-10 text-muted-foreground border border-dashed border-border rounded-xl">
+          <BookOpen className="w-5 h-5 mx-auto mb-3 text-muted-foreground/70 stroke-[1.75]" />
+          <p className="text-sm font-medium text-foreground">
             {t("admin_academy.no_modules")}
           </p>
           <p className="text-sm mt-1 max-w-xs mx-auto">
-            Click <strong>Add Module</strong> above, then add lessons. Each
-            lesson holds a BunnyStream Embed URL and Thumbnail URL.
+            {t("admin_academy.no_modules_hint")}
           </p>
           <Button
             size="sm"
             className="gap-1.5 mt-4"
             onClick={() => setAddingModule(true)}
           >
-            <Plus className="w-4 h-4" /> {t("admin_academy.add_module")}
+            <Plus className="w-4 h-4 stroke-[1.75]" /> {t("admin_academy.add_module")}
           </Button>
         </div>
       ) : (
@@ -1187,9 +1187,9 @@ function CourseDetailView({
                     onClick={() => toggleModule(mod.id)}
                   >
                     {isExpanded ? (
-                      <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                      <ChevronDown className="w-4 h-4 stroke-[1.75] text-muted-foreground" />
                     ) : (
-                      <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                      <ChevronRight className="w-4 h-4 stroke-[1.75] text-muted-foreground" />
                     )}
                     {moduleEditId === mod.id ? (
                       <Input
@@ -1208,7 +1208,7 @@ function CourseDetailView({
                         onClick={(e) => e.stopPropagation()}
                       />
                     ) : (
-                      <span className="font-semibold text-sm text-foreground">
+                      <span className="font-medium text-sm text-foreground">
                         {modTitle}
                       </span>
                     )}
@@ -1258,15 +1258,14 @@ function CourseDetailView({
                       return (
                         <div
                           key={lesson.id}
-                          className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-muted/40 group"
+                          className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg border border-border hover:bg-muted/50 transition-colors group"
                         >
                           <div className="flex items-center gap-2 flex-1 min-w-0">
                             <span className="text-sm font-medium text-foreground truncate">
                               {lTitle}
                             </span>
-                            <span
-                              className={`text-xs px-1.5 py-0.5 rounded-full ${lesson.isPublished ? "bg-success/15 text-success" : "bg-muted text-muted-foreground"}`}
-                            >
+                            <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+                              <span className={`h-1.5 w-1.5 rounded-full ${lesson.isPublished ? "bg-success" : "bg-muted-foreground/50"}`} />
                               {lesson.isPublished
                                 ? t("admin_academy.published_badge")
                                 : t("admin_academy.draft_badge")}
@@ -1411,7 +1410,7 @@ export default function AdminAcademy() {
   };
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-8">
       <CourseFormModal
         open={courseModal.open}
         onClose={() => setCourseModal({ open: false })}
@@ -1446,45 +1445,41 @@ export default function AdminAcademy() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">
-            {t("admin_academy.title")}
-          </h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            {t("admin_academy.subtitle")}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            className="gap-1.5"
-            onClick={() => setShowBunny(true)}
-          >
-            <Video className="w-4 h-4" /> BunnyStream Importer
-          </Button>
-          <Button
-            className="gap-1.5"
-            onClick={() => setCourseModal({ open: true })}
-          >
-            <Plus className="w-4 h-4" /> {t("admin_academy.new_course")}
-          </Button>
-        </div>
-      </div>
+      <PageHeader
+        title={t("admin_academy.title")}
+        description={t("admin_academy.subtitle")}
+        actions={
+          <>
+            <Button
+              variant="outline"
+              className="gap-1.5"
+              onClick={() => setShowBunny(true)}
+            >
+              <Video className="w-4 h-4 stroke-[1.75]" /> {t("admin_bunny.title")}
+            </Button>
+            <Button
+              className="gap-1.5"
+              onClick={() => setCourseModal({ open: true })}
+            >
+              <Plus className="w-4 h-4 stroke-[1.75]" /> {t("admin_academy.new_course")}
+            </Button>
+          </>
+        }
+      />
 
-      <div className="flex gap-3 items-center flex-wrap">
+      <div className="flex gap-2 items-center flex-wrap">
         <Input
           className="max-w-xs"
           placeholder={t("admin_academy.search_placeholder")}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
-        <div className="flex gap-1">
+        <div className="flex gap-1 rounded-lg border border-border p-0.5">
           {["all", "published", "draft"].map((s) => (
             <button
               key={s}
               onClick={() => setStatusFilter(s)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${statusFilter === s ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}
+              className={`px-3 py-1 rounded-md text-xs transition-colors ${statusFilter === s ? "bg-muted text-foreground font-medium" : "text-muted-foreground hover:text-foreground"}`}
             >
               {filterLabels[s] ?? s}
             </button>
@@ -1492,7 +1487,7 @@ export default function AdminAcademy() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <StatGrid className="grid-cols-2 md:grid-cols-4">
         {[
           { labelKey: "admin_academy.stat_total", value: courses.length },
           {
@@ -1508,16 +1503,13 @@ export default function AdminAcademy() {
             value: courses.reduce((s, c) => s + c.lessonCount, 0),
           },
         ].map((s) => (
-          <Card key={s.labelKey}>
-            <CardContent className="p-4 text-center">
-              <p className="text-2xl font-bold text-foreground">{s.value}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                {t(s.labelKey as Parameters<typeof t>[0])}
-              </p>
-            </CardContent>
-          </Card>
+          <Stat
+            key={s.labelKey}
+            label={t(s.labelKey as Parameters<typeof t>[0])}
+            value={s.value}
+          />
         ))}
-      </div>
+      </StatGrid>
 
       {isLoading ? (
         <div className="space-y-2">
@@ -1526,32 +1518,25 @@ export default function AdminAcademy() {
           ))}
         </div>
       ) : courses.length === 0 ? (
-        <Card>
-          <CardContent className="py-16 text-center">
-            <GraduationCap className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
-            <p className="font-medium text-muted-foreground">
-              {t("admin_academy.no_courses")}
-            </p>
-            <Button
-              size="sm"
-              className="gap-1.5 mt-3"
-              onClick={() => setCourseModal({ open: true })}
-            >
-              <Plus className="w-4 h-4" /> {t("admin_academy.create_first")}
-            </Button>
-          </CardContent>
-        </Card>
+        <EmptyState icon={GraduationCap} text={t("admin_academy.no_courses")}>
+          <Button
+            size="sm"
+            className="gap-1.5"
+            onClick={() => setCourseModal({ open: true })}
+          >
+            <Plus className="w-4 h-4 stroke-[1.75]" /> {t("admin_academy.create_first")}
+          </Button>
+        </EmptyState>
       ) : (
-        <div className="space-y-2">
+        <ul className="rounded-xl border border-border bg-card divide-y divide-border">
           {courses.map((course) => {
             const titleEn =
               (course.title as Record<string, string>).en ?? "Untitled";
             return (
-              <Card
+              <li
                 key={course.id}
-                className="hover:border-border/80 transition-colors"
+                className="px-4 py-3 flex items-center gap-4 hover:bg-muted/50 transition-colors"
               >
-                <CardContent className="p-4 flex items-center gap-4">
                   {course.thumbnailUrl ? (
                     <img
                       src={course.thumbnailUrl}
@@ -1560,25 +1545,29 @@ export default function AdminAcademy() {
                     />
                   ) : (
                     <div className="w-14 h-10 rounded bg-muted shrink-0 flex items-center justify-center">
-                      <GraduationCap className="w-5 h-5 text-muted-foreground" />
+                      <GraduationCap className="w-4 h-4 stroke-[1.75] text-muted-foreground" />
                     </div>
                   )}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-semibold text-sm text-foreground">
+                      <span className="font-medium text-sm text-foreground">
                         {titleEn}
                       </span>
                       {course.isFeatured && (
-                        <Star className="w-3.5 h-3.5 text-warning fill-warning" />
+                        <Star className="w-3.5 h-3.5 stroke-[1.75] text-warning fill-warning" />
                       )}
                       <Badge
-                        className={`text-xs ${LEVEL_COLORS[course.level] ?? ""}`}
+                        variant="outline"
+                        className="gap-1.5 text-xs font-normal"
                       >
+                        <span className={`h-1.5 w-1.5 rounded-full ${LEVEL_COLORS[course.level] ?? "bg-muted-foreground/50"}`} />
                         {course.level}
                       </Badge>
                       <Badge
-                        className={`text-xs ${course.isPublished ? "bg-success/15 text-success" : "bg-muted text-muted-foreground"}`}
+                        variant="outline"
+                        className="gap-1.5 text-xs font-normal"
                       >
+                        <span className={`h-1.5 w-1.5 rounded-full ${course.isPublished ? "bg-success" : "bg-muted-foreground/50"}`} />
                         {course.isPublished
                           ? t("admin_academy.published_badge")
                           : t("admin_academy.archived_badge")}
@@ -1606,13 +1595,13 @@ export default function AdminAcademy() {
                       className="gap-1.5"
                       onClick={() => setSelectedCourseId(course.id)}
                     >
-                      <BookOpen className="w-3.5 h-3.5" />{" "}
+                      <BookOpen className="w-3.5 h-3.5 stroke-[1.75]" />{" "}
                       {t("admin_academy.manage")}
                     </Button>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <MoreHorizontal className="w-4 h-4" />
+                          <MoreHorizontal className="w-4 h-4 stroke-[1.75]" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
@@ -1661,11 +1650,10 @@ export default function AdminAcademy() {
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
-                </CardContent>
-              </Card>
+              </li>
             );
           })}
-        </div>
+        </ul>
       )}
     </div>
   );

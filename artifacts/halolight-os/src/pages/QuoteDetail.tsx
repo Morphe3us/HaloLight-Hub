@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { paymentMethodPrint } from "@/lib/paymentMethodPrint";
+import { escapeHtml, safeImageUrl } from "@/lib/escapeHtml";
 import { useRoute, Link, useLocation } from "wouter";
 import { useTranslation } from "react-i18next";
 import {
@@ -13,7 +14,6 @@ import {
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -45,13 +45,14 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCurrency } from "@/lib/currency";
+import { PageHeader } from "@/components/page";
 
 const STATUS_COLORS: Record<string, string> = {
-  draft: "bg-slate-100 text-slate-700 border-slate-200",
-  sent: "bg-info/10 text-info border-info/30",
-  accepted: "bg-success/8 text-success border-success/20",
-  declined: "bg-destructive/10 text-destructive border-destructive/30",
-  expired: "bg-warning/8 text-warning border-warning/20",
+  draft: "bg-muted-foreground/50",
+  sent: "bg-info",
+  accepted: "bg-success",
+  declined: "bg-destructive",
+  expired: "bg-warning",
 };
 
 const STATUS_KEYS = ["draft", "sent", "accepted", "declined", "expired"];
@@ -85,12 +86,12 @@ function serviceDetailsHtml(
   if (quote.eventType || eventDate || quote.eventLocation) {
     fields.push(`
       <div class="detail-section">
-        <div class="detail-label">${t("quotes.event_section", { defaultValue: "Event Details" })}</div>
+        <div class="detail-label">${escapeHtml(t("quotes.event_section", { defaultValue: "Event Details" }))}</div>
         <table class="detail-table">
-          ${quote.eventType ? `<tr><td class="dk">${t("quotes.event_type_label", { defaultValue: "Type" })}</td><td>${quote.eventType}</td></tr>` : ""}
-          ${eventDate ? `<tr><td class="dk">${t("quotes.event_date_label", { defaultValue: "Date" })}</td><td>${eventDate}</td></tr>` : ""}
-          ${quote.eventStartTime ? `<tr><td class="dk">${t("quotes.event_start_label", { defaultValue: "Start Time" })}</td><td>${quote.eventStartTime}${quote.eventEndTime ? ` – ${quote.eventEndTime}` : ""}</td></tr>` : ""}
-          ${quote.eventLocation ? `<tr><td class="dk">${t("quotes.location_label", { defaultValue: "Location" })}</td><td>${quote.eventLocation}</td></tr>` : ""}
+          ${quote.eventType ? `<tr><td class="dk">${escapeHtml(t("quotes.event_type_label", { defaultValue: "Type" }))}</td><td>${escapeHtml(quote.eventType)}</td></tr>` : ""}
+          ${eventDate ? `<tr><td class="dk">${escapeHtml(t("quotes.event_date_label", { defaultValue: "Date" }))}</td><td>${escapeHtml(eventDate)}</td></tr>` : ""}
+          ${quote.eventStartTime ? `<tr><td class="dk">${escapeHtml(t("quotes.event_start_label", { defaultValue: "Start Time" }))}</td><td>${escapeHtml(quote.eventStartTime)}${quote.eventEndTime ? ` – ${escapeHtml(quote.eventEndTime)}` : ""}</td></tr>` : ""}
+          ${quote.eventLocation ? `<tr><td class="dk">${escapeHtml(t("quotes.location_label", { defaultValue: "Location" }))}</td><td>${escapeHtml(quote.eventLocation)}</td></tr>` : ""}
         </table>
       </div>`);
   }
@@ -121,14 +122,14 @@ function serviceDetailsHtml(
 
     fields.push(`
       <div class="detail-section">
-        <div class="detail-label">${t("quotes.package_section", { defaultValue: "Service Package" })}</div>
+        <div class="detail-label">${escapeHtml(t("quotes.package_section", { defaultValue: "Service Package" }))}</div>
         <table class="detail-table">
-          ${quote.packageName ? `<tr><td class="dk">${t("quotes.package_name_label", { defaultValue: "Package" })}</td><td>${quote.packageName}</td></tr>` : ""}
-          ${quote.rentalDuration ? `<tr><td class="dk">${t("quotes.rental_duration_label", { defaultValue: "Duration" })}</td><td>${quote.rentalDuration} ${t("quotes.hours_label", { defaultValue: "hours" })}</td></tr>` : ""}
-          ${quote.includedPrints ? `<tr><td class="dk">${t("quotes.included_prints_label", { defaultValue: "Prints Included" })}</td><td>${quote.includedPrints}</td></tr>` : ""}
-          ${quote.equipmentDescription ? `<tr><td class="dk">${t("quotes.equipment_label", { defaultValue: "Equipment" })}</td><td>${quote.equipmentDescription}</td></tr>` : ""}
-          ${options.length > 0 ? `<tr><td class="dk">${t("quotes.options_label", { defaultValue: "Options" })}</td><td>${options.join(", ")}</td></tr>` : ""}
-          ${quote.optionsList ? `<tr><td class="dk">${t("quotes.options_detail_label", { defaultValue: "Options Detail" })}</td><td>${quote.optionsList}</td></tr>` : ""}
+          ${quote.packageName ? `<tr><td class="dk">${escapeHtml(t("quotes.package_name_label", { defaultValue: "Package" }))}</td><td>${escapeHtml(quote.packageName)}</td></tr>` : ""}
+          ${quote.rentalDuration ? `<tr><td class="dk">${escapeHtml(t("quotes.rental_duration_label", { defaultValue: "Duration" }))}</td><td>${escapeHtml(quote.rentalDuration)} ${escapeHtml(t("quotes.hours_label", { defaultValue: "hours" }))}</td></tr>` : ""}
+          ${quote.includedPrints ? `<tr><td class="dk">${escapeHtml(t("quotes.included_prints_label", { defaultValue: "Prints Included" }))}</td><td>${escapeHtml(quote.includedPrints)}</td></tr>` : ""}
+          ${quote.equipmentDescription ? `<tr><td class="dk">${escapeHtml(t("quotes.equipment_label", { defaultValue: "Equipment" }))}</td><td>${escapeHtml(quote.equipmentDescription)}</td></tr>` : ""}
+          ${options.length > 0 ? `<tr><td class="dk">${escapeHtml(t("quotes.options_label", { defaultValue: "Options" }))}</td><td>${escapeHtml(options.join(", "))}</td></tr>` : ""}
+          ${quote.optionsList ? `<tr><td class="dk">${escapeHtml(t("quotes.options_detail_label", { defaultValue: "Options Detail" }))}</td><td>${escapeHtml(quote.optionsList)}</td></tr>` : ""}
         </table>
       </div>`);
   }
@@ -141,12 +142,12 @@ function serviceDetailsHtml(
   if (hasCustomPricing) {
     fields.push(`
       <div class="detail-section">
-        <div class="detail-label">${t("quotes.pricing_breakdown_label", { defaultValue: "Pricing Breakdown" })}</div>
+        <div class="detail-label">${escapeHtml(t("quotes.pricing_breakdown_label", { defaultValue: "Pricing Breakdown" }))}</div>
         <table class="detail-table">
-          ${Number(quote.rentalPrice) > 0 ? `<tr><td class="dk">${t("quotes.rental_price_label", { defaultValue: "Rental" })}</td><td>${formatCurrency(quote.rentalPrice)}</td></tr>` : ""}
-          ${Number(quote.optionsPrice) > 0 ? `<tr><td class="dk">${t("quotes.options_price_label", { defaultValue: "Options" })}</td><td>${formatCurrency(quote.optionsPrice)}</td></tr>` : ""}
-          ${Number(quote.deliveryFees) > 0 ? `<tr><td class="dk">${t("quotes.delivery_fees_label", { defaultValue: "Delivery" })}</td><td>${formatCurrency(quote.deliveryFees)}</td></tr>` : ""}
-          ${Number(quote.discountAmount) > 0 ? `<tr><td class="dk">${t("quotes.discount_label", { defaultValue: "Discount" })}</td><td>-${formatCurrency(quote.discountAmount)}</td></tr>` : ""}
+          ${Number(quote.rentalPrice) > 0 ? `<tr><td class="dk">${escapeHtml(t("quotes.rental_price_label", { defaultValue: "Rental" }))}</td><td>${escapeHtml(formatCurrency(quote.rentalPrice))}</td></tr>` : ""}
+          ${Number(quote.optionsPrice) > 0 ? `<tr><td class="dk">${escapeHtml(t("quotes.options_price_label", { defaultValue: "Options" }))}</td><td>${escapeHtml(formatCurrency(quote.optionsPrice))}</td></tr>` : ""}
+          ${Number(quote.deliveryFees) > 0 ? `<tr><td class="dk">${escapeHtml(t("quotes.delivery_fees_label", { defaultValue: "Delivery" }))}</td><td>${escapeHtml(formatCurrency(quote.deliveryFees))}</td></tr>` : ""}
+          ${Number(quote.discountAmount) > 0 ? `<tr><td class="dk">${escapeHtml(t("quotes.discount_label", { defaultValue: "Discount" }))}</td><td>-${escapeHtml(formatCurrency(quote.discountAmount))}</td></tr>` : ""}
         </table>
       </div>`);
   }
@@ -194,7 +195,7 @@ function PrintPreview({ quote, lang }: { quote: any; lang: string }) {
 
     const detailsHtml = serviceDetailsHtml(quote, formatCurrency, t, lang);
 
-    const html = `<!DOCTYPE html><html lang="${lang}"><head><meta charset="utf-8"><title>${quote.quoteNumber}</title>
+    const html = `<!DOCTYPE html><html lang="${escapeHtml(lang)}"><head><meta charset="utf-8"><title>${escapeHtml(quote.quoteNumber)}</title>
     <style>
       *{box-sizing:border-box;margin:0;padding:0}
       body{font-family:Arial,Helvetica,sans-serif;max-width:820px;margin:40px auto;color:#111;font-size:13.5px;padding:0 28px}
@@ -229,47 +230,47 @@ function PrintPreview({ quote, lang }: { quote: any; lang: string }) {
     </style></head><body>
     <div class="doc-header">
       <div class="provider-block">
-        ${logoUrl ? `<img src="${logoUrl}" alt="${companyName.replace(/"/g, "&quot;")}">` : ""}
-        ${companyName ? `<div class="provider-name">${companyName}</div>` : ""}
-        ${providerEmail ? `<div style="font-size:11.5px;color:#555">${providerEmail}</div>` : ""}
+        ${safeImageUrl(logoUrl) ? `<img src="${safeImageUrl(logoUrl)}" alt="${escapeHtml(companyName)}">` : ""}
+        ${companyName ? `<div class="provider-name">${escapeHtml(companyName)}</div>` : ""}
+        ${providerEmail ? `<div style="font-size:11.5px;color:#555">${escapeHtml(providerEmail)}</div>` : ""}
       </div>
       <div class="doc-meta">
-        <div class="doc-type">${t("quotes.print_quote_title", { defaultValue: "QUOTE" })}</div>
-        <div class="doc-number">${quote.quoteNumber}</div>
-        <div class="doc-sub">${quote.title}</div>
-        <div style="margin-top:8px;font-size:11px;color:#999">${t("quotes.print_quote_date").toUpperCase()}</div>
-        <div style="font-size:12px">${today}</div>
-        ${validUntilStr ? `<div style="margin-top:6px;font-size:11px;color:#999">${t("quotes.valid_until_label").toUpperCase()}</div><div style="font-size:12px">${validUntilStr}</div>` : ""}
+        <div class="doc-type">${escapeHtml(t("quotes.print_quote_title", { defaultValue: "QUOTE" }))}</div>
+        <div class="doc-number">${escapeHtml(quote.quoteNumber)}</div>
+        <div class="doc-sub">${escapeHtml(quote.title)}</div>
+        <div style="margin-top:8px;font-size:11px;color:#999">${escapeHtml(t("quotes.print_quote_date").toUpperCase())}</div>
+        <div style="font-size:12px">${escapeHtml(today)}</div>
+        ${validUntilStr ? `<div style="margin-top:6px;font-size:11px;color:#999">${escapeHtml(t("quotes.valid_until_label").toUpperCase())}</div><div style="font-size:12px">${escapeHtml(validUntilStr)}</div>` : ""}
       </div>
     </div>
     <div class="parties">
       <div>
-        <div class="label">${t("quotes.print_from")}</div>
-        <div class="party-name">${(me as any)?.fullName ?? ""}</div>
-        ${(me as any)?.companyName ? `<div class="party-detail">${(me as any).companyName}</div>` : ""}
-        ${(me as any)?.phone ? `<div class="party-detail">${(me as any).phone}</div>` : ""}
+        <div class="label">${escapeHtml(t("quotes.print_from"))}</div>
+        <div class="party-name">${escapeHtml((me as any)?.fullName ?? "")}</div>
+        ${(me as any)?.companyName ? `<div class="party-detail">${escapeHtml((me as any).companyName)}</div>` : ""}
+        ${(me as any)?.phone ? `<div class="party-detail">${escapeHtml((me as any).phone)}</div>` : ""}
       </div>
       <div>
-        <div class="label">${t("quotes.print_prepared_for")}</div>
-        <div class="party-name">${quote.clientName}</div>
-        ${quote.clientEmail ? `<div class="party-detail">${quote.clientEmail}</div>` : ""}
-        ${quote.clientPhone ? `<div class="party-detail">${quote.clientPhone}</div>` : ""}
-        ${quote.clientCompany ? `<div class="party-detail">${quote.clientCompany}</div>` : ""}
+        <div class="label">${escapeHtml(t("quotes.print_prepared_for"))}</div>
+        <div class="party-name">${escapeHtml(quote.clientName)}</div>
+        ${quote.clientEmail ? `<div class="party-detail">${escapeHtml(quote.clientEmail)}</div>` : ""}
+        ${quote.clientPhone ? `<div class="party-detail">${escapeHtml(quote.clientPhone)}</div>` : ""}
+        ${quote.clientCompany ? `<div class="party-detail">${escapeHtml(quote.clientCompany)}</div>` : ""}
       </div>
     </div>
     ${detailsHtml}
     <table class="items">
-      <thead><tr><th style="width:50%">${t("quotes.description_col")}</th><th style="text-align:right">${t("quotes.qty_col")}</th><th style="text-align:right">${t("quotes.unit_price_col")}</th><th style="text-align:right">${t("quotes.total_col")}</th></tr></thead>
-      <tbody>${items.map((item) => `<tr><td>${item.description}</td><td style="text-align:right">${item.quantity}</td><td style="text-align:right">${formatCurrency(item.unitPrice)}</td><td style="text-align:right">${formatCurrency(item.total)}</td></tr>`).join("")}</tbody>
+      <thead><tr><th style="width:50%">${escapeHtml(t("quotes.description_col"))}</th><th style="text-align:right">${escapeHtml(t("quotes.qty_col"))}</th><th style="text-align:right">${escapeHtml(t("quotes.unit_price_col"))}</th><th style="text-align:right">${escapeHtml(t("quotes.total_col"))}</th></tr></thead>
+      <tbody>${items.map((item) => `<tr><td>${escapeHtml(item.description)}</td><td style="text-align:right">${escapeHtml(item.quantity)}</td><td style="text-align:right">${escapeHtml(formatCurrency(item.unitPrice))}</td><td style="text-align:right">${escapeHtml(formatCurrency(item.total))}</td></tr>`).join("")}</tbody>
     </table>
     <table class="totals">
-      <tr><td>${t("quotes.subtotal")}</td><td>${formatCurrency(quote.subtotal)}</td></tr>
-      <tr><td>${t("quotes.tax_label", { rate: quote.taxRate })}</td><td>${formatCurrency(quote.taxAmount)}</td></tr>
-      <tr class="grand"><td style="font-weight:700">${t("quotes.total_col")}</td><td style="font-size:18px;font-weight:700">${formatCurrency(quote.total)}</td></tr>
+      <tr><td>${escapeHtml(t("quotes.subtotal"))}</td><td>${escapeHtml(formatCurrency(quote.subtotal))}</td></tr>
+      <tr><td>${escapeHtml(t("quotes.tax_label", { rate: quote.taxRate }))}</td><td>${escapeHtml(formatCurrency(quote.taxAmount))}</td></tr>
+      <tr class="grand"><td style="font-weight:700">${escapeHtml(t("quotes.total_col"))}</td><td style="font-size:18px;font-weight:700">${escapeHtml(formatCurrency(quote.total))}</td></tr>
     </table>
-    ${quote.notes ? `<div class="section"><div class="label">${t("quotes.notes_section")}</div><div class="notes">${quote.notes}</div></div>` : ""}
+    ${quote.notes ? `<div class="section"><div class="label">${escapeHtml(t("quotes.notes_section"))}</div><div class="notes">${escapeHtml(quote.notes)}</div></div>` : ""}
     ${paymentMethodPrint(t("quotes.payment_method", { defaultValue: "Payment method" }), quote.paymentMethod)}
-    ${quote.terms ? `<div class="section"><div class="label">${t("quotes.terms_section")}</div><div class="notes">${quote.terms}</div></div>` : ""}
+    ${quote.terms ? `<div class="section"><div class="label">${escapeHtml(t("quotes.terms_section"))}</div><div class="notes">${escapeHtml(quote.terms)}</div></div>` : ""}
     </body></html>`;
     const w = window.open("", "_blank");
     if (w) {
@@ -283,7 +284,7 @@ function PrintPreview({ quote, lang }: { quote: any; lang: string }) {
 
   return (
     <Button variant="outline" onClick={handlePrint} className="gap-2">
-      <Printer className="w-4 h-4" /> {t("quotes.print_btn")}
+      <Printer className="w-4 h-4 stroke-[1.75]" /> {t("quotes.print_btn")}
     </Button>
   );
 }
@@ -477,44 +478,39 @@ export default function QuoteDetail() {
 
   if (isLoading)
     return (
-      <div className="flex items-center justify-center h-40 text-muted-foreground">
+      <div className="flex items-center justify-center h-40 text-sm text-muted-foreground">
         {t("quotes.loading")}
       </div>
     );
   if (!quote)
     return (
-      <div className="p-8 text-muted-foreground">{t("quotes.not_found")}</div>
+      <div className="p-8 text-sm text-muted-foreground">{t("quotes.not_found")}</div>
     );
 
   const color = STATUS_COLORS[quote.status];
   const q = quote as any;
 
   return (
-    <div className="space-y-6 max-w-4xl">
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        <div className="flex items-center gap-3">
-          <Link href="/quotes">
-            <Button variant="ghost" size="sm" className="gap-1.5">
-              <ArrowLeft className="w-4 h-4" />
-              {t("common.back")}
-            </Button>
-          </Link>
-          <div>
-            <div className="flex items-center gap-2.5 flex-wrap">
-              <span className="font-mono text-lg font-bold">
-                {quote.quoteNumber}
+    <div className="space-y-8 max-w-4xl">
+      <div className="space-y-4">
+        <Link href="/quotes">
+          <Button variant="ghost" size="sm" className="gap-1.5 -ml-2 text-muted-foreground hover:text-foreground">
+            <ArrowLeft className="w-4 h-4 stroke-[1.75]" />
+            {t("common.back")}
+          </Button>
+        </Link>
+        <PageHeader
+          title={<span className="font-mono">{quote.quoteNumber}</span>}
+          description={<span className="flex items-center gap-3 flex-wrap">
+            <span>{quote.title}</span>
+            {color && (
+              <span className="inline-flex items-center gap-1.5 text-xs font-medium text-foreground">
+                <span className={cn("h-1.5 w-1.5 rounded-full", color)} />
+                {t(`quotes.status_${quote.status}`)}
               </span>
-              {color && (
-                <Badge variant="outline" className={cn("text-xs", color)}>
-                  {t(`quotes.status_${quote.status}`)}
-                </Badge>
-              )}
-            </div>
-            <p className="text-muted-foreground text-sm mt-0.5">
-              {quote.title}
-            </p>
-          </div>
-        </div>
+            )}
+          </span>}
+        />
         <div className="flex gap-2 flex-wrap">
           <PrintPreview quote={quote} lang={lang} />
           {quote.status !== "accepted" && quote.status !== "declined" && (
@@ -525,7 +521,7 @@ export default function QuoteDetail() {
               disabled={sendMutation.isPending || !quote.clientEmail}
               className="gap-1.5"
             >
-              <Send className="w-3.5 h-3.5" /> {t("quotes.send_quote")}
+              <Send className="w-3.5 h-3.5 stroke-[1.75]" /> {t("quotes.send_quote")}
             </Button>
           )}
           {(quote.status === "draft" || quote.status === "sent") && (
@@ -535,9 +531,9 @@ export default function QuoteDetail() {
               onClick={() =>
                 statusMutation.mutate({ id, data: { status: "accepted" } })
               }
-              className="gap-1.5 border-success/40 text-success hover:bg-success/5"
+              className="gap-1.5"
             >
-              <CheckCircle2 className="w-3.5 h-3.5" />{" "}
+              <CheckCircle2 className="w-3.5 h-3.5 stroke-[1.75]" />{" "}
               {t("pipeline.accept_quote")}
             </Button>
           )}
@@ -548,9 +544,9 @@ export default function QuoteDetail() {
               onClick={() =>
                 statusMutation.mutate({ id, data: { status: "declined" } })
               }
-              className="gap-1.5 border-destructive/40 text-destructive hover:bg-destructive/5"
+              className="gap-1.5 text-destructive hover:text-destructive"
             >
-              <XCircle className="w-3.5 h-3.5" /> {t("pipeline.reject_quote")}
+              <XCircle className="w-3.5 h-3.5 stroke-[1.75]" /> {t("pipeline.reject_quote")}
             </Button>
           )}
           <Button
@@ -559,7 +555,7 @@ export default function QuoteDetail() {
             onClick={openCreateContract}
             className="gap-1.5"
           >
-            <FileSignature className="w-3.5 h-3.5" />{" "}
+            <FileSignature className="w-3.5 h-3.5 stroke-[1.75]" />{" "}
             {t("pipeline.create_contract")}
           </Button>
           <Button
@@ -568,7 +564,7 @@ export default function QuoteDetail() {
             onClick={openCreateInvoice}
             className="gap-1.5"
           >
-            <ReceiptText className="w-3.5 h-3.5" />{" "}
+            <ReceiptText className="w-3.5 h-3.5 stroke-[1.75]" />{" "}
             {t("pipeline.create_invoice")}
           </Button>
           <Select
@@ -592,21 +588,21 @@ export default function QuoteDetail() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="rounded-xl border bg-card p-5 space-y-3">
-          <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
+        <div className="rounded-xl border border-border bg-card p-5 space-y-3">
+          <h3 className="text-sm font-medium text-foreground">
             {t("quotes.client_section")}
           </h3>
           <div className="space-y-2 text-sm">
             <div className="flex items-center gap-2">
-              <Building2 className="w-4 h-4 text-muted-foreground" />
+              <Building2 className="w-4 h-4 stroke-[1.75] text-muted-foreground" />
               <span className="font-medium">{quote.clientName}</span>
             </div>
             {quote.clientEmail && (
               <div className="flex items-center gap-2">
-                <Mail className="w-4 h-4 text-muted-foreground" />
+                <Mail className="w-4 h-4 stroke-[1.75] text-muted-foreground" />
                 <a
                   href={`mailto:${quote.clientEmail}`}
-                  className="hover:text-primary"
+                  className="hover:underline underline-offset-4"
                 >
                   {quote.clientEmail}
                 </a>
@@ -614,15 +610,15 @@ export default function QuoteDetail() {
             )}
             {(quote as any).clientPhone && (
               <div className="flex items-center gap-2">
-                <Phone className="w-4 h-4 text-muted-foreground" />
+                <Phone className="w-4 h-4 stroke-[1.75] text-muted-foreground" />
                 <span>{(quote as any).clientPhone}</span>
               </div>
             )}
           </div>
         </div>
 
-        <div className="rounded-xl border bg-card p-5 space-y-3">
-          <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
+        <div className="rounded-xl border border-border bg-card p-5 space-y-3">
+          <h3 className="text-sm font-medium text-foreground">
             {t("quotes.dates_section")}
           </h3>
           <div className="space-y-2 text-sm">
@@ -667,8 +663,8 @@ export default function QuoteDetail() {
           </div>
         </div>
 
-        <div className="rounded-xl border bg-card p-5 space-y-3">
-          <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
+        <div className="rounded-xl border border-border bg-card p-5 space-y-3">
+          <h3 className="text-sm font-medium text-foreground">
             {t("quotes.summary_section")}
           </h3>
           <div className="space-y-2 text-sm">
@@ -677,7 +673,7 @@ export default function QuoteDetail() {
                 <span className="text-muted-foreground">
                   {t("quotes.rental_price_label", { defaultValue: "Rental" })}
                 </span>
-                <span>{formatCurrency(q.rentalPrice)}</span>
+                <span className="tabular-nums">{formatCurrency(q.rentalPrice)}</span>
               </div>
             )}
             {q.optionsPrice && Number(q.optionsPrice) > 0 && (
@@ -685,7 +681,7 @@ export default function QuoteDetail() {
                 <span className="text-muted-foreground">
                   {t("quotes.options_price_label", { defaultValue: "Options" })}
                 </span>
-                <span>{formatCurrency(q.optionsPrice)}</span>
+                <span className="tabular-nums">{formatCurrency(q.optionsPrice)}</span>
               </div>
             )}
             {q.deliveryFees && Number(q.deliveryFees) > 0 && (
@@ -695,7 +691,7 @@ export default function QuoteDetail() {
                     defaultValue: "Delivery",
                   })}
                 </span>
-                <span>{formatCurrency(q.deliveryFees)}</span>
+                <span className="tabular-nums">{formatCurrency(q.deliveryFees)}</span>
               </div>
             )}
             {q.discountAmount && Number(q.discountAmount) > 0 && (
@@ -703,7 +699,7 @@ export default function QuoteDetail() {
                 <span className="text-muted-foreground">
                   {t("quotes.discount_label", { defaultValue: "Discount" })}
                 </span>
-                <span className="text-destructive">
+                <span className="text-destructive tabular-nums">
                   -{formatCurrency(q.discountAmount)}
                 </span>
               </div>
@@ -712,17 +708,17 @@ export default function QuoteDetail() {
               <span className="text-muted-foreground">
                 {t("quotes.subtotal")}
               </span>
-              <span>{formatCurrency(quote.subtotal)}</span>
+              <span className="tabular-nums">{formatCurrency(quote.subtotal)}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">
                 {t("quotes.tax_label", { rate: quote.taxRate })}
               </span>
-              <span>{formatCurrency(quote.taxAmount)}</span>
+              <span className="tabular-nums">{formatCurrency(quote.taxAmount)}</span>
             </div>
-            <div className="flex justify-between border-t pt-2 mt-2">
-              <span className="font-bold">{t("quotes.total_col")}</span>
-              <span className="font-bold text-lg">
+            <div className="flex justify-between items-baseline border-t border-border pt-2 mt-2">
+              <span className="font-medium">{t("quotes.total_col")}</span>
+              <span className="font-semibold text-lg tracking-tight tabular-nums">
                 {formatCurrency(quote.total)}
               </span>
             </div>
@@ -736,8 +732,8 @@ export default function QuoteDetail() {
         q.packageName ||
         q.rentalDuration ||
         q.includedPrints) && (
-        <div className="rounded-xl border bg-card p-5 space-y-4">
-          <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
+        <div className="rounded-xl border border-border bg-card p-5 space-y-4">
+          <h3 className="text-sm font-medium text-foreground">
             {t("quotes.event_section", {
               defaultValue: "Event & Service Details",
             })}
@@ -745,7 +741,7 @@ export default function QuoteDetail() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
             {q.eventType && (
               <div>
-                <p className="text-xs text-muted-foreground mb-0.5">
+                <p className="text-[13px] text-muted-foreground mb-0.5">
                   {t("quotes.event_type_label", { defaultValue: "Event Type" })}
                 </p>
                 <p className="font-medium">{q.eventType}</p>
@@ -753,7 +749,7 @@ export default function QuoteDetail() {
             )}
             {q.eventDate && (
               <div>
-                <p className="text-xs text-muted-foreground mb-0.5">
+                <p className="text-[13px] text-muted-foreground mb-0.5">
                   {t("quotes.event_date_label", { defaultValue: "Event Date" })}
                 </p>
                 <p className="font-medium">{formatDate(q.eventDate, lang)}</p>
@@ -761,7 +757,7 @@ export default function QuoteDetail() {
             )}
             {q.eventStartTime && (
               <div>
-                <p className="text-xs text-muted-foreground mb-0.5">
+                <p className="text-[13px] text-muted-foreground mb-0.5">
                   {t("quotes.event_start_label", {
                     defaultValue: "Start Time",
                   })}
@@ -774,7 +770,7 @@ export default function QuoteDetail() {
             )}
             {q.eventLocation && (
               <div>
-                <p className="text-xs text-muted-foreground mb-0.5">
+                <p className="text-[13px] text-muted-foreground mb-0.5">
                   {t("quotes.location_label", { defaultValue: "Location" })}
                 </p>
                 <p className="font-medium">{q.eventLocation}</p>
@@ -782,7 +778,7 @@ export default function QuoteDetail() {
             )}
             {q.packageName && (
               <div>
-                <p className="text-xs text-muted-foreground mb-0.5">
+                <p className="text-[13px] text-muted-foreground mb-0.5">
                   {t("quotes.package_name_label", { defaultValue: "Package" })}
                 </p>
                 <p className="font-medium">{q.packageName}</p>
@@ -790,7 +786,7 @@ export default function QuoteDetail() {
             )}
             {q.rentalDuration && (
               <div>
-                <p className="text-xs text-muted-foreground mb-0.5">
+                <p className="text-[13px] text-muted-foreground mb-0.5">
                   {t("quotes.rental_duration_label", {
                     defaultValue: "Duration",
                   })}
@@ -800,7 +796,7 @@ export default function QuoteDetail() {
             )}
             {q.includedPrints && (
               <div>
-                <p className="text-xs text-muted-foreground mb-0.5">
+                <p className="text-[13px] text-muted-foreground mb-0.5">
                   {t("quotes.included_prints_label", {
                     defaultValue: "Prints",
                   })}
@@ -810,7 +806,7 @@ export default function QuoteDetail() {
             )}
             {q.equipmentDescription && (
               <div className="col-span-2">
-                <p className="text-xs text-muted-foreground mb-0.5">
+                <p className="text-[13px] text-muted-foreground mb-0.5">
                   {t("quotes.equipment_label", { defaultValue: "Equipment" })}
                 </p>
                 <p className="font-medium">{q.equipmentDescription}</p>
@@ -820,23 +816,23 @@ export default function QuoteDetail() {
         </div>
       )}
 
-      <div className="rounded-xl border bg-card overflow-hidden">
-        <div className="px-5 py-4 border-b bg-muted/30">
-          <h3 className="font-semibold">{t("quotes.line_items_section")}</h3>
+      <div className="rounded-xl border border-border bg-card overflow-hidden">
+        <div className="px-5 py-4 border-b border-border">
+          <h3 className="text-sm font-medium text-foreground">{t("quotes.line_items_section")}</h3>
         </div>
         <table className="w-full text-sm">
-          <thead className="bg-muted/20 border-b">
+          <thead className="border-b border-border">
             <tr>
-              <th className="text-left px-5 py-3 font-medium text-muted-foreground">
+              <th className="text-left px-5 py-3 text-[13px] font-normal text-muted-foreground">
                 {t("quotes.description_col")}
               </th>
-              <th className="text-right px-4 py-3 font-medium text-muted-foreground">
+              <th className="text-right px-4 py-3 text-[13px] font-normal text-muted-foreground">
                 {t("quotes.qty_col")}
               </th>
-              <th className="text-right px-4 py-3 font-medium text-muted-foreground">
+              <th className="text-right px-4 py-3 text-[13px] font-normal text-muted-foreground">
                 {t("quotes.unit_price_col")}
               </th>
-              <th className="text-right px-5 py-3 font-medium text-muted-foreground">
+              <th className="text-right px-5 py-3 text-[13px] font-normal text-muted-foreground">
                 {t("quotes.total_col")}
               </th>
             </tr>
@@ -848,19 +844,19 @@ export default function QuoteDetail() {
                 className={cn(Number(item.total) < 0 ? "text-destructive" : "")}
               >
                 <td className="px-5 py-3">{item.description}</td>
-                <td className="px-4 py-3 text-right text-muted-foreground">
+                <td className="px-4 py-3 text-right text-muted-foreground tabular-nums">
                   {item.quantity}
                 </td>
-                <td className="px-4 py-3 text-right text-muted-foreground">
+                <td className="px-4 py-3 text-right text-muted-foreground tabular-nums">
                   {formatCurrency(item.unitPrice)}
                 </td>
-                <td className="px-5 py-3 text-right font-medium">
+                <td className="px-5 py-3 text-right font-medium tabular-nums">
                   {formatCurrency(item.total)}
                 </td>
               </tr>
             ))}
           </tbody>
-          <tfoot className="border-t bg-muted/20">
+          <tfoot className="border-t border-border">
             <tr>
               <td
                 colSpan={3}
@@ -868,7 +864,7 @@ export default function QuoteDetail() {
               >
                 {t("quotes.subtotal")}
               </td>
-              <td className="px-5 py-3 text-right font-medium">
+              <td className="px-5 py-3 text-right font-medium tabular-nums">
                 {formatCurrency(quote.subtotal)}
               </td>
             </tr>
@@ -879,18 +875,18 @@ export default function QuoteDetail() {
               >
                 {t("quotes.tax_label", { rate: quote.taxRate })}
               </td>
-              <td className="px-5 py-2 text-right">
+              <td className="px-5 py-2 text-right tabular-nums">
                 {formatCurrency(quote.taxAmount)}
               </td>
             </tr>
-            <tr className="border-t">
+            <tr className="border-t border-border">
               <td
                 colSpan={3}
-                className="px-5 py-3 text-right font-bold text-base"
+                className="px-5 py-3 text-right font-medium"
               >
                 {t("quotes.total_col")}
               </td>
-              <td className="px-5 py-3 text-right font-bold text-lg">
+              <td className="px-5 py-3 text-right font-semibold text-lg tracking-tight tabular-nums">
                 {formatCurrency(quote.total)}
               </td>
             </tr>
@@ -898,12 +894,12 @@ export default function QuoteDetail() {
         </table>
       </div>
 
-      {quote.paymentMethod && <p className="text-sm"><span className="font-medium">{t("quotes.payment_method", { defaultValue: "Payment method" })}: </span>{quote.paymentMethod}</p>}
+      {quote.paymentMethod && <p className="text-sm text-muted-foreground"><span className="font-medium text-foreground">{t("quotes.payment_method", { defaultValue: "Payment method" })}: </span>{quote.paymentMethod}</p>}
       {(quote.notes || quote.terms) && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {quote.notes && (
-            <div className="rounded-xl border bg-card p-5">
-              <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide mb-2">
+            <div className="rounded-xl border border-border bg-card p-5">
+              <h4 className="text-sm font-medium text-foreground mb-2">
                 {t("quotes.notes_section")}
               </h4>
               <p className="text-sm text-muted-foreground whitespace-pre-wrap">
@@ -912,8 +908,8 @@ export default function QuoteDetail() {
             </div>
           )}
           {quote.terms && (
-            <div className="rounded-xl border bg-card p-5">
-              <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide mb-2">
+            <div className="rounded-xl border border-border bg-card p-5">
+              <h4 className="text-sm font-medium text-foreground mb-2">
                 {t("quotes.terms_section")}
               </h4>
               <p className="text-sm text-muted-foreground whitespace-pre-wrap">

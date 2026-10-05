@@ -35,21 +35,30 @@ router.get("/admin/clients", requireAuth, async (req: Request, res: Response): P
     .where(ne(usersTable.role, "admin"))
     .orderBy(desc(customerSuccessScores.score));
 
-  // Enrich with counts
-  const enriched = await Promise.all(clients.map(async (c) => {
-    const [eventsRow] = await db.select({ count: count() }).from(events).where(eq(events.userId, c.id));
-    const [quotesRow] = await db.select({ count: count() }).from(quotes).where(eq(quotes.userId, c.id));
-    const [ticketsRow] = await db.select({ count: count() }).from(supportTickets).where(eq(supportTickets.userId, c.id));
-    const coaching = await db.select().from(coachingRecommendations).where(eq(coachingRecommendations.userId, c.id));
-    const upsells = await db.select().from(upsellOpportunities).where(eq(upsellOpportunities.userId, c.id));
-    return {
-      ...c,
-      eventsCount: eventsRow?.count ?? 0,
-      quotesCount: quotesRow?.count ?? 0,
-      ticketsCount: ticketsRow?.count ?? 0,
-      coachingCount: coaching.length,
-      upsellCount: upsells.length,
-    };
+  // Enrich with counts: one grouped aggregate per table instead of 5 queries per client.
+  const countByUser = async (
+    table: typeof events | typeof quotes | typeof supportTickets | typeof coachingRecommendations | typeof upsellOpportunities,
+  ): Promise<Map<string, number>> => {
+    const rows = await db
+      .select({ userId: table.userId, count: count() })
+      .from(table)
+      .groupBy(table.userId);
+    return new Map(rows.map((row) => [row.userId, Number(row.count)]));
+  };
+  const [eventCounts, quoteCounts, ticketCounts, coachingCounts, upsellCounts] = await Promise.all([
+    countByUser(events),
+    countByUser(quotes),
+    countByUser(supportTickets),
+    countByUser(coachingRecommendations),
+    countByUser(upsellOpportunities),
+  ]);
+  const enriched = clients.map((c) => ({
+    ...c,
+    eventsCount: eventCounts.get(c.id) ?? 0,
+    quotesCount: quoteCounts.get(c.id) ?? 0,
+    ticketsCount: ticketCounts.get(c.id) ?? 0,
+    coachingCount: coachingCounts.get(c.id) ?? 0,
+    upsellCount: upsellCounts.get(c.id) ?? 0,
   }));
 
   res.json({ items: enriched, total: enriched.length });

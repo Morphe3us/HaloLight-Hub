@@ -12,7 +12,8 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { ArrowLeft, Send, Trash2, MessageSquare, Eye, Clock, Lock, ThumbsUp } from "lucide-react";
+import { ArrowLeft, Send, Trash2, Eye, Lock, ThumbsUp } from "lucide-react";
+import { EmptyState } from "@/components/page";
 
 const EMOJI_OPTIONS = ["👍", "❤️", "🎉", "🔥", "👏", "💡"];
 
@@ -24,7 +25,7 @@ function formatDate(d: string | Date | null | undefined) {
 function Avatar({ name, role }: { name?: string; role?: string }) {
   const initials = (name ?? "U").charAt(0).toUpperCase();
   return (
-    <div className={`h-8 w-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0 ${role === "admin" ? "bg-primary text-white" : "bg-border text-foreground"}`}>
+    <div className={`h-8 w-8 rounded-full flex items-center justify-center text-[13px] font-medium shrink-0 bg-muted ${role === "admin" ? "text-foreground ring-1 ring-foreground/15" : "text-muted-foreground"}`}>
       {initials}
     </div>
   );
@@ -77,8 +78,8 @@ export default function PostDetail() {
 
   if (isLoading) {
     return (
-      <div className="max-w-3xl mx-auto space-y-4">
-        <div className="h-8 w-48 bg-border rounded animate-pulse" />
+      <div className="max-w-3xl space-y-4">
+        <div className="h-8 w-48 bg-muted rounded-md animate-pulse" />
         <div className="h-48 bg-muted rounded-xl animate-pulse" />
       </div>
     );
@@ -86,9 +87,10 @@ export default function PostDetail() {
 
   if (!post) {
     return (
-      <div className="max-w-3xl mx-auto text-center py-16">
-        <p className="text-muted-foreground">{t("post_detail.not_found")}</p>
-        <Link href="/community"><Button variant="outline" className="mt-4">{t("post_detail.back_to_community")}</Button></Link>
+      <div className="max-w-3xl">
+        <EmptyState text={t("post_detail.not_found")}>
+          <Link href="/community"><Button variant="outline" size="sm">{t("post_detail.back_to_community")}</Button></Link>
+        </EmptyState>
       </div>
     );
   }
@@ -119,34 +121,34 @@ export default function PostDetail() {
   const canDelete = isAdmin || post.userId === currentUserId;
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
+    <div className="max-w-3xl space-y-8">
       <div className="flex items-center gap-3">
         <Link href={postData.channelId ? `/community/${postData.channelId}` : "/community"}>
-          <Button variant="ghost" size="sm" className="gap-2">
-            <ArrowLeft className="w-4 h-4" />
+          <Button variant="ghost" size="sm" className="gap-2 -ml-2 text-muted-foreground hover:text-foreground">
+            <ArrowLeft className="w-4 h-4 stroke-[1.75]" />
             {t("post_detail.back")}
           </Button>
         </Link>
       </div>
 
       <Card>
-        <CardHeader className="pb-3">
+        <CardHeader className="p-5 pb-3">
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-start gap-3 flex-1">
               <Avatar name={postData.userName} role={postData.userRole} />
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-0.5">
-                  <span className="font-medium text-foreground">{postData.userName ?? "User"}</span>
+                  <span className="text-sm font-medium text-foreground">{postData.userName ?? "User"}</span>
                   {postData.userRole === "admin" && (
-                    <Badge className="text-xs bg-primary/10 text-primary px-1.5 py-0">{t("post_detail.staff_badge")}</Badge>
+                    <Badge variant="outline" className="text-[11px] font-normal text-muted-foreground px-1.5 py-0">{t("post_detail.staff_badge")}</Badge>
                   )}
-                  <span className="text-xs text-muted-foreground">{formatDate(post.createdAt)}</span>
+                  <span className="text-xs text-muted-foreground tabular-nums">{formatDate(post.createdAt)}</span>
                 </div>
-                <h1 className="text-xl font-bold text-foreground">{post.title}</h1>
+                <h1 className="text-xl font-semibold tracking-tight text-foreground">{post.title}</h1>
               </div>
             </div>
             <div className="flex items-center gap-1 shrink-0">
-              <span className="flex items-center gap-1 text-xs text-muted-foreground"><Eye className="w-3.5 h-3.5" />{post.views}</span>
+              <span className="flex items-center gap-1 text-xs text-muted-foreground tabular-nums"><Eye className="w-3.5 h-3.5 stroke-[1.75]" />{post.views}</span>
               {canDelete && (
                 <Button
                   variant="ghost"
@@ -154,23 +156,21 @@ export default function PostDetail() {
                   className="h-7 w-7 text-destructive/70 hover:text-destructive"
                   onClick={() => deletePost({ id: id! })}
                 >
-                  <Trash2 className="w-3.5 h-3.5" />
+                  <Trash2 className="w-3.5 h-3.5 stroke-[1.75]" />
                 </Button>
               )}
             </div>
           </div>
         </CardHeader>
-        <CardContent className="pt-0">
-          <div className="bg-muted rounded-lg p-4 mb-4">
-            <p className="text-foreground whitespace-pre-wrap leading-relaxed">{post.content}</p>
-          </div>
+        <CardContent className="p-5 pt-0">
+          <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed mb-5">{post.content}</p>
 
           <div className="flex items-center gap-2 flex-wrap">
             {Object.entries(reactionGroups).map(([emoji, { count, userReacted }]) => (
               <button
                 key={emoji}
                 onClick={() => toggleReaction({ id: id!, data: { emoji } })}
-                className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm border transition-colors ${userReacted ? "bg-primary/10 border-primary/30 text-primary" : "bg-muted border-border text-muted-foreground hover:bg-muted"}`}
+                className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm tabular-nums border transition-colors ${userReacted ? "bg-muted border-foreground/25 text-foreground" : "bg-card border-border text-muted-foreground hover:bg-muted/50"}`}
               >
                 {emoji} {count}
               </button>
@@ -180,7 +180,7 @@ export default function PostDetail() {
                 onClick={() => setShowEmojiPicker(!showEmojiPicker)}
                 className="flex items-center gap-1 px-3 py-1 rounded-full text-sm border border-dashed border-border text-muted-foreground hover:bg-muted transition-colors"
               >
-                <ThumbsUp className="w-3.5 h-3.5" />
+                <ThumbsUp className="w-3.5 h-3.5 stroke-[1.75]" />
                 {t("post_detail.react")}
               </button>
               {showEmojiPicker && (
@@ -203,23 +203,22 @@ export default function PostDetail() {
 
       {replies.length > 0 && (
         <div className="space-y-3">
-          <h3 className="font-medium text-foreground flex items-center gap-2">
-            <MessageSquare className="w-4 h-4" />
+          <h3 className="text-sm font-medium text-foreground">
             {replies.length === 1 ? `${replies.length} ${t("post_detail.reply_one")}` : `${replies.length} ${t("post_detail.replies_many")}`}
           </h3>
           {replies.map((r) => (
             <div key={r.id} className="flex gap-3">
               <Avatar name={r.userName} role={r.userRole} />
-              <div className="flex-1 bg-card border rounded-xl rounded-tl-none p-4">
+              <div className="flex-1 min-w-0 bg-muted rounded-2xl rounded-tl-md px-4 py-3">
                 <div className="flex items-center justify-between mb-1">
                   <div className="flex items-center gap-2">
                     <span className="font-medium text-sm text-foreground">{r.userName ?? "User"}</span>
                     {r.userRole === "admin" && (
-                      <Badge className="text-xs bg-primary/10 text-primary px-1.5 py-0">{t("post_detail.staff_badge")}</Badge>
+                      <Badge variant="outline" className="text-[11px] font-normal text-muted-foreground px-1.5 py-0">{t("post_detail.staff_badge")}</Badge>
                     )}
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground flex items-center gap-1"><Clock className="w-3 h-3" />{formatDate(r.createdAt)}</span>
+                    <span className="text-xs text-muted-foreground tabular-nums">{formatDate(r.createdAt)}</span>
                     {(isAdmin || r.userId === currentUserId) && (
                       <Button
                         variant="ghost"
@@ -227,7 +226,7 @@ export default function PostDetail() {
                         className="h-6 w-6 text-destructive/70 hover:text-destructive"
                         onClick={() => deleteReply({ id: r.id })}
                       >
-                        <Trash2 className="w-3 h-3" />
+                        <Trash2 className="w-3 h-3 stroke-[1.75]" />
                       </Button>
                     )}
                   </div>
@@ -240,14 +239,14 @@ export default function PostDetail() {
       )}
 
       {isLocked && !isAdmin ? (
-        <div className="flex items-center justify-center gap-2 py-6 text-muted-foreground bg-muted rounded-xl border border-dashed">
-          <Lock className="w-4 h-4" />
+        <div className="flex items-center justify-center gap-2 py-6 text-muted-foreground rounded-xl border border-dashed border-border">
+          <Lock className="w-4 h-4 stroke-[1.75]" />
           <span className="text-sm">{t("post_detail.locked_msg")}</span>
         </div>
       ) : (
         <Card>
-          <CardContent className="p-4">
-            <h3 className="font-medium text-foreground mb-3">{t("post_detail.write_reply")}</h3>
+          <CardContent className="p-5">
+            <h3 className="text-sm font-medium text-foreground mb-3">{t("post_detail.write_reply")}</h3>
             <Textarea
               placeholder={t("post_detail.reply_placeholder")}
               value={reply}
@@ -261,7 +260,7 @@ export default function PostDetail() {
                 disabled={!reply.trim() || isReplying}
                 className="gap-2"
               >
-                <Send className="w-4 h-4" />
+                <Send className="w-4 h-4 stroke-[1.75]" />
                 {t("post_detail.reply_btn")}
               </Button>
             </div>

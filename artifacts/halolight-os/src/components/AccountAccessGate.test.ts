@@ -150,8 +150,8 @@ test("optional private French pending fixture uses real component, icons, button
   const css = readdirSync(assets).find(name => /^index-.*\.css$/.test(name));
   assert.ok(css, "build the frontend first");
   let markup = require("react-dom/server").renderToStaticMarkup(harness(true).render());
-  const logo = readFileSync(new URL("../../public/logo-hub-light-orig.png", import.meta.url)).toString("base64");
-  markup = markup.replaceAll("/logo-hub-light-orig.png", `data:image/png;base64,${logo}`);
+  const logo = readFileSync(new URL("../../public/hub-logo-light.webp", import.meta.url)).toString("base64");
+  markup = markup.replaceAll("/hub-logo-light.webp", `data:image/webp;base64,${logo}`);
   const styles = readFileSync(new URL(css, assets), "utf8");
   mkdirSync(directory, { recursive: true, mode: 0o700 });
   writeFileSync(`${directory}/pending-fr.html`, `<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Pending approval preview</title><style>${styles}</style></head><body>${markup}</body></html>`, { mode: 0o600 });

@@ -12,7 +12,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Save, RotateCcw, ChevronDown, ChevronUp, FileSignature, AlertCircle } from "lucide-react";
+import { Save, RotateCcw, ChevronDown, ChevronUp, AlertCircle } from "lucide-react";
+import { Notice, PageHeader } from "@/components/page";
 
 const LANGUAGES = [
   { code: "en", label: "English" },
@@ -162,26 +163,23 @@ export default function AdminContractTemplates() {
   const isSaving = updateMutation.isPending || createMutation.isPending;
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-            <FileSignature className="w-6 h-6 text-primary" />
-            {t("admin_contract_templates.title")}
-          </h1>
-          <p className="text-muted-foreground text-sm mt-1">{t("admin_contract_templates.subtitle")}</p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={handleReset} disabled={resetMutation.isPending} className="gap-2">
-            <RotateCcw className="w-4 h-4" />
-            {t("admin_contract_templates.reset_btn")}
-          </Button>
-          <Button size="sm" onClick={handleSave} disabled={isSaving || !isDirty} className="gap-2">
-            <Save className="w-4 h-4" />
-            {isSaving ? t("admin_contract_templates.saving") : t("admin_contract_templates.save_btn")}
-          </Button>
-        </div>
-      </div>
+    <div className="space-y-8">
+      <PageHeader
+        title={t("admin_contract_templates.title")}
+        description={t("admin_contract_templates.subtitle")}
+        actions={
+          <>
+            <Button variant="outline" size="sm" onClick={handleReset} disabled={resetMutation.isPending} className="gap-2">
+              <RotateCcw className="w-4 h-4 stroke-[1.75]" />
+              {t("admin_contract_templates.reset_btn")}
+            </Button>
+            <Button size="sm" onClick={handleSave} disabled={isSaving || !isDirty} className="gap-2">
+              <Save className="w-4 h-4 stroke-[1.75]" />
+              {isSaving ? t("admin_contract_templates.saving") : t("admin_contract_templates.save_btn")}
+            </Button>
+          </>
+        }
+      />
 
       <div className="flex flex-wrap gap-1.5">
         {LANGUAGES.map((lang) => {
@@ -190,33 +188,34 @@ export default function AdminContractTemplates() {
             <button
               key={lang.code}
               onClick={() => setActiveLang(lang.code)}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
+              className={`inline-flex items-center px-3 py-1.5 rounded-lg text-sm border transition-colors ${
                 activeLang === lang.code
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : "bg-card text-foreground border-border hover:bg-muted"
+                  ? "bg-muted text-foreground border-foreground/20 font-medium"
+                  : "bg-card text-muted-foreground border-border hover:border-foreground/20 hover:text-foreground"
               }`}
             >
-              <span className="uppercase text-xs font-bold mr-1.5">{lang.code}</span>
+              <span className="uppercase text-xs text-muted-foreground mr-1.5">{lang.code}</span>
               {lang.label}
-              {!hasTemplate && <span className="ml-1.5 text-warning text-xs">●</span>}
+              {!hasTemplate && <span className="ml-1.5 h-1.5 w-1.5 rounded-full bg-warning" />}
             </button>
           );
         })}
       </div>
 
       {isLoading ? (
-        <div className="flex items-center justify-center h-40 text-muted-foreground">Loading templates...</div>
+        <div className="flex items-center justify-center h-40 text-sm text-muted-foreground">{t("admin_contract_templates.loading")}</div>
       ) : (
         <div className="grid grid-cols-1 xl:grid-cols-[1fr_300px] gap-6 items-start">
           <div className="space-y-4">
             {!activeTemplate && (
-              <div className="flex items-center gap-2 px-4 py-3 rounded-lg bg-warning/10 border border-warning/30 text-warning text-sm">
-                <AlertCircle className="w-4 h-4 shrink-0" />
-                {t("admin_contract_templates.no_template")} — {t("admin_contract_templates.create_hint")}
-              </div>
+              <Notice
+                tone="warning"
+                icon={AlertCircle}
+                title={<>{t("admin_contract_templates.no_template")} — {t("admin_contract_templates.create_hint")}</>}
+              />
             )}
             <div className="space-y-1.5">
-              <Label>{t("admin_contract_templates.template_title_label")}</Label>
+              <Label className="text-[13px] font-normal text-muted-foreground">{t("admin_contract_templates.template_title_label")}</Label>
               <Input
                 value={editedTitle}
                 onChange={(e) => { setEditedTitle(e.target.value); setIsDirty(true); }}
@@ -225,8 +224,8 @@ export default function AdminContractTemplates() {
             </div>
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <Label>{t("admin_contract_templates.template_content_label")}</Label>
-                {isDirty && <span className="text-xs text-warning font-medium">{t("admin_contract_templates.unsaved")}</span>}
+                <Label className="text-[13px] font-normal text-muted-foreground">{t("admin_contract_templates.template_content_label")}</Label>
+                {isDirty && <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground"><span className="h-1.5 w-1.5 rounded-full bg-warning" />{t("admin_contract_templates.unsaved")}</span>}
               </div>
               <Textarea
                 value={editedContent}
@@ -238,29 +237,29 @@ export default function AdminContractTemplates() {
             </div>
             <div className="flex gap-2">
               <Button variant="outline" size="sm" onClick={handleReset} disabled={resetMutation.isPending} className="gap-2">
-                <RotateCcw className="w-3.5 h-3.5" />
+                <RotateCcw className="w-3.5 h-3.5 stroke-[1.75]" />
                 {t("admin_contract_templates.reset_btn")}
               </Button>
               <Button size="sm" onClick={handleSave} disabled={isSaving || !isDirty} className="gap-2">
-                <Save className="w-3.5 h-3.5" />
+                <Save className="w-3.5 h-3.5 stroke-[1.75]" />
                 {isSaving ? t("admin_contract_templates.saving") : t("admin_contract_templates.save_btn")}
               </Button>
             </div>
           </div>
 
-          <div className="rounded-xl border bg-card overflow-hidden">
+          <div className="rounded-xl border border-border bg-card overflow-hidden">
             <button
               onClick={() => setShowVars(!showVars)}
-              className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium hover:bg-muted/40 transition-colors"
+              className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-foreground hover:bg-muted/50 transition-colors"
             >
               <span>{t("admin_contract_templates.variables_title")}</span>
-              {showVars ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+              {showVars ? <ChevronUp className="w-4 h-4 stroke-[1.75] text-muted-foreground" /> : <ChevronDown className="w-4 h-4 stroke-[1.75] text-muted-foreground" />}
             </button>
             {showVars && (
-              <div className="border-t divide-y max-h-96 overflow-y-auto">
+              <div className="border-t border-border divide-y divide-border max-h-96 overflow-y-auto">
                 {TEMPLATE_VARIABLES.map(([key, desc]) => (
                   <div key={key} className="px-4 py-2">
-                    <code className="text-xs font-mono text-primary bg-primary/8 px-1.5 py-0.5 rounded">
+                    <code className="text-xs font-mono text-foreground bg-muted px-1.5 py-0.5 rounded">
                       {`{{${key}}}`}
                     </code>
                     <p className="text-xs text-muted-foreground mt-0.5">{desc}</p>
@@ -269,7 +268,7 @@ export default function AdminContractTemplates() {
               </div>
             )}
             {!showVars && (
-              <div className="px-4 pb-3 text-xs text-muted-foreground">
+              <div className="px-4 pb-3 text-xs text-muted-foreground tabular-nums">
                 {TEMPLATE_VARIABLES.length} {t("admin_contract_templates.variables_count")}
               </div>
             )}

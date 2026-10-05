@@ -9,6 +9,7 @@ import { transformSync } from "esbuild";
 import * as orm from "drizzle-orm";
 import { PgDialect } from "drizzle-orm/pg-core";
 import { usersTable, type User } from "../../../../lib/db/src/schema/users";
+import * as bodyLimits from "../lib/bodyLimits";
 
 function load<T>(relative: string, dependencies: Record<string, unknown>): T {
   const code = transformSync(readFileSync(new URL(relative, import.meta.url), "utf8"), { loader: "ts", format: "cjs" }).code;
@@ -107,6 +108,9 @@ test("account approval integration uses real middleware order and route guards w
     "./lib/frontend": { createFrontendHandler: () => pass },
     "./middlewares/consentGate": { consentGate: ((_req, _res, next) => { consentCalls++; next(); }) as express.RequestHandler },
     "./middlewares/accountAccessGate": { accountAccessGate: gate }, "./routes/accountAccess": access,
+    "./lib/bodyLimits": bodyLimits,
+    "./lib/rateLimit": { createApiRateLimiter: () => pass, resolveTrustProxy: () => false },
+    "./lib/securityHeaders": { createSecurityHeaders: () => pass },
   }).default;
   const server = app.listen(0, "127.0.0.1"); await once(server, "listening");
   t.after(() => new Promise<void>(resolve => { server.close(() => resolve()); server.closeAllConnections(); }));

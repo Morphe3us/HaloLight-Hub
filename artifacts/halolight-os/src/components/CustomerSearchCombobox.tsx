@@ -37,17 +37,17 @@ interface CustomerSearchComboboxProps {
 }
 
 const TYPE_ICON: Record<string, React.ReactNode> = {
-  lead: <User className="w-3 h-3" />,
-  quote: <FileText className="w-3 h-3" />,
-  contract: <FileSignature className="w-3 h-3" />,
-  invoice: <ReceiptText className="w-3 h-3" />,
+  lead: <User className="w-3 h-3 stroke-[1.75]" />,
+  quote: <FileText className="w-3 h-3 stroke-[1.75]" />,
+  contract: <FileSignature className="w-3 h-3 stroke-[1.75]" />,
+  invoice: <ReceiptText className="w-3 h-3 stroke-[1.75]" />,
 };
 
 const TYPE_COLOR: Record<string, string> = {
-  lead: "bg-info/10 text-info border-info/30",
-  quote: "bg-warning/10 text-warning border-warning/30",
-  contract: "bg-success/10 text-success border-success/30",
-  invoice: "bg-primary/10 text-primary border-primary/30",
+  lead: "text-info",
+  quote: "text-warning",
+  contract: "text-success",
+  invoice: "text-primary",
 };
 
 function useDebounce<T>(value: T, delay: number): T {
@@ -141,7 +141,7 @@ export default function CustomerSearchCombobox({
   return (
     <div className={cn("relative", className)}>
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 stroke-[1.75] text-muted-foreground pointer-events-none" />
         <Input
           ref={inputRef}
           value={value}
@@ -164,14 +164,14 @@ export default function CustomerSearchCombobox({
             onClick={handleClear}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
           >
-            <X className="w-4 h-4" />
+            <X className="w-4 h-4 stroke-[1.75]" />
           </button>
         )}
       </div>
 
       {emailDuplicate && existingEmail && (
         <div className="mt-1.5 flex items-center gap-1.5 text-xs text-warning">
-          <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+          <AlertCircle className="w-3.5 h-3.5 shrink-0 stroke-[1.75]" />
           <span>{t("sales_search.existing_customer_found")}</span>
         </div>
       )}
@@ -179,7 +179,7 @@ export default function CustomerSearchCombobox({
       {open && (
         <ul
           ref={listRef}
-          className="absolute z-50 left-0 right-0 mt-1 rounded-xl border bg-popover shadow-lg overflow-hidden"
+          className="absolute z-50 left-0 right-0 mt-1 rounded-xl border border-border bg-popover shadow-md overflow-hidden divide-y divide-border"
         >
           {suggestions.length === 0 && !loading ? (
             <li className="px-4 py-3 text-sm text-muted-foreground text-center">
@@ -190,8 +190,8 @@ export default function CustomerSearchCombobox({
               <li
                 key={`${s.type}-${s.id}`}
                 className={cn(
-                  "px-3 py-2.5 cursor-pointer transition-colors hover:bg-muted/60 border-b last:border-b-0",
-                  i === activeIndex && "bg-muted/60",
+                  "px-4 py-3 cursor-pointer transition-colors hover:bg-muted/50",
+                  i === activeIndex && "bg-muted/50",
                 )}
                 onMouseDown={() => handleSelect(s)}
               >
@@ -211,8 +211,8 @@ export default function CustomerSearchCombobox({
                       <p className="text-xs text-muted-foreground mt-0.5 capitalize">{s.pipelineStage.replace(/_/g, " ")}</p>
                     )}
                   </div>
-                  <span className={cn("inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded border shrink-0 mt-0.5 font-medium", TYPE_COLOR[s.type])}>
-                    {TYPE_ICON[s.type]}
+                  <span className="inline-flex items-center gap-1.5 text-xs px-1.5 py-0.5 rounded-md border border-border text-muted-foreground shrink-0 mt-0.5">
+                    <span className={TYPE_COLOR[s.type]}>{TYPE_ICON[s.type]}</span>
                     {t(`sales_search.type_${s.type}`)}
                   </span>
                 </div>

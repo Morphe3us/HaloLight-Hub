@@ -11,6 +11,7 @@ import { requireAuth } from "../middlewares/requireAuth";
 import { getOrCreateUser } from "../lib/userSync";
 import { getAIProvider } from "../lib/ai/factory";
 import { chatInputError } from "../lib/ai/chatLimits";
+import { createAiRateLimiters } from "../lib/rateLimit";
 import {
   enqueueTicketMail,
   dispatchTicketMail,
@@ -28,6 +29,8 @@ import {
 } from "../lib/ai/supportPolicy";
 
 const router: IRouter = Router();
+// Shared per-user burst + daily caps for every route that calls the LLM provider.
+const aiRateLimit = createAiRateLimiters();
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -154,6 +157,7 @@ router.delete(
 router.post(
   "/ai/conversations/:id/stream",
   requireAuth,
+  ...aiRateLimit,
   async (req: Request, res: Response): Promise<void> => {
     const user = await getOrCreateUser(req);
     if (!user) {
@@ -323,6 +327,7 @@ router.post(
 router.post(
   "/ai/conversations/:id/messages",
   requireAuth,
+  ...aiRateLimit,
   async (req: Request, res: Response): Promise<void> => {
     const user = await getOrCreateUser(req);
     if (!user) {

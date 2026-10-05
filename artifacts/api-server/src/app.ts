@@ -12,8 +12,13 @@ import { createFrontendHandler } from "./lib/frontend";
 import { consentGate } from "./middlewares/consentGate";
 import { accountAccessGate } from "./middlewares/accountAccessGate";
 import accountAccessRouter from "./routes/accountAccess";
+import { createBodyParsers } from "./lib/bodyLimits";
+import { createApiRateLimiter, resolveTrustProxy } from "./lib/rateLimit";
+import { createSecurityHeaders } from "./lib/securityHeaders";
 
 const app: Express = express();
+// req.ip must be the real client address behind the hosting reverse proxy.
+app.set("trust proxy", resolveTrustProxy());
 
 app.use(
   pinoHttp({
@@ -36,6 +41,8 @@ app.use(
   }),
 );
 
+app.use(createSecurityHeaders());
+
 const allowedCorsOrigins = getAllowedCorsOrigins();
 app.use(
   cors({
@@ -50,10 +57,12 @@ app.use("/api", healthRouter);
 if (process.env.NODE_ENV === "production") {
   app.use(createFrontendHandler(process.env.FRONTEND_DIST_PATH || "artifacts/halolight-os/dist/public"));
 }
-app.use(express.json({ limit: "25mb" }));
-app.use(express.urlencoded({ extended: true, limit: "25mb" }));
+// Strict 1mb default; only the routes listed in lib/bodyLimits accept larger JSON.
+app.use(createBodyParsers());
 
 app.use(supabaseAuth);
+// After auth so authenticated traffic is counted per user rather than per IP.
+app.use("/api", createApiRateLimiter());
 app.use("/api", accountAccessGate);
 app.use("/api", (req, res, next) => {
   if (req.method === "GET" && req.path === "/users/me/access") accountAccessRouter(req, res, next);

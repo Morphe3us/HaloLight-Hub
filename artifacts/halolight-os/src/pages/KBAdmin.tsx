@@ -8,7 +8,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
+import { EmptyState, PageHeader } from "@/components/page";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -23,9 +23,9 @@ import { Plus, Pencil, Trash2, Eye, ArrowLeft, ExternalLink, FileText } from "lu
 import { kbLanguages, type KbLanguage } from "@/lib/kbLanguage";
 
 const statusColors: Record<string, string> = {
-  draft:     "bg-warning/15 text-yellow-700",
-  published: "bg-success/15 text-success",
-  archived:  "bg-muted text-muted-foreground",
+  draft:     "bg-warning",
+  published: "bg-success",
+  archived:  "bg-muted-foreground/50",
 };
 
 type ArticleForm = { categoryId: string; title: string; content: string; excerpt: string; status: string; tags: string; language: KbLanguage; aiEligible: boolean };
@@ -136,21 +136,20 @@ export default function KBAdmin() {
   };
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Link href="/kb">
-            <Button variant="ghost" size="sm" className="gap-2">
-              <ArrowLeft className="w-4 h-4" /> {t("kb_admin.back")}
-            </Button>
+    <div className="max-w-5xl space-y-8">
+      <PageHeader
+        eyebrow={
+          <Link href="/kb" className="inline-flex items-center gap-1.5 hover:text-foreground transition-colors">
+            <ArrowLeft className="w-3.5 h-3.5 stroke-[1.75]" /> {t("kb_admin.back")}
           </Link>
-          <span className="text-muted-foreground">/</span>
-          <h1 className="text-xl font-semibold text-foreground">{t("kb_admin.title")}</h1>
-        </div>
-        <Button onClick={() => { setEditId(null); setForm(emptyForm); setShowForm(true); }} className="gap-2">
-          <Plus className="w-4 h-4" /> {t("kb_admin.new_article")}
-        </Button>
-      </div>
+        }
+        title={t("kb_admin.title")}
+        actions={
+          <Button onClick={() => { setEditId(null); setForm(emptyForm); setShowForm(true); }} className="gap-2">
+            <Plus className="w-4 h-4 stroke-[1.75]" /> {t("kb_admin.new_article")}
+          </Button>
+        }
+      />
 
       <div className="flex gap-3">
         <Select value={categoryFilter} onValueChange={value => { setCategoryFilter(value); setOffset(0); }}>
@@ -166,47 +165,40 @@ export default function KBAdmin() {
 
       {isLoading ? (
         <div className="space-y-2">
-          {[1, 2, 3].map((i) => <div key={i} className="h-16 bg-muted rounded animate-pulse" />)}
+          {[1, 2, 3].map((i) => <div key={i} className="h-16 bg-muted rounded-xl animate-pulse" />)}
         </div>
       ) : articles.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center py-12 text-center">
-            <FileText className="w-10 h-10 text-muted-foreground mb-2" />
-            <p className="text-muted-foreground">{t("kb_admin.no_articles")}</p>
-          </CardContent>
-        </Card>
+        <EmptyState icon={FileText} text={t("kb_admin.no_articles")} />
       ) : (
-        <div className="space-y-2">
+        <ul className="rounded-xl border border-border bg-card divide-y divide-border">
           {articles.map((article) => (
-            <Card key={article.id}>
-              <CardContent className="p-4 flex items-center gap-4">
+            <li key={article.id} className="px-4 py-3 flex items-center gap-4 hover:bg-muted/50 transition-colors">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-0.5">
-                    <Badge className={`text-xs ${statusColors[article.status ?? "draft"] ?? ""}`}>{article.status}</Badge>
+                    <Badge variant="outline" className="gap-1.5 text-xs font-normal"><span className={`h-1.5 w-1.5 rounded-full ${statusColors[article.status ?? "draft"] ?? "bg-muted-foreground/50"}`} />{article.status}</Badge>
                     <span className="text-xs text-muted-foreground">{categories.find((c) => c.id === article.categoryId)?.name}</span>
                   </div>
-                  <p className="font-medium text-foreground truncate">{article.title}</p>
+                  <p className="text-sm font-medium text-foreground truncate">{article.title}</p>
                   {article.excerpt && <p className="text-xs text-muted-foreground truncate">{article.excerpt}</p>}
                 </div>
-                <div className="flex items-center gap-1 text-xs text-muted-foreground shrink-0">
-                  <Eye className="w-3 h-3" />{article.views}
+                <div className="flex items-center gap-1 text-xs text-muted-foreground tabular-nums shrink-0">
+                  <Eye className="w-3 h-3 stroke-[1.75]" />{article.views}
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
                   <Link href={`/kb/articles/${article.id}`}>
-                    <Button variant="ghost" size="sm"><ExternalLink className="w-4 h-4" /></Button>
+                    <Button variant="ghost" size="sm"><ExternalLink className="w-4 h-4 stroke-[1.75]" /></Button>
                   </Link>
                   <Button variant="ghost" size="sm" onClick={() => handleEdit(article)}>
-                    <Pencil className="w-4 h-4" />
+                    <Pencil className="w-4 h-4 stroke-[1.75]" />
                   </Button>
                   <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive"
                     onClick={() => setDeleteId(article.id ?? null)}>
-                    <Trash2 className="w-4 h-4" />
+                    <Trash2 className="w-4 h-4 stroke-[1.75]" />
                   </Button>
                 </div>
-              </CardContent>
-            </Card>
+            </li>
           ))}
-        </div>
+        </ul>
       )}
 
       <Dialog open={showForm} onOpenChange={setShowForm}>
@@ -241,7 +233,7 @@ export default function KBAdmin() {
             </div>
             <label className="block text-sm space-y-1">
               <span>{t("kb.content_language", { defaultValue: "Content language" })}</span>
-              <select value={form.language} onChange={e => setForm({ ...form, language: e.target.value as KbLanguage, aiEligible: false })} className="block border rounded-md bg-background h-10 px-3">
+              <select value={form.language} onChange={e => setForm({ ...form, language: e.target.value as KbLanguage, aiEligible: false })} className="block border border-input rounded-md bg-background h-10 px-3">
                 {Object.entries(kbLanguages).map(([code, name]) => <option value={code} key={code}>{name}</option>)}
               </select>
             </label>
@@ -281,7 +273,7 @@ export default function KBAdmin() {
 
       {(articlesData?.total ?? 0) > 50 && <div className="flex items-center gap-3">
         <Button variant="outline" disabled={offset === 0 || isLoading} onClick={() => setOffset(value => Math.max(0, value - 50))}>{t("kb.previous_page", { defaultValue: "Previous page" })}</Button>
-        <span className="text-sm">{t("kb.page_status", { defaultValue: "{{from}}–{{to}} of {{total}}", from: offset + 1, to: Math.min(offset + 50, articlesData?.total ?? 0), total: articlesData?.total ?? 0 })}</span>
+        <span className="text-[13px] text-muted-foreground tabular-nums">{t("kb.page_status", { defaultValue: "{{from}}–{{to}} of {{total}}", from: offset + 1, to: Math.min(offset + 50, articlesData?.total ?? 0), total: articlesData?.total ?? 0 })}</span>
         <Button variant="outline" disabled={offset + 50 >= (articlesData?.total ?? 0) || isLoading} onClick={() => setOffset(value => value + 50)}>{t("kb.next_page", { defaultValue: "Next page" })}</Button>
       </div>}
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>

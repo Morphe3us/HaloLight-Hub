@@ -1,4 +1,4 @@
-import { pgTable, text, uuid, timestamp, pgEnum, integer } from "drizzle-orm/pg-core";
+import { pgTable, text, uuid, timestamp, pgEnum, integer, index } from "drizzle-orm/pg-core";
 import { usersTable } from "./users";
 
 export const channelTypeEnum = pgEnum("channel_type", [
@@ -36,7 +36,7 @@ export const communityPosts = pgTable("community_posts", {
   views: integer("views").notNull().default(0),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
-});
+}, (t) => [index("community_posts_channel_idx").on(t.channelId)]);
 
 export const communityReplies = pgTable("community_replies", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -49,7 +49,7 @@ export const communityReplies = pgTable("community_replies", {
   content: text("content").notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
-});
+}, (t) => [index("community_replies_post_idx").on(t.postId)]);
 
 export const communityReactions = pgTable("community_reactions", {
   id: uuid("id").primaryKey().defaultRandom(),

@@ -1,11 +1,11 @@
 import { useTranslation } from "react-i18next";
 import { useListNotifications, useMarkNotificationRead, useMarkAllNotificationsRead, getGetUnreadNotificationCountQueryKey, getListNotificationsQueryKey } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Check, Bell, BellRing } from "lucide-react";
+import { Check, Bell } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
+import { EmptyState, PageHeader } from "@/components/page";
 
 export default function Notifications() {
   const { t } = useTranslation();
@@ -34,10 +34,12 @@ export default function Notifications() {
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
-        <Skeleton className="h-10 w-64" />
-        <Skeleton className="h-32 w-full rounded-xl" />
-        <Skeleton className="h-32 w-full rounded-xl" />
+      <div className="max-w-4xl space-y-8">
+        <div className="space-y-2">
+          <Skeleton className="h-8 w-64" />
+          <Skeleton className="h-4 w-80" />
+        </div>
+        <Skeleton className="h-48 w-full rounded-xl" />
       </div>
     );
   }
@@ -46,93 +48,95 @@ export default function Notifications() {
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6" data-testid="page-notifications">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground flex items-center gap-3">
+    <div className="max-w-4xl space-y-8" data-testid="page-notifications">
+      <PageHeader
+        title={
+          <span className="flex flex-wrap items-center gap-3">
             {t("notifications.inbox")}
             {unreadCount > 0 && (
-              <Badge variant="secondary" className="bg-primary/10 text-primary hover:bg-primary/20 text-sm">
+              <span className="inline-flex items-center gap-1.5 text-sm font-normal tracking-normal text-muted-foreground tabular-nums">
+                <span className="h-1.5 w-1.5 rounded-full bg-primary" />
                 {unreadCount} {t("notifications.new_badge")}
-              </Badge>
+              </span>
             )}
-          </h1>
-          <p className="text-muted-foreground mt-1">{t("notifications.subtitle")}</p>
-        </div>
-
-        {unreadCount > 0 && (
+          </span>
+        }
+        description={t("notifications.subtitle")}
+        actions={unreadCount > 0 && (
           <Button
             variant="outline"
+            size="sm"
             onClick={handleMarkAllRead}
             disabled={markAllRead.isPending}
-            className="shadow-sm"
+            className="gap-1.5"
             data-testid="button-mark-all-read"
           >
-            <Check className="mr-2 h-4 w-4" />
+            <Check className="h-4 w-4 stroke-[1.75]" />
             {t("notifications.mark_all_read")}
           </Button>
         )}
-      </div>
+      />
 
-      <div className="space-y-4">
+      <div>
         {notifications.length === 0 ? (
-          <Card className="p-12 text-center border-dashed">
-            <div className="flex justify-center mb-4">
-              <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center">
-                <Bell className="h-6 w-6 text-muted-foreground" />
-              </div>
-            </div>
-            <h3 className="text-lg font-medium text-foreground">{t("notifications.all_caught_up_title")}</h3>
-            <p className="text-muted-foreground mt-1">{t("notifications.all_caught_up_body")}</p>
-          </Card>
+          <EmptyState
+            icon={Bell}
+            text={
+              <>
+                <span className="block font-medium text-foreground">{t("notifications.all_caught_up_title")}</span>
+                <span className="block mt-1">{t("notifications.all_caught_up_body")}</span>
+              </>
+            }
+          />
         ) : (
-          notifications.map((notification) => (
-            <Card
-              key={notification.id}
-              className={`p-5 transition-colors border ${!notification.isRead ? 'bg-primary/[0.02] border-primary/20 shadow-sm' : 'bg-card border-border'}`}
-              data-testid={`card-notification-${notification.id}`}
-            >
-              <div className="flex items-start gap-4">
-                <div className={`mt-1 p-2 rounded-full shrink-0 ${!notification.isRead ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
-                  {!notification.isRead ? <BellRing className="w-4 h-4" /> : <Bell className="w-4 h-4" />}
-                </div>
+          <ul className="rounded-xl border border-border bg-card divide-y divide-border">
+            {notifications.map((notification) => (
+              <li
+                key={notification.id}
+                className="px-4 py-4 transition-colors"
+                data-testid={`card-notification-${notification.id}`}
+              >
+                <div className="flex items-start gap-3">
+                  <span className={cn("h-1.5 w-1.5 rounded-full mt-2 shrink-0", !notification.isRead ? "bg-primary" : "bg-transparent")} />
 
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <h4 className="text-base font-semibold text-foreground">
-                        {notification.title}
-                      </h4>
-                      <p className="text-muted-foreground mt-1">{notification.body}</p>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="min-w-0">
+                        <h4 className={cn("text-sm", !notification.isRead ? "font-medium text-foreground" : "text-foreground/80")}>
+                          {notification.title}
+                        </h4>
+                        <p className="text-sm text-muted-foreground mt-0.5">{notification.body}</p>
 
-                      <div className="flex items-center gap-4 mt-3">
-                        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                          {notification.type.replace('_', ' ')}
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          {new Date(notification.createdAt).toLocaleString()}
-                        </span>
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-2 text-xs text-muted-foreground">
+                          <span className="first-letter:uppercase">
+                            {notification.type.replace('_', ' ')}
+                          </span>
+                          <span aria-hidden="true">·</span>
+                          <span className="tabular-nums">
+                            {new Date(notification.createdAt).toLocaleString()}
+                          </span>
+                        </div>
                       </div>
-                    </div>
 
-                    {!notification.isRead && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleMarkRead(notification.id)}
-                        disabled={markRead.isPending}
-                        className="shrink-0 text-muted-foreground hover:text-primary hover:bg-primary/10"
-                        data-testid={`button-mark-read-${notification.id}`}
-                      >
-                        <Check className="h-4 w-4 mr-2" />
-                        {t("notifications.mark_read")}
-                      </Button>
-                    )}
+                      {!notification.isRead && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleMarkRead(notification.id)}
+                          disabled={markRead.isPending}
+                          className="shrink-0 gap-1.5 text-muted-foreground hover:text-foreground"
+                          data-testid={`button-mark-read-${notification.id}`}
+                        >
+                          <Check className="h-4 w-4 stroke-[1.75]" />
+                          {t("notifications.mark_read")}
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            </Card>
-          ))
+              </li>
+            ))}
+          </ul>
         )}
       </div>
     </div>

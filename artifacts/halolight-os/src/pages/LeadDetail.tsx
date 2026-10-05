@@ -10,7 +10,6 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -24,28 +23,38 @@ import {
 import { cn } from "@/lib/utils";
 import { useCurrency } from "@/lib/currency";
 import { prospectCreationUrl } from "@/lib/prospectCreation";
+import { EmptyState, PageHeader } from "@/components/page";
+
+function StatusLabel({ dot, children }: { dot?: string; children: React.ReactNode }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 text-xs font-medium text-foreground">
+      <span className={cn("h-1.5 w-1.5 rounded-full", dot ?? "bg-muted-foreground/50")} />
+      {children}
+    </span>
+  );
+}
 
 const LEAD_STAGE_COLORS: Record<string, string> = {
-  new: "bg-slate-100 text-slate-700 border-slate-200",
-  contacted: "bg-info/10 text-info border-info/30",
-  qualified: "bg-info/8 text-info border-info/20",
-  proposal: "bg-warning/8 text-warning border-warning/20",
-  negotiation: "bg-warning/8 text-warning border-warning/20",
-  won: "bg-success/8 text-success border-success/20",
-  lost: "bg-destructive/10 text-destructive border-destructive/30",
+  new: "bg-muted-foreground/50",
+  contacted: "bg-info",
+  qualified: "bg-info",
+  proposal: "bg-warning",
+  negotiation: "bg-warning",
+  won: "bg-success",
+  lost: "bg-destructive",
 };
 
 const PIPELINE_STAGE_COLORS: Record<string, string> = {
-  lead: "bg-slate-100 text-slate-600 border-slate-200",
-  qualified: "bg-info/10 text-info border-info/30",
-  quote_created: "bg-info/8 text-info border-info/20",
-  quote_sent: "bg-warning/10 text-warning border-warning/30",
-  quote_accepted: "bg-warning/8 text-warning border-warning/20",
-  contract_created: "bg-success/8 text-success border-success/20",
-  contract_signed: "bg-success/10 text-success border-success/30",
-  invoice_created: "bg-success/12 text-success border-success/40",
-  won: "bg-success/15 text-success border-success/50",
-  lost: "bg-destructive/10 text-destructive border-destructive/30",
+  lead: "bg-muted-foreground/50",
+  qualified: "bg-info",
+  quote_created: "bg-info",
+  quote_sent: "bg-warning",
+  quote_accepted: "bg-warning",
+  contract_created: "bg-success",
+  contract_signed: "bg-success",
+  invoice_created: "bg-success",
+  won: "bg-success",
+  lost: "bg-destructive",
 };
 
 const ACTIVITY_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -54,26 +63,26 @@ const ACTIVITY_ICONS: Record<string, React.ComponentType<{ className?: string }>
 };
 
 const ACTIVITY_COLORS: Record<string, string> = {
-  note: "bg-slate-100 text-slate-600", call: "bg-info/15 text-info", email: "bg-info/15 text-info",
-  meeting: "bg-warning/15 text-warning", status_change: "bg-muted text-muted-foreground",
-  quote_sent: "bg-success/15 text-success", contract_sent: "bg-info/15 text-info", invoice_sent: "bg-warning/15 text-warning",
+  note: "text-muted-foreground", call: "text-info", email: "text-info",
+  meeting: "text-warning", status_change: "text-muted-foreground",
+  quote_sent: "text-success", contract_sent: "text-info", invoice_sent: "text-warning",
 };
 
 const LEAD_STATUSES = ["new", "contacted", "qualified", "proposal", "negotiation", "won", "lost"];
 const ACTIVITY_TYPES = ["note", "call", "email", "meeting", "status_change", "quote_sent", "contract_sent", "invoice_sent"];
 
 const QUOTE_STATUS_COLORS: Record<string, string> = {
-  draft: "bg-slate-100 text-slate-700", sent: "bg-info/10 text-info",
-  accepted: "bg-success/10 text-success", declined: "bg-destructive/10 text-destructive", expired: "bg-warning/10 text-warning",
+  draft: "bg-muted-foreground/50", sent: "bg-info",
+  accepted: "bg-success", declined: "bg-destructive", expired: "bg-warning",
 };
 const CONTRACT_STATUS_COLORS: Record<string, string> = {
-  draft: "bg-slate-100 text-slate-700", sent: "bg-info/10 text-info",
-  signed: "bg-success/10 text-success", active: "bg-success/10 text-success",
-  expired: "bg-warning/10 text-warning", cancelled: "bg-destructive/10 text-destructive",
+  draft: "bg-muted-foreground/50", sent: "bg-info",
+  signed: "bg-success", active: "bg-success",
+  expired: "bg-warning", cancelled: "bg-destructive",
 };
 const INVOICE_STATUS_COLORS: Record<string, string> = {
-  draft: "bg-slate-100 text-slate-700", sent: "bg-info/10 text-info",
-  paid: "bg-success/10 text-success", overdue: "bg-destructive/10 text-destructive", cancelled: "bg-muted text-muted-foreground",
+  draft: "bg-muted-foreground/50", sent: "bg-info",
+  paid: "bg-success", overdue: "bg-destructive", cancelled: "bg-muted-foreground/50",
 };
 
 function formatDate(d: string | null | undefined) {
@@ -190,8 +199,8 @@ export default function LeadDetail() {
     });
   };
 
-  if (isLoading) return <div className="flex items-center justify-center h-40 text-muted-foreground">{t("common.loading")}</div>;
-  if (!lead) return <div className="text-muted-foreground p-8">{t("leads.lead_not_found")}</div>;
+  if (isLoading) return <div className="flex items-center justify-center h-40 text-sm text-muted-foreground">{t("common.loading")}</div>;
+  if (!lead) return <div className="text-sm text-muted-foreground p-8">{t("leads.lead_not_found")}</div>;
 
   const pipelineStageKey = (lead as any).pipelineStage as string | undefined;
   const pipelineColor = pipelineStageKey ? PIPELINE_STAGE_COLORS[pipelineStageKey] : undefined;
@@ -203,91 +212,90 @@ export default function LeadDetail() {
   const hasLinked = quotes.length > 0 || contracts.length > 0 || invoices.length > 0;
 
   return (
-    <div className="space-y-6 max-w-5xl">
-      <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div className="flex items-center gap-3">
-          <Link href="/crm/leads">
-            <Button variant="ghost" size="sm" className="gap-1.5 shrink-0"><ArrowLeft className="w-4 h-4" />{t("common.back")}</Button>
-          </Link>
-          <div>
-            <div className="flex items-center gap-2.5 flex-wrap">
-              <h1 className="text-2xl font-bold">{lead.companyName}</h1>
-              {statusColor && (
-                <Badge variant="outline" className={cn("text-xs", statusColor)}>{t(`leads.stage_${lead.status}`)}</Badge>
-              )}
-              {pipelineColor && pipelineStageKey && (
-                <Badge variant="outline" className={cn("text-xs", pipelineColor)}>
-                  {t(`pipeline.stage_${pipelineStageKey}`, { defaultValue: pipelineStageKey.replace(/_/g, " ") })}
-                </Badge>
-              )}
-            </div>
-            <p className="text-muted-foreground text-sm mt-0.5">{lead.contactName}</p>
-          </div>
-        </div>
+    <div className="space-y-8 max-w-5xl">
+      <div className="space-y-4">
+        <Link href="/crm/leads">
+          <Button variant="ghost" size="sm" className="gap-1.5 -ml-2 text-muted-foreground hover:text-foreground"><ArrowLeft className="w-4 h-4 stroke-[1.75]" />{t("common.back")}</Button>
+        </Link>
+        <PageHeader
+          title={lead.companyName}
+          description={<span className="flex items-center gap-3 flex-wrap">
+            <span>{lead.contactName}</span>
+            {statusColor && (
+              <StatusLabel dot={statusColor}>{t(`leads.stage_${lead.status}`)}</StatusLabel>
+            )}
+            {pipelineColor && pipelineStageKey && (
+              <span className="inline-flex items-center gap-1.5 rounded-md border border-border px-2 py-0.5 text-xs text-foreground">
+                <span className={cn("h-1.5 w-1.5 rounded-full", pipelineColor)} />
+                {t(`pipeline.stage_${pipelineStageKey}`, { defaultValue: pipelineStageKey.replace(/_/g, " ") })}
+              </span>
+            )}
+          </span>}
+        />
 
-        <div className="flex gap-2 flex-wrap shrink-0">
+        <div className="flex gap-2 flex-wrap">
           <Button variant="outline" size="sm" onClick={openCreateQuote} className="gap-1.5">
-            <FilePlus className="w-3.5 h-3.5" /> {t("pipeline.create_quote")}
+            <FilePlus className="w-3.5 h-3.5 stroke-[1.75]" /> {t("pipeline.create_quote")}
           </Button>
           <Button variant="outline" size="sm" onClick={openCreateContract} className="gap-1.5">
-            <FileSignature className="w-3.5 h-3.5" /> {t("pipeline.create_contract")}
+            <FileSignature className="w-3.5 h-3.5 stroke-[1.75]" /> {t("pipeline.create_contract")}
           </Button>
           <Button variant="outline" size="sm" onClick={openCreateInvoice} className="gap-1.5">
-            <ReceiptText className="w-3.5 h-3.5" /> {t("pipeline.create_invoice")}
+            <ReceiptText className="w-3.5 h-3.5 stroke-[1.75]" /> {t("pipeline.create_invoice")}
           </Button>
           {lead.status !== "won" && lead.status !== "lost" && (
-            <Button variant="outline" size="sm" onClick={() => markStatus("qualified")} className="gap-1.5 border-info/40 text-info hover:bg-info/5">
-              <Trophy className="w-3.5 h-3.5" /> {t("pipeline.mark_qualified")}
+            <Button variant="outline" size="sm" onClick={() => markStatus("qualified")} className="gap-1.5">
+              <Trophy className="w-3.5 h-3.5 stroke-[1.75]" /> {t("pipeline.mark_qualified")}
             </Button>
           )}
           {lead.status !== "lost" && (
-            <Button variant="outline" size="sm" onClick={() => markStatus("lost")} className="gap-1.5 border-destructive/40 text-destructive hover:bg-destructive/5">
-              <XCircle className="w-3.5 h-3.5" /> {t("pipeline.mark_lost")}
+            <Button variant="outline" size="sm" onClick={() => markStatus("lost")} className="gap-1.5 text-destructive hover:text-destructive">
+              <XCircle className="w-3.5 h-3.5 stroke-[1.75]" /> {t("pipeline.mark_lost")}
             </Button>
           )}
           <Button variant="outline" size="sm" onClick={() => setShowActivity(true)} className="gap-1.5">
-            <Send className="w-3.5 h-3.5" /> {t("leads.log_activity")}
+            <Send className="w-3.5 h-3.5 stroke-[1.75]" /> {t("leads.log_activity")}
           </Button>
           <Button size="sm" onClick={startEdit} className="gap-1.5">
-            <Edit2 className="w-3.5 h-3.5" /> {t("common.edit")}
+            <Edit2 className="w-3.5 h-3.5 stroke-[1.75]" /> {t("common.edit")}
           </Button>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-1 space-y-4">
-          <div className="rounded-xl border bg-card p-5 space-y-4">
-            <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">{t("leads.contact_section")}</h3>
+          <div className="rounded-xl border border-border bg-card p-5 space-y-4">
+            <h3 className="text-sm font-medium text-foreground">{t("leads.contact_section")}</h3>
             <div className="space-y-3">
               <div className="flex items-center gap-2.5 text-sm">
-                <Building2 className="w-4 h-4 text-muted-foreground shrink-0" />
+                <Building2 className="w-4 h-4 stroke-[1.75] text-muted-foreground shrink-0" />
                 <span className="font-medium">{lead.companyName}</span>
               </div>
               {lead.email && (
                 <div className="flex items-center gap-2.5 text-sm">
-                  <Mail className="w-4 h-4 text-muted-foreground shrink-0" />
-                  <a href={`mailto:${lead.email}`} className="hover:text-primary">{lead.email}</a>
+                  <Mail className="w-4 h-4 stroke-[1.75] text-muted-foreground shrink-0" />
+                  <a href={`mailto:${lead.email}`} className="hover:underline underline-offset-4">{lead.email}</a>
                 </div>
               )}
               {lead.phone && (
                 <div className="flex items-center gap-2.5 text-sm">
-                  <Phone className="w-4 h-4 text-muted-foreground shrink-0" />
-                  <a href={`tel:${lead.phone}`} className="hover:text-primary">{lead.phone}</a>
+                  <Phone className="w-4 h-4 stroke-[1.75] text-muted-foreground shrink-0" />
+                  <a href={`tel:${lead.phone}`} className="hover:underline underline-offset-4">{lead.phone}</a>
                 </div>
               )}
               {lead.expectedEventDate && (
                 <div className="flex items-center gap-2.5 text-sm">
-                  <CalendarDays className="w-4 h-4 text-muted-foreground shrink-0" />
+                  <CalendarDays className="w-4 h-4 stroke-[1.75] text-muted-foreground shrink-0" />
                   <span>{formatDate(lead.expectedEventDate)}</span>
                 </div>
               )}
             </div>
           </div>
 
-          <div className="rounded-xl border bg-card p-5 space-y-3">
-            <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">{t("leads.opportunity_section")}</h3>
+          <div className="rounded-xl border border-border bg-card p-5 space-y-3">
+            <h3 className="text-sm font-medium text-foreground">{t("leads.opportunity_section")}</h3>
             <div className="space-y-2 text-sm">
-              <div className="flex justify-between"><span className="text-muted-foreground">{t("leads.value_label2")}</span><span className="font-bold text-success text-base">{formatCurrency(lead.value)}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">{t("leads.value_label2")}</span><span className="font-semibold tabular-nums text-base">{formatCurrency(lead.value)}</span></div>
               <div className="flex justify-between"><span className="text-muted-foreground">{t("leads.event_type_label")}</span><span>{lead.eventType ?? "—"}</span></div>
               <div className="flex justify-between"><span className="text-muted-foreground">{t("leads.stage_label")}</span><span>{t(`leads.stage_${lead.status}`)}</span></div>
               <div className="flex justify-between"><span className="text-muted-foreground">{t("common.created")}</span><span>{formatDate(lead.createdAt)}</span></div>
@@ -295,8 +303,8 @@ export default function LeadDetail() {
           </div>
 
           {lead.notes && (
-            <div className="rounded-xl border bg-card p-5">
-              <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide mb-2">{t("leads.notes_label")}</h3>
+            <div className="rounded-xl border border-border bg-card p-5">
+              <h3 className="text-sm font-medium text-foreground mb-2">{t("leads.notes_label")}</h3>
               <p className="text-sm text-muted-foreground whitespace-pre-wrap">{lead.notes}</p>
             </div>
           )}
@@ -304,26 +312,26 @@ export default function LeadDetail() {
 
         <div className="lg:col-span-2 space-y-4">
           {hasLinked && (
-            <div className="rounded-xl border bg-card p-5 space-y-4">
-              <h3 className="font-semibold text-sm">{t("pipeline.linked_records")}</h3>
+            <div className="rounded-xl border border-border bg-card p-5 space-y-4">
+              <h3 className="text-sm font-medium text-foreground">{t("pipeline.linked_records")}</h3>
 
               {quotes.length > 0 && (
                 <div className="space-y-2">
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{t("pipeline.quotes")} ({quotes.length})</p>
+                  <p className="text-[13px] text-muted-foreground">{t("pipeline.quotes")} ({quotes.length})</p>
                   {quotes.map((q: any) => (
                     <Link key={q.id} href={`/quotes/${q.id}`}>
-                      <div className="flex items-center justify-between p-3 rounded-lg border bg-background hover:bg-muted/30 transition-colors cursor-pointer">
+                      <div className="flex items-center justify-between px-4 py-3 rounded-lg border border-border bg-card hover:bg-muted/40 transition-colors cursor-pointer">
                         <div className="flex items-center gap-2.5">
-                          <FilePlus className="w-4 h-4 text-muted-foreground" />
+                          <FilePlus className="w-4 h-4 stroke-[1.75] text-muted-foreground" />
                           <div>
                             <p className="text-sm font-medium">{q.quoteNumber} — {q.title}</p>
                             <p className="text-xs text-muted-foreground">{formatDate(q.createdAt)}</p>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <Badge variant="outline" className={cn("text-xs", QUOTE_STATUS_COLORS[q.status] ?? "")}>{q.status}</Badge>
-                          <span className="text-sm font-semibold">{formatCurrency(q.total)}</span>
-                          <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                          <StatusLabel dot={QUOTE_STATUS_COLORS[q.status]}>{q.status}</StatusLabel>
+                          <span className="text-sm font-medium tabular-nums">{formatCurrency(q.total)}</span>
+                          <ChevronRight className="w-4 h-4 stroke-[1.75] text-muted-foreground" />
                         </div>
                       </div>
                     </Link>
@@ -333,21 +341,21 @@ export default function LeadDetail() {
 
               {contracts.length > 0 && (
                 <div className="space-y-2">
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{t("pipeline.contracts")} ({contracts.length})</p>
+                  <p className="text-[13px] text-muted-foreground">{t("pipeline.contracts")} ({contracts.length})</p>
                   {contracts.map((c: any) => (
                     <Link key={c.id} href={`/contracts/${c.id}`}>
-                      <div className="flex items-center justify-between p-3 rounded-lg border bg-background hover:bg-muted/30 transition-colors cursor-pointer">
+                      <div className="flex items-center justify-between px-4 py-3 rounded-lg border border-border bg-card hover:bg-muted/40 transition-colors cursor-pointer">
                         <div className="flex items-center gap-2.5">
-                          <FileSignature className="w-4 h-4 text-muted-foreground" />
+                          <FileSignature className="w-4 h-4 stroke-[1.75] text-muted-foreground" />
                           <div>
                             <p className="text-sm font-medium">{c.contractNumber} — {c.title}</p>
                             <p className="text-xs text-muted-foreground">{formatDate(c.createdAt)}</p>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <Badge variant="outline" className={cn("text-xs", CONTRACT_STATUS_COLORS[c.status] ?? "")}>{c.status}</Badge>
-                          <span className="text-sm font-semibold">{formatCurrency(c.value)}</span>
-                          <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                          <StatusLabel dot={CONTRACT_STATUS_COLORS[c.status]}>{c.status}</StatusLabel>
+                          <span className="text-sm font-medium tabular-nums">{formatCurrency(c.value)}</span>
+                          <ChevronRight className="w-4 h-4 stroke-[1.75] text-muted-foreground" />
                         </div>
                       </div>
                     </Link>
@@ -357,21 +365,21 @@ export default function LeadDetail() {
 
               {invoices.length > 0 && (
                 <div className="space-y-2">
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{t("pipeline.invoices")} ({invoices.length})</p>
+                  <p className="text-[13px] text-muted-foreground">{t("pipeline.invoices")} ({invoices.length})</p>
                   {invoices.map((inv: any) => (
                     <Link key={inv.id} href={`/invoices/${inv.id}`}>
-                      <div className="flex items-center justify-between p-3 rounded-lg border bg-background hover:bg-muted/30 transition-colors cursor-pointer">
+                      <div className="flex items-center justify-between px-4 py-3 rounded-lg border border-border bg-card hover:bg-muted/40 transition-colors cursor-pointer">
                         <div className="flex items-center gap-2.5">
-                          <ReceiptText className="w-4 h-4 text-muted-foreground" />
+                          <ReceiptText className="w-4 h-4 stroke-[1.75] text-muted-foreground" />
                           <div>
                             <p className="text-sm font-medium">{inv.invoiceNumber} — {inv.title}</p>
                             <p className="text-xs text-muted-foreground">{formatDate(inv.createdAt)}</p>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <Badge variant="outline" className={cn("text-xs", INVOICE_STATUS_COLORS[inv.status] ?? "")}>{inv.status}</Badge>
-                          <span className="text-sm font-semibold">{formatCurrency(inv.total)}</span>
-                          <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                          <StatusLabel dot={INVOICE_STATUS_COLORS[inv.status]}>{inv.status}</StatusLabel>
+                          <span className="text-sm font-medium tabular-nums">{formatCurrency(inv.total)}</span>
+                          <ChevronRight className="w-4 h-4 stroke-[1.75] text-muted-foreground" />
                         </div>
                       </div>
                     </Link>
@@ -381,17 +389,16 @@ export default function LeadDetail() {
             </div>
           )}
 
-          <div className="rounded-xl border bg-card p-5">
+          <div className="rounded-xl border border-border bg-card p-5">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold">{t("leads.activity_timeline")}</h3>
+              <h3 className="text-sm font-medium text-foreground">{t("leads.activity_timeline")}</h3>
               <span className="text-xs text-muted-foreground">{t("leads.activities_count", { count: lead.activities?.length ?? 0 })}</span>
             </div>
             {(!lead.activities || lead.activities.length === 0) ? (
-              <div className="text-center py-10 text-muted-foreground">
-                <MessageSquare className="w-8 h-8 mx-auto mb-2 opacity-30" />
-                <p className="text-sm">{t("leads.no_activities")}</p>
-                <p className="text-xs mt-1">{t("leads.activity_hint")}</p>
-              </div>
+              <EmptyState
+                icon={MessageSquare}
+                text={<><span className="block">{t("leads.no_activities")}</span><span className="block text-xs mt-1">{t("leads.activity_hint")}</span></>}
+              />
             ) : (
               <div className="relative">
                 <div className="absolute left-5 top-0 bottom-0 w-px bg-border" />
@@ -400,8 +407,8 @@ export default function LeadDetail() {
                     const Icon = ACTIVITY_ICONS[activity.type] ?? MessageSquare;
                     return (
                       <div key={activity.id} className="flex gap-4 relative">
-                        <div className={cn("w-10 h-10 rounded-full flex items-center justify-center shrink-0 z-10 border-2 border-background", ACTIVITY_COLORS[activity.type] ?? "bg-muted text-muted-foreground")}>
-                          <Icon className="w-4 h-4" />
+                        <div className={cn("w-10 h-10 rounded-full flex items-center justify-center shrink-0 z-10 border border-border bg-card", ACTIVITY_COLORS[activity.type] ?? "text-muted-foreground")}>
+                          <Icon className="w-4 h-4 stroke-[1.75]" />
                         </div>
                         <div className="flex-1 min-w-0 pt-1">
                           <div className="flex items-start justify-between gap-2">

@@ -5,7 +5,6 @@ packages:
   - scripts
 
 allowBuilds:
-  '@clerk/shared': set this to true or false
   esbuild: true
 
 autoInstallPeers: false
@@ -48,6 +47,10 @@ onlyBuiltDependencies:
 
 overrides:
   '@esbuild-kit/esm-loader': npm:tsx@^4.21.0
+  # Security: GHSA-4mjr-xmp4-gh2g (qs), GHSA-v422-hmwv-36x6 (body-parser), GHSA-q2hr-2g5m-vwhr (brace-expansion)
+  'qs@<6.16.0': ^6.16.0
+  'body-parser@>=2.0.0 <2.3.0': ^2.3.0
+  'brace-expansion@>=4.0.0 <5.0.12': ^5.0.12
   '@expo/ngrok-bin>@expo/ngrok-bin-darwin-arm64': '-'
   '@expo/ngrok-bin>@expo/ngrok-bin-darwin-x64': '-'
   '@expo/ngrok-bin>@expo/ngrok-bin-freebsd-ia32': '-'

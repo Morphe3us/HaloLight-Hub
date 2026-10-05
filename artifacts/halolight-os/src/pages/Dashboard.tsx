@@ -10,8 +10,6 @@ import {
   useGetDashboardSummary,
   useListEvents,
 } from "@workspace/api-client-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -20,13 +18,12 @@ import {
   Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger,
 } from "@/components/ui/sheet";
 import {
-  Bell, ArrowRight, Trophy, PlayCircle, Calendar, BookOpen, Clock,
-  MapPin, GraduationCap, Monitor, Package, LifeBuoy, CheckCircle2,
-  Settings2, Users, FileText, FilePen, ReceiptText,
+  ArrowRight, Play, Clock, MapPin, Settings2, ShieldCheck,
 } from "lucide-react";
 import { Link } from "wouter";
 import { format, parseISO } from "date-fns";
 import { cn } from "@/lib/utils";
+import { EmptyState, Meter, PageHeader, Section, Stat, StatGrid } from "@/components/page";
 const THUMB_FALLBACK = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='450' viewBox='0 0 800 450'%3E%3Crect width='800' height='450' fill='%23DDB398' opacity='0.25'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='48' fill='%23DDB398'%3E%E2%96%B6%3C/text%3E%3C/svg%3E";
 
 const DEFAULT_WIDGETS = DEFAULT_DASHBOARD_WIDGETS;
@@ -93,11 +90,12 @@ export default function Dashboard() {
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
-        <Skeleton className="h-10 w-72" />
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-28 rounded-xl" />)}
+      <div className="space-y-10">
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-32" />
+          <Skeleton className="h-8 w-72" />
         </div>
+        <Skeleton className="h-[124px] rounded-xl" />
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <Skeleton className="h-48 col-span-2 rounded-xl" />
           <Skeleton className="h-48 rounded-xl" />
@@ -117,487 +115,236 @@ export default function Dashboard() {
   const contractsTotal = summary?.contractsCount ?? 0;
   const invoicesTotal = summary?.invoicesCount ?? 0;
 
-  const salesChartData = [
-    { name: t("nav.leads"), value: leadsTotal, fill: "#4B96FF" },
-    { name: t("nav.quotes"), value: quotesTotal, fill: "#F59E0B" },
-    { name: t("nav.contracts"), value: contractsTotal, fill: "#22C55E" },
-    { name: t("nav.invoices"), value: invoicesTotal, fill: "#DDB398" },
+  const pipeline = [
+    { key: "leads", label: t("nav.leads"), value: leadsTotal, href: "/crm/leads" },
+    { key: "quotes", label: t("nav.quotes"), value: quotesTotal, href: "/quotes" },
+    { key: "contracts", label: t("nav.contracts"), value: contractsTotal, href: "/contracts" },
+    { key: "invoices", label: t("nav.invoices"), value: invoicesTotal, href: "/invoices" },
   ];
-  const maxSalesTotal = Math.max(...salesChartData.map((entry) => entry.value), 1);
+  const academyPercent = summary && summary.academyTotalLessons > 0
+    ? Math.round((summary.academyLessonsCompleted / summary.academyTotalLessons) * 100)
+    : 0;
+
+  const attention = [
+    equipmentAlerts > 0 && { key: "equipment", count: equipmentAlerts, label: t("dashboard.kpi_equipment_alerts"), href: "/equipment" },
+    lowStockCount > 0 && { key: "stock", count: lowStockCount, label: t("dashboard.kpi_low_stock"), href: "/consumables" },
+  ].filter(Boolean) as { key: string; count: number; label: string; href: string }[];
+  const widgetKeys = (Object.keys(widgets) as WidgetKey[]).filter((key) => key !== "academy_stats");
 
   return (
-    <div className="space-y-8" data-testid="page-dashboard">
-      {/* Header */}
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">
-            {greeting}, {firstName}
-          </h1>
-          <p className="text-muted-foreground mt-1">{t("dashboard.subtitle")}</p>
-        </div>
-        <Sheet open={customizeOpen} onOpenChange={setCustomizeOpen}>
-          <SheetTrigger asChild>
-            <Button variant="outline" size="sm" className="gap-2 shrink-0">
-              <Settings2 className="w-4 h-4" />
-              {t("dashboard.customize", { defaultValue: "Customize" })}
-            </Button>
-          </SheetTrigger>
-          <SheetContent>
-            <SheetHeader>
-              <SheetTitle>{t("dashboard.customize_title", { defaultValue: "Customize Dashboard" })}</SheetTitle>
-            </SheetHeader>
-            <div className="space-y-4 mt-6">
-              <p className="text-sm text-muted-foreground">{t("dashboard.customize_desc", { defaultValue: "Show or hide widgets to personalise your dashboard." })}</p>
-              {(preferences.isError || savePreference.isError) && <div role="alert" className="text-sm text-destructive space-y-2">
-                <p>{t("dashboard.preferences_error", { defaultValue: "Dashboard preferences could not be loaded or saved. Your previous choices have been kept." })}</p>
-                <Button variant="outline" onClick={() => { savePreference.reset(); void preferences.refetch(); }}>{t("common.retry")}</Button>
-              </div>}
-              {savePreference.isPending && <p role="status" className="text-sm">{t("common.loading")}</p>}
-              {(Object.keys(widgets) as WidgetKey[]).map((key) => (
-                <div key={key} className="flex items-center justify-between py-2 border-b border-border last:border-0">
-                  <Label htmlFor={`widget-${key}`} className="text-sm font-medium cursor-pointer">
-                    {t(WIDGET_LABELS[key], { defaultValue: key.replace(/_/g, " ") })}
-                  </Label>
-                  <Switch
-                    id={`widget-${key}`}
-                    checked={widgets[key]}
-                    disabled={!preferences.data || preferences.isError || savePreference.isPending}
-                    onCheckedChange={() => toggleWidget(key)}
-                  />
-                </div>
-              ))}
-            </div>
-          </SheetContent>
-        </Sheet>
-      </div>
-      <Dialog open={privacyOpen} onOpenChange={setPrivacyOpen}>
-        <DialogTrigger asChild><Button variant="link" className="px-0">{t("consent.manage", { defaultValue: "Privacy choices" })}</Button></DialogTrigger>
-        <DialogContent className="max-h-[90dvh] overflow-y-auto">
-          <DialogHeader><DialogTitle>{t("consent.title", { defaultValue: "Terms and privacy" })}</DialogTitle></DialogHeader>
-          {consent.isError ? <div role="alert"><p>{t("common.error")}</p><Button onClick={() => void consent.refetch()}>{t("common.retry")}</Button></div> :
-            consent.data ? <ConsentForm key={JSON.stringify(consent.data.documents)} status={consent.data} userId={user!.id} onSaved={() => setPrivacyOpen(false)} /> : <p>{t("common.loading")}</p>}
-        </DialogContent>
-      </Dialog>
-
-      {/* KPI Cards */}
-      {summary && (
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          <Card className="border-0 shadow-sm bg-success/8">
-            <CardContent className="p-5">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="h-9 w-9 rounded-lg bg-success flex items-center justify-center">
-                  <GraduationCap className="w-4 h-4 text-white" />
-                </div>
-                <span className="text-xs font-medium text-success uppercase tracking-wide leading-tight">
-                  {t("dashboard.kpi_lessons")}
-                </span>
-              </div>
-              <p className="text-3xl font-bold text-foreground">
-                {summary.academyLessonsCompleted}
-                <span className="text-base font-normal text-muted-foreground ml-1">/ {summary.academyTotalLessons}</span>
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-0 shadow-sm bg-primary/8">
-            <Link href="/onboarding">
-              <CardContent className="p-5 cursor-pointer">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className={cn("h-9 w-9 rounded-lg flex items-center justify-center", summary.onboardingPercent >= 100 ? "bg-success" : "bg-primary")}>
-                    <CheckCircle2 className="w-4 h-4 text-white" />
-                  </div>
-                  <span className="text-xs font-medium text-primary uppercase tracking-wide leading-tight">
-                    {t("dashboard.kpi_onboarding")}
-                  </span>
-                </div>
-                <p className="text-3xl font-bold text-foreground">{summary.onboardingPercent}%</p>
-              </CardContent>
-            </Link>
-          </Card>
-
-          <Link href="/notifications">
-            <Card className="border-0 shadow-sm bg-info/8">
-              <CardContent className="p-5 cursor-pointer">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className={cn("h-9 w-9 rounded-lg flex items-center justify-center", summary.unreadNotifications > 0 ? "bg-info" : "bg-muted")}>
-                    <Bell className={cn("w-4 h-4", summary.unreadNotifications > 0 ? "text-white" : "text-muted-foreground")} />
-                  </div>
-                  <span className={cn("text-xs font-medium uppercase tracking-wide leading-tight", summary.unreadNotifications > 0 ? "text-info" : "text-muted-foreground")}>
-                    {t("dashboard.kpi_notifications")}
-                  </span>
-                </div>
-                <p className="text-3xl font-bold text-foreground">{summary.unreadNotifications}</p>
-              </CardContent>
-            </Card>
-          </Link>
-
-          <Link href="/events">
-            <Card className="border-0 shadow-sm bg-accent/8">
-              <CardContent className="p-5 cursor-pointer">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className={cn("h-9 w-9 rounded-lg flex items-center justify-center", summary.upcomingEventsCount > 0 ? "bg-accent" : "bg-muted")}>
-                    <Calendar className={cn("w-4 h-4", summary.upcomingEventsCount > 0 ? "text-foreground" : "text-muted-foreground")} />
-                  </div>
-                  <span className={cn("text-xs font-medium uppercase tracking-wide leading-tight", summary.upcomingEventsCount > 0 ? "text-foreground" : "text-muted-foreground")}>
-                    {t("dashboard.kpi_events")}
-                  </span>
-                </div>
-                <p className="text-3xl font-bold text-foreground">{summary.upcomingEventsCount}</p>
-              </CardContent>
-            </Card>
-          </Link>
-
-          <Link href="/equipment">
-            <Card className="border-0 shadow-sm">
-              <CardContent className="p-5 cursor-pointer">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className={cn("h-9 w-9 rounded-lg flex items-center justify-center", equipmentAlerts > 0 ? "bg-warning" : "bg-muted")}>
-                    <Monitor className={cn("w-4 h-4", equipmentAlerts > 0 ? "text-foreground" : "text-muted-foreground")} />
-                  </div>
-                  <span className={cn("text-xs font-medium uppercase tracking-wide leading-tight", equipmentAlerts > 0 ? "text-warning" : "text-muted-foreground")}>
-                    {t("dashboard.kpi_equipment_alerts")}
-                  </span>
-                </div>
-                <p className="text-3xl font-bold text-foreground">{equipmentAlerts}</p>
-                {equipmentAlerts === 0 && <p className="text-xs text-success mt-0.5">{t("dashboard.equipment_ok")}</p>}
-              </CardContent>
-            </Card>
-          </Link>
-
-          <Link href="/consumables">
-            <Card className="border-0 shadow-sm">
-              <CardContent className="p-5 cursor-pointer">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className={cn("h-9 w-9 rounded-lg flex items-center justify-center", lowStockCount > 0 ? "bg-destructive" : "bg-muted")}>
-                    <Package className={cn("w-4 h-4", lowStockCount > 0 ? "text-white" : "text-muted-foreground")} />
-                  </div>
-                  <span className={cn("text-xs font-medium uppercase tracking-wide leading-tight", lowStockCount > 0 ? "text-destructive" : "text-muted-foreground")}>
-                    {t("dashboard.kpi_low_stock")}
-                  </span>
-                </div>
-                <p className="text-3xl font-bold text-foreground">{lowStockCount}</p>
-                {lowStockCount === 0 && <p className="text-xs text-success mt-0.5">{t("dashboard.stock_ok")}</p>}
-              </CardContent>
-            </Card>
-          </Link>
-
-          {openTicketsCount > 0 && (
-            <Link href="/support/tickets">
-              <Card className="border-0 shadow-sm">
-                <CardContent className="p-5 cursor-pointer">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className={cn("h-9 w-9 rounded-lg flex items-center justify-center", openTicketsCount > 0 ? "bg-info" : "bg-muted")}>
-                      <LifeBuoy className={cn("w-4 h-4", openTicketsCount > 0 ? "text-white" : "text-muted-foreground")} />
-                    </div>
-                    <span className={cn("text-xs font-medium uppercase tracking-wide leading-tight", openTicketsCount > 0 ? "text-info" : "text-muted-foreground")}>
-                      {t("dashboard.kpi_open_tickets")}
-                    </span>
-                  </div>
-                  <p className="text-3xl font-bold text-foreground">{openTicketsCount}</p>
-                </CardContent>
-              </Card>
-            </Link>
-          )}
-        </div>
-      )}
-
-      {/* Sales Overview */}
-      {widgets.sales_overview && (
-        <Card className="border border-border shadow-sm">
-          <CardHeader className="pb-3 flex flex-row items-center justify-between">
-            <CardTitle className="text-base">{t("dashboard.sales_overview", { defaultValue: "Sales Pipeline" })}</CardTitle>
-            <Link href="/crm/leads">
-              <button className="text-xs text-primary hover:underline font-medium">{t("dashboard.view_all")}</button>
-            </Link>
-          </CardHeader>
-          <CardContent className="pt-0">
-            <div className="grid grid-cols-4 gap-3 mb-4">
-              <Link href="/crm/leads">
-                <div className="text-center p-3 rounded-lg bg-info/8 hover:bg-info/15 transition-colors cursor-pointer">
-                  <Users className="w-5 h-5 text-info mx-auto mb-1" />
-                  <p className="text-2xl font-bold text-foreground">{leadsTotal}</p>
-                  <p className="text-xs text-muted-foreground">{t("nav.leads")}</p>
-                </div>
-              </Link>
-              <Link href="/quotes">
-                <div className="text-center p-3 rounded-lg bg-warning/8 hover:bg-warning/15 transition-colors cursor-pointer">
-                  <FileText className="w-5 h-5 text-warning mx-auto mb-1" />
-                  <p className="text-2xl font-bold text-foreground">{quotesTotal}</p>
-                  <p className="text-xs text-muted-foreground">{t("nav.quotes")}</p>
-                </div>
-              </Link>
-              <Link href="/contracts">
-                <div className="text-center p-3 rounded-lg bg-success/8 hover:bg-success/15 transition-colors cursor-pointer">
-                  <FilePen className="w-5 h-5 text-success mx-auto mb-1" />
-                  <p className="text-2xl font-bold text-foreground">{contractsTotal}</p>
-                  <p className="text-xs text-muted-foreground">{t("nav.contracts")}</p>
-                </div>
-              </Link>
-              <Link href="/invoices">
-                <div className="text-center p-3 rounded-lg bg-accent/8 hover:bg-accent/15 transition-colors cursor-pointer">
-                  <ReceiptText className="w-5 h-5 text-accent-foreground mx-auto mb-1" />
-                  <p className="text-2xl font-bold text-foreground">{invoicesTotal}</p>
-                  <p className="text-xs text-muted-foreground">{t("nav.invoices")}</p>
-                </div>
-              </Link>
-            </div>
-            {(leadsTotal + quotesTotal + contractsTotal + invoicesTotal) > 0 && (
-              <div className="space-y-2">
-                {salesChartData.map((entry) => (
-                  <div key={entry.name} className="grid grid-cols-[86px_1fr_34px] items-center gap-3 text-xs">
-                    <span className="truncate text-muted-foreground">{entry.name}</span>
-                    <div className="h-2 rounded-full bg-muted overflow-hidden">
-                      <div
-                        className="h-full rounded-full"
-                        style={{
-                          width: `${Math.max((entry.value / maxSalesTotal) * 100, 4)}%`,
-                          backgroundColor: entry.fill,
-                        }}
-                      />
-                    </div>
-                    <span className="text-right font-medium text-foreground">{entry.value}</span>
+    <div className="space-y-10" data-testid="page-dashboard">
+      <PageHeader
+        eyebrow={new Intl.DateTimeFormat(dashLang, { weekday: "long", day: "numeric", month: "long" }).format(new Date())}
+        title={<>{greeting}, {firstName}</>}
+        actions={
+          <Sheet open={customizeOpen} onOpenChange={setCustomizeOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="sm" className="gap-2 shrink-0 text-muted-foreground hover:text-foreground">
+                <Settings2 className="w-4 h-4 stroke-[1.75]" />
+                {t("dashboard.customize", { defaultValue: "Customize" })}
+              </Button>
+            </SheetTrigger>
+            <SheetContent>
+              <SheetHeader>
+                <SheetTitle>{t("dashboard.customize_title", { defaultValue: "Customize Dashboard" })}</SheetTitle>
+              </SheetHeader>
+              <div className="space-y-4 mt-6">
+                <p className="text-sm text-muted-foreground">{t("dashboard.customize_desc", { defaultValue: "Show or hide widgets to personalise your dashboard." })}</p>
+                {(preferences.isError || savePreference.isError) && <div role="alert" className="text-sm text-destructive space-y-2">
+                  <p>{t("dashboard.preferences_error", { defaultValue: "Dashboard preferences could not be loaded or saved. Your previous choices have been kept." })}</p>
+                  <Button variant="outline" onClick={() => { savePreference.reset(); void preferences.refetch(); }}>{t("common.retry")}</Button>
+                </div>}
+                {savePreference.isPending && <p role="status" className="text-sm">{t("common.loading")}</p>}
+                {widgetKeys.map((key) => (
+                  <div key={key} className="flex items-center justify-between py-2 border-b border-border last:border-0">
+                    <Label htmlFor={`widget-${key}`} className="text-sm font-medium cursor-pointer">
+                      {t(WIDGET_LABELS[key], { defaultValue: key.replace(/_/g, " ") })}
+                    </Label>
+                    <Switch
+                      id={`widget-${key}`}
+                      checked={widgets[key]}
+                      disabled={!preferences.data || preferences.isError || savePreference.isPending}
+                      onCheckedChange={() => toggleWidget(key)}
+                    />
                   </div>
                 ))}
+                <Dialog open={privacyOpen} onOpenChange={setPrivacyOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="ghost" size="sm" className="gap-2 -ml-2 text-muted-foreground hover:text-foreground">
+                      <ShieldCheck className="w-4 h-4 stroke-[1.75]" />
+                      {t("consent.manage", { defaultValue: "Privacy choices" })}
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-h-[90dvh] overflow-y-auto">
+                    <DialogHeader><DialogTitle>{t("consent.title", { defaultValue: "Terms and privacy" })}</DialogTitle></DialogHeader>
+                    {consent.isError ? <div role="alert"><p>{t("common.error")}</p><Button onClick={() => void consent.refetch()}>{t("common.retry")}</Button></div> :
+                      consent.data ? <ConsentForm key={JSON.stringify(consent.data.documents)} status={consent.data} userId={user!.id} onSaved={() => setPrivacyOpen(false)} /> : <p>{t("common.loading")}</p>}
+                  </DialogContent>
+                </Dialog>
               </div>
-            )}
-          </CardContent>
-        </Card>
+            </SheetContent>
+          </Sheet>
+        }
+      />
+
+      {/* Account setup — compact banner while incomplete */}
+      {widgets.onboarding && summary && summary.onboardingPercent < 100 && (
+        <Link href="/onboarding" className="group flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6 rounded-xl border border-border bg-card px-5 py-4 hover:bg-muted/40 transition-colors">
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-medium text-foreground">{t("dashboard.onboarding_card")}</p>
+            <p className="text-[13px] text-muted-foreground mt-0.5">{t("dashboard.onboarding_desc")}</p>
+          </div>
+          <div className="flex items-center gap-3 sm:w-64 shrink-0">
+            <Meter value={summary.onboardingPercent} className="flex-1" />
+            <span className="text-sm font-medium tabular-nums text-foreground">{summary.onboardingPercent}%</span>
+            <ArrowRight className="w-4 h-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+          </div>
+        </Link>
       )}
 
-      {/* Main content grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left — 2/3 */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Next Lesson */}
+      {/* Key figures */}
+      {summary && (
+        <StatGrid className="grid-cols-1 sm:grid-cols-3 md:grid-cols-3">
+          <Stat label={t("dashboard.kpi_events")} value={summary.upcomingEventsCount} href="/events" />
+          <Stat label={t("dashboard.kpi_lessons")} value={summary.academyLessonsCompleted} suffix={`/ ${summary.academyTotalLessons}`} href="/academy" progress={academyPercent} />
+          <Stat label={t("dashboard.kpi_open_tickets")} value={openTicketsCount} href="/support" tone={openTicketsCount > 0 ? "info" : undefined} />
+        </StatGrid>
+      )}
+
+      {/* Only surfaced when something needs attention */}
+      {attention.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {attention.map((item) => (
+            <Link key={item.key} href={item.href} className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-[13px] text-foreground hover:bg-muted/50 transition-colors">
+              <span className={cn("h-1.5 w-1.5 rounded-full", item.key === "stock" ? "bg-destructive" : "bg-warning")} />
+              <span className="tabular-nums font-medium">{item.count}</span>
+              <span className="text-muted-foreground">{item.label}</span>
+              <ArrowRight className="w-3 h-3 text-muted-foreground" />
+            </Link>
+          ))}
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-8 gap-y-10">
+        <div className="lg:col-span-2 space-y-10">
+          {/* Next lesson */}
           {widgets.next_lesson && (
-            summary?.nextLesson ? (
-              <Card className="border border-primary/10 bg-gradient-to-br from-primary/5 via-card to-card shadow-sm overflow-hidden">
-                <CardContent className="p-6">
-                  <div className="flex items-start gap-4">
-                    <div className="h-16 w-16 rounded-xl overflow-hidden flex-shrink-0 shadow-sm bg-muted">
-                      <img
-                        src={summary.nextLesson.courseThumbnailUrl || THUMB_FALLBACK}
-                        alt={summary.nextLesson.courseTitle}
-                        className="w-full h-full object-cover"
-                        onError={(e) => { (e.target as HTMLImageElement).src = THUMB_FALLBACK; }}
-                      />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium text-primary uppercase tracking-wide mb-0.5">
-                        {t("dashboard.next_lesson")}
-                      </p>
-                      <h3 className="font-semibold text-foreground text-lg leading-snug truncate">
-                        {summary.nextLesson.lessonTitle}
-                      </h3>
-                      <p className="text-sm text-muted-foreground truncate">{summary.nextLesson.courseTitle}</p>
-                      <div className="flex items-center gap-3 mt-2">
-                        <span className="text-xs text-muted-foreground flex items-center gap-1">
-                          <Clock className="w-3.5 h-3.5" />
-                          {formatDuration(summary.nextLesson.durationSeconds)}
-                        </span>
-                        {summary.nextLesson.watchPercent > 0 && (
-                          <span className="text-xs text-primary font-medium">
-                            {summary.nextLesson.watchPercent}% {t("dashboard.watched")}
-                          </span>
-                        )}
-                      </div>
+            <Section title={t("dashboard.next_lesson")} href="/academy" linkLabel={t("academy.all_courses")}>
+              {summary?.nextLesson ? (
+                <div className="flex flex-col sm:flex-row sm:items-center gap-5 rounded-xl border border-border bg-card p-4">
+                  <div className="aspect-video w-full sm:w-40 rounded-lg overflow-hidden bg-muted shrink-0">
+                    <img
+                      src={summary.nextLesson.courseThumbnailUrl || THUMB_FALLBACK}
+                      alt={summary.nextLesson.courseTitle}
+                      className="w-full h-full object-cover"
+                      onError={(e) => { (e.target as HTMLImageElement).src = THUMB_FALLBACK; }}
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[13px] text-muted-foreground truncate">{summary.nextLesson.courseTitle}</p>
+                    <h3 className="text-base font-medium text-foreground leading-snug truncate mt-0.5">
+                      {summary.nextLesson.lessonTitle}
+                    </h3>
+                    <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1">
+                        <Clock className="w-3.5 h-3.5 stroke-[1.75]" />
+                        {formatDuration(summary.nextLesson.durationSeconds)}
+                      </span>
                       {summary.nextLesson.watchPercent > 0 && (
-                        <Progress value={summary.nextLesson.watchPercent} className="h-1.5 mt-2" />
+                        <span className="tabular-nums">{summary.nextLesson.watchPercent}% {t("dashboard.watched")}</span>
                       )}
                     </div>
+                    {summary.nextLesson.watchPercent > 0 && (
+                      <Meter value={summary.nextLesson.watchPercent} className="mt-3" />
+                    )}
+                  </div>
+                  <Button asChild size="sm" className="shrink-0 gap-1.5 self-start sm:self-center">
                     <Link href={`/academy/${summary.nextLesson.courseId}/${summary.nextLesson.lessonId}`}>
-                      <Button size="sm" className="shrink-0 shadow-sm gap-1.5">
-                        <PlayCircle className="w-4 h-4" />
-                        {summary.nextLesson.watchPercent > 0 ? t("dashboard.resume") : t("dashboard.start")}
-                      </Button>
+                      <Play className="w-3.5 h-3.5 fill-current" />
+                      {summary.nextLesson.watchPercent > 0 ? t("dashboard.resume") : t("dashboard.start")}
                     </Link>
-                  </div>
-                </CardContent>
-              </Card>
-            ) : (
-              <Card className="border border-dashed border-border shadow-sm">
-                <CardContent className="p-6 text-center">
-                  <BookOpen className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
-                  <p className="text-muted-foreground font-medium">{t("dashboard.no_lessons")}</p>
-                  <Link href="/academy">
-                    <Button variant="outline" size="sm" className="mt-3">
-                      {t("academy.all_courses")} <ArrowRight className="w-4 h-4 ml-1.5" />
-                    </Button>
-                  </Link>
-                </CardContent>
-              </Card>
-            )
-          )}
-
-          {/* Onboarding progress */}
-          {widgets.onboarding && summary && summary.onboardingPercent < 100 && (
-            <Card className="border border-warning/20 bg-warning/5 shadow-sm">
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <Trophy className="w-4 h-4 text-warning" />
-                    {t("dashboard.onboarding_card")}
-                  </CardTitle>
-                  <span className="text-sm font-semibold text-warning">{summary.onboardingPercent}%</span>
-                </div>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <Progress value={summary.onboardingPercent} className="h-2 mb-3" />
-                <p className="text-sm text-muted-foreground mb-3">{t("dashboard.onboarding_desc")}</p>
-                <Link href="/onboarding">
-                  <Button size="sm" variant="outline" className="border-warning/40 text-warning hover:bg-warning/10">
-                    {t("dashboard.continue_setup")} <ArrowRight className="w-4 h-4 ml-1.5" />
                   </Button>
-                </Link>
-              </CardContent>
-            </Card>
+                </div>
+              ) : (
+                <EmptyState text={t("dashboard.no_lessons")}>
+                  <Button asChild variant="outline" size="sm">
+                    <Link href="/academy">{t("academy.all_courses")} <ArrowRight className="w-3.5 h-3.5" /></Link>
+                  </Button>
+                </EmptyState>
+              )}
+            </Section>
           )}
 
-          {/* Onboarding complete celebration */}
-          {widgets.onboarding && summary && summary.onboardingPercent >= 100 && (
-            <Card className="border border-success/20 bg-success/5 shadow-sm">
-              <CardContent className="p-5 flex items-center gap-4">
-                <div className="h-10 w-10 rounded-full bg-success/15 flex items-center justify-center flex-shrink-0">
-                  <CheckCircle2 className="w-5 h-5 text-success" />
-                </div>
-                <div>
-                  <p className="font-semibold text-foreground">{t("onboarding.congratulations")}</p>
-                  <p className="text-sm text-muted-foreground">{t("onboarding.congratulations_desc")}</p>
-                </div>
-              </CardContent>
-            </Card>
+          {/* Sales pipeline — one quiet row */}
+          {widgets.sales_overview && (
+            <Section title={t("dashboard.sales_overview", { defaultValue: "Sales Pipeline" })} href="/crm/leads" linkLabel={t("dashboard.view_all")}>
+              <div className="grid grid-cols-2 sm:grid-cols-4 rounded-xl border border-border bg-card overflow-hidden">
+                {pipeline.map((stage) => (
+                  <Link key={stage.key} href={stage.href} className="px-5 py-4 shadow-[1px_1px_0_0_hsl(var(--border))] hover:bg-muted/50 transition-colors">
+                    <p className="text-[13px] text-muted-foreground">{stage.label}</p>
+                    <p className="mt-1 text-xl font-semibold tracking-tight tabular-nums text-foreground">{stage.value}</p>
+                  </Link>
+                ))}
+              </div>
+            </Section>
           )}
 
-          {/* Recent Notifications */}
-          {widgets.notifications && (
-            <Card className="border border-border shadow-sm">
-              <CardHeader className="pb-3 flex flex-row items-center justify-between">
-                <CardTitle className="text-base">{t("dashboard.recent_notifications")}</CardTitle>
-                <Link href="/notifications">
-                  <button className="text-xs text-primary hover:underline font-medium">{t("dashboard.view_all")}</button>
-                </Link>
-              </CardHeader>
-              <CardContent className="pt-0">
-                {loadingNotifs ? (
-                  <div className="space-y-3">{[...Array(3)].map((_, i) => <Skeleton key={i} className="h-10" />)}</div>
-                ) : notifications?.items.length === 0 ? (
-                  <p className="text-sm text-muted-foreground py-4 text-center">{t("dashboard.no_notifications")}</p>
-                ) : (
-                  <div className="space-y-2">
-                    {notifications?.items.map((n) => (
-                      <div
-                        key={n.id}
-                        className={cn(
-                          "flex items-start gap-3 p-3 rounded-lg transition-colors",
-                          !n.isRead ? "bg-primary/5" : "hover:bg-muted"
-                        )}
-                      >
-                        {!n.isRead && <div className="h-2 w-2 rounded-full bg-primary mt-1.5 flex-shrink-0" />}
-                        <div className={cn("flex-1 min-w-0", n.isRead && "pl-5")}>
-                          <p className="text-sm font-medium text-foreground truncate">{n.title}</p>
-                          <p className="text-xs text-muted-foreground truncate">{n.body}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
         </div>
 
-        {/* Right — 1/3 */}
-        <div className="space-y-6">
-          {/* Upcoming Events */}
+        <div className="space-y-10">
+          {/* Upcoming events */}
           {widgets.upcoming_events && (
-            <Card className="border border-border shadow-sm">
-              <CardHeader className="pb-3 flex flex-row items-center justify-between">
-                <CardTitle className="text-base">{t("dashboard.upcoming_events")}</CardTitle>
-                <Link href="/events">
-                  <button className="text-xs text-primary hover:underline font-medium">{t("dashboard.view_all")}</button>
-                </Link>
-              </CardHeader>
-              <CardContent className="pt-0">
-                {loadingEvents ? (
-                  <div className="space-y-3">{[...Array(3)].map((_, i) => <Skeleton key={i} className="h-14" />)}</div>
-                ) : eventsData?.items.length === 0 ? (
-                  <div className="text-center py-6">
-                    <Calendar className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
-                    <p className="text-sm text-muted-foreground mb-3">{t("dashboard.no_events")}</p>
-                    <Link href="/events">
-                      <Button variant="outline" size="sm">{t("dashboard.add_event")}</Button>
-                    </Link>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {eventsData?.items.map((ev) => (
-                      <div key={ev.id} className="flex gap-3 items-start p-2 rounded-lg hover:bg-muted transition-colors">
-                        <div className="h-10 w-10 rounded-lg bg-primary/10 flex flex-col items-center justify-center flex-shrink-0">
-                          <span className="text-[10px] font-medium text-primary uppercase leading-tight">
-                            {format(parseISO(ev.eventDate), "MMM")}
-                          </span>
-                          <span className="text-base font-bold text-primary leading-none">
-                            {format(parseISO(ev.eventDate), "d")}
-                          </span>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-foreground truncate">{ev.title}</p>
-                          {ev.location && (
-                            <p className="text-xs text-muted-foreground flex items-center gap-1 truncate">
-                              <MapPin className="w-3 h-3" /> {ev.location}
-                            </p>
-                          )}
-                        </div>
+            <Section title={t("dashboard.upcoming_events")} href="/events" linkLabel={t("dashboard.view_all")}>
+              {loadingEvents ? (
+                <div className="space-y-2">{[...Array(3)].map((_, i) => <Skeleton key={i} className="h-14" />)}</div>
+              ) : eventsData?.items.length === 0 ? (
+                <EmptyState text={t("dashboard.no_events")} className="py-8">
+                  <Button asChild variant="outline" size="sm">
+                    <Link href="/events">{t("dashboard.add_event")}</Link>
+                  </Button>
+                </EmptyState>
+              ) : (
+                <ul className="rounded-xl border border-border bg-card divide-y divide-border">
+                  {eventsData?.items.map((ev) => (
+                    <li key={ev.id} className="flex gap-3 items-center px-4 py-3">
+                      <div className="w-10 text-center shrink-0">
+                        <p className="text-[10px] font-medium text-muted-foreground uppercase leading-none">
+                          {format(parseISO(ev.eventDate), "MMM")}
+                        </p>
+                        <p className="text-lg font-semibold text-foreground leading-tight tabular-nums">
+                          {format(parseISO(ev.eventDate), "d")}
+                        </p>
                       </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-foreground truncate">{ev.title}</p>
+                        {ev.location && (
+                          <p className="text-[13px] text-muted-foreground flex items-center gap-1 truncate">
+                            <MapPin className="w-3 h-3 stroke-[1.75] shrink-0" /> {ev.location}
+                          </p>
+                        )}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </Section>
           )}
 
-          {/* Academy Stats */}
-          {widgets.academy_stats && summary && (
-            <Card className="border border-border shadow-sm">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">{t("academy.your_progress")}</CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0 space-y-4">
-                <div>
-                  <div className="flex justify-between text-sm mb-1.5">
-                    <span className="text-muted-foreground">{t("academy.total_progress")}</span>
-                    <span className="font-semibold text-foreground">
-                      {summary.academyTotalLessons > 0
-                        ? Math.round((summary.academyLessonsCompleted / summary.academyTotalLessons) * 100)
-                        : 0}%
-                    </span>
-                  </div>
-                  <Progress
-                    value={
-                      summary.academyTotalLessons > 0
-                        ? (summary.academyLessonsCompleted / summary.academyTotalLessons) * 100
-                        : 0
-                    }
-                    className="h-2"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-muted rounded-lg p-3 text-center">
-                    <p className="text-2xl font-bold text-foreground">{summary.academyCoursesCompleted}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">{t("academy.courses_completed")}</p>
-                  </div>
-                  <div className="bg-muted rounded-lg p-3 text-center">
-                    <p className="text-2xl font-bold text-foreground">{summary.academyLessonsCompleted}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">{t("academy.lessons")}</p>
-                  </div>
-                </div>
-                <Link href="/academy">
-                  <Button variant="outline" size="sm" className="w-full">
-                    {t("academy.all_courses")} <ArrowRight className="w-4 h-4 ml-1.5" />
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
+          {/* Recent notifications — only when there is something to read */}
+          {widgets.notifications && !loadingNotifs && (notifications?.items.length ?? 0) > 0 && (
+            <Section title={t("dashboard.recent_notifications")} href="/notifications" linkLabel={t("dashboard.view_all")}>
+              <ul className="rounded-xl border border-border bg-card divide-y divide-border">
+                {notifications?.items.map((n) => (
+                  <li key={n.id} className="flex items-start gap-3 px-4 py-3">
+                    <span className={cn("h-1.5 w-1.5 rounded-full mt-2 shrink-0", n.isRead ? "bg-transparent" : "bg-foreground")} />
+                    <div className="flex-1 min-w-0">
+                      <p className={cn("text-sm truncate", n.isRead ? "text-muted-foreground" : "text-foreground font-medium")}>{n.title}</p>
+                      <p className="text-[13px] text-muted-foreground truncate">{n.body}</p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </Section>
           )}
         </div>
       </div>

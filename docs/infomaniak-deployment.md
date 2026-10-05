@@ -83,6 +83,21 @@ variables, including `PORT`. The file must remain outside `dist/public`:
 | `STORAGE_PROVIDER` | `url` for URL-only resources; otherwise a configured durable provider |
 | `PORT` | Supplied by Infomaniak; preserved by the start wrapper |
 | `FRONTEND_DIST_PATH` | Optional override; defaults to `artifacts/halolight-os/dist/public` |
+| `TRUST_PROXY` | Optional; reverse-proxy hops for `req.ip`. Defaults to `1` in production (Infomaniak proxy) |
+| `API_RATE_LIMIT_PER_MINUTE` | Optional; general `/api` limit per user/IP, default `600` (`0` disables) |
+| `AI_RATE_LIMIT_PER_MINUTE` | Optional; AI chat burst limit per user, default `20` |
+| `AI_RATE_LIMIT_PER_DAY` | Optional; AI chat daily cap per user, default `300` |
+
+Rate limits use an in-memory store: counters are per Node process and reset on
+restart. Exceeded limits return `429 {"error":"Too Many Requests","code":"RATE_LIMITED"}`
+with `RateLimit`/`Retry-After` headers. JSON bodies are capped at 1 MB except the
+upload, support-ticket, profile, contract and AI-knowledge routes listed in
+`artifacts/api-server/src/lib/bodyLimits.ts`. Security headers (CSP, HSTS,
+frame-ancestors `none`) come from `artifacts/api-server/src/lib/securityHeaders.ts`;
+add any new third-party embed, font or API host there.
+
+Clerk variables (`CLERK_*`, `VITE_CLERK_*`) are no longer read; remove them
+from the private `.env` (2026-10-05 cleanup).
 
 The start wrapper sets `NODE_ENV=production` before dynamically importing the
 API bundle, and changes the working directory to the repository root. Relative

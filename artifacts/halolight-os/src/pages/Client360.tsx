@@ -3,8 +3,9 @@ import { Link, useParams } from "wouter";
 import { useCurrency } from "@/lib/currency";
 import { useGetAdminClient } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Meter, StatGrid, Stat } from "@/components/page";
+import { cn } from "@/lib/utils";
 import {
   ArrowLeft, Award, Heart, Activity, AlertTriangle, Calendar, FileText,
   ReceiptText, LifeBuoy, MessageSquare, GraduationCap, CheckCircle2,
@@ -12,30 +13,37 @@ import {
   Phone, Mail, Loader2,
 } from "lucide-react";
 
-const tierConfig: Record<string, { bg: string; text: string; border: string; icon: React.ComponentType<{ className?: string }> }> = {
-  champion:   { bg: "bg-muted",          text: "text-foreground",  border: "border-border",          icon: Award },
-  healthy:    { bg: "bg-success/10",     text: "text-success",     border: "border-green-200",       icon: Heart },
-  developing: { bg: "bg-warning/10",     text: "text-yellow-700",  border: "border-yellow-200",      icon: Activity },
-  at_risk:    { bg: "bg-destructive/10", text: "text-destructive", border: "border-destructive/30",  icon: AlertTriangle },
+const tierConfig: Record<string, { dot: string; icon: React.ComponentType<{ className?: string }> }> = {
+  champion:   { dot: "bg-foreground",  icon: Award },
+  healthy:    { dot: "bg-success",     icon: Heart },
+  developing: { dot: "bg-warning",     icon: Activity },
+  at_risk:    { dot: "bg-destructive", icon: AlertTriangle },
 };
 
 const confidenceColors: Record<string, string> = {
-  low:    "bg-muted text-muted-foreground",
-  medium: "bg-info/15 text-info",
-  high:   "bg-success/15 text-success",
+  low:    "bg-muted-foreground/50",
+  medium: "bg-info",
+  high:   "bg-success",
 };
 
-function ScoreBar({ label, value, max, color = "bg-primary" }: { label: string; value: number; max: number; color?: string }) {
+function StatusLabel({ dot, children }: { dot: string; children: React.ReactNode }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 text-xs font-medium text-foreground">
+      <span className={cn("h-1.5 w-1.5 rounded-full", dot)} />
+      {children}
+    </span>
+  );
+}
+
+function ScoreBar({ label, value, max }: { label: string; value: number; max: number; color?: string }) {
   const pct = max > 0 ? Math.round((value / max) * 100) : 0;
   return (
     <div>
-      <div className="flex justify-between text-xs mb-1">
+      <div className="flex justify-between text-xs mb-1.5">
         <span className="text-muted-foreground">{label}</span>
-        <span className="font-medium text-foreground">{value}/{max}</span>
+        <span className="font-medium text-foreground tabular-nums">{value}/{max}</span>
       </div>
-      <div className="h-2 bg-muted rounded-full">
-        <div className={`h-2 ${color} rounded-full transition-all`} style={{ width: `${pct}%` }} />
-      </div>
+      <Meter value={pct} />
     </div>
   );
 }
@@ -54,7 +62,7 @@ export default function Client360() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-24">
-        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+        <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
       </div>
     );
   }
@@ -100,37 +108,37 @@ export default function Client360() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
-      <div className="flex items-center gap-3">
+    <div className="space-y-10">
+      <div className="flex items-center gap-2">
         <Link href="/admin/clients">
-          <Button variant="ghost" size="sm" className="gap-2">
-            <ArrowLeft className="w-4 h-4" />
+          <Button variant="ghost" size="sm" className="gap-1.5 -ml-2 text-muted-foreground hover:text-foreground">
+            <ArrowLeft className="w-4 h-4 stroke-[1.75]" />
             {t("client360.back")}
           </Button>
         </Link>
-        <span className="text-muted-foreground">/</span>
-        <span className="text-sm font-medium text-muted-foreground">{client.fullName ?? client.email}</span>
+        <span className="text-muted-foreground/60">/</span>
+        <span className="text-[13px] text-muted-foreground">{client.fullName ?? client.email}</span>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-2">
-          <CardContent className="p-6">
+        <Card className="lg:col-span-2 overflow-hidden">
+          <CardContent className="p-5">
             <div className="flex items-start gap-4">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center text-2xl font-bold text-primary shrink-0">
+              <div className="w-12 h-12 rounded-full border border-border bg-muted flex items-center justify-center text-base font-medium text-foreground shrink-0">
                 {(client.fullName ?? client.email ?? "?").charAt(0).toUpperCase()}
               </div>
-              <div className="flex-1">
-                <h1 className="text-xl font-bold text-foreground">{client.fullName ?? "—"}</h1>
+              <div className="flex-1 min-w-0">
+                <h1 className="text-2xl font-semibold tracking-tight text-foreground">{client.fullName ?? "—"}</h1>
                 {client.companyName && (
-                  <p className="text-muted-foreground flex items-center gap-1.5 mt-0.5">
-                    <Building className="w-3.5 h-3.5" />
+                  <p className="text-sm text-muted-foreground flex items-center gap-1.5 mt-0.5">
+                    <Building className="w-3.5 h-3.5 stroke-[1.75]" />
                     {client.companyName}
                   </p>
                 )}
-                <div className="flex flex-wrap gap-3 mt-2 text-sm text-muted-foreground">
-                  <span className="flex items-center gap-1.5"><Mail className="w-3.5 h-3.5" />{client.email}</span>
-                  {client.phone && <span className="flex items-center gap-1.5"><Phone className="w-3.5 h-3.5" />{client.phone}</span>}
-                  <span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" />{t("client360.joined", { date: formatDate(client.createdAt) })}</span>
+                <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-sm text-muted-foreground">
+                  <span className="flex items-center gap-1.5"><Mail className="w-3.5 h-3.5 stroke-[1.75]" />{client.email}</span>
+                  {client.phone && <span className="flex items-center gap-1.5"><Phone className="w-3.5 h-3.5 stroke-[1.75]" />{client.phone}</span>}
+                  <span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5 stroke-[1.75]" />{t("client360.joined", { date: formatDate(client.createdAt) })}</span>
                 </div>
                 {(client.country || client.city || client.businessType || client.currency || client.website) && (
                   <div className="flex flex-wrap gap-3 mt-1.5 text-xs text-muted-foreground">
@@ -140,53 +148,48 @@ export default function Client360() {
                     {client.businessType && <span>🏢 {client.businessType}</span>}
                     {client.currency && <span>💱 {client.currency}</span>}
                     {client.website && (
-                      <a href={client.website} target="_blank" rel="noopener noreferrer" className="hover:text-primary underline">
+                      <a href={client.website} target="_blank" rel="noopener noreferrer" className="hover:text-foreground underline underline-offset-4">
                         🌐 {client.website.replace(/^https?:\/\//, "")}
                       </a>
                     )}
                   </div>
                 )}
               </div>
-              <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm font-semibold ${tierCfg.bg} ${tierCfg.text} border ${tierCfg.border}`}>
-                <TierIcon className="w-4 h-4" />
+              <div className="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground shrink-0">
+                <span className={cn("h-1.5 w-1.5 rounded-full", tierCfg.dot)} />
+                <TierIcon className="w-3.5 h-3.5 stroke-[1.75] text-muted-foreground" />
                 {tierLabels[tier] ?? tier}
               </div>
             </div>
-
-            <div className="grid grid-cols-4 gap-3 mt-6 pt-6 border-t">
-              {[
-                { label: t("client360.stat_events"),   value: events?.length ?? 0,                              icon: Calendar },
-                { label: t("client360.stat_quotes"),   value: quotes?.length ?? 0,                              icon: FileText },
-                { label: t("client360.stat_invoices"), value: invoices?.length ?? 0,                            icon: ReceiptText },
-                { label: t("client360.stat_revenue"),  value: fmtCurrency(Math.round(revenue ?? 0)), icon: DollarSign },
-              ].map((s) => (
-                <div key={s.label} className="text-center">
-                  <p className="text-xl font-bold text-foreground">{s.value}</p>
-                  <p className="text-xs text-muted-foreground flex items-center justify-center gap-1 mt-0.5">
-                    <s.icon className="w-3 h-3" />{s.label}
-                  </p>
-                </div>
-              ))}
-            </div>
           </CardContent>
+          <StatGrid className="md:grid-cols-4 rounded-none border-x-0 border-b-0 bg-transparent">
+            {[
+              { label: t("client360.stat_events"),   value: events?.length ?? 0,                              icon: Calendar },
+              { label: t("client360.stat_quotes"),   value: quotes?.length ?? 0,                              icon: FileText },
+              { label: t("client360.stat_invoices"), value: invoices?.length ?? 0,                            icon: ReceiptText },
+              { label: t("client360.stat_revenue"),  value: fmtCurrency(Math.round(revenue ?? 0)), icon: DollarSign },
+            ].map((s) => (
+              <Stat key={s.label} label={s.label} value={s.value} />
+            ))}
+          </StatGrid>
         </Card>
 
         <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center justify-between">
+          <CardHeader className="p-5 pb-3">
+            <CardTitle className="text-sm font-medium flex items-center justify-between">
               <span>{t("client360.success_score")}</span>
-              <span className={`text-2xl font-bold ${tierCfg.text}`}>{score?.score ?? 0}</span>
+              <span className="text-2xl font-semibold tracking-tight tabular-nums text-foreground">{score?.score ?? 0}</span>
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
-            <ScoreBar label={t("client360.score_login")}      value={score?.loginScore ?? 0}      max={20} color="bg-info" />
-            <ScoreBar label={t("client360.score_onboarding")} value={score?.onboardingScore ?? 0} max={20} color="bg-accent" />
-            <ScoreBar label={t("client360.score_academy")}    value={score?.academyScore ?? 0}    max={15} color="bg-info" />
-            <ScoreBar label={t("client360.score_events")}     value={score?.eventsScore ?? 0}     max={15} color="bg-success" />
-            <ScoreBar label={t("client360.score_quotes")}     value={score?.quotesScore ?? 0}     max={10} color="bg-teal-400" />
-            <ScoreBar label={t("client360.score_invoices")}   value={score?.invoicesScore ?? 0}   max={5}  color="bg-success" />
-            <ScoreBar label={t("client360.score_community")}  value={score?.communityScore ?? 0}  max={10} color="bg-warning" />
-            <ScoreBar label={t("client360.score_support")}    value={score?.supportScore ?? 0}    max={5}  color="bg-rose-400" />
+          <CardContent className="p-5 pt-0 space-y-3">
+            <ScoreBar label={t("client360.score_login")}      value={score?.loginScore ?? 0}      max={20} />
+            <ScoreBar label={t("client360.score_onboarding")} value={score?.onboardingScore ?? 0} max={20} />
+            <ScoreBar label={t("client360.score_academy")}    value={score?.academyScore ?? 0}    max={15} />
+            <ScoreBar label={t("client360.score_events")}     value={score?.eventsScore ?? 0}     max={15} />
+            <ScoreBar label={t("client360.score_quotes")}     value={score?.quotesScore ?? 0}     max={10} />
+            <ScoreBar label={t("client360.score_invoices")}   value={score?.invoicesScore ?? 0}   max={5} />
+            <ScoreBar label={t("client360.score_community")}  value={score?.communityScore ?? 0}  max={10} />
+            <ScoreBar label={t("client360.score_support")}    value={score?.supportScore ?? 0}    max={5} />
             {score?.computedAt && (
               <p className="text-xs text-muted-foreground text-right pt-1">{t("client360.score_updated", { date: formatDate(score.computedAt) })}</p>
             )}
@@ -197,92 +200,86 @@ export default function Client360() {
       {((coaching?.length ?? 0) > 0 || (upsells?.length ?? 0) > 0) && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {(coaching?.length ?? 0) > 0 && (
-            <Card className="border-warning/20 bg-warning/5">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2 text-warning">
-                  <Lightbulb className="w-4 h-4" />
-                  {t("client360.coaching_title", { count: coaching.length })}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
+            <section>
+              <h2 className="text-sm font-medium text-foreground flex items-center gap-2 mb-3">
+                <Lightbulb className="w-4 h-4 stroke-[1.75] text-muted-foreground" />
+                {t("client360.coaching_title", { count: coaching.length })}
+              </h2>
+              <ul className="rounded-xl border border-border bg-card divide-y divide-border">
                 {coaching.map((c) => (
-                  <div key={c.id} className="bg-card rounded-lg p-3 border border-amber-100">
+                  <li key={c.id} className="px-4 py-3">
                     <div className="flex items-start justify-between gap-2 mb-1">
                       <p className="font-medium text-foreground text-sm">{c.title}</p>
-                      <Badge className="text-xs bg-warning/15 text-warning border-0 shrink-0">P{c.priority}</Badge>
+                      <span className="text-xs text-muted-foreground tabular-nums shrink-0">P{c.priority}</span>
                     </div>
                     <p className="text-xs text-muted-foreground leading-relaxed">{c.description}</p>
-                  </div>
+                  </li>
                 ))}
-              </CardContent>
-            </Card>
+              </ul>
+            </section>
           )}
 
           {(upsells?.length ?? 0) > 0 && (
-            <Card className="border-info/30 bg-info/10/30">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2 text-info">
-                  <TrendingUp className="w-4 h-4" />
-                  {t("client360.upsell_title", { count: upsells.length })}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
+            <section>
+              <h2 className="text-sm font-medium text-foreground flex items-center gap-2 mb-3">
+                <TrendingUp className="w-4 h-4 stroke-[1.75] text-muted-foreground" />
+                {t("client360.upsell_title", { count: upsells.length })}
+              </h2>
+              <ul className="rounded-xl border border-border bg-card divide-y divide-border">
                 {upsells.map((u) => (
-                  <div key={u.id} className="bg-card rounded-lg p-3 border border-blue-100">
+                  <li key={u.id} className="px-4 py-3">
                     <div className="flex items-start justify-between gap-2 mb-1">
                       <p className="font-medium text-foreground text-sm">{u.title}</p>
-                      <div className="flex items-center gap-1.5 shrink-0">
+                      <div className="flex items-center gap-3 shrink-0">
                         {u.estimatedValue && (
-                          <span className="text-xs text-success font-medium">${u.estimatedValue.toLocaleString()}</span>
+                          <span className="text-xs text-foreground font-medium tabular-nums">${u.estimatedValue.toLocaleString()}</span>
                         )}
-                        <Badge className={`text-xs border-0 ${confidenceColors[u.confidence] ?? ""}`}>
+                        <StatusLabel dot={confidenceColors[u.confidence] ?? "bg-muted-foreground/50"}>
                           {u.confidence}
-                        </Badge>
+                        </StatusLabel>
                       </div>
                     </div>
                     <p className="text-xs text-muted-foreground leading-relaxed">{u.description}</p>
-                  </div>
+                  </li>
                 ))}
-              </CardContent>
-            </Card>
+              </ul>
+            </section>
           )}
         </div>
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-primary" />
+          <CardHeader className="p-5 pb-3">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 stroke-[1.75] text-muted-foreground" />
               {t("client360.onboarding_title")}
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-3 mb-3">
-              <span className="text-3xl font-bold text-foreground">{onboarding?.pct ?? 0}%</span>
+          <CardContent className="p-5 pt-0">
+            <div className="flex items-baseline gap-3 mb-3">
+              <span className="text-2xl font-semibold tracking-tight tabular-nums text-foreground">{onboarding?.pct ?? 0}%</span>
               <span className="text-sm text-muted-foreground">{t("client360.steps_of", { completed: onboarding?.completedSteps ?? 0, total: onboarding?.totalSteps ?? 0 })}</span>
             </div>
-            <div className="h-3 bg-muted rounded-full">
-              <div className="h-3 bg-primary rounded-full transition-all" style={{ width: `${onboarding?.pct ?? 0}%` }} />
-            </div>
+            <Meter value={onboarding?.pct ?? 0} />
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <GraduationCap className="w-4 h-4 text-primary" />
+          <CardHeader className="p-5 pb-3">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <GraduationCap className="w-4 h-4 stroke-[1.75] text-muted-foreground" />
               {t("client360.academy_title")}
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-3">
-              <span className="text-3xl font-bold text-foreground">{academy?.lessonsCompleted ?? 0}</span>
+          <CardContent className="p-5 pt-0">
+            <div className="flex items-baseline gap-3">
+              <span className="text-2xl font-semibold tracking-tight tabular-nums text-foreground">{academy?.lessonsCompleted ?? 0}</span>
               <span className="text-sm text-muted-foreground">{t("client360.lessons_completed")}</span>
             </div>
             {(academy?.lessonsCompleted ?? 0) === 0 && (
-              <p className="text-xs text-warning mt-2 flex items-center gap-1">
-                <AlertTriangle className="w-3.5 h-3.5" />
+              <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1.5">
+                <AlertTriangle className="w-3.5 h-3.5 stroke-[1.75] text-warning" />
                 {t("client360.no_academy")}
               </p>
             )}
@@ -292,21 +289,21 @@ export default function Client360() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-primary" />
+          <CardHeader className="p-5 pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Calendar className="w-4 h-4 stroke-[1.75] text-muted-foreground" />
               {t("client360.events_title", { count: events?.length ?? 0 })}
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-5 pt-0">
             {(events?.length ?? 0) === 0 ? (
               <p className="text-xs text-muted-foreground">{t("client360.no_events")}</p>
             ) : (
-              <div className="space-y-2">
+              <div className="divide-y divide-border">
                 {events.slice(0, 5).map((e) => (
-                  <div key={e.id} className="flex items-center justify-between">
+                  <div key={e.id} className="flex items-center justify-between py-2">
                     <span className="text-sm text-foreground truncate flex-1">{e.title}</span>
-                    <span className="text-xs text-muted-foreground shrink-0 ml-2">{formatDate(e.date)}</span>
+                    <span className="text-xs text-muted-foreground tabular-nums shrink-0 ml-2">{formatDate(e.date)}</span>
                   </div>
                 ))}
               </div>
@@ -315,21 +312,21 @@ export default function Client360() {
         </Card>
 
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <FileText className="w-4 h-4 text-primary" />
+          <CardHeader className="p-5 pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <FileText className="w-4 h-4 stroke-[1.75] text-muted-foreground" />
               {t("client360.quotes_title", { count: quotes?.length ?? 0 })}
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-5 pt-0">
             {(quotes?.length ?? 0) === 0 ? (
               <p className="text-xs text-muted-foreground">{t("client360.no_quotes")}</p>
             ) : (
-              <div className="space-y-2">
+              <div className="divide-y divide-border">
                 {quotes.slice(0, 5).map((q) => (
-                  <div key={q.id} className="flex items-center justify-between">
+                  <div key={q.id} className="flex items-center justify-between py-2">
                     <span className="text-sm text-foreground truncate flex-1">{q.title}</span>
-                    <span className="text-xs font-medium text-muted-foreground shrink-0 ml-2">${Number(q.total ?? 0).toLocaleString()}</span>
+                    <span className="text-xs font-medium text-muted-foreground tabular-nums shrink-0 ml-2">${Number(q.total ?? 0).toLocaleString()}</span>
                   </div>
                 ))}
               </div>
@@ -338,24 +335,24 @@ export default function Client360() {
         </Card>
 
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <ReceiptText className="w-4 h-4 text-primary" />
+          <CardHeader className="p-5 pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <ReceiptText className="w-4 h-4 stroke-[1.75] text-muted-foreground" />
               {t("client360.invoices_title", { count: invoices?.length ?? 0 })}
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-5 pt-0">
             {(invoices?.length ?? 0) === 0 ? (
               <p className="text-xs text-muted-foreground">{t("client360.no_invoices")}</p>
             ) : (
-              <div className="space-y-2">
+              <div className="divide-y divide-border">
                 {invoices.slice(0, 5).map((inv) => (
-                  <div key={inv.id} className="flex items-center justify-between">
+                  <div key={inv.id} className="flex items-center justify-between py-2">
                     <span className="text-sm text-foreground truncate flex-1">{inv.title}</span>
                     <div className="flex items-center gap-1.5 shrink-0 ml-2">
-                      <Badge className={`text-xs px-1.5 py-0 border-0 ${inv.status === "paid" ? "bg-success/15 text-success" : "bg-muted text-muted-foreground"}`}>
+                      <StatusLabel dot={inv.status === "paid" ? "bg-success" : "bg-muted-foreground/50"}>
                         {inv.status}
-                      </Badge>
+                      </StatusLabel>
                     </div>
                   </div>
                 ))}
@@ -367,24 +364,26 @@ export default function Client360() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <LifeBuoy className="w-4 h-4 text-primary" />
+          <CardHeader className="p-5 pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <LifeBuoy className="w-4 h-4 stroke-[1.75] text-muted-foreground" />
               {t("client360.support_title", { count: support?.length ?? 0 })}
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-5 pt-0">
             {(support?.length ?? 0) === 0 ? (
               <p className="text-xs text-muted-foreground">{t("client360.no_tickets")}</p>
             ) : (
-              <div className="space-y-2">
+              <div className="divide-y divide-border">
                 {support.slice(0, 5).map((ticket) => (
-                  <div key={ticket.id} className="flex items-center gap-2">
+                  <div key={ticket.id} className="flex items-center gap-2 py-2">
                     <span className="text-xs font-mono text-muted-foreground">{ticket.ticketNumber}</span>
                     <span className="text-sm text-foreground truncate flex-1">{ticket.title}</span>
-                    <Badge className={`text-xs px-1.5 py-0 border-0 shrink-0 ${ticket.status === "resolved" || ticket.status === "closed" ? "bg-success/15 text-success" : ticket.status === "open" ? "bg-info/15 text-info" : "bg-muted text-muted-foreground"}`}>
-                      {ticket.status}
-                    </Badge>
+                    <span className="shrink-0">
+                      <StatusLabel dot={ticket.status === "resolved" || ticket.status === "closed" ? "bg-success" : ticket.status === "open" ? "bg-info" : "bg-muted-foreground/50"}>
+                        {ticket.status}
+                      </StatusLabel>
+                    </span>
                   </div>
                 ))}
               </div>
@@ -393,26 +392,26 @@ export default function Client360() {
         </Card>
 
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <MessageSquare className="w-4 h-4 text-primary" />
+          <CardHeader className="p-5 pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <MessageSquare className="w-4 h-4 stroke-[1.75] text-muted-foreground" />
               {t("client360.community_title")}
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 gap-4 text-center">
-              <div className="bg-muted rounded-lg p-3">
-                <p className="text-2xl font-bold text-foreground">{community?.postsCount ?? 0}</p>
+          <CardContent className="p-5 pt-0">
+            <div className="grid grid-cols-2 rounded-lg border border-border divide-x divide-border">
+              <div className="p-3">
+                <p className="text-2xl font-semibold tracking-tight tabular-nums text-foreground">{community?.postsCount ?? 0}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">{t("client360.posts_created")}</p>
               </div>
-              <div className="bg-muted rounded-lg p-3">
-                <p className="text-2xl font-bold text-foreground">{community?.repliesCount ?? 0}</p>
+              <div className="p-3">
+                <p className="text-2xl font-semibold tracking-tight tabular-nums text-foreground">{community?.repliesCount ?? 0}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">{t("client360.replies_written")}</p>
               </div>
             </div>
             {(community?.postsCount ?? 0) + (community?.repliesCount ?? 0) === 0 && (
-              <p className="text-xs text-warning mt-3 flex items-center gap-1">
-                <AlertTriangle className="w-3.5 h-3.5" />
+              <p className="text-xs text-muted-foreground mt-3 flex items-center gap-1.5">
+                <AlertTriangle className="w-3.5 h-3.5 stroke-[1.75] text-warning" />
                 {t("client360.no_community")}
               </p>
             )}

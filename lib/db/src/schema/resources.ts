@@ -1,4 +1,4 @@
-import { pgTable, text, uuid, timestamp, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, text, uuid, timestamp, pgEnum, index } from "drizzle-orm/pg-core";
 import { usersTable } from "./users";
 
 export const resourceCategoryEnum = pgEnum("resource_category", [
@@ -26,4 +26,4 @@ export const resources = pgTable("resources", {
   authorId: text("author_id").references(() => usersTable.id, { onDelete: "set null" }),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
-});
+}, (t) => [index("resources_file_url_idx").using("hash", t.fileUrl)]);

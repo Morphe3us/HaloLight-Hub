@@ -9,6 +9,7 @@ import {
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
+import { EmptyState, PageHeader } from "@/components/page";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -456,7 +457,7 @@ export default function AdminResources() {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-8">
       <ResourceFormModal
         open={modal.open}
         onClose={() => setModal({ open: false })}
@@ -490,21 +491,17 @@ export default function AdminResources() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">
-            {t("admin_resources.title")}
-          </h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            {t("admin_resources.subtitle")}
-          </p>
-        </div>
-        <Button className="gap-1.5" onClick={() => setModal({ open: true })}>
-          <Plus className="w-4 h-4" /> {t("admin_resources.add_btn")}
-        </Button>
-      </div>
+      <PageHeader
+        title={t("admin_resources.title")}
+        description={t("admin_resources.subtitle")}
+        actions={
+          <Button className="gap-1.5" onClick={() => setModal({ open: true })}>
+            <Plus className="w-4 h-4 stroke-[1.75]" /> {t("admin_resources.add_btn")}
+          </Button>
+        }
+      />
 
-      <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+      <div className="grid grid-cols-3 sm:grid-cols-6 rounded-xl border border-border bg-card overflow-hidden">
         {CATEGORIES.map((cat) => {
           const CatIcon = cat.icon;
           const count = items.filter((r) => r.category === cat.value).length;
@@ -516,17 +513,19 @@ export default function AdminResources() {
                   categoryFilter === cat.value ? "all" : cat.value,
                 )
               }
-              className={`rounded-xl border p-3 text-center transition-colors ${categoryFilter === cat.value ? "bg-primary/8 border-primary/30" : "bg-card border-border hover:border-border/80"}`}
+              className={`flex flex-col gap-3 p-4 text-left shadow-[1px_1px_0_0_hsl(var(--border))] transition-colors ${categoryFilter === cat.value ? "bg-muted" : "hover:bg-muted/50"}`}
             >
-              <CatIcon className={`w-5 h-5 mx-auto mb-1 ${cat.color}`} />
-              <p className="text-lg font-bold text-foreground">{count}</p>
-              <p className="text-xs text-muted-foreground">{cat.label}</p>
+              <span className="flex items-center gap-1.5 text-[13px] text-muted-foreground">
+                <CatIcon className="w-4 h-4 stroke-[1.75] shrink-0" />
+                {cat.label}
+              </span>
+              <p className="text-2xl font-semibold tracking-tight tabular-nums text-foreground">{count}</p>
             </button>
           );
         })}
       </div>
 
-      <div className="flex gap-3 flex-wrap items-center">
+      <div className="flex gap-2 flex-wrap items-center">
         <Input
           className="max-w-xs"
           placeholder={t("admin_resources.search_placeholder")}
@@ -548,12 +547,12 @@ export default function AdminResources() {
             ))}
           </SelectContent>
         </Select>
-        <div className="flex gap-1">
+        <div className="flex gap-1 rounded-lg border border-border p-0.5">
           {["all", "published", "draft"].map((s) => (
             <button
               key={s}
               onClick={() => setStatusFilter(s)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${statusFilter === s ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}
+              className={`px-3 py-1 rounded-md text-xs transition-colors ${statusFilter === s ? "bg-muted text-foreground font-medium" : "text-muted-foreground hover:text-foreground"}`}
             >
               {s === "all"
                 ? t("admin_resources.filter_all")
@@ -572,37 +571,31 @@ export default function AdminResources() {
           ))}
         </div>
       ) : items.length === 0 ? (
-        <Card>
-          <CardContent className="py-16 text-center">
-            <FileCheck className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
-            <p className="font-medium text-muted-foreground">
-              {t("admin_resources.no_resources")}
-            </p>
-            <Button
-              size="sm"
-              className="gap-1.5 mt-3"
-              onClick={() => setModal({ open: true })}
-            >
-              <Plus className="w-4 h-4" /> {t("admin_resources.add_first")}
-            </Button>
-          </CardContent>
-        </Card>
+        <EmptyState icon={FileCheck} text={t("admin_resources.no_resources")}>
+          <Button
+            size="sm"
+            className="gap-1.5"
+            onClick={() => setModal({ open: true })}
+          >
+            <Plus className="w-4 h-4 stroke-[1.75]" /> {t("admin_resources.add_first")}
+          </Button>
+        </EmptyState>
       ) : (
-        <Card>
+        <Card className="overflow-hidden">
           <CardContent className="p-0">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-border text-xs text-muted-foreground">
-                  <th className="text-left px-4 py-3 font-medium">
+                <tr className="border-b border-border text-[13px] text-muted-foreground">
+                  <th className="text-left px-4 py-3 font-normal">
                     {t("admin_resources.col_title")}
                   </th>
-                  <th className="text-left px-4 py-3 font-medium hidden sm:table-cell">
+                  <th className="text-left px-4 py-3 font-normal hidden sm:table-cell">
                     {t("admin_resources.col_category")}
                   </th>
-                  <th className="text-left px-4 py-3 font-medium hidden md:table-cell">
+                  <th className="text-left px-4 py-3 font-normal hidden md:table-cell">
                     {t("admin_resources.col_language")}
                   </th>
-                  <th className="text-left px-4 py-3 font-medium">
+                  <th className="text-left px-4 py-3 font-normal">
                     {t("admin_resources.col_status")}
                   </th>
                   <th className="px-4 py-3" />
@@ -618,12 +611,12 @@ export default function AdminResources() {
                   return (
                     <tr
                       key={item.id}
-                      className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors group"
+                      className="border-b border-border last:border-0 hover:bg-muted/50 transition-colors group"
                     >
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
                           <CatIcon
-                            className={`w-4 h-4 shrink-0 ${cfg.color}`}
+                            className="w-4 h-4 shrink-0 stroke-[1.75] text-muted-foreground"
                           />
                           <div className="min-w-0">
                             <p className="font-medium text-foreground truncate max-w-[200px]">
@@ -638,7 +631,7 @@ export default function AdminResources() {
                         </div>
                       </td>
                       <td className="px-4 py-3 hidden sm:table-cell">
-                        <Badge variant="outline" className="text-xs capitalize">
+                        <Badge variant="outline" className="text-xs font-normal capitalize">
                           {item.category}
                         </Badge>
                       </td>
@@ -646,9 +639,8 @@ export default function AdminResources() {
                         {langLabel}
                       </td>
                       <td className="px-4 py-3">
-                        <span
-                          className={`text-xs px-2 py-0.5 rounded-full font-medium ${item.status === "published" ? "bg-success/15 text-success" : "bg-muted text-muted-foreground"}`}
-                        >
+                        <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground whitespace-nowrap">
+                          <span className={`h-1.5 w-1.5 rounded-full ${item.status === "published" ? "bg-success" : "bg-muted-foreground/50"}`} />
                           {item.status === "published"
                             ? t("admin_resources.status_published")
                             : t("admin_resources.status_draft")}
@@ -662,7 +654,7 @@ export default function AdminResources() {
                             className="h-7 w-7"
                             onClick={() => void handleOpenFile(item)}
                           >
-                            <ExternalLink className="w-3.5 h-3.5" />
+                            <ExternalLink className="w-3.5 h-3.5 stroke-[1.75]" />
                           </Button>
                           <Button
                             variant="ghost"
@@ -672,7 +664,7 @@ export default function AdminResources() {
                               setModal({ open: true, resource: item })
                             }
                           >
-                            <Pencil className="w-3.5 h-3.5" />
+                            <Pencil className="w-3.5 h-3.5 stroke-[1.75]" />
                           </Button>
                           <Button
                             variant="ghost"
@@ -680,7 +672,7 @@ export default function AdminResources() {
                             className="h-7 w-7 text-destructive hover:text-destructive"
                             onClick={() => setDeleteId(item.id)}
                           >
-                            <Trash2 className="w-3.5 h-3.5" />
+                            <Trash2 className="w-3.5 h-3.5 stroke-[1.75]" />
                           </Button>
                         </div>
                       </td>

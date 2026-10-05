@@ -4,7 +4,6 @@ import {
   useListTranslations, useEnsureTranslationRecords, useUpdateTranslationRecord,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,28 +17,28 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import {
-  Languages, RefreshCw, Loader2, CheckCircle2, AlertCircle,
-  Clock, Globe, Filter, Search,
+  Languages, RefreshCw, Loader2, Filter, Search,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { EmptyState, Meter, PageHeader } from "@/components/page";
 
 const LANGUAGES = [
-  { code: "fr", label: "French" },
-  { code: "de", label: "German" },
-  { code: "nl", label: "Dutch" },
-  { code: "es", label: "Spanish" },
-  { code: "it", label: "Italian" },
-  { code: "pt", label: "Portuguese" },
-  { code: "pl", label: "Polish" },
+  { code: "fr", label: "Français" },
+  { code: "de", label: "Deutsch" },
+  { code: "nl", label: "Nederlands" },
+  { code: "es", label: "Español" },
+  { code: "it", label: "Italiano" },
+  { code: "pt", label: "Português" },
+  { code: "pl", label: "Polski" },
 ];
 
 const CONTENT_TYPES = [
-  { value: "course", label: "Courses" },
-  { value: "module", label: "Modules" },
-  { value: "lesson", label: "Lessons" },
-  { value: "kb_article", label: "KB Articles" },
-  { value: "resource", label: "Resources" },
-  { value: "ai_knowledge_doc", label: "AI Knowledge Docs" },
+  { value: "course", labelKey: "admin_translations.type_course" },
+  { value: "module", labelKey: "admin_translations.type_module" },
+  { value: "lesson", labelKey: "admin_translations.type_lesson" },
+  { value: "kb_article", labelKey: "admin_translations.type_kb_article" },
+  { value: "resource", labelKey: "admin_translations.type_resource" },
+  { value: "ai_knowledge_doc", labelKey: "admin_translations.type_ai_knowledge_doc" },
 ];
 
 type TranslationItem = {
@@ -52,33 +51,30 @@ type TranslationItem = {
 
 function StatusBadge({ status }: { status: string }) {
   const { t } = useTranslation();
-  const STATUS_CONFIG: Record<string, { color: string; icon: React.ReactNode; key: string }> = {
-    draft:        { color: "bg-muted text-muted-foreground",                       icon: <Clock className="w-3 h-3" />,        key: "admin_translations.status_draft" },
-    needs_review: { color: "bg-warning/10 text-warning border-warning/30",         icon: <AlertCircle className="w-3 h-3" />,   key: "admin_translations.status_needs_review" },
-    approved:     { color: "bg-success/10 text-success border-success/30",         icon: <CheckCircle2 className="w-3 h-3" />,  key: "admin_translations.status_approved" },
-    published:    { color: "bg-info/10 text-info border-info/30",                  icon: <Globe className="w-3 h-3" />,         key: "admin_translations.status_published" },
-    missing:      { color: "bg-destructive/10 text-destructive border-destructive/30", icon: <AlertCircle className="w-3 h-3" />, key: "admin_translations.status_missing" },
+  const STATUS_CONFIG: Record<string, { dot: string; key: string }> = {
+    draft:        { dot: "bg-muted-foreground/50", key: "admin_translations.status_draft" },
+    needs_review: { dot: "bg-warning",             key: "admin_translations.status_needs_review" },
+    approved:     { dot: "bg-success",             key: "admin_translations.status_approved" },
+    published:    { dot: "bg-info",                key: "admin_translations.status_published" },
+    missing:      { dot: "bg-destructive",         key: "admin_translations.status_missing" },
   };
   const cfg = STATUS_CONFIG[status] ?? STATUS_CONFIG["draft"]!;
   return (
-    <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border", cfg.color)}>
-      {cfg.icon} {t(cfg.key as Parameters<typeof t>[0])}
+    <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground whitespace-nowrap">
+      <span className={cn("h-1.5 w-1.5 rounded-full shrink-0", cfg.dot)} /> {t(cfg.key as Parameters<typeof t>[0])}
     </span>
   );
 }
 
 function CompletenessBar({ score, lang }: { score: number; lang: string }) {
   const langLabel = LANGUAGES.find(l => l.code === lang)?.label ?? lang.toUpperCase();
-  const color = score >= 80 ? "bg-success" : score >= 50 ? "bg-warning" : "bg-destructive";
   return (
-    <div className="space-y-1">
+    <div className="space-y-1.5">
       <div className="flex items-center justify-between text-xs">
-        <span className="font-medium text-foreground">{langLabel}</span>
-        <span className="text-muted-foreground">{score}%</span>
+        <span className="text-muted-foreground">{langLabel}</span>
+        <span className="text-foreground tabular-nums">{score}%</span>
       </div>
-      <div className="h-1.5 bg-border rounded-full overflow-hidden">
-        <div className={cn("h-full rounded-full transition-all", color)} style={{ width: `${score}%` }} />
-      </div>
+      <Meter value={score} />
     </div>
   );
 }
@@ -155,40 +151,35 @@ export default function AdminTranslations() {
   }
 
   return (
-    <div className="p-6 space-y-6 max-w-[1400px] mx-auto">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <Languages className="w-6 h-6 text-[var(--accent)]" /> {t("admin_translations.title")}
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">{t("admin_translations.subtitle")}</p>
-        </div>
-        <Button variant="outline" size="sm" onClick={handleEnsure} disabled={ensuring}>
-          {ensuring ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <RefreshCw className="w-4 h-4 mr-2" />}
-          {t("admin_translations.sync_btn")}
-        </Button>
-      </div>
+    <div className="space-y-8 max-w-[1400px]">
+      <PageHeader
+        title={t("admin_translations.title")}
+        description={t("admin_translations.subtitle")}
+        actions={
+          <Button variant="outline" size="sm" onClick={handleEnsure} disabled={ensuring}>
+            {ensuring ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <RefreshCw className="w-4 h-4 stroke-[1.75] mr-2" />}
+            {t("admin_translations.sync_btn")}
+          </Button>
+        }
+      />
 
       {Object.keys(completenessScore).length > 0 && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">{t("admin_translations.completeness_title")}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-4">
+        <section>
+          <h2 className="text-sm font-medium text-foreground mb-3">{t("admin_translations.completeness_title")}</h2>
+          <div className="rounded-xl border border-border bg-card p-5">
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-x-6 gap-y-4">
               {LANGUAGES.map(lang => (
                 <CompletenessBar key={lang.code} lang={lang.code} score={completenessScore[lang.code] ?? 0} />
               ))}
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </section>
       )}
 
-      <Card>
-        <CardContent className="pt-4 pb-3">
-          <div className="flex flex-col sm:flex-row gap-3">
+      <div className="space-y-3">
+          <div className="flex flex-col sm:flex-row gap-2">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 stroke-[1.75] text-muted-foreground" />
               <Input className="pl-9" placeholder={t("admin_translations.search_placeholder")} value={q} onChange={e => setQ(e.target.value)} />
             </div>
             <Select value={contentType || "all"} onValueChange={v => setContentType(v === "all" ? "" : v)}>
@@ -198,7 +189,7 @@ export default function AdminTranslations() {
               <SelectContent>
                 <SelectItem value="all">{t("admin_translations.all_types")}</SelectItem>
                 {CONTENT_TYPES.map(ct => (
-                  <SelectItem key={ct.value} value={ct.value}>{ct.label}</SelectItem>
+                  <SelectItem key={ct.value} value={ct.value}>{t(ct.labelKey)}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -225,33 +216,27 @@ export default function AdminTranslations() {
               </SelectContent>
             </Select>
             <Button variant="ghost" size="sm" onClick={() => { setContentType(""); setLanguage(""); setStatus(""); setQ(""); }}>
-              <Filter className="w-4 h-4 mr-1" /> {t("admin_translations.clear_btn")}
+              <Filter className="w-4 h-4 stroke-[1.75] mr-1" /> {t("admin_translations.clear_btn")}
             </Button>
           </div>
-        </CardContent>
-      </Card>
 
-      <Card>
-        <CardContent className="p-0">
           {isLoading ? (
-            <div className="flex items-center justify-center py-16">
-              <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+            <div className="flex items-center justify-center py-16 rounded-xl border border-border bg-card">
+              <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
             </div>
           ) : items.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-              <Languages className="w-10 h-10 mb-3 opacity-40" />
-              <p className="font-medium">{t("admin_translations.no_records")}</p>
-              <p className="text-sm mt-1">{t("admin_translations.no_records_hint")}</p>
-            </div>
+            <EmptyState icon={Languages} text={t("admin_translations.no_records")}>
+              <p className="text-[13px] text-muted-foreground">{t("admin_translations.no_records_hint")}</p>
+            </EmptyState>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto rounded-xl border border-border bg-card">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b bg-muted/30">
-                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">{t("admin_translations.col_content")}</th>
-                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">{t("admin_translations.col_type")}</th>
+                  <tr className="border-b border-border">
+                    <th className="text-left px-4 py-3 text-[13px] font-normal text-muted-foreground">{t("admin_translations.col_content")}</th>
+                    <th className="text-left px-4 py-3 text-[13px] font-normal text-muted-foreground">{t("admin_translations.col_type")}</th>
                     {LANGUAGES.map(l => (
-                      <th key={l.code} className="text-center px-2 py-3 font-medium text-muted-foreground w-20">
+                      <th key={l.code} className="text-center px-2 py-3 text-[13px] font-normal text-muted-foreground w-20">
                         {l.code.toUpperCase()}
                       </th>
                     ))}
@@ -259,12 +244,12 @@ export default function AdminTranslations() {
                 </thead>
                 <tbody className="divide-y divide-border">
                   {items.map((item) => (
-                    <tr key={item.contentId} className="hover:bg-muted/20 transition-colors">
+                    <tr key={item.contentId} className="hover:bg-muted/50 transition-colors">
                       <td className="px-4 py-3 font-medium text-foreground max-w-xs truncate">
                         {item.sourceTitle}
                       </td>
                       <td className="px-4 py-3">
-                        <Badge variant="outline" className="text-xs capitalize">
+                        <Badge variant="outline" className="text-xs font-normal capitalize">
                           {item.contentType.replace("_", " ")}
                         </Badge>
                       </td>
@@ -275,7 +260,7 @@ export default function AdminTranslations() {
                             <button
                               onClick={() => tr.id ? openEdit(tr.id, tr.status) : undefined}
                               disabled={!tr.id}
-                              className="disabled:cursor-default"
+                              className="rounded-md px-1.5 py-1 hover:bg-muted disabled:cursor-default disabled:hover:bg-transparent"
                             >
                               <StatusBadge status={tr.status} />
                             </button>
@@ -288,8 +273,7 @@ export default function AdminTranslations() {
               </table>
             </div>
           )}
-        </CardContent>
-      </Card>
+      </div>
 
       <Dialog open={!!editId} onOpenChange={open => !open && setEditId(null)}>
         <DialogContent className="max-w-lg">
@@ -298,7 +282,7 @@ export default function AdminTranslations() {
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-1.5">
-              <Label>{t("admin_translations.label_status")}</Label>
+              <Label className="text-[13px] font-normal text-muted-foreground">{t("admin_translations.label_status")}</Label>
               <Select value={editStatus} onValueChange={setEditStatus}>
                 <SelectTrigger>
                   <SelectValue />
@@ -312,7 +296,7 @@ export default function AdminTranslations() {
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label>{t("admin_translations.label_translated_title")}</Label>
+              <Label className="text-[13px] font-normal text-muted-foreground">{t("admin_translations.label_translated_title")}</Label>
               <Input
                 placeholder={t("admin_translations.placeholder_title")}
                 value={editTitle}
@@ -320,7 +304,7 @@ export default function AdminTranslations() {
               />
             </div>
             <div className="space-y-1.5">
-              <Label>{t("admin_translations.label_translated_body")}</Label>
+              <Label className="text-[13px] font-normal text-muted-foreground">{t("admin_translations.label_translated_body")}</Label>
               <Textarea
                 rows={5}
                 placeholder={t("admin_translations.placeholder_body")}

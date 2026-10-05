@@ -1,19 +1,19 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { getAuthToken } from "@workspace/api-client-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import {
   Download, FileArchive, FileText, Users, Layers,
   ReceiptText, FileSignature, Calendar, LifeBuoy,
-  Monitor, Package, RefreshCw, History, AlertCircle,
+  Monitor, Package, RefreshCw, AlertCircle,
 } from "lucide-react";
+import { EmptyState, Notice, PageHeader, Section } from "@/components/page";
 
 interface ExportLog {
   id: string;
@@ -65,15 +65,15 @@ function dateSuffix() {
 }
 
 const ENTITIES = [
-  { key: "leads", label: "Leads", icon: Layers },
-  { key: "quotes", label: "Quotes", icon: FileText },
-  { key: "contracts", label: "Contracts", icon: FileSignature },
-  { key: "invoices", label: "Invoices", icon: ReceiptText },
-  { key: "events", label: "Events", icon: Calendar },
-  { key: "support-tickets", label: "Support Tickets", icon: LifeBuoy },
-  { key: "equipment", label: "Equipment", icon: Monitor },
-  { key: "consumables", label: "Consumables", icon: Package },
-  { key: "clients", label: "Clients", icon: Users },
+  { key: "leads", labelKey: "admin_exports.entity_leads", icon: Layers },
+  { key: "quotes", labelKey: "admin_exports.entity_quotes", icon: FileText },
+  { key: "contracts", labelKey: "admin_exports.entity_contracts", icon: FileSignature },
+  { key: "invoices", labelKey: "admin_exports.entity_invoices", icon: ReceiptText },
+  { key: "events", labelKey: "admin_exports.entity_events", icon: Calendar },
+  { key: "support-tickets", labelKey: "admin_exports.entity_support_tickets", icon: LifeBuoy },
+  { key: "equipment", labelKey: "admin_exports.entity_equipment", icon: Monitor },
+  { key: "consumables", labelKey: "admin_exports.entity_consumables", icon: Package },
+  { key: "clients", labelKey: "admin_exports.entity_clients", icon: Users },
 ] as const;
 
 type EntityKey = (typeof ENTITIES)[number]["key"];
@@ -83,27 +83,24 @@ function formatTypeLabel(type: string) {
 }
 
 function ScopeBadge({ scope }: { scope: string }) {
+  const { t } = useTranslation();
   return (
-    <Badge variant={scope === "workspace" ? "default" : "secondary"} className="capitalize text-xs">
-      {scope}
+    <Badge variant="outline" className={`capitalize text-xs font-normal ${scope === "workspace" ? "text-foreground" : "text-muted-foreground"}`}>
+      {t(`admin_exports.scope_${scope}`, { defaultValue: scope })}
     </Badge>
   );
 }
 
 function FormatBadge({ format }: { format: string }) {
-  const colors: Record<string, string> = {
-    zip: "bg-info/10 text-info border-info/20",
-    json: "bg-warning/10 text-warning border-warning/20",
-    csv: "bg-success/10 text-success border-success/20",
-  };
   return (
-    <span className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-medium border ${colors[format] ?? "bg-muted text-muted-foreground"}`}>
+    <span className="inline-flex items-center rounded border border-border px-1.5 py-0.5 font-mono text-[11px] text-muted-foreground">
       {format.toUpperCase()}
     </span>
   );
 }
 
 export default function AdminExports() {
+  const { t } = useTranslation();
   const [sep, setSep] = useState<"comma" | "semicolon">("comma");
   const [downloading, setDownloading] = useState<string | null>(null);
 
@@ -123,10 +120,10 @@ export default function AdminExports() {
     setDownloading(key);
     try {
       await downloadFile(path, filename);
-      toast({ title: "Export downloaded", description: filename });
+      toast({ title: t("admin_exports.toast_downloaded"), description: filename });
       setTimeout(() => refetchHistory(), 800);
     } catch (err) {
-      toast({ title: "Export failed", description: (err as Error).message, variant: "destructive" });
+      toast({ title: t("admin_exports.toast_failed"), description: (err as Error).message, variant: "destructive" });
     } finally {
       setDownloading(null);
     }
@@ -135,52 +132,42 @@ export default function AdminExports() {
   const date = dateSuffix();
 
   return (
-    <div className="p-6 space-y-6 max-w-6xl mx-auto">
-      <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-bold tracking-tight">Data Exports</h1>
-        <p className="text-sm text-muted-foreground">
-          Download workspace data as CSV or ZIP. All exports are logged for audit purposes.
-        </p>
-      </div>
+    <div className="space-y-10">
+      <PageHeader
+        title={t("admin_exports.title")}
+        description={t("admin_exports.subtitle")}
+      />
 
       {/* CSV Separator Option */}
-      <Card className="shadow-sm">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">Export Settings</CardTitle>
-          <CardDescription>Choose a CSV separator. Use semicolon for European Excel compatibility.</CardDescription>
-        </CardHeader>
-        <CardContent>
+      <Section title={t("admin_exports.settings_title")} description={t("admin_exports.settings_desc")}>
+        <div className="rounded-xl border border-border bg-card p-5">
           <div className="flex items-center gap-3">
-            <span className="text-sm text-muted-foreground">CSV separator:</span>
+            <span className="text-sm text-muted-foreground">{t("admin_exports.separator_label")}</span>
             <Select value={sep} onValueChange={(v) => setSep(v as "comma" | "semicolon")}>
               <SelectTrigger className="w-48">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="comma">Comma ( , ) — default</SelectItem>
-                <SelectItem value="semicolon">Semicolon ( ; ) — EU Excel</SelectItem>
+                <SelectItem value="comma">{t("admin_exports.sep_comma")}</SelectItem>
+                <SelectItem value="semicolon">{t("admin_exports.sep_semicolon")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </Section>
 
       {/* Full Workspace ZIP */}
-      <Card className="shadow-sm border-primary/20">
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <FileArchive className="h-5 w-5 text-primary" />
-            <CardTitle>Full Workspace Export</CardTitle>
-          </div>
-          <CardDescription>
-            Download all data as a single ZIP file containing 9 CSV files and a{" "}
-            <code className="text-xs bg-muted px-1 rounded">metadata.json</code>. Admin only.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+      <Section
+        title={t("admin_exports.workspace_title")}
+        description={<>
+          {t("admin_exports.workspace_desc_prefix")}{" "}
+          <code className="text-xs bg-muted px-1 rounded">metadata.json</code>{t("admin_exports.workspace_desc_suffix")}
+        </>}
+      >
+        <div className="rounded-xl border border-border bg-card p-5">
           <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-            <div className="flex-1 text-sm text-muted-foreground">
-              Includes: leads, quotes, contracts, invoices, events, support tickets, equipment, consumables, clients
+            <div className="flex-1 text-[13px] text-muted-foreground">
+              {t("admin_exports.includes")}
             </div>
             <Button
               onClick={() =>
@@ -191,90 +178,77 @@ export default function AdminExports() {
                 )
               }
               disabled={downloading === "workspace-zip"}
+              size="sm"
               className="gap-2 shrink-0"
             >
               {downloading === "workspace-zip" ? (
                 <RefreshCw className="h-4 w-4 animate-spin" />
               ) : (
-                <FileArchive className="h-4 w-4" />
+                <FileArchive className="h-4 w-4 stroke-[1.75]" />
               )}
-              {downloading === "workspace-zip" ? "Generating…" : "Download ZIP"}
+              {downloading === "workspace-zip" ? t("admin_exports.generating") : t("admin_exports.download_zip")}
             </Button>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </Section>
 
       {/* Individual Entity CSVs */}
-      <Card className="shadow-sm">
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <FileText className="h-5 w-5 text-muted-foreground" />
-            <CardTitle>Individual CSV Exports</CardTitle>
-          </div>
-          <CardDescription>
-            Download a single entity as a UTF-8 BOM CSV file. Excel-friendly, fully escaped.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {ENTITIES.map(({ key, label, icon: Icon }) => (
-              <div
-                key={key}
-                className="flex items-center justify-between gap-2 p-3 border rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
-              >
-                <div className="flex items-center gap-2 min-w-0">
-                  <Icon className="h-4 w-4 text-muted-foreground shrink-0" />
-                  <span className="text-sm font-medium truncate">{label}</span>
-                </div>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() =>
-                    handleDownload(
-                      key,
-                      `/exports/csv/${key}${sepParam}`,
-                      `halolight-${key}-${date}.csv`
-                    )
-                  }
-                  disabled={downloading === key}
-                  className="gap-1.5 shrink-0"
-                >
-                  {downloading === key ? (
-                    <RefreshCw className="h-3 w-3 animate-spin" />
-                  ) : (
-                    <Download className="h-3 w-3" />
-                  )}
-                  CSV
-                </Button>
+      <Section
+        title={t("admin_exports.individual_title")}
+        description={t("admin_exports.individual_desc")}
+      >
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-px bg-border rounded-xl border border-border overflow-hidden">
+          {ENTITIES.map(({ key, labelKey, icon: Icon }) => (
+            <div
+              key={key}
+              className="flex items-center justify-between gap-2 px-4 py-3 bg-card hover:bg-muted/40 transition-colors"
+            >
+              <div className="flex items-center gap-2.5 min-w-0">
+                <Icon className="h-4 w-4 stroke-[1.75] text-muted-foreground shrink-0" />
+                <span className="text-sm font-medium text-foreground truncate">{t(labelKey)}</span>
               </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() =>
+                  handleDownload(
+                    key,
+                    `/exports/csv/${key}${sepParam}`,
+                    `halolight-${key}-${date}.csv`
+                  )
+                }
+                disabled={downloading === key}
+                className="gap-1.5 shrink-0 text-muted-foreground hover:text-foreground"
+              >
+                {downloading === key ? (
+                  <RefreshCw className="h-3 w-3 animate-spin" />
+                ) : (
+                  <Download className="h-3 w-3 stroke-[1.75]" />
+                )}
+                CSV
+              </Button>
+            </div>
+          ))}
+        </div>
+      </Section>
 
       {/* Export Audit Log */}
-      <Card className="shadow-sm">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <History className="h-5 w-5 text-muted-foreground" />
-              <CardTitle>Export Audit Log</CardTitle>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => refetchHistory()}
-              className="gap-2 text-muted-foreground"
-            >
-              <RefreshCw className="h-3 w-3" />
-              Refresh
-            </Button>
-          </div>
-          <CardDescription>
-            Every export is logged with who exported, what, in which format, and when.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+      <Section
+        title={t("admin_exports.audit_title")}
+        description={t("admin_exports.audit_desc")}
+        actions={
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => refetchHistory()}
+            className="gap-2 text-muted-foreground"
+          >
+            <RefreshCw className="h-3 w-3 stroke-[1.75]" />
+            {t("admin_exports.refresh")}
+          </Button>
+        }
+      >
+        <div className="space-y-3">
           {historyLoading && (
             <div className="space-y-2">
               {Array.from({ length: 4 }).map((_, i) => (
@@ -283,32 +257,27 @@ export default function AdminExports() {
             </div>
           )}
           {historyError && (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>Failed to load export history.</AlertDescription>
-            </Alert>
+            <Notice icon={AlertCircle} title={t("admin_exports.history_failed")} />
           )}
           {history && history.items.length === 0 && (
-            <div className="text-center py-10 text-muted-foreground text-sm">
-              No exports yet. Download something above to see it logged here.
-            </div>
+            <EmptyState text={t("admin_exports.no_exports")} />
           )}
           {history && history.items.length > 0 && (
-            <div className="rounded-md border overflow-x-auto">
+            <div className="rounded-xl border border-border bg-card overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Format</TableHead>
-                    <TableHead>Scope</TableHead>
-                    <TableHead>Exported by</TableHead>
-                    <TableHead>Records</TableHead>
-                    <TableHead>When</TableHead>
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead className="text-[13px] font-normal text-muted-foreground">{t("admin_exports.col_type")}</TableHead>
+                    <TableHead className="text-[13px] font-normal text-muted-foreground">{t("admin_exports.col_format")}</TableHead>
+                    <TableHead className="text-[13px] font-normal text-muted-foreground">{t("admin_exports.col_scope")}</TableHead>
+                    <TableHead className="text-[13px] font-normal text-muted-foreground">{t("admin_exports.col_exported_by")}</TableHead>
+                    <TableHead className="text-[13px] font-normal text-muted-foreground">{t("admin_exports.col_records")}</TableHead>
+                    <TableHead className="text-[13px] font-normal text-muted-foreground">{t("admin_exports.col_when")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {history.items.map((log) => (
-                    <TableRow key={log.id}>
+                    <TableRow key={log.id} className="hover:bg-muted/40">
                       <TableCell className="font-medium text-sm">
                         {formatTypeLabel(log.exportType)}
                       </TableCell>
@@ -321,14 +290,14 @@ export default function AdminExports() {
                       <TableCell className="text-sm text-muted-foreground">
                         {log.userEmail ?? log.userId.slice(0, 8) + "…"}
                       </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
+                      <TableCell className="text-sm tabular-nums text-muted-foreground">
                         {log.recordCounts
                           ? Object.entries(log.recordCounts)
                               .map(([k, v]) => `${v} ${k}`)
                               .join(", ")
                           : "—"}
                       </TableCell>
-                      <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
+                      <TableCell className="text-sm tabular-nums text-muted-foreground whitespace-nowrap">
                         {new Date(log.createdAt).toLocaleString()}
                       </TableCell>
                     </TableRow>
@@ -337,8 +306,8 @@ export default function AdminExports() {
               </Table>
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </Section>
     </div>
   );
 }

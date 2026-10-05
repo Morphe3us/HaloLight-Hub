@@ -88,26 +88,26 @@ export function AuthPage({ mode }: { mode: Mode }) {
       className="flex min-h-[100dvh] items-center justify-center bg-background px-4 py-10"
       data-testid="page-auth"
     >
-      <section className="w-full max-w-[440px] rounded-lg border border-border bg-card p-6 shadow-xl sm:p-8">
+      <section className="w-full max-w-sm">
         <Link
           href="/"
-          className="mb-7 flex justify-center"
+          className="mb-10 flex justify-center"
           aria-label="HaloLight Hub"
         >
           <img
-            src={`${base}/logo-hub-light-orig.png`}
+            src={`${base}/hub-logo-light.webp`}
             alt="HaloLight Hub"
-            className="h-auto w-[132px] dark:brightness-0 dark:invert"
+            className="h-auto w-[104px] dark:brightness-0 dark:invert"
           />
         </Link>
-        <h1 className="text-center text-2xl font-semibold">{title}</h1>
+        <h1 className="text-center text-xl font-semibold tracking-tight text-foreground">{title}</h1>
         {(mode === "sign-in" || mode === "sign-up") && !sent && (
           <p className="mt-2 text-center text-sm text-muted-foreground">
             {tr("purchase_email_hint", "Use the email address used for your HaloLight purchase.")}
           </p>
         )}
         {invalid ? (
-          <div className="mt-6 space-y-4 text-center">
+          <div className="mt-8 space-y-3 text-center">
             <p role="alert" className="text-sm text-muted-foreground">
               {sessionError
                 ? tr(
@@ -119,32 +119,33 @@ export function AuthPage({ mode }: { mode: Mode }) {
                     "Request a new invitation or password reset link.",
                   )}
             </p>
-            <a className="block underline" href={`${base}/sign-in`}>
+            <a className="block text-[13px] text-muted-foreground hover:text-foreground underline-offset-4 hover:underline transition-colors" href={`${base}/sign-in`}>
               {tr("back_sign_in", "Back to sign in")}
             </a>
-            <a className="block underline" href={`${base}/forgot-password`}>
+            <a className="block text-[13px] text-muted-foreground hover:text-foreground underline-offset-4 hover:underline transition-colors" href={`${base}/forgot-password`}>
               {tr("forgot_password", "Forgot password?")}
             </a>
           </div>
         ) : sent ? (
-          <div className="mt-6 space-y-4 text-center">
-            <p role="status" className="text-sm">
+          <div className="mt-8 space-y-4 text-center">
+            <p role="status" className="rounded-xl border border-border bg-card px-4 py-3 text-sm text-muted-foreground">
               {mode === "sign-up" ? tr("check_email_message", "Check your inbox for a confirmation link. After confirming your email, your access will be reviewed.") : tr(
                 "reset_sent",
                 "If an account exists for this email, you will receive a password reset link.",
               )}
             </p>
-            <Link className="text-sm underline" href="/sign-in">
+            <Link className="text-[13px] text-muted-foreground hover:text-foreground underline-offset-4 hover:underline transition-colors" href="/sign-in">
               {tr("back_sign_in", "Back to sign in")}
             </Link>
           </div>
         ) : (
           <>
-            <form onSubmit={submit} className="mt-6 space-y-4">
+            <form onSubmit={submit} className="mt-8 space-y-4">
               {mode !== "password" && (
                 <div className="space-y-2">
-                  <Label htmlFor="auth-email">{tr("email", "Email")}</Label>
+                  <Label htmlFor="auth-email" className="text-[13px] font-normal text-muted-foreground">{tr("email", "Email")}</Label>
                   <Input
+                    className="h-10"
                     id="auth-email"
                     type="email"
                     autoComplete="email"
@@ -157,10 +158,11 @@ export function AuthPage({ mode }: { mode: Mode }) {
               )}
               {mode !== "reset" && (
                 <div className="space-y-2">
-                  <Label htmlFor="auth-password">
+                  <Label htmlFor="auth-password" className="text-[13px] font-normal text-muted-foreground">
                     {tr("password", "Password")}
                   </Label>
                   <Input
+                    className="h-10"
                     id="auth-password"
                     type="password"
                     autoComplete={
@@ -176,10 +178,11 @@ export function AuthPage({ mode }: { mode: Mode }) {
               )}
               {mode === "password" && (
                 <div className="space-y-2">
-                  <Label htmlFor="auth-confirm">
+                  <Label htmlFor="auth-confirm" className="text-[13px] font-normal text-muted-foreground">
                     {tr("confirm_password", "Confirm password")}
                   </Label>
                   <Input
+                    className="h-10"
                     id="auth-confirm"
                     type="password"
                     autoComplete="new-password"
@@ -199,16 +202,16 @@ export function AuthPage({ mode }: { mode: Mode }) {
               <Button
                 type="submit"
                 disabled={pending}
-                className="w-full gap-2 whitespace-normal"
+                className="h-10 w-full gap-2 whitespace-normal"
               >
                 {pending ? (
                   <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
                 ) : mode === "reset" ? (
-                  <Mail className="h-4 w-4 shrink-0" />
+                  <Mail className="h-4 w-4 shrink-0 stroke-[1.75]" />
                 ) : mode === "password" ? (
-                  <KeyRound className="h-4 w-4 shrink-0" />
+                  <KeyRound className="h-4 w-4 shrink-0 stroke-[1.75]" />
                 ) : (
-                  <LogIn className="h-4 w-4 shrink-0" />
+                  <LogIn className="h-4 w-4 shrink-0 stroke-[1.75]" />
                 )}
                 {mode === "reset"
                   ? tr("send_reset", "Send reset link")
@@ -218,31 +221,31 @@ export function AuthPage({ mode }: { mode: Mode }) {
               </Button>
             </form>
             {(mode === "sign-in" || mode === "sign-up") && (
-              <div className="mt-4 space-y-4 text-center">
+              <div className="mt-3 space-y-6 text-center">
                 <Button
                   type="button"
                   variant="outline"
                   disabled={pending}
-                  className="min-h-11 w-full gap-3 whitespace-normal bg-background text-foreground hover:bg-muted [&_svg]:size-5"
+                  className="min-h-10 w-full gap-2.5 whitespace-normal bg-background text-foreground hover:bg-muted/50 [&_svg]:size-[18px]"
                   onClick={() => void run(auth.signInWithGoogle)}
                 >
                   <FcGoogle aria-hidden="true" focusable="false" />
                   <span>{tr("google", "Continue with Google")}</span>
                 </Button>
                 {mode === "sign-in" && <Link
-                  className="block text-sm underline"
+                  className="block text-[13px] text-muted-foreground hover:text-foreground underline-offset-4 hover:underline transition-colors"
                   href="/forgot-password"
                 >
                   {tr("forgot_password", "Forgot password?")}
                 </Link>}
-                <Link className="block text-sm underline" href={mode === "sign-up" ? "/sign-in" : "/sign-up"}>
+                <Link className="block text-[13px] text-muted-foreground hover:text-foreground underline-offset-4 hover:underline transition-colors" href={mode === "sign-up" ? "/sign-in" : "/sign-up"}>
                   {mode === "sign-up" ? tr("already_registered", "Already registered? Sign in") : tr("register_link", "Create an account")}
                 </Link>
               </div>
             )}
             {mode === "reset" && (
               <Link
-                className="mt-4 block text-center text-sm underline"
+                className="mt-6 block text-center text-[13px] text-muted-foreground hover:text-foreground underline-offset-4 hover:underline transition-colors"
                 href="/sign-in"
               >
                 {tr("back_sign_in", "Back to sign in")}
@@ -251,7 +254,7 @@ export function AuthPage({ mode }: { mode: Mode }) {
             {mode === "password" && (
               <Button
                 variant="ghost"
-                className="mt-4 w-full"
+                className="mt-3 w-full text-[13px] text-muted-foreground hover:text-foreground"
                 disabled={pending}
                 onClick={() => void auth.signOut()}
               >

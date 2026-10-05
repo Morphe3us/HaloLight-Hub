@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import {
   useListAiConversations, useCreateAiConversation,
-  useGetAiConversation, useDeleteAiConversation,
+  useGetAiConversation, getGetAiConversationQueryKey, useDeleteAiConversation,
   useListAiSuggestedQuestions, useEscalateAiConversation,
   useGetAiProvider, getAuthToken,
 } from "@workspace/api-client-react";
@@ -60,20 +60,36 @@ interface StreamState {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function formatTime(d: string | Date | null | undefined) {
-  if (!d) return "";
-  return new Date(d).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
+function uiLang(lang: string | undefined) {
+  return lang?.split("-")[0] || "en";
 }
 
-function formatDate(d: string | Date | null | undefined) {
+function formatTime(d: string | Date | null | undefined, lang: string) {
+  if (!d) return "";
+  return new Intl.DateTimeFormat(lang, { hour: "2-digit", minute: "2-digit" }).format(new Date(d));
+}
+
+function formatDate(d: string | Date | null | undefined, lang: string, labels: { today: string; yesterday: string }) {
   if (!d) return "";
   const date = new Date(d);
   const today = new Date();
   const yesterday = new Date(today);
   yesterday.setDate(yesterday.getDate() - 1);
-  if (date.toDateString() === today.toDateString()) return "Today";
-  if (date.toDateString() === yesterday.toDateString()) return "Yesterday";
-  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  if (date.toDateString() === today.toDateString()) return labels.today;
+  if (date.toDateString() === yesterday.toDateString()) return labels.yesterday;
+  return new Intl.DateTimeFormat(lang, {
+    day: "numeric",
+    month: "short",
+    ...(date.getFullYear() !== today.getFullYear() ? { year: "numeric" as const } : {}),
+  }).format(date);
+}
+
+/** Server stores the literal "New Conversation" until the first exchange auto-titles it. */
+const DEFAULT_SERVER_TITLE = "New Conversation";
+
+function displayConvTitle(title: string | null | undefined, fallback: string) {
+  const trimmed = title?.trim();
+  return !trimmed || trimmed === DEFAULT_SERVER_TITLE ? fallback : trimmed;
 }
 
 function RichText({ text }: { text: string }) {
@@ -102,7 +118,7 @@ function RichText({ text }: { text: string }) {
 // ─── Source Citations ─────────────────────────────────────────────────────────
 
 function SourceIcon({ type }: { type: RAGSource["type"] }) {
-  const cls = "w-3 h-3";
+  const cls = "w-3 h-3 stroke-[1.75]";
   if (type === "kb") return <BookOpen className={cls} />;
   if (type === "academy") return <GraduationCap className={cls} />;
   if (type === "support") return <Ticket className={cls} />;
@@ -113,16 +129,16 @@ function SourceCitations({ sources }: { sources: RAGSource[] }) {
   const { t } = useTranslation();
   if (!sources.length) return null;
   return (
-    <div className="mt-3 pt-3 border-t border-border/40">
-      <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold mb-2">
+    <div className="mt-3 pt-3 border-t border-foreground/10">
+      <p className="text-xs text-muted-foreground mb-2">
         {t("ai.sources")}
       </p>
       <div className="flex flex-wrap gap-1.5">
         {sources.map((s) => (
           <Link key={s.id} href={s.url}>
             <Badge
-              variant="secondary"
-              className="flex items-center gap-1 text-[11px] cursor-pointer hover:bg-primary/10 hover:text-primary transition-colors py-0.5"
+              variant="outline"
+              className="flex items-center gap-1 text-[11px] font-normal text-muted-foreground cursor-pointer bg-background hover:text-foreground hover:border-foreground/20 transition-colors py-0.5"
             >
               <SourceIcon type={s.type} />
               <span className="max-w-[150px] truncate">{s.title}</span>
@@ -138,7 +154,7 @@ function SourceCitations({ sources }: { sources: RAGSource[] }) {
 // ─── Suggested Actions ────────────────────────────────────────────────────────
 
 function ActionIcon({ type }: { type: string }) {
-  const cls = "w-3.5 h-3.5";
+  const cls = "w-3.5 h-3.5 stroke-[1.75]";
   if (type === "escalate") return <AlertTriangle className={cls} />;
   if (type === "reorder") return <Package className={cls} />;
   if (type === "book_service") return <Wrench className={cls} />;
@@ -162,7 +178,7 @@ function SuggestedActions({
               key={i}
               size="sm"
               variant="outline"
-              className="h-7 text-xs gap-1.5 border-warning/30 text-warning hover:bg-warning/8"
+              className="h-7 text-xs gap-1.5"
               onClick={onEscalate}
             >
               <ActionIcon type={a.type} />
@@ -199,7 +215,7 @@ function MessageBubble({
   onSpeak?: (text: string, id: string) => void;
   isSpeaking?: boolean;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const isUser = message.role === "user";
   const displayContent = stream ? stream.content : message.content;
   const sources = stream ? stream.sources : (message.sources ?? []);
@@ -211,22 +227,19 @@ function MessageBubble({
     <div className={cn("flex gap-3", isUser ? "flex-row-reverse" : "flex-row")}>
       <div
         className={cn(
-          "flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center mt-0.5",
-          isUser
-            ? "bg-primary text-primary-foreground"
-            : "bg-foreground text-background"
+          "flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center mt-0.5 bg-muted text-muted-foreground"
         )}
       >
-        {isUser ? <User className="w-3.5 h-3.5" /> : <Bot className="w-3.5 h-3.5" />}
+        {isUser ? <User className="w-3.5 h-3.5 stroke-[1.75]" /> : <Bot className="w-3.5 h-3.5 stroke-[1.75]" />}
       </div>
 
-      <div className={cn("flex flex-col max-w-[82%]", isUser ? "items-end" : "items-start")}>
+      <div className={cn("flex flex-col min-w-0 max-w-[85%] sm:max-w-[82%]", isUser ? "items-end" : "items-start")}>
         <div
           className={cn(
-            "rounded-2xl px-4 py-3 text-sm leading-relaxed",
+            "max-w-full rounded-2xl px-4 py-3 text-sm leading-relaxed [overflow-wrap:anywhere]",
             isUser
-              ? "bg-primary text-primary-foreground rounded-tr-sm"
-              : "bg-card border border-border rounded-tl-sm"
+              ? "bg-foreground text-background rounded-tr-md"
+              : "bg-muted text-foreground rounded-tl-md"
           )}
         >
           {displayContent ? (
@@ -259,18 +272,18 @@ function MessageBubble({
           "flex items-center gap-2 px-1 mt-1",
           isUser ? "justify-end" : "justify-start"
         )}>
-          <p className="text-[11px] text-muted-foreground/60">
-            {formatTime(message.createdAt)}
+          <p className="text-[11px] text-muted-foreground/60 tabular-nums">
+            {formatTime(message.createdAt, uiLang(i18n.language))}
           </p>
           {canSpeak && (
             <button
               type="button"
               onClick={() => onSpeak(displayContent, message.id)}
-              aria-label={isSpeaking ? t("ai.stop_generating") : t("ai.send_message")}
+              aria-label={isSpeaking ? t("ai.stop_reading") : t("ai.read_aloud")}
               className={cn(
                 "w-5 h-5 flex items-center justify-center rounded-full transition-colors",
                 "text-muted-foreground/40 hover:text-muted-foreground focus:outline-none",
-                isSpeaking && "text-accent hover:text-accent/80"
+                isSpeaking && "text-foreground hover:text-foreground/80"
               )}
             >
               {isSpeaking
@@ -287,12 +300,14 @@ function MessageBubble({
 
 // ─── Suggestion pills ─────────────────────────────────────────────────────────
 
-const DEFAULT_PILLS = [
-  "My printer is jamming",
-  "How do I reorder consumables?",
-  "Which Academy course should I start with?",
-  "How should I price a wedding event?",
-];
+// i18n keys — used whenever the UI is not in English, because the DB-managed
+// suggestions (ai_suggested_questions) are English-only.
+const DEFAULT_PILL_KEYS = [
+  "ai.pill_install",
+  "ai.pill_event",
+  "ai.pill_print",
+  "ai.pill_pricing",
+] as const;
 
 // ─── Integrated input bar (shared between welcome + chat states) ──────────────
 
@@ -315,9 +330,18 @@ function InputBar({
   isDisabled: boolean;
   voiceInput: ReturnType<typeof useVoiceInput>;
   placeholder?: string;
-  inputRef?: React.RefObject<HTMLInputElement | null>;
+  inputRef?: React.RefObject<HTMLTextAreaElement | null>;
 }) {
   const { t } = useTranslation();
+  const localRef = useRef<HTMLTextAreaElement>(null);
+  const ref = inputRef ?? localRef;
+  // Auto-grow up to ~6 lines so long questions/placeholders never clip.
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
+  }, [value, ref]);
   return (
     <div className="relative">
       {voiceInput.isListening && (
@@ -327,22 +351,23 @@ function InputBar({
         </div>
       )}
       <div className={cn(
-        "flex items-center gap-1 rounded-2xl border bg-card pl-4 pr-2 py-2 transition-shadow",
-        "focus-within:ring-2 focus-within:ring-ring/30 focus-within:border-ring/50 shadow-sm"
+        "flex items-end gap-1 rounded-2xl border border-border bg-card pl-4 pr-2 py-2 transition-colors",
+        "focus-within:border-foreground/30"
       )}>
-        <input
-          ref={inputRef}
+        <textarea
+          ref={ref}
+          rows={1}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
+            if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
               e.preventDefault();
               onSubmit();
             }
           }}
           placeholder={voiceInput.isListening ? t("ai.listening_short") : (placeholder ?? t("ai.chat_placeholder"))}
           disabled={isStreaming || voiceInput.isActive || isDisabled}
-          className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground py-1.5 min-w-0"
+          className="flex-1 min-w-0 resize-none bg-transparent text-sm leading-6 outline-none placeholder:text-muted-foreground placeholder:truncate py-2.5 max-h-40 overflow-y-auto"
           autoComplete="off"
         />
         <div className="flex items-center gap-1 shrink-0">
@@ -358,17 +383,17 @@ function InputBar({
             <button
               type="button"
               onClick={onStop}
-              className="p-2 rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors"
+              className="p-2 rounded-xl bg-muted text-foreground hover:bg-muted/70 transition-colors"
               aria-label={t("ai.stop_generating")}
             >
-              <StopCircle className="w-4 h-4" />
+              <StopCircle className="w-4 h-4 stroke-[1.75]" />
             </button>
           ) : (
             <button
               type="button"
               onClick={onSubmit}
               disabled={!value.trim() || voiceInput.isActive || isDisabled}
-              className="p-2 rounded-xl bg-primary text-primary-foreground disabled:opacity-25 hover:bg-primary/90 transition-all"
+              className="p-2 rounded-xl bg-foreground text-background disabled:opacity-25 hover:bg-foreground/90 transition-colors"
               aria-label={t("ai.send_message")}
             >
               <Send className="w-4 h-4" />
@@ -383,7 +408,8 @@ function InputBar({
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function AIAssistant() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const lang = uiLang(i18n.language);
   const { toast } = useToast();
   const qc = useQueryClient();
   const [activeConvId, setActiveConvId] = useState<string | null>(null);
@@ -394,13 +420,14 @@ export default function AIAssistant() {
   const [escalateOpen, setEscalateOpen] = useState(false);
   const [autoPlay, setAutoPlay] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const chatInputRef = useRef<HTMLInputElement>(null);
-  const welcomeInputRef = useRef<HTMLInputElement>(null);
+  const chatInputRef = useRef<HTMLTextAreaElement>(null);
+  const welcomeInputRef = useRef<HTMLTextAreaElement>(null);
   const streamFinalContentRef = useRef("");
 
   const { data: convsData, isLoading: convsLoading } = useListAiConversations();
   const { data: activeConv, isLoading: convLoading } = useGetAiConversation(
-    activeConvId ?? "skip"
+    activeConvId ?? "skip",
+    { query: { enabled: !!activeConvId, queryKey: getGetAiConversationQueryKey(activeConvId ?? "skip") } },
   );
   const { data: suggestionsData } = useListAiSuggestedQuestions();
   const { data: providerData } = useGetAiProvider();
@@ -638,14 +665,15 @@ export default function AIAssistant() {
   const messages = ((activeConv as unknown as { messages?: StoredMessage[] })?.messages ?? []);
   const conversations = convsData?.items ?? [];
   const suggestions = suggestionsData?.items ?? [];
-  const convTitle = (activeConv as unknown as { title?: string })?.title ?? "Conversation";
-  const providerName = providerData?.name ?? "AI Assistant";
+  const convTitle = displayConvTitle((activeConv as unknown as { title?: string })?.title, t("ai.new_conversation"));
+  const providerName = providerData?.name ?? t("ai.title");
+  const dateLabels = { today: t("common.today"), yesterday: t("common.yesterday") };
   const isStreaming = !!stream;
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const pills = suggestions.length > 0
+  const pills = lang === "en" && suggestions.length > 0
     ? suggestions.slice(0, 4).map((s) => s.question)
-    : DEFAULT_PILLS;
+    : DEFAULT_PILL_KEYS.map((key) => t(key));
 
   const displayMessages: Array<StoredMessage & { isOptimistic?: boolean }> = [
     ...messages,
@@ -655,7 +683,7 @@ export default function AIAssistant() {
   ];
 
   return (
-    <div className="relative flex h-[calc(100dvh-3.5rem)] md:h-[calc(100dvh-4rem)] overflow-hidden" data-testid="page-ai-assistant">
+    <div className="relative flex -mx-4 -my-6 md:-mx-10 md:-my-10 h-[calc(100dvh-3.5rem)] md:h-[calc(100dvh-4rem)] overflow-hidden" data-testid="page-ai-assistant">
 
       {/* ── Mobile backdrop ────────────────────────────────────────────────── */}
       {sidebarOpen && (
@@ -664,15 +692,15 @@ export default function AIAssistant() {
 
       {/* ── Conversation sidebar ──────────────────────────────────────────── */}
       <div className={cn(
-        "flex flex-col border-r bg-background lg:bg-muted/10 shrink-0",
+        "flex flex-col border-r border-border bg-background lg:bg-muted/30 shrink-0",
         "absolute lg:relative inset-y-0 left-0 z-40 w-72 lg:w-60",
         sidebarOpen ? "flex" : "hidden lg:flex"
       )}>
-        <div className="relative p-3 border-b">
+        <div className="relative p-3 border-b border-border">
           <button
             onClick={() => newConv()}
             disabled={isCreating}
-            className="w-full flex items-center justify-center gap-2 rounded-xl border border-border bg-card hover:bg-muted py-2 text-sm font-medium text-foreground transition-colors disabled:opacity-50 pr-10 lg:pr-2"
+            className="w-full flex items-center justify-center gap-2 rounded-lg border border-border bg-card hover:bg-muted/50 py-2 text-sm font-medium text-foreground transition-colors disabled:opacity-50 pr-10 lg:pr-2"
           >
             {isCreating
               ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -682,12 +710,13 @@ export default function AIAssistant() {
           <button
             className="lg:hidden absolute top-1/2 -translate-y-1/2 right-4 p-1 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted"
             onClick={() => setSidebarOpen(false)}
+            aria-label={t("ai.close_history")}
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        <ScrollArea className="flex-1">
+        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
           <div className="p-2 space-y-0.5">
             {convsLoading ? (
               <div className="flex items-center justify-center py-8">
@@ -698,7 +727,9 @@ export default function AIAssistant() {
                 {t("ai.no_conversations_title")}
               </p>
             ) : (
-              conversations.map((c) => (
+              conversations.map((c) => {
+                const title = displayConvTitle(c.title, t("ai.new_conversation"));
+                return (
                 <div
                   key={c.id}
                   role="button"
@@ -710,34 +741,36 @@ export default function AIAssistant() {
                     voiceOutput.stop();
                     setSidebarOpen(false);
                   }}
-                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { setActiveConvId(c.id ?? null); setSidebarOpen(false); } }}
+                  onKeyDown={(e) => { if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); setActiveConvId(c.id ?? null); setSidebarOpen(false); } }}
+                  title={title}
                   className={cn(
-                    "w-full text-left rounded-lg px-3 py-2.5 text-sm transition-colors group cursor-pointer",
+                    "w-full min-w-0 text-left rounded-lg px-3 py-2.5 text-sm transition-colors group cursor-pointer",
                     activeConvId === c.id
-                      ? "bg-primary/8 text-primary"
+                      ? "bg-muted text-foreground"
                       : "hover:bg-muted/60 text-foreground"
                   )}
                 >
-                  <div className="flex items-start justify-between gap-1">
-                    <span className="truncate font-medium leading-tight text-sm">{c.title}</span>
+                  <div className="flex min-w-0 items-start justify-between gap-2">
+                    <span className="min-w-0 flex-1 truncate leading-tight text-sm">{title}</span>
                     <button
                       onClick={(e) => { e.stopPropagation(); if (c.id) deleteConv({ id: c.id }); }}
-                      className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-opacity shrink-0 mt-0.5"
-                      aria-label="Delete conversation"
+                      className="opacity-100 lg:opacity-0 lg:group-hover:opacity-100 focus-visible:opacity-100 text-muted-foreground hover:text-destructive transition-opacity shrink-0 mt-0.5"
+                      aria-label={t("ai.delete_conv_title")}
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
-                  <p className="text-[11px] text-muted-foreground/70 mt-0.5">{formatDate(c.updatedAt)}</p>
+                  <p className="text-[11px] text-muted-foreground/70 tabular-nums mt-0.5">{formatDate(c.updatedAt, lang, dateLabels)}</p>
                 </div>
-              ))
+                );
+              })
             )}
           </div>
-        </ScrollArea>
+        </div>
 
-        <div className="p-3 border-t">
-          <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-muted/40">
-            <Cpu className="w-3 h-3 text-muted-foreground/60 shrink-0" />
+        <div className="p-3 border-t border-border">
+          <div className="flex items-center gap-2 px-2.5 py-1.5">
+            <Cpu className="w-3 h-3 stroke-[1.75] text-muted-foreground/60 shrink-0" />
             <span className="text-[11px] text-muted-foreground/70 truncate">{providerName}</span>
           </div>
         </div>
@@ -752,19 +785,18 @@ export default function AIAssistant() {
             <button
               className="lg:hidden absolute top-4 left-4 p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted"
               onClick={() => setSidebarOpen(true)}
+              aria-label={t("ai.open_history")}
             >
               <Menu className="w-4 h-4" />
             </button>
             <div className="w-full max-w-2xl flex flex-col items-center">
 
               {/* Icon + title */}
-              <div className="w-10 h-10 rounded-2xl bg-foreground flex items-center justify-center mb-5 shadow-md">
-                <Sparkles className="w-5 h-5 text-background" />
-              </div>
-              <h1 className="text-2xl font-bold text-foreground mb-1.5 tracking-tight">
+              <Sparkles className="w-5 h-5 stroke-[1.75] text-muted-foreground mb-4" />
+              <h1 className="text-2xl md:text-[28px] font-semibold text-foreground mb-1.5 tracking-tight text-center">
                 {t("ai.assistant_name")}
               </h1>
-              <p className="text-muted-foreground text-sm mb-8">
+              <p className="text-muted-foreground text-sm mb-8 text-center">
                 {t("ai.help_question")}
               </p>
 
@@ -790,7 +822,7 @@ export default function AIAssistant() {
                     key={i}
                     onClick={() => handleWelcomeSubmit(p)}
                     disabled={isCreating}
-                    className="px-3.5 py-1.5 rounded-full border border-border bg-card text-sm text-muted-foreground hover:text-foreground hover:bg-muted hover:border-border/80 transition-colors disabled:opacity-50"
+                    className="max-w-full px-3.5 py-1.5 rounded-full border border-border bg-card text-[13px] text-left text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-colors disabled:opacity-50"
                   >
                     {p}
                   </button>
@@ -803,23 +835,21 @@ export default function AIAssistant() {
           /* ── Active conversation ──────────────────────────────────────────── */
           <>
             {/* Chat header */}
-            <div className="flex items-center justify-between px-3 md:px-5 py-2.5 border-b bg-background/95 backdrop-blur-sm shrink-0">
+            <div className="flex items-center justify-between gap-2 px-3 md:px-5 py-2.5 border-b border-border bg-background/95 backdrop-blur-sm shrink-0">
               <div className="flex items-center gap-2 md:gap-2.5 min-w-0">
                 <button
                   className="lg:hidden p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted shrink-0"
                   onClick={() => setSidebarOpen(true)}
+                  aria-label={t("ai.open_history")}
                 >
                   <Menu className="w-4 h-4" />
                 </button>
-                <div className="w-7 h-7 rounded-full bg-foreground flex items-center justify-center shrink-0">
-                  <Bot className="w-3.5 h-3.5 text-background" />
-                </div>
                 <div className="min-w-0">
-                  <p className="font-semibold text-sm truncate text-foreground">{convTitle}</p>
+                  <p className="font-medium text-sm truncate text-foreground">{convTitle}</p>
                   <p className="text-[11px] text-muted-foreground leading-none mt-0.5">
                     {isStreaming ? (
-                      <span className="flex items-center gap-1 text-accent">
-                        <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
+                      <span className="flex items-center gap-1.5 text-muted-foreground">
+                        <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
                         {t("ai.generating")}
                       </span>
                     ) : (
@@ -828,18 +858,20 @@ export default function AIAssistant() {
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 shrink-0">
                 {voiceOutput.isSupported && (
                   <button
                     onClick={() => {
                       if (autoPlay) voiceOutput.stop();
                       setAutoPlay((v) => !v);
                     }}
-                    title={autoPlay ? "Disable auto-read" : "Enable auto-read"}
+                    title={autoPlay ? t("ai.auto_read_on") : t("ai.auto_read_off")}
+                    aria-label={autoPlay ? t("ai.auto_read_on") : t("ai.auto_read_off")}
+                    aria-pressed={autoPlay}
                     className={cn(
                       "w-8 h-8 flex items-center justify-center rounded-lg transition-colors",
                       autoPlay
-                        ? "text-foreground bg-accent/20 hover:bg-accent/30"
+                        ? "text-foreground bg-muted hover:bg-muted/70"
                         : "text-muted-foreground hover:text-foreground hover:bg-muted"
                     )}
                   >
@@ -849,16 +881,16 @@ export default function AIAssistant() {
                 <button
                   onClick={() => setEscalateOpen(true)}
                   disabled={messages.length === 0}
-                  className="flex items-center gap-1.5 px-2.5 h-8 rounded-lg border border-warning/30 text-warning hover:bg-warning/8 text-xs font-medium transition-colors disabled:opacity-40"
+                  className="flex items-center gap-1.5 px-2.5 h-8 rounded-lg border border-border text-foreground hover:bg-muted/50 text-xs font-medium transition-colors disabled:opacity-40"
                 >
-                  <AlertTriangle className="w-3.5 h-3.5" />
+                  <AlertTriangle className="w-3.5 h-3.5 stroke-[1.75] text-warning" />
                   {t("ai.escalate_short")}
                 </button>
                 <button
                   onClick={() => { if (activeConvId) deleteConv({ id: activeConvId }); }}
                   disabled={isDeleting}
                   className="w-8 h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-destructive hover:bg-muted transition-colors"
-                  aria-label="Delete conversation"
+                  aria-label={t("ai.delete_conv_title")}
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
@@ -866,8 +898,8 @@ export default function AIAssistant() {
             </div>
 
             {/* Messages */}
-            <ScrollArea className="flex-1">
-              <div className="px-6 py-6 space-y-6 max-w-3xl mx-auto w-full">
+            <ScrollArea className="flex-1 min-h-0 [&_[data-radix-scroll-area-viewport]>div]:!block">
+              <div className="px-4 py-5 md:px-6 md:py-6 space-y-6 max-w-3xl mx-auto w-full">
                 {convLoading ? (
                   <div className="flex items-center justify-center py-20">
                     <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
@@ -922,7 +954,7 @@ export default function AIAssistant() {
             </ScrollArea>
 
             {/* Input bar */}
-            <div className="border-t bg-background px-5 py-4 shrink-0">
+            <div className="border-t border-border bg-background px-3 py-3 md:px-5 md:py-4 shrink-0">
               <div className="max-w-3xl mx-auto">
                 <InputBar
                   value={input}
@@ -949,7 +981,7 @@ export default function AIAssistant() {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5 text-warning" />
+              <AlertTriangle className="w-4 h-4 stroke-[1.75] text-warning" />
               {t("ai.escalate")}
             </DialogTitle>
             <DialogDescription>

@@ -1,4 +1,4 @@
-import { pgTable, text, uuid, timestamp, pgEnum, integer, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, uuid, timestamp, pgEnum, integer, jsonb, index } from "drizzle-orm/pg-core";
 import { usersTable } from "./users";
 
 export const messageRoleEnum = pgEnum("message_role", ["user", "assistant"]);
@@ -12,7 +12,7 @@ export const aiConversations = pgTable("ai_conversations", {
   providerName: text("provider_name"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
-});
+}, (t) => [index("ai_conversations_user_updated_idx").on(t.userId, t.updatedAt)]);
 
 export const aiMessages = pgTable("ai_messages", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -36,7 +36,7 @@ export const aiMessages = pgTable("ai_messages", {
     data?: Record<string, unknown>;
   }>>(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
-});
+}, (t) => [index("ai_messages_conversation_created_idx").on(t.conversationId, t.createdAt)]);
 
 export const aiSuggestedQuestions = pgTable("ai_suggested_questions", {
   id: uuid("id").primaryKey().defaultRandom(),

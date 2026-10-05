@@ -25,9 +25,10 @@ import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import {
   Brain, Plus, Pencil, Trash2, RefreshCw, Loader2, Search, Filter,
-  CheckCircle2, AlertCircle, Archive, Clock, Layers, Tag, ExternalLink,
+  Tag, ExternalLink,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { EmptyState, PageHeader, Stat, StatGrid } from "@/components/page";
 
 const CATEGORIES = [
   { value: "faq", label: "FAQ" },
@@ -44,17 +45,17 @@ const CATEGORIES = [
 ];
 
 const STATUSES = [
-  { value: "draft",        icon: <Clock className="w-3 h-3" />,         color: "bg-muted text-muted-foreground" },
-  { value: "indexed",      icon: <CheckCircle2 className="w-3 h-3" />,  color: "bg-success/10 text-success border-success/30" },
-  { value: "needs_review", icon: <AlertCircle className="w-3 h-3" />,   color: "bg-warning/10 text-warning border-warning/30" },
-  { value: "archived",     icon: <Archive className="w-3 h-3" />,        color: "bg-muted text-muted-foreground" },
+  { value: "draft",        dot: "bg-muted-foreground/50" },
+  { value: "indexed",      dot: "bg-success" },
+  { value: "needs_review", dot: "bg-warning" },
+  { value: "archived",     dot: "bg-muted-foreground/30" },
 ];
 
 const LANGUAGES = [
-  { code: "en", label: "English" }, { code: "fr", label: "French" },
-  { code: "de", label: "German" }, { code: "nl", label: "Dutch" },
-  { code: "es", label: "Spanish" }, { code: "it", label: "Italian" },
-  { code: "pt", label: "Portuguese" }, { code: "pl", label: "Polish" },
+  { code: "en", label: "English" }, { code: "fr", label: "Français" },
+  { code: "de", label: "Deutsch" }, { code: "nl", label: "Nederlands" },
+  { code: "es", label: "Español" }, { code: "it", label: "Italiano" },
+  { code: "pt", label: "Português" }, { code: "pl", label: "Polski" },
 ];
 
 type AIDoc = {
@@ -74,8 +75,8 @@ function StatusBadge({ status }: { status: string }) {
   };
   const cfg = STATUSES.find(s => s.value === status) ?? STATUSES[0]!;
   return (
-    <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border", cfg.color)}>
-      {cfg.icon} {statusLabels[status] ?? status}
+    <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground whitespace-nowrap">
+      <span className={cn("h-1.5 w-1.5 rounded-full shrink-0", cfg.dot)} /> {statusLabels[status] ?? status}
     </span>
   );
 }
@@ -227,51 +228,28 @@ export default function AdminAIKnowledge() {
   }
 
   return (
-    <div className="p-6 space-y-6 max-w-[1400px] mx-auto">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <Brain className="w-6 h-6 text-[var(--accent)]" /> {t("admin_ai.title")}
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">{t("admin_ai.subtitle")}</p>
-        </div>
-        <Button onClick={openCreate} size="sm">
-          <Plus className="w-4 h-4 mr-2" /> {t("admin_ai.add_btn")}
-        </Button>
-      </div>
+    <div className="space-y-8 max-w-[1400px]">
+      <PageHeader
+        title={t("admin_ai.title")}
+        description={t("admin_ai.subtitle")}
+        actions={
+          <Button onClick={openCreate} size="sm">
+            <Plus className="w-4 h-4 stroke-[1.75] mr-2" /> {t("admin_ai.add_btn")}
+          </Button>
+        }
+      />
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="pt-4 pb-3">
-            <div className="text-xl font-bold text-foreground">{items.length}</div>
-            <div className="text-xs text-muted-foreground">{t("admin_ai.stat_total")}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-4 pb-3">
-            <div className="text-xl font-bold text-success">{activeCount}</div>
-            <div className="text-xs text-muted-foreground">{t("admin_ai.stat_active")}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-4 pb-3">
-            <div className="text-xl font-bold text-info">{indexedCount}</div>
-            <div className="text-xs text-muted-foreground">{t("admin_ai.stat_indexed")}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-4 pb-3">
-            <div className="text-xl font-bold text-warning">{needsReviewCount}</div>
-            <div className="text-xs text-muted-foreground">{t("admin_ai.stat_review")}</div>
-          </CardContent>
-        </Card>
-      </div>
+      <StatGrid className="grid-cols-2 md:grid-cols-4">
+        <Stat label={t("admin_ai.stat_total")} value={items.length} />
+        <Stat label={t("admin_ai.stat_active")} value={activeCount} tone="success" />
+        <Stat label={t("admin_ai.stat_indexed")} value={indexedCount} tone="info" />
+        <Stat label={t("admin_ai.stat_review")} value={needsReviewCount} tone={needsReviewCount > 0 ? "warning" : undefined} />
+      </StatGrid>
 
-      <Card>
-        <CardContent className="pt-4 pb-3">
-          <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
+      <div className="space-y-3">
+          <div className="flex flex-col sm:flex-row gap-2 flex-wrap">
             <div className="relative flex-1 min-w-48">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 stroke-[1.75] text-muted-foreground" />
               <Input className="pl-9" placeholder={t("admin_ai.search_placeholder")} value={q} onChange={e => setQ(e.target.value)} />
             </div>
             <Select value={filterCat || "all"} onValueChange={v => setFilterCat(v === "all" ? "" : v)}>
@@ -280,7 +258,7 @@ export default function AdminAIKnowledge() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">{t("admin_ai.all_categories")}</SelectItem>
-                {CATEGORIES.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
+                {CATEGORIES.map(c => <SelectItem key={c.value} value={c.value}>{t(`admin_ai.cat_${c.value}`, { defaultValue: c.label })}</SelectItem>)}
               </SelectContent>
             </Select>
             <Select value={filterLang || "all"} onValueChange={v => setFilterLang(v === "all" ? "" : v)}>
@@ -316,28 +294,22 @@ export default function AdminAIKnowledge() {
               </SelectContent>
             </Select>
             <Button variant="ghost" size="sm" onClick={() => { setQ(""); setFilterCat(""); setFilterLang(""); setFilterStatus(""); setFilterActive(""); }}>
-              <Filter className="w-4 h-4 mr-1" /> {t("admin_ai.clear")}
+              <Filter className="w-4 h-4 stroke-[1.75] mr-1" /> {t("admin_ai.clear")}
             </Button>
           </div>
-        </CardContent>
-      </Card>
 
-      <Card>
-        <CardContent className="p-0">
           {isLoading ? (
-            <div className="flex items-center justify-center py-16">
-              <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+            <div className="flex items-center justify-center py-16 rounded-xl border border-border bg-card">
+              <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
             </div>
           ) : items.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-              <Brain className="w-10 h-10 mb-3 opacity-40" />
-              <p className="font-medium">{t("admin_ai.no_docs")}</p>
-              <p className="text-sm mt-1">{t("admin_ai.no_docs_hint")}</p>
-            </div>
+            <EmptyState icon={Brain} text={t("admin_ai.no_docs")}>
+              <p className="text-[13px] text-muted-foreground">{t("admin_ai.no_docs_hint")}</p>
+            </EmptyState>
           ) : (
-            <div className="divide-y divide-border">
+            <div className="rounded-xl border border-border bg-card divide-y divide-border">
               {items.map(item => (
-                <div key={item.id} className="flex items-start gap-4 px-4 py-4 hover:bg-muted/20 transition-colors">
+                <div key={item.id} className="flex items-start gap-4 px-4 py-3 hover:bg-muted/50 transition-colors">
                   <div className="flex-shrink-0 mt-1">
                     <Switch
                       checked={item.aiActive}
@@ -348,15 +320,15 @@ export default function AdminAIKnowledge() {
 
                   <div className="flex-1 min-w-0 cursor-pointer" onClick={() => setDetailId(detailId === item.id ? null : item.id)}>
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-medium text-foreground">{item.title}</span>
+                      <span className="text-sm font-medium text-foreground">{item.title}</span>
                       <StatusBadge status={item.status} />
                       {!item.aiActive && (
                         <span className="text-xs text-muted-foreground italic">{t("admin_ai.inactive")}</span>
                       )}
                     </div>
                     <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                      <Badge variant="outline" className="text-xs capitalize">
-                        {CATEGORIES.find(c => c.value === item.category)?.label ?? item.category}
+                      <Badge variant="outline" className="text-xs font-normal capitalize">
+                        {t(`admin_ai.cat_${item.category}`, { defaultValue: CATEGORIES.find(c => c.value === item.category)?.label ?? item.category })}
                       </Badge>
                       <span className="text-xs text-muted-foreground">{item.language.toUpperCase()}</span>
                       {item.productModel && (
@@ -364,7 +336,7 @@ export default function AdminAIKnowledge() {
                       )}
                       {Array.isArray(item.tags) && item.tags.length > 0 && (
                         <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                          <Tag className="w-3 h-3" />
+                          <Tag className="w-3 h-3 stroke-[1.75]" />
                           {item.tags.slice(0, 3).join(", ")}
                           {item.tags.length > 3 && ` +${item.tags.length - 3}`}
                         </span>
@@ -384,7 +356,7 @@ export default function AdminAIKnowledge() {
                     {item.sourceUrl && (
                       <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
                         <a href={item.sourceUrl} target="_blank" rel="noopener noreferrer">
-                          <ExternalLink className="w-4 h-4" />
+                          <ExternalLink className="w-4 h-4 stroke-[1.75]" />
                         </a>
                       </Button>
                     )}
@@ -395,29 +367,28 @@ export default function AdminAIKnowledge() {
                     >
                       {reindexing === item.id
                         ? <Loader2 className="w-4 h-4 animate-spin" />
-                        : <RefreshCw className="w-4 h-4" />}
+                        : <RefreshCw className="w-4 h-4 stroke-[1.75]" />}
                     </Button>
                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(item)}>
-                      <Pencil className="w-4 h-4" />
+                      <Pencil className="w-4 h-4 stroke-[1.75]" />
                     </Button>
                     <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive"
                       onClick={() => setDeleteId(item.id)}>
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className="w-4 h-4 stroke-[1.75]" />
                     </Button>
                   </div>
                 </div>
               ))}
             </div>
           )}
-        </CardContent>
-      </Card>
+      </div>
 
       {detailId && detailData && (
-        <Card className="border-[var(--accent)]/30">
+        <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Layers className="w-4 h-4" /> {t("admin_ai.chunks_for")} {(detailData as { title: string }).title}
-              <span className="ml-auto text-sm font-normal text-muted-foreground">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              {t("admin_ai.chunks_for")} {(detailData as { title: string }).title}
+              <span className="ml-auto text-[13px] font-normal text-muted-foreground tabular-nums">
                 {t("admin_ai.chunks_count", { count: ((detailData as { chunks?: unknown[] }).chunks ?? []).length })}
               </span>
             </CardTitle>
@@ -425,7 +396,7 @@ export default function AdminAIKnowledge() {
           <CardContent>
             <div className="space-y-2 max-h-64 overflow-y-auto">
               {((detailData as { chunks?: Array<{ id: string; chunkIndex: number; content: string }> }).chunks ?? []).map((chunk) => (
-                <div key={chunk.id} className="bg-muted/30 rounded-lg p-3 text-xs">
+                <div key={chunk.id} className="rounded-lg border border-border p-3 text-xs">
                   <span className="text-muted-foreground font-mono">#{chunk.chunkIndex + 1} · </span>
                   {chunk.content}
                 </div>
@@ -452,7 +423,7 @@ export default function AdminAIKnowledge() {
                 <Select value={form.category} onValueChange={v => setForm(f => ({ ...f, category: v }))}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {CATEGORIES.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
+                    {CATEGORIES.map(c => <SelectItem key={c.value} value={c.value}>{t(`admin_ai.cat_${c.value}`, { defaultValue: c.label })}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
@@ -484,7 +455,7 @@ export default function AdminAIKnowledge() {
               </div>
               <div className="space-y-1.5">
                 <Label>{t("admin_ai.label_tags")}</Label>
-                <Input value={form.tags} onChange={e => setForm(f => ({ ...f, tags: e.target.value }))} placeholder="tag1, tag2, tag3" />
+                <Input value={form.tags} onChange={e => setForm(f => ({ ...f, tags: e.target.value }))} placeholder={t("admin_ai.placeholder_tags")} />
               </div>
               <div className="col-span-2 space-y-1.5">
                 <Label>{t("admin_ai.label_content")}</Label>

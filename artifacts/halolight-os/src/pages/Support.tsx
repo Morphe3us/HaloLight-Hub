@@ -4,30 +4,29 @@ import { Link } from "wouter";
 import { useListSupportTickets, useCreateSupportTicket } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
-import { Plus, Search, Ticket, AlertCircle, Clock, CheckCircle2, ChevronRight } from "lucide-react";
+import { Plus, Search, Ticket, AlertCircle, ChevronRight } from "lucide-react";
+import { EmptyState, Notice, PageHeader, Stat, StatGrid } from "@/components/page";
 import { encodeSupportFiles } from "./supportAttachmentFiles";
 
-const statusColors: Record<string, string> = {
-  open: "bg-info/15 text-info",
-  in_progress: "bg-muted text-foreground",
-  waiting_on_client: "bg-warning/15 text-yellow-700",
-  resolved: "bg-success/15 text-success",
-  closed: "bg-muted text-muted-foreground",
+const statusDot: Record<string, string> = {
+  open: "bg-info",
+  in_progress: "bg-foreground/60",
+  waiting_on_client: "bg-warning",
+  resolved: "bg-success",
+  closed: "bg-muted-foreground/50",
 };
 
-const priorityColors: Record<string, string> = {
-  low: "bg-muted text-muted-foreground",
-  medium: "bg-info/15 text-info",
-  high: "bg-warning/15 text-warning",
-  urgent: "bg-destructive/15 text-destructive",
+const priorityText: Record<string, string> = {
+  low: "text-muted-foreground",
+  medium: "text-muted-foreground",
+  high: "text-warning",
+  urgent: "text-destructive",
 };
 
 const STATUS_LABEL_KEYS: Record<string, string> = {
@@ -93,36 +92,27 @@ export default function Support() {
   };
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">{t("support.center_title")}</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">{t("support.center_subtitle")}</p>
-        </div>
-        <Button onClick={() => setShowCreate(true)} className="gap-2 shrink-0 self-start sm:self-auto">
-          <Plus className="w-4 h-4" />
-          {t("support.new_ticket")}
-        </Button>
-      </div>
+    <div className="max-w-5xl space-y-8">
+      <PageHeader
+        title={t("support.center_title")}
+        description={t("support.center_subtitle")}
+        actions={
+          <Button onClick={() => setShowCreate(true)} className="gap-2 shrink-0">
+            <Plus className="w-4 h-4" />
+            {t("support.new_ticket")}
+          </Button>
+        }
+      />
 
-      <div className="grid grid-cols-3 gap-4">
-        {[
-          { labelKey: "support.stat_open", value: stats.open, color: "text-info", bg: "bg-info/10" },
-          { labelKey: "support.stat_in_progress", value: stats.inProgress, color: "text-muted-foreground", bg: "bg-muted" },
-          { labelKey: "support.stat_resolved", value: stats.resolved, color: "text-success", bg: "bg-success/10" },
-        ].map((s) => (
-          <Card key={s.labelKey} className={`${s.bg} border-0`}>
-            <CardContent className="p-4">
-              <div className={`text-2xl font-bold ${s.color}`}>{s.value}</div>
-              <div className="text-sm text-muted-foreground mt-0.5">{t(s.labelKey)}</div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      <StatGrid className="grid-cols-3 md:grid-cols-3">
+        <Stat label={t("support.stat_open")} value={stats.open} tone={stats.open > 0 ? "info" : undefined} />
+        <Stat label={t("support.stat_in_progress")} value={stats.inProgress} />
+        <Stat label={t("support.stat_resolved")} value={stats.resolved} tone={stats.resolved > 0 ? "success" : undefined} />
+      </StatGrid>
 
       <div className="flex gap-3">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground stroke-[1.75]" />
           <Input
             placeholder={t("support.search_tickets")}
             value={search}
@@ -146,54 +136,48 @@ export default function Support() {
       </div>
 
       {isError ? (
-        <div role="alert" className="flex items-center gap-3"><p>{t("common.error")}</p><Button variant="outline" onClick={() => void refetch()}>{t("common.retry", { defaultValue: "Retry" })}</Button></div>
+        <Notice
+          icon={AlertCircle}
+          title={t("common.error")}
+          action={<Button variant="outline" size="sm" onClick={() => void refetch()}>{t("common.retry", { defaultValue: "Retry" })}</Button>}
+        />
       ) : isLoading ? (
-        <div className="space-y-3">
-          {[1, 2, 3].map((i) => <div key={i} className="h-20 bg-muted rounded-lg animate-pulse" />)}
+        <div className="rounded-xl border border-border bg-card divide-y divide-border">
+          {[1, 2, 3].map((i) => <div key={i} className="h-[72px] px-4 py-3"><div className="h-full bg-muted rounded-md animate-pulse" /></div>)}
         </div>
       ) : filtered.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-            <Ticket className="w-12 h-12 text-muted-foreground mb-3" />
-            <p className="text-muted-foreground font-medium">{t("support.no_tickets_title")}</p>
-            <p className="text-sm text-muted-foreground mt-1">{t("support.no_tickets_desc")}</p>
-          </CardContent>
-        </Card>
+        <EmptyState icon={Ticket} text={t("support.no_tickets_title")}>
+          <p className="text-[13px] text-muted-foreground -mt-2">{t("support.no_tickets_desc")}</p>
+        </EmptyState>
       ) : (
-        <div className="space-y-2">
+        <ul className="rounded-xl border border-border bg-card divide-y divide-border overflow-hidden">
           {filtered.map((ticket) => (
-            <Link key={ticket.id} href={`/support/tickets/${ticket.id}`}>
-              <Card className="hover:shadow-md transition-shadow cursor-pointer group">
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-xs font-mono text-muted-foreground">{ticket.ticketNumber}</span>
-                        <Badge className={`text-xs px-2 py-0 ${statusColors[ticket.status ?? "open"] ?? ""}`}>
-                          {t(STATUS_LABEL_KEYS[ticket.status ?? "open"] ?? "support.status_open")}
-                        </Badge>
-                        <Badge className={`text-xs px-2 py-0 gap-1 ${priorityColors[ticket.priority ?? "medium"] ?? ""}`}>
-                          {(ticket.priority === "high" || ticket.priority === "urgent")
-                            ? <AlertCircle className="w-3 h-3" />
-                            : <Clock className="w-3 h-3" />}
-                          {t(PRIORITY_LABEL_KEYS[ticket.priority ?? "medium"] ?? "support.priority_medium")}
-                        </Badge>
-                      </div>
-                      <p className="font-medium text-foreground truncate">{ticket.title}</p>
-                      <p className="text-sm text-muted-foreground truncate mt-0.5">{ticket.description}</p>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <span className="text-xs text-muted-foreground">
-                        {ticket.createdAt ? new Date(ticket.createdAt).toLocaleDateString() : ""}
-                      </span>
-                      <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-muted-foreground transition-colors" />
-                    </div>
+            <li key={ticket.id}>
+              <Link href={`/support/tickets/${ticket.id}`} className="group flex items-start justify-between gap-4 px-4 py-3 hover:bg-muted/50 transition-colors">
+                <div className="flex-1 min-w-0">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-1 text-xs text-muted-foreground">
+                    <span className="font-mono">{ticket.ticketNumber}</span>
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className={`h-1.5 w-1.5 rounded-full ${statusDot[ticket.status ?? "open"] ?? "bg-muted-foreground/50"}`} />
+                      {t(STATUS_LABEL_KEYS[ticket.status ?? "open"] ?? "support.status_open")}
+                    </span>
+                    <span className={priorityText[ticket.priority ?? "medium"] ?? ""}>
+                      {t(PRIORITY_LABEL_KEYS[ticket.priority ?? "medium"] ?? "support.priority_medium")}
+                    </span>
                   </div>
-                </CardContent>
-              </Card>
-            </Link>
+                  <p className="text-sm font-medium text-foreground truncate">{ticket.title}</p>
+                  <p className="text-[13px] text-muted-foreground truncate mt-0.5">{ticket.description}</p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="text-xs text-muted-foreground tabular-nums">
+                    {ticket.createdAt ? new Date(ticket.createdAt).toLocaleDateString() : ""}
+                  </span>
+                  <ChevronRight className="w-4 h-4 stroke-[1.75] text-muted-foreground/60 group-hover:text-foreground transition-colors" />
+                </div>
+              </Link>
+            </li>
           ))}
-        </div>
+        </ul>
       )}
 
       <Dialog open={showCreate} onOpenChange={open => { if (!encoding && !isPending) setShowCreate(open); }}>

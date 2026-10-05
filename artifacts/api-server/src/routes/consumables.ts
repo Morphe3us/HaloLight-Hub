@@ -1,6 +1,6 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import { randomUUID } from "node:crypto";
-import { eq, desc, and, lte, sql, gte, asc } from "drizzle-orm";
+import { eq, desc, and, lte, sql, gte, asc, inArray } from "drizzle-orm";
 import { db, usersTable, consumableCatalog, consumableStock, consumableOrders, events } from "@workspace/db";
 import { requireAuth } from "../middlewares/requireAuth";
 import { getOrCreateUser } from "../lib/userSync";
@@ -365,33 +365,32 @@ router.get("/admin/consumables", requireAuth, async (req: Request, res: Response
     unitType: sql<string>`coalesce(${consumableStock.quantityUnit}, ${consumableCatalog.unitType})`,
     unitPrice: consumableCatalog.unitPrice,
     reorderThreshold: consumableCatalog.reorderThreshold,
+    ownerFullName: usersTable.fullName,
+    ownerEmailRaw: usersTable.email,
+    ownerCompanyName: usersTable.companyName,
   })
     .from(consumableStock)
     .innerJoin(consumableCatalog, eq(consumableStock.catalogItemId, consumableCatalog.id))
+    // Owner details in the same query (was one users lookup per stock row).
+    .leftJoin(usersTable, eq(usersTable.id, consumableStock.userId))
     .orderBy(consumableStock.currentQuantity);
 
-  const enriched = await Promise.all(stockItems.map(async (item) => {
-    const [owner] = await db.select({
-      fullName: usersTable.fullName,
-      email: usersTable.email,
-      companyName: usersTable.companyName,
-    }).from(usersTable).where(eq(usersTable.id, item.userId));
-
+  const enriched = stockItems.map(({ ownerFullName, ownerEmailRaw, ownerCompanyName, ...item }) => {
     const isLow = item.currentQuantity <= item.reorderThreshold;
     const isCritical = item.currentQuantity === 0;
 
     return {
       ...item,
-      ownerName: owner?.fullName ?? owner?.email ?? "Unknown",
-      ownerEmail: owner?.email ?? "",
-      ownerCompany: owner?.companyName ?? "",
+      ownerName: ownerFullName ?? ownerEmailRaw ?? "Unknown",
+      ownerEmail: ownerEmailRaw ?? "",
+      ownerCompany: ownerCompanyName ?? "",
       isLow,
       isCritical,
       daysRemaining: null,
       ...consumableUsage(item),
       reorderRecommended: isLow && item.lowStockAlertEnabled,
     };
-  }));
+  });
 
   res.json(enriched);
 });
@@ -416,6 +415,7 @@ router.get("/consumables/forecast", requireAuth, async (req: Request, res: Respo
       and(
         eq(events.userId, user.id),
         gte(events.eventDate, now),
+        inArray(events.status, ["upcoming", "active"]),
       )
     )
     .orderBy(asc(events.eventDate))
@@ -448,7 +448,7 @@ router.get("/consumables/forecast", requireAuth, async (req: Request, res: Respo
       and(
         eq(consumableStock.userId, user.id),
         sql`coalesce(${consumableStock.quantityUnit}, ${consumableCatalog.unitType}) = 'prints'`,
-        sql`lower(${consumableCatalog.category}) LIKE '%paper%'`
+        eq(consumableCatalog.category, "paper")
       )
     );
 

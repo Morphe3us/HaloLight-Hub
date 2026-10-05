@@ -63,7 +63,7 @@ export const supportTicketReplies = pgTable("support_ticket_replies", {
   isStaff: integer("is_staff").notNull().default(0),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
-});
+}, (t) => [index("support_ticket_replies_ticket_idx").on(t.ticketId)]);
 
 export const supportTicketMailOutbox = pgTable("support_ticket_mail_outbox", {
   id: uuid("id").primaryKey().defaultRandom(),

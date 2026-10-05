@@ -7,7 +7,6 @@ import {
   useDeleteUpload,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -53,9 +52,10 @@ import {
   FileArchive,
   Search,
   Filter,
-  FolderUp,
+  AlertCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { EmptyState, Notice, PageHeader, StatGrid } from "@/components/page";
 
 const CATEGORIES = [
   { value: "academy" },
@@ -77,33 +77,32 @@ const VISIBILITY = [
 
 const LANGUAGES = [
   { code: "en", label: "English" },
-  { code: "fr", label: "French" },
-  { code: "de", label: "German" },
-  { code: "nl", label: "Dutch" },
-  { code: "es", label: "Spanish" },
-  { code: "it", label: "Italian" },
-  { code: "pt", label: "Portuguese" },
-  { code: "pl", label: "Polish" },
+  { code: "fr", label: "Français" },
+  { code: "de", label: "Deutsch" },
+  { code: "nl", label: "Nederlands" },
+  { code: "es", label: "Español" },
+  { code: "it", label: "Italiano" },
+  { code: "pt", label: "Português" },
+  { code: "pl", label: "Polski" },
 ];
 
 function getFileIcon(mimeType?: string | null) {
-  if (!mimeType) return <FileText className="w-5 h-5 text-muted-foreground" />;
+  const cls = "w-4 h-4 stroke-[1.75] text-muted-foreground";
+  if (!mimeType) return <FileText className={cls} />;
   if (mimeType.startsWith("image/"))
-    return <Image className="w-5 h-5 text-info" />;
+    return <Image className={cls} />;
   if (mimeType.startsWith("video/"))
-    return <Video className="w-5 h-5 text-warning" />;
+    return <Video className={cls} />;
   if (mimeType.includes("zip") || mimeType.includes("archive"))
-    return <FileArchive className="w-5 h-5 text-[var(--accent)]" />;
-  return <FileText className="w-5 h-5 text-muted-foreground" />;
+    return <FileArchive className={cls} />;
+  return <FileText className={cls} />;
 }
 
 function visibilityColor(v: string) {
-  if (v === "admin_only")
-    return "bg-destructive/10 text-destructive border-destructive/30";
-  if (v === "client_visible")
-    return "bg-success/10 text-success border-success/30";
-  if (v === "ai_only") return "bg-info/10 text-info border-info/30";
-  return "bg-muted text-muted-foreground";
+  if (v === "admin_only") return "bg-destructive";
+  if (v === "client_visible") return "bg-success";
+  if (v === "ai_only") return "bg-info";
+  return "bg-muted-foreground/50";
 }
 
 type UploadItem = {
@@ -301,52 +300,48 @@ export default function AdminUploads() {
   };
 
   return (
-    <div className="p-6 space-y-6 max-w-[1400px] mx-auto">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <FolderUp className="w-6 h-6 text-[var(--accent)]" />{" "}
-            {t("admin_uploads.title")}
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            {t("admin_uploads.subtitle")}
-          </p>
-        </div>
-        <Button onClick={openCreate} size="sm">
-          <Plus className="w-4 h-4 mr-2" /> {t("admin_uploads.add_btn")}
-        </Button>
-      </div>
+    <div className="space-y-8 max-w-[1400px]">
+      <PageHeader
+        title={t("admin_uploads.title")}
+        description={t("admin_uploads.subtitle")}
+        actions={
+          <Button onClick={openCreate} size="sm">
+            <Plus className="w-4 h-4 stroke-[1.75] mr-2" /> {t("admin_uploads.add_btn")}
+          </Button>
+        }
+      />
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <StatGrid className="grid-cols-2 md:grid-cols-4">
         {CATEGORIES.slice(0, 4).map((cat) => {
           const count =
             (data?.items as UploadItem[] | undefined)?.filter(
               (i) => i.category === cat.value,
             ).length ?? 0;
           return (
-            <Card
+            <button
+              type="button"
               key={cat.value}
-              className="cursor-pointer hover:border-[var(--accent)] transition-colors"
+              className={cn(
+                "flex flex-col justify-between gap-4 p-5 min-h-[116px] text-left shadow-[1px_1px_0_0_hsl(var(--border))] transition-colors",
+                filterCat === cat.value ? "bg-muted" : "hover:bg-muted/50",
+              )}
               onClick={() =>
                 setFilterCat(filterCat === cat.value ? "" : cat.value)
               }
             >
-              <CardContent className="pt-4 pb-3">
-                <div className="text-xl font-bold text-foreground">{count}</div>
-                <div className="text-xs text-muted-foreground">
-                  {catLabel(cat.value)}
-                </div>
-              </CardContent>
-            </Card>
+              <span className="text-[13px] leading-snug text-muted-foreground">
+                {catLabel(cat.value)}
+              </span>
+              <span className="text-2xl font-semibold tracking-tight tabular-nums text-foreground">{count}</span>
+            </button>
           );
         })}
-      </div>
+      </StatGrid>
 
-      <Card>
-        <CardContent className="pt-4 pb-3">
-          <div className="flex flex-col sm:flex-row gap-3">
+      <div className="space-y-3">
+          <div className="flex flex-col sm:flex-row gap-2">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 stroke-[1.75] text-muted-foreground" />
               <Input
                 className="pl-9"
                 placeholder={t("admin_uploads.search_placeholder")}
@@ -420,52 +415,45 @@ export default function AdminUploads() {
                 setFilterLang("");
               }}
             >
-              <Filter className="w-4 h-4 mr-1" /> {t("admin_uploads.clear")}
+              <Filter className="w-4 h-4 stroke-[1.75] mr-1" /> {t("admin_uploads.clear")}
             </Button>
           </div>
-        </CardContent>
-      </Card>
 
-      <Card>
-        <CardContent className="p-0">
           {isLoading ? (
-            <div className="flex items-center justify-center py-16">
-              <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+            <div className="flex items-center justify-center py-16 rounded-xl border border-border bg-card">
+              <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
             </div>
           ) : isError ? (
-            <div className="flex flex-col items-center justify-center gap-3 py-16 text-muted-foreground">
-              <Upload className="w-10 h-10 opacity-40" />
-              <p className="font-medium text-foreground">
-                {t("admin_uploads.error_loading")}
-              </p>
-              <p className="max-w-md text-center text-sm">
-                {apiErrorMessage(error, t("admin_uploads.error_loading"))}
-              </p>
-              <Button variant="outline" size="sm" onClick={() => void refetch()}>
-                {t("admin_uploads.retry")}
-              </Button>
-            </div>
+            <Notice
+              icon={AlertCircle}
+              title={t("admin_uploads.error_loading")}
+              action={
+                <Button variant="outline" size="sm" onClick={() => void refetch()}>
+                  {t("admin_uploads.retry")}
+                </Button>
+              }
+            >
+              {apiErrorMessage(error, t("admin_uploads.error_loading"))}
+            </Notice>
           ) : items.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-              <Upload className="w-10 h-10 mb-3 opacity-40" />
-              <p className="font-medium">{t("admin_uploads.no_uploads")}</p>
-              <p className="text-sm mt-1">
+            <EmptyState icon={Upload} text={t("admin_uploads.no_uploads")}>
+              <p className="text-[13px] text-muted-foreground">
                 {t("admin_uploads.no_uploads_hint")}
               </p>
-            </div>
+            </EmptyState>
           ) : (
-            <div className="divide-y divide-border">
+            <div className="rounded-xl border border-border bg-card divide-y divide-border">
               {items.map((item) => (
                 <div
                   key={item.id}
-                  className="flex items-center gap-4 px-4 py-3 hover:bg-muted/20 transition-colors"
+                  className="flex items-center gap-4 px-4 py-3 hover:bg-muted/50 transition-colors"
                 >
                   <div className="flex-shrink-0">
                     {getFileIcon(item.mimeType)}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-medium text-foreground truncate">
+                      <span className="text-sm font-medium text-foreground truncate">
                         {item.title}
                       </span>
                       {item.fileName && (
@@ -475,35 +463,36 @@ export default function AdminUploads() {
                       )}
                     </div>
                     <div className="flex items-center gap-2 mt-1 flex-wrap">
-                      <Badge variant="outline" className="text-xs">
+                      <Badge variant="outline" className="text-xs font-normal">
                         {catLabel(item.category)}
                       </Badge>
-                      <span
-                        className={cn(
-                          "text-xs px-2 py-0.5 rounded-full border font-medium",
-                          visibilityColor(item.visibility),
-                        )}
-                      >
+                      <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <span
+                          className={cn(
+                            "h-1.5 w-1.5 rounded-full",
+                            visibilityColor(item.visibility),
+                          )}
+                        />
                         {visLabel(item.visibility)}
                       </span>
                       <span className="text-xs text-muted-foreground">
                         {item.language.toUpperCase()}
                       </span>
                       {item.fileSize && (
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-xs text-muted-foreground tabular-nums">
                           {formatBytes(item.fileSize)}
                         </span>
                       )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 flex-shrink-0">
+                  <div className="flex items-center gap-1 flex-shrink-0">
                     <Button
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8"
                       onClick={() => void handleOpenFile(item)}
                     >
-                      <ExternalLink className="w-4 h-4" />
+                      <ExternalLink className="w-4 h-4 stroke-[1.75]" />
                     </Button>
                     <Button
                       variant="ghost"
@@ -511,7 +500,7 @@ export default function AdminUploads() {
                       className="h-8 w-8"
                       onClick={() => openEdit(item)}
                     >
-                      <Pencil className="w-4 h-4" />
+                      <Pencil className="w-4 h-4 stroke-[1.75]" />
                     </Button>
                     <Button
                       variant="ghost"
@@ -519,15 +508,14 @@ export default function AdminUploads() {
                       className="h-8 w-8 text-destructive hover:text-destructive"
                       onClick={() => setDeleteId(item.id)}
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className="w-4 h-4 stroke-[1.75]" />
                     </Button>
                   </div>
                 </div>
               ))}
             </div>
           )}
-        </CardContent>
-      </Card>
+      </div>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
@@ -540,7 +528,7 @@ export default function AdminUploads() {
           </DialogHeader>
           <div className="space-y-4 py-2">
             {!editItem && (
-              <div className="rounded-lg border border-border bg-muted/30 px-4 py-3">
+              <div className="rounded-lg border border-border px-4 py-3">
                 <p className="text-sm font-medium text-foreground">
                   {t("admin_uploads.url_only_title")}
                 </p>
@@ -623,7 +611,7 @@ export default function AdminUploads() {
                   onChange={(e) =>
                     setForm((f) => ({ ...f, fileName: e.target.value }))
                   }
-                  placeholder="document.pdf"
+                  placeholder={t("admin_uploads.placeholder_file_name")}
                 />
               </div>
               <div className="space-y-1.5">

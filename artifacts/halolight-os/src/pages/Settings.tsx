@@ -50,6 +50,7 @@ import { useState } from "react";
 import { getAuthToken } from "@workspace/api-client-react";
 import { useAuth } from "@/auth/AuthProvider";
 import { isPlaceholderEmail, resolveCurrentUserIdentity } from "@/lib/currentUserIdentity";
+import { Notice, PageHeader } from "@/components/page";
 
 const profileSchema = z.object({
   firstName: z.string().trim().min(1, "Required"),
@@ -111,7 +112,7 @@ function PersonalExportCard() {
       });
     } catch (err) {
       toast({
-        title: "Export failed",
+        title: t("common.export_failed"),
         description: (err as Error).message,
         variant: "destructive",
       });
@@ -121,19 +122,19 @@ function PersonalExportCard() {
   }
 
   return (
-    <Card className="shadow-sm">
-      <CardHeader>
-        <CardTitle>
+    <Card>
+      <CardHeader className="p-5 space-y-1">
+        <CardTitle className="text-sm font-medium">
           {t("settings.export_data", { defaultValue: "Export My Data" })}
         </CardTitle>
-        <CardDescription>
+        <CardDescription className="text-[13px]">
           {t("settings.export_data_desc", {
             defaultValue:
               "Download all your personal data as a JSON file (GDPR Article 20 — Right to Data Portability).",
           })}
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-5 pt-0">
         <Button
           onClick={handleExport}
           disabled={loading}
@@ -141,9 +142,9 @@ function PersonalExportCard() {
           className="gap-2"
         >
           {loading ? (
-            <RefreshCw className="h-4 w-4 animate-spin" />
+            <RefreshCw className="h-4 w-4 stroke-[1.75] animate-spin" />
           ) : (
-            <Download className="h-4 w-4" />
+            <Download className="h-4 w-4 stroke-[1.75]" />
           )}
           {loading
             ? t("settings.export_data_downloading", {
@@ -184,20 +185,20 @@ export function NotificationPreferences() {
   };
 
   return (
-    <Card className="shadow-sm">
-      <CardHeader>
-        <CardTitle>{t("settings.notifications")}</CardTitle>
-        <CardDescription>{t("settings.notifications_desc")}</CardDescription>
+    <Card>
+      <CardHeader className="p-5 space-y-1">
+        <CardTitle className="text-sm font-medium">{t("settings.notifications")}</CardTitle>
+        <CardDescription className="text-[13px]">{t("settings.notifications_desc")}</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-6">
+      <CardContent className="p-5 pt-0 space-y-6">
         <div className="min-w-0 space-y-0.5 break-words">
-          <p className="text-base font-medium">{t("settings.email_notifications")}</p>
+          <p className="text-sm font-medium">{t("settings.email_notifications")}</p>
           <p className="text-sm text-muted-foreground">{t("settings.email_notifications_desc")}</p>
         </div>
-        <div className="h-px bg-muted w-full" />
+        <div className="h-px bg-border w-full" />
         <div className="flex items-center justify-between gap-4" aria-busy={busy}>
           <div className="min-w-0 space-y-0.5 break-words">
-            <Label htmlFor="settings-inapp-notifications" className="text-base">
+            <Label htmlFor="settings-inapp-notifications" className="text-sm font-medium">
               {t("settings.in_app_notifications")}
             </Label>
             <p id="settings-inapp-description" className="text-sm text-muted-foreground">
@@ -214,7 +215,7 @@ export function NotificationPreferences() {
             data-testid="switch-inapp-notif"
           />
         </div>
-        <div className="min-h-6 text-sm" role="status" aria-live="polite">
+        <div className="min-h-6 text-[13px] text-muted-foreground" role="status" aria-live="polite">
           {update.isPending ? t("settings.saving") : prefs.isFetching || prefs.isLoading
             ? t("common.loading") : update.isSuccess && !prefs.isError ? t("settings.saved") : null}
         </div>
@@ -224,7 +225,7 @@ export function NotificationPreferences() {
               <span>{t("common.error")}</span>
               <Button type="button" variant="outline" disabled={busy}
                 onClick={() => { if (!ready) void prefs.refetch(); else save(attempted.current); }}>
-                <RefreshCw className="mr-2 h-4 w-4 shrink-0" aria-hidden="true" />
+                <RefreshCw className="mr-2 h-4 w-4 shrink-0 stroke-[1.75]" aria-hidden="true" />
                 {t("common.retry")}
               </Button>
             </AlertDescription>
@@ -472,8 +473,11 @@ export default function Settings() {
 
   if (isLoadingUser || !isAuthLoaded) {
     return (
-      <div className="max-w-3xl mx-auto space-y-6">
-        <Skeleton className="h-10 w-64" />
+      <div className="max-w-3xl space-y-8">
+        <div className="space-y-2">
+          <Skeleton className="h-8 w-64" />
+          <Skeleton className="h-4 w-80" />
+        </div>
         <Skeleton className="h-[400px] w-full rounded-xl" />
         <Skeleton className="h-[200px] w-full rounded-xl" />
       </div>
@@ -481,43 +485,36 @@ export default function Settings() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto space-y-8" data-testid="page-settings">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight text-foreground">
-          {t("settings.title")}
-        </h1>
-        <p className="text-muted-foreground mt-1">
-          {t("settings.subtitle", {
-            defaultValue: "Manage your account preferences and profile.",
-          })}
-        </p>
-      </div>
+    <div className="max-w-3xl space-y-8" data-testid="page-settings">
+      <PageHeader
+        title={t("settings.title")}
+        description={t("settings.subtitle", {
+          defaultValue: "Manage your account preferences and profile.",
+        })}
+      />
 
       {isMissingRequired && (
-        <Alert className="border-warning/30 bg-warning/8">
-          <AlertCircle className="h-4 w-4 text-warning" />
-          <AlertDescription className="text-warning">
-            <span className="font-semibold">
-              {t("settings.profile_complete_title")}
-            </span>
-            {" — "}
-            {t("settings.profile_complete_desc")}
-          </AlertDescription>
-        </Alert>
+        <Notice
+          tone="warning"
+          icon={AlertCircle}
+          title={t("settings.profile_complete_title")}
+        >
+          {t("settings.profile_complete_desc")}
+        </Notice>
       )}
 
       <form onSubmit={handleSubmit(onSubmitProfile)} className="space-y-6">
         {/* Required Profile */}
-        <Card className="shadow-sm">
-          <CardHeader>
-            <CardTitle>{t("settings.profile")}</CardTitle>
-            <CardDescription>
+        <Card>
+          <CardHeader className="p-5 space-y-1">
+            <CardTitle className="text-sm font-medium">{t("settings.profile")}</CardTitle>
+            <CardDescription className="text-[13px]">
               {t("settings.profile_desc", {
                 defaultValue: "Update your personal and company information.",
               })}
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent className="p-5 pt-0 space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label htmlFor="firstName">{t("settings.first_name")} *</Label>
@@ -643,16 +640,16 @@ export default function Settings() {
         </Card>
 
         {/* Contact & Location */}
-        <Card className="shadow-sm">
-          <CardHeader>
-            <CardTitle>{t("settings.contact_info")}</CardTitle>
-            <CardDescription>
+        <Card>
+          <CardHeader className="p-5 space-y-1">
+            <CardTitle className="text-sm font-medium">{t("settings.contact_info")}</CardTitle>
+            <CardDescription className="text-[13px]">
               {t("settings.contact_info_desc", {
                 defaultValue: "Optional location and web presence details.",
               })}
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-5 pt-0">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label htmlFor="country">{t("settings.country")}</Label>
@@ -679,23 +676,23 @@ export default function Settings() {
         </Card>
 
         {/* Social Media */}
-        <Card className="shadow-sm">
-          <CardHeader>
-            <CardTitle>{t("settings.social_media")}</CardTitle>
-            <CardDescription>
+        <Card>
+          <CardHeader className="p-5 space-y-1">
+            <CardTitle className="text-sm font-medium">{t("settings.social_media")}</CardTitle>
+            <CardDescription className="text-[13px]">
               {t("settings.social_media_desc", {
                 defaultValue: "Links to your social profiles.",
               })}
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-5 pt-0">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label htmlFor="instagram">{t("settings.instagram")}</Label>
                 <Input
                   id="instagram"
                   {...register("instagram")}
-                  placeholder="@handle or URL"
+                  placeholder={t("settings.placeholder_handle_or_url")}
                 />
               </div>
               <div className="space-y-2">
@@ -703,7 +700,7 @@ export default function Settings() {
                 <Input
                   id="facebook"
                   {...register("facebook")}
-                  placeholder="URL or page name"
+                  placeholder={t("settings.placeholder_facebook")}
                 />
               </div>
               <div className="space-y-2">
@@ -711,7 +708,7 @@ export default function Settings() {
                 <Input
                   id="pinterest"
                   {...register("pinterest")}
-                  placeholder="@handle or URL"
+                  placeholder={t("settings.placeholder_handle_or_url")}
                 />
               </div>
               <div className="space-y-2">
@@ -719,7 +716,7 @@ export default function Settings() {
                 <Input
                   id="tiktok"
                   {...register("tiktok")}
-                  placeholder="@handle"
+                  placeholder={t("settings.placeholder_handle")}
                 />
               </div>
               <div className="space-y-2">
@@ -727,7 +724,7 @@ export default function Settings() {
                 <Input
                   id="linkedin"
                   {...register("linkedin")}
-                  placeholder="LinkedIn URL"
+                  placeholder={t("settings.placeholder_linkedin")}
                 />
               </div>
             </div>
@@ -735,16 +732,16 @@ export default function Settings() {
         </Card>
 
         {/* Business Info */}
-        <Card className="shadow-sm">
-          <CardHeader>
-            <CardTitle>{t("settings.business_info")}</CardTitle>
-            <CardDescription>
+        <Card>
+          <CardHeader className="p-5 space-y-1">
+            <CardTitle className="text-sm font-medium">{t("settings.business_info")}</CardTitle>
+            <CardDescription className="text-[13px]">
               {t("settings.business_info_desc", {
                 defaultValue: "Help us tailor the platform to your business.",
               })}
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent className="p-5 pt-0 space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label htmlFor="businessType">
@@ -753,7 +750,7 @@ export default function Settings() {
                 <Input
                   id="businessType"
                   {...register("businessType")}
-                  placeholder="e.g. Photobooth rental, Event photography"
+                  placeholder={t("settings.placeholder_business_type")}
                 />
               </div>
               <div className="space-y-2">
@@ -761,7 +758,7 @@ export default function Settings() {
                 <Input
                   id="mainMarket"
                   {...register("mainMarket")}
-                  placeholder="e.g. United States, UK"
+                  placeholder={t("settings.placeholder_main_market")}
                 />
               </div>
               <div className="space-y-2">
@@ -792,7 +789,7 @@ export default function Settings() {
                 id="businessGoal"
                 {...register("businessGoal")}
                 rows={3}
-                placeholder="e.g. Expand to corporate events, grow to 10 units"
+                placeholder={t("settings.placeholder_business_goal")}
               />
             </div>
           </CardContent>
@@ -811,18 +808,18 @@ export default function Settings() {
       </form>
 
       {/* Appearance */}
-      <Card className="shadow-sm">
-        <CardHeader>
-          <CardTitle>
+      <Card>
+        <CardHeader className="p-5 space-y-1">
+          <CardTitle className="text-sm font-medium">
             {t("settings.appearance", { defaultValue: "Appearance" })}
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="text-[13px]">
             {t("settings.appearance_desc", {
               defaultValue: "Choose how HaloLight OS looks on your device.",
             })}
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-5 pt-0">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {[
               {
@@ -845,18 +842,16 @@ export default function Settings() {
                 key={value}
                 type="button"
                 onClick={() => setTheme(value as "light" | "dark" | "system")}
-                className={`flex items-center gap-3 rounded-xl border-2 p-4 text-sm font-medium transition-all ${
+                className={`flex items-center gap-3 rounded-lg border px-4 py-3 text-sm transition-colors ${
                   theme === value
-                    ? "border-primary bg-primary/5 text-foreground"
-                    : "border-border text-muted-foreground hover:border-primary/40 hover:text-foreground"
+                    ? "border-foreground/60 bg-muted/50 text-foreground font-medium"
+                    : "border-border text-muted-foreground hover:border-foreground/20 hover:text-foreground"
                 }`}
               >
-                <Icon
-                  className={`w-5 h-5 ${theme === value ? "text-primary" : ""}`}
-                />
+                <Icon className="w-4 h-4 stroke-[1.75]" />
                 <span>{label}</span>
                 {theme === value && (
-                  <span className="ml-auto w-2 h-2 rounded-full bg-primary" />
+                  <span className="ml-auto h-1.5 w-1.5 rounded-full bg-foreground" />
                 )}
               </button>
             ))}
@@ -865,19 +860,19 @@ export default function Settings() {
       </Card>
 
       {/* Company Logo for Documents */}
-      <Card id="company-logo" className="shadow-sm scroll-mt-24">
-        <CardHeader>
-          <CardTitle>
+      <Card id="company-logo" className="scroll-mt-24">
+        <CardHeader className="p-5 space-y-1">
+          <CardTitle className="text-sm font-medium">
             {t("settings.logo_title", { defaultValue: "Company Logo" })}
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="text-[13px]">
             {t("settings.logo_desc", {
               defaultValue:
                 "Shown on quotes, contracts and invoices. If not set, no logo appears on your documents.",
             })}
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="p-5 pt-0 space-y-4">
           <input
             ref={logoInputRef}
             type="file"
@@ -887,10 +882,10 @@ export default function Settings() {
           />
           {logoPreview ? (
             <div className="flex items-start gap-4">
-              <div className="flex-1 border rounded-xl overflow-hidden bg-muted/30 p-4 flex items-center justify-center min-h-[80px]">
+              <div className="flex-1 border border-border rounded-lg overflow-hidden bg-muted/30 p-4 flex items-center justify-center min-h-[80px]">
                 <img
                   src={logoPreview}
-                  alt="Logo preview"
+                  alt={t("settings.logo_preview_alt")}
                   className="max-h-20 max-w-full object-contain"
                 />
               </div>
@@ -904,7 +899,7 @@ export default function Settings() {
               </Button>
             </div>
           ) : (
-            <div className="border-2 border-dashed rounded-xl p-6 text-center text-muted-foreground text-sm">
+            <div className="border border-dashed border-border rounded-lg p-6 text-center text-muted-foreground text-sm">
               {t("settings.logo_empty", {
                 defaultValue: "No logo uploaded yet.",
               })}
@@ -944,21 +939,21 @@ export default function Settings() {
       </Card>
 
       {/* Provider Signature for Contracts */}
-      <Card className="shadow-sm">
-        <CardHeader>
-          <CardTitle>
+      <Card>
+        <CardHeader className="p-5 space-y-1">
+          <CardTitle className="text-sm font-medium">
             {t("contracts.provider_signature_section", {
               defaultValue: "Provider Signature for Contracts",
             })}
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="text-[13px]">
             {t("contracts.provider_signature_desc", {
               defaultValue:
                 "When set, this text appears as the provider signature in generated contracts.",
             })}
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="p-5 pt-0 space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="providerSignerTitle">
@@ -975,7 +970,7 @@ export default function Settings() {
                     providerSignerTitle: e.target.value,
                   }))
                 }
-                placeholder="CEO, Manager, Director…"
+                placeholder={t("settings.placeholder_signer_title")}
               />
             </div>
             <div className="space-y-2">

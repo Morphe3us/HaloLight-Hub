@@ -4,7 +4,6 @@ import { useTranslation } from "react-i18next";
 import { useGetContract, useUpdateContractStatus, useDeleteContract, useUpdateContract, useGetCurrentUser, useCreateInvoice } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -15,15 +14,17 @@ import { ArrowLeft, Printer, Building2, Mail, Edit2, FileSignature, ReceiptText 
 import { cn } from "@/lib/utils";
 import { useCurrency } from "@/lib/currency";
 import { contractPrintSettings } from "@/lib/contractPrintSettings";
+import { escapeHtml, safeImageUrl } from "@/lib/escapeHtml";
 import { loadLocale } from "@/i18n";
+import { PageHeader } from "@/components/page";
 
 const STATUS_COLORS: Record<string, string> = {
-  draft: "bg-slate-100 text-slate-700 border-slate-200",
-  sent: "bg-info/10 text-info border-info/30",
-  signed: "bg-success/8 text-success border-success/20",
-  active: "bg-success/10 text-success border-green-200",
-  expired: "bg-warning/8 text-warning border-warning/20",
-  cancelled: "bg-destructive/10 text-destructive border-destructive/30",
+  draft: "bg-muted-foreground/50",
+  sent: "bg-info",
+  signed: "bg-success",
+  active: "bg-success",
+  expired: "bg-warning",
+  cancelled: "bg-destructive",
 };
 
 const STATUS_KEYS = ["draft", "sent", "signed", "active", "expired", "cancelled"];
@@ -55,7 +56,7 @@ function PrintButton({ contractNumber, title, clientName, content, value, lang, 
     const rawContent = content ?? "";
 
     // Convert text content to clean HTML: replace heavy separators with subtle dividers
-    const escaped = rawContent.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    const escaped = escapeHtml(rawContent);
     const formattedBody = escaped
       .replace(/═{5,}/g, '<hr class="sep-major">')
       .replace(/─{5,}/g, '<hr class="sep-minor">')
@@ -63,9 +64,9 @@ function PrintButton({ contractNumber, title, clientName, content, value, lang, 
 
     const bodyHtml = formattedBody.trim()
       ? `<div class="body-wrap">${formattedBody}</div>`
-      : `<div class="body-empty">${t("contracts.no_content_message", { defaultValue: "No contract body has been generated yet. Use the Edit button to add contract content, or generate a contract from a template." })}</div>`;
+      : `<div class="body-empty">${escapeHtml(t("contracts.no_content_message", { defaultValue: "No contract body has been generated yet. Use the Edit button to add contract content, or generate a contract from a template." }))}</div>`;
 
-    const html = `<!DOCTYPE html><html lang="${lang}"><head><meta charset="utf-8"><title>${contractNumber}</title>
+    const html = `<!DOCTYPE html><html lang="${escapeHtml(lang)}"><head><meta charset="utf-8"><title>${escapeHtml(contractNumber)}</title>
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
   body{font-family:Arial,Helvetica,sans-serif;max-width:820px;margin:40px auto;color:#111;font-size:13.5px;line-height:1.65;padding:0 28px}
@@ -98,40 +99,40 @@ function PrintButton({ contractNumber, title, clientName, content, value, lang, 
 </style></head><body>
 <div class="doc-header">
   <div class="provider-block">
-    ${logoUrl ? `<img src="${logoUrl}" alt="${companyName.replace(/"/g, "&quot;")}">` : ""}
-    ${companyName ? `<div class="provider-name">${companyName}</div>` : ""}
-    <div class="provider-sub">${providerEmail}${providerPhone ? ` &middot; ${providerPhone}` : ""}</div>
+    ${safeImageUrl(logoUrl) ? `<img src="${safeImageUrl(logoUrl)}" alt="${escapeHtml(companyName)}">` : ""}
+    ${companyName ? `<div class="provider-name">${escapeHtml(companyName)}</div>` : ""}
+    <div class="provider-sub">${escapeHtml(providerEmail)}${providerPhone ? ` &middot; ${escapeHtml(providerPhone)}` : ""}</div>
   </div>
   <div class="doc-meta">
-    <div class="doc-type">${t("contracts.print_contract_label", { defaultValue: "CONTRACT" })}</div>
-    <div class="doc-number">${contractNumber}</div>
-    <div class="doc-date">${today}</div>
+    <div class="doc-type">${escapeHtml(t("contracts.print_contract_label", { defaultValue: "CONTRACT" }))}</div>
+    <div class="doc-number">${escapeHtml(contractNumber)}</div>
+    <div class="doc-date">${escapeHtml(today)}</div>
   </div>
 </div>
 <div class="parties">
   <div>
-    <div class="party-label">${t("contracts.print_prepared_by")}</div>
-    <div class="party-name">${(me as any)?.fullName ?? ""}</div>
-    ${companyName ? `<div class="party-detail">${companyName}</div>` : ""}
-    ${providerEmail ? `<div class="party-detail">${providerEmail}</div>` : ""}
+    <div class="party-label">${escapeHtml(t("contracts.print_prepared_by"))}</div>
+    <div class="party-name">${escapeHtml((me as any)?.fullName ?? "")}</div>
+    ${companyName ? `<div class="party-detail">${escapeHtml(companyName)}</div>` : ""}
+    ${providerEmail ? `<div class="party-detail">${escapeHtml(providerEmail)}</div>` : ""}
   </div>
   <div>
-    <div class="party-label">${t("contracts.client_section")}</div>
-    <div class="party-name">${clientName}</div>
-    <div class="party-detail">${t("contracts.print_date")}${sep} ${today}</div>
+    <div class="party-label">${escapeHtml(t("contracts.client_section"))}</div>
+    <div class="party-name">${escapeHtml(clientName)}</div>
+    <div class="party-detail">${escapeHtml(t("contracts.print_date"))}${escapeHtml(sep)} ${escapeHtml(today)}</div>
   </div>
 </div>
 <div class="contract-value-bar">
   <div class="cv-inner">
-    <div class="cv-label">${t("contracts.contract_value")}</div>
-    <div class="cv-amount">${settings.formatValue(value)}</div>
+    <div class="cv-label">${escapeHtml(t("contracts.contract_value"))}</div>
+    <div class="cv-amount">${escapeHtml(settings.formatValue(value))}</div>
   </div>
 </div>
 ${bodyHtml}
 </body></html>`;
     if (w) { w.document.write(html); w.document.close(); w.document.title = contractNumber; w.focus(); w.print(); }
   };
-  return <Button variant="outline" onClick={handlePrint} className="gap-2"><Printer className="w-4 h-4" /> {t("contracts.export_pdf_btn")}</Button>;
+  return <Button variant="outline" onClick={handlePrint} className="gap-2"><Printer className="w-4 h-4 stroke-[1.75]" /> {t("contracts.export_pdf_btn")}</Button>;
 }
 
 export default function ContractDetail() {
@@ -244,30 +245,33 @@ export default function ContractDetail() {
     });
   };
 
-  if (isLoading) return <div className="flex items-center justify-center h-40 text-muted-foreground">{t("contracts.loading")}</div>;
-  if (!contract) return <div className="p-8 text-muted-foreground">{t("contracts.not_found")}</div>;
+  if (isLoading) return <div className="flex items-center justify-center h-40 text-sm text-muted-foreground">{t("contracts.loading")}</div>;
+  if (!contract) return <div className="p-8 text-sm text-muted-foreground">{t("contracts.not_found")}</div>;
 
   const color = STATUS_COLORS[contract.status];
 
   return (
-    <div className="space-y-6 max-w-4xl">
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        <div className="flex items-center gap-3">
-          <Link href="/contracts"><Button variant="ghost" size="sm" className="gap-1.5"><ArrowLeft className="w-4 h-4" />{t("common.back")}</Button></Link>
-          <div>
-            <div className="flex items-center gap-2.5 flex-wrap">
-              <span className="font-mono text-lg font-bold">{contract.contractNumber}</span>
-              {color && <Badge variant="outline" className={cn("text-xs", color)}>{t(`contracts.status_${contract.status}`)}</Badge>}
-            </div>
-            <p className="text-muted-foreground text-sm mt-0.5">{contract.title}</p>
-          </div>
-        </div>
+    <div className="space-y-8 max-w-4xl">
+      <div className="space-y-4">
+        <Link href="/contracts"><Button variant="ghost" size="sm" className="gap-1.5 -ml-2 text-muted-foreground hover:text-foreground"><ArrowLeft className="w-4 h-4 stroke-[1.75]" />{t("common.back")}</Button></Link>
+        <PageHeader
+          title={<span className="font-mono">{contract.contractNumber}</span>}
+          description={<span className="flex items-center gap-3 flex-wrap">
+            <span>{contract.title}</span>
+            {color && (
+              <span className="inline-flex items-center gap-1.5 text-xs font-medium text-foreground">
+                <span className={cn("h-1.5 w-1.5 rounded-full", color)} />
+                {t(`contracts.status_${contract.status}`)}
+              </span>
+            )}
+          </span>}
+        />
         <div className="flex gap-2 flex-wrap">
           <PrintButton contractNumber={contract.contractNumber} title={contract.title} clientName={contract.clientName} content={contract.content} value={contract.value} lang={contract.language ?? "en"} currency={contract.currency ?? "EUR"} />
           <Button variant="outline" size="sm" onClick={openCreateInvoice} className="gap-1.5">
-            <ReceiptText className="w-3.5 h-3.5" /> {t("pipeline.create_invoice")}
+            <ReceiptText className="w-3.5 h-3.5 stroke-[1.75]" /> {t("pipeline.create_invoice")}
           </Button>
-          <Button variant="outline" onClick={startEdit} className="gap-2"><Edit2 className="w-4 h-4" /> {t("common.edit")}</Button>
+          <Button variant="outline" onClick={startEdit} className="gap-2"><Edit2 className="w-4 h-4 stroke-[1.75]" /> {t("common.edit")}</Button>
           <Select value={contract.status} onValueChange={(s) => statusMutation.mutate({ id, data: { status: s as any } })}>
             <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
             <SelectContent>
@@ -278,34 +282,34 @@ export default function ContractDetail() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="rounded-xl border bg-card p-5 space-y-3">
-          <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">{t("contracts.client_section")}</h3>
+        <div className="rounded-xl border border-border bg-card p-5 space-y-3">
+          <h3 className="text-sm font-medium text-foreground">{t("contracts.client_section")}</h3>
           <div className="space-y-2 text-sm">
-            <div className="flex items-center gap-2"><Building2 className="w-4 h-4 text-muted-foreground" /><span className="font-medium">{contract.clientName}</span></div>
-            {contract.clientEmail && <div className="flex items-center gap-2"><Mail className="w-4 h-4 text-muted-foreground" /><a href={`mailto:${contract.clientEmail}`} className="hover:text-primary">{contract.clientEmail}</a></div>}
+            <div className="flex items-center gap-2"><Building2 className="w-4 h-4 stroke-[1.75] text-muted-foreground" /><span className="font-medium">{contract.clientName}</span></div>
+            {contract.clientEmail && <div className="flex items-center gap-2"><Mail className="w-4 h-4 stroke-[1.75] text-muted-foreground" /><a href={`mailto:${contract.clientEmail}`} className="hover:underline underline-offset-4">{contract.clientEmail}</a></div>}
           </div>
         </div>
-        <div className="rounded-xl border bg-card p-5 space-y-3">
-          <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">{t("contracts.dates_section")}</h3>
+        <div className="rounded-xl border border-border bg-card p-5 space-y-3">
+          <h3 className="text-sm font-medium text-foreground">{t("contracts.dates_section")}</h3>
           <div className="space-y-1.5 text-sm">
             <div className="flex justify-between"><span className="text-muted-foreground">{t("common.created")}</span><span>{formatDate(contract.createdAt, lang)}</span></div>
             {contract.sentAt && <div className="flex justify-between"><span className="text-muted-foreground">{t("contracts.sent_label")}</span><span>{formatDate(contract.sentAt, lang)}</span></div>}
-            {contract.signedAt && <div className="flex justify-between"><span className="text-muted-foreground">{t("contracts.signed_label2")}</span><span className="text-success font-medium">{formatDate(contract.signedAt, lang)}</span></div>}
+            {contract.signedAt && <div className="flex justify-between"><span className="text-muted-foreground">{t("contracts.signed_label2")}</span><span className="inline-flex items-center gap-1.5 font-medium"><span className="h-1.5 w-1.5 rounded-full bg-success" />{formatDate(contract.signedAt, lang)}</span></div>}
             {contract.startDate && <div className="flex justify-between"><span className="text-muted-foreground">{t("contracts.start_label")}</span><span>{formatDate(contract.startDate, lang)}</span></div>}
             {contract.endDate && <div className="flex justify-between"><span className="text-muted-foreground">{t("contracts.end_label")}</span><span>{formatDate(contract.endDate, lang)}</span></div>}
           </div>
         </div>
-        <div className="rounded-xl border bg-card p-5 space-y-3">
-          <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">{t("contracts.value_section")}</h3>
-          <p className="text-2xl font-bold text-success">{formatCurrency(contract.value)}</p>
+        <div className="rounded-xl border border-border bg-card p-5 space-y-3">
+          <h3 className="text-sm font-medium text-foreground">{t("contracts.value_section")}</h3>
+          <p className="text-2xl font-semibold tracking-tight tabular-nums">{formatCurrency(contract.value)}</p>
           {contract.notes && <p className="text-xs text-muted-foreground">{contract.notes}</p>}
         </div>
       </div>
 
-      <div className="rounded-xl border bg-card overflow-hidden">
-        <div className="px-5 py-4 border-b bg-muted/30 flex items-center gap-2">
-          <FileSignature className="w-4 h-4 text-muted-foreground" />
-          <h3 className="font-semibold">{t("contracts.document_section")}</h3>
+      <div className="rounded-xl border border-border bg-card overflow-hidden">
+        <div className="px-5 py-4 border-b border-border flex items-center gap-2">
+          <FileSignature className="w-4 h-4 stroke-[1.75] text-muted-foreground" />
+          <h3 className="text-sm font-medium text-foreground">{t("contracts.document_section")}</h3>
         </div>
         <div className="p-6">
           {contract.content ? (

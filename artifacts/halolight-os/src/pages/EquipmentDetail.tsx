@@ -1,11 +1,11 @@
 import { Link, useParams } from "wouter";
 import { useTranslation } from "react-i18next";
 import { useGetEquipmentById, useListEvents } from "@workspace/api-client-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import {
-  Monitor, Wrench, ArrowLeft, ShieldCheck, ShieldAlert, ShieldX,
-  Clock, Hash, Info, Calendar, MapPin,
+  ArrowLeft, ShieldCheck, ShieldAlert, ShieldX, MapPin,
 } from "lucide-react";
+import { EmptyState, PageHeader, Section } from "@/components/page";
 
 type ServiceRecord = {
   id: string; serviceDate: string; serviceType: string; description: string;
@@ -19,26 +19,26 @@ type EquipmentDetailData = {
   purchasePrice: string | null; vendorName: string | null; serviceHistory: ServiceRecord[];
 };
 
-const STATUS_COLORS: Record<string, string> = {
-  active:     "bg-success/15 text-success",
-  inactive:   "bg-muted text-muted-foreground",
-  in_service: "bg-info/15 text-info",
-  retired:    "bg-destructive/15 text-destructive",
+const STATUS_DOT: Record<string, string> = {
+  active:     "bg-success",
+  inactive:   "bg-muted-foreground/50",
+  in_service: "bg-info",
+  retired:    "bg-destructive",
 };
 
-const SERVICE_TYPE_STYLES: Record<string, { color: string; dot: string }> = {
-  routine_maintenance: { color: "bg-info/10 text-info border-info/30",                  dot: "bg-info" },
-  repair:              { color: "bg-warning/8 text-warning border-warning/20",            dot: "bg-warning" },
-  upgrade:             { color: "bg-muted text-foreground border-border",                 dot: "bg-accent" },
-  inspection:          { color: "bg-success/10 text-success border-success/30",           dot: "bg-success" },
-  warranty_claim:      { color: "bg-destructive/10 text-destructive border-destructive/30", dot: "bg-destructive" },
+const SERVICE_TYPE_STYLES: Record<string, { dot: string }> = {
+  routine_maintenance: { dot: "bg-info" },
+  repair:              { dot: "bg-warning" },
+  upgrade:             { dot: "bg-foreground/60" },
+  inspection:          { dot: "bg-success" },
+  warranty_claim:      { dot: "bg-destructive" },
 };
 
-const EVENT_STATUS_COLORS: Record<string, string> = {
-  upcoming:  "bg-info/15 text-info",
-  active:    "bg-success/15 text-success",
-  completed: "bg-muted text-muted-foreground",
-  cancelled: "bg-destructive/15 text-destructive",
+const EVENT_STATUS_DOT: Record<string, string> = {
+  upcoming:  "bg-info",
+  active:    "bg-success",
+  completed: "bg-muted-foreground/50",
+  cancelled: "bg-destructive",
 };
 
 function fmtDate(d: string | null, opts?: Intl.DateTimeFormatOptions) {
@@ -98,8 +98,8 @@ export default function EquipmentDetail() {
 
   if (isLoading) {
     return (
-      <div className="max-w-3xl mx-auto space-y-4">
-        <div className="h-8 w-48 bg-border rounded animate-pulse" />
+      <div className="max-w-3xl space-y-4">
+        <div className="h-8 w-48 bg-muted rounded-md animate-pulse" />
         <div className="h-48 bg-muted rounded-xl animate-pulse" />
         <div className="h-64 bg-muted rounded-xl animate-pulse" />
       </div>
@@ -107,92 +107,83 @@ export default function EquipmentDetail() {
   }
 
   if (!item) return (
-    <div className="max-w-3xl mx-auto text-center py-20 text-muted-foreground">
-      {t("equipment_detail.not_found")}
+    <div className="max-w-3xl">
+      <EmptyState text={t("equipment_detail.not_found")} />
     </div>
   );
 
-  const statusColor = STATUS_COLORS[item.status] ?? STATUS_COLORS.active!;
+  const statusDot = STATUS_DOT[item.status] ?? STATUS_DOT.active!;
   const warranty = warrantyInfo(item.warrantyExpiration ?? null);
-  const WarrantyIcon = warranty.Icon;
   const maintenance = maintenanceInfo(item.nextMaintenanceDate ?? null);
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
-      <div className="flex items-center gap-3">
+    <div className="max-w-3xl space-y-10">
+      <div className="space-y-4">
         <Link href="/equipment">
-          <button className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground -ml-1 transition-colors">
-            <ArrowLeft className="w-4 h-4" /> {t("equipment_detail.back")}
+          <button className="inline-flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-foreground transition-colors">
+            <ArrowLeft className="w-4 h-4 stroke-[1.75]" /> {t("equipment_detail.back")}
           </button>
         </Link>
+
+        <PageHeader
+          title={
+            <span className="inline-flex flex-wrap items-center gap-x-3 gap-y-1">
+              {item.productModel}
+              <span className="inline-flex items-center gap-1.5 text-xs font-normal tracking-normal text-muted-foreground">
+                <span className={`h-1.5 w-1.5 rounded-full ${statusDot}`} />
+                {statusLabel(item.status)}
+              </span>
+            </span>
+          }
+          description={<span className="font-mono text-[13px]">{t("equipment_detail.serial")} {item.serialNumber}</span>}
+        />
       </div>
 
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex items-start gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0">
-              <Monitor className="w-8 h-8 text-primary" />
-            </div>
-            <div className="flex-1">
-              <div className="flex items-center gap-2 flex-wrap">
-                <h1 className="text-xl font-bold text-foreground">{item.productModel}</h1>
-                <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${statusColor}`}>
-                  {statusLabel(item.status)}
-                </span>
-              </div>
-              <p className="text-sm text-muted-foreground mt-0.5 flex items-center gap-1.5">
-                <Hash className="w-3.5 h-3.5" /> {t("equipment_detail.serial")} {item.serialNumber}
-              </p>
-
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mt-4">
-                <div>
-                  <p className="text-xs text-muted-foreground mb-0.5">{t("equipment_detail.purchased")}</p>
-                  <p className="text-sm font-medium text-foreground">{fmtDate(item.purchaseDate)}</p>
-                </div>
-                {item.purchasePrice && (
-                  <div>
-                    <p className="text-xs text-muted-foreground mb-0.5">{t("equipment_detail.purchase_price")}</p>
-                    <p className="text-sm font-medium text-foreground">${Number(item.purchasePrice).toLocaleString()}</p>
-                  </div>
-                )}
-                {item.vendorName && (
-                  <div>
-                    <p className="text-xs text-muted-foreground mb-0.5">{t("equipment_detail.vendor")}</p>
-                    <p className="text-sm font-medium text-foreground">{item.vendorName}</p>
-                  </div>
-                )}
-              </div>
-            </div>
+      <dl className="grid grid-cols-2 sm:grid-cols-3 rounded-xl border border-border bg-card overflow-hidden">
+        <div className="p-5 shadow-[1px_1px_0_0_hsl(var(--border))]">
+          <dt className="text-[13px] text-muted-foreground">{t("equipment_detail.purchased")}</dt>
+          <dd className="text-sm font-medium text-foreground tabular-nums mt-1">{fmtDate(item.purchaseDate)}</dd>
+        </div>
+        {item.purchasePrice && (
+          <div className="p-5 shadow-[1px_1px_0_0_hsl(var(--border))]">
+            <dt className="text-[13px] text-muted-foreground">{t("equipment_detail.purchase_price")}</dt>
+            <dd className="text-sm font-medium text-foreground tabular-nums mt-1">${Number(item.purchasePrice).toLocaleString()}</dd>
           </div>
-        </CardContent>
-      </Card>
+        )}
+        {item.vendorName && (
+          <div className="p-5 shadow-[1px_1px_0_0_hsl(var(--border))]">
+            <dt className="text-[13px] text-muted-foreground">{t("equipment_detail.vendor")}</dt>
+            <dd className="text-sm font-medium text-foreground mt-1">{item.vendorName}</dd>
+          </div>
+        )}
+      </dl>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <Card className={warranty.alert ? "border-warning/20 bg-warning/5" : ""}>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <WarrantyIcon className={`w-4 h-4 ${warranty.color}`} />
-              <p className="text-sm font-semibold text-foreground">{t("equipment_detail.warranty_title")}</p>
+        <Card>
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between gap-2 mb-2">
+              <p className="text-[13px] text-muted-foreground">{t("equipment_detail.warranty_title")}</p>
+              {warranty.alert && <span className={`h-1.5 w-1.5 rounded-full ${warranty.color === "text-destructive" ? "bg-destructive" : "bg-warning"}`} />}
             </div>
-            <p className={`text-sm font-medium ${warranty.color}`}>{warranty.label}</p>
+            <p className={`text-sm font-medium ${warranty.alert ? warranty.color : "text-foreground"}`}>{warranty.label}</p>
             {item.warrantyExpiration && (
-              <p className="text-xs text-muted-foreground mt-0.5">
+              <p className="text-xs text-muted-foreground tabular-nums mt-1">
                 {t("equipment_detail.expiry")} {fmtDate(item.warrantyExpiration)}
               </p>
             )}
           </CardContent>
         </Card>
-        <Card className={maintenance.urgent ? "border-warning/20 bg-warning/5" : ""}>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <Wrench className={`w-4 h-4 ${maintenance.urgent ? "text-warning" : "text-muted-foreground"}`} />
-              <p className="text-sm font-semibold text-foreground">{t("equipment_detail.maintenance_title")}</p>
+        <Card>
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between gap-2 mb-2">
+              <p className="text-[13px] text-muted-foreground">{t("equipment_detail.maintenance_title")}</p>
+              {maintenance.urgent && <span className="h-1.5 w-1.5 rounded-full bg-warning" />}
             </div>
             <p className={`text-sm font-medium ${maintenance.urgent ? "text-warning" : "text-foreground"}`}>
               {maintenance.label}
             </p>
             {item.lastMaintenanceDate && (
-              <p className="text-xs text-muted-foreground mt-0.5">
+              <p className="text-xs text-muted-foreground tabular-nums mt-1">
                 {t("equipment_detail.last")} {fmtDate(item.lastMaintenanceDate, { month: "short", day: "numeric", year: "numeric" })}
               </p>
             )}
@@ -201,113 +192,91 @@ export default function EquipmentDetail() {
       </div>
 
       {item.maintenanceNotes && (
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Info className="w-4 h-4 text-muted-foreground" /> {t("equipment_detail.notes_title")}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground leading-relaxed">{item.maintenanceNotes}</p>
-          </CardContent>
-        </Card>
+        <Section title={t("equipment_detail.notes_title")}>
+          <p className="rounded-xl border border-border bg-card p-5 text-sm text-muted-foreground leading-relaxed">{item.maintenanceNotes}</p>
+        </Section>
       )}
 
-      <Card>
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-primary" />
-              {t("equipment_detail.upcoming_events_title", { defaultValue: "Upcoming Assignments" })}
-            </CardTitle>
-            <span className="text-xs text-muted-foreground">
-              {linkedEvents.length} {t("equipment_detail.events_count", { defaultValue: "event(s)" })}
-            </span>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {linkedEvents.length === 0 ? (
-            <div className="py-6 text-center text-muted-foreground text-sm">
-              {t("equipment_detail.no_upcoming_events", { defaultValue: "No upcoming events assigned to this equipment." })}
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {linkedEvents.map((ev) => {
-                const evAny = ev as any;
-                const statusColor = EVENT_STATUS_COLORS[ev.status] ?? EVENT_STATUS_COLORS.upcoming!;
-                return (
-                  <div key={ev.id} className="flex items-start gap-3 p-3 rounded-lg border bg-muted/20">
-                    <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                      <Calendar className="w-4 h-4 text-primary" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <p className="text-sm font-semibold text-foreground">{ev.title}</p>
-                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusColor}`}>{ev.status}</span>
-                      </div>
-                      <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground flex-wrap">
-                        <span className="flex items-center gap-1">
-                          <Clock className="w-3 h-3" />
-                          {fmtDate(ev.eventDate, { weekday: "short", month: "short", day: "numeric", year: "numeric" })}
-                          {evAny.eventStartTime ? ` · ${evAny.eventStartTime}` : ""}
-                        </span>
-                        {ev.location && (
-                          <span className="flex items-center gap-1">
-                            <MapPin className="w-3 h-3" /> {ev.location}
-                          </span>
-                        )}
-                        {evAny.clientName && <span>{evAny.clientName}</span>}
-                      </div>
-                    </div>
+      <Section
+        title={t("equipment_detail.upcoming_events_title", { defaultValue: "Upcoming Assignments" })}
+        actions={
+          <span className="text-xs text-muted-foreground tabular-nums">
+            {linkedEvents.length} {t("equipment_detail.events_count", { defaultValue: "event(s)" })}
+          </span>
+        }
+      >
+        {linkedEvents.length === 0 ? (
+          <EmptyState text={t("equipment_detail.no_upcoming_events", { defaultValue: "No upcoming events assigned to this equipment." })} className="py-8" />
+        ) : (
+          <ul className="rounded-xl border border-border bg-card divide-y divide-border overflow-hidden">
+            {linkedEvents.map((ev) => {
+              const evAny = ev as any;
+              const dot = EVENT_STATUS_DOT[ev.status] ?? EVENT_STATUS_DOT.upcoming!;
+              return (
+                <li key={ev.id} className="px-4 py-3">
+                  <div className="flex items-center gap-x-3 gap-y-1 flex-wrap">
+                    <p className="text-sm font-medium text-foreground">{ev.title}</p>
+                    <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <span className={`h-1.5 w-1.5 rounded-full ${dot}`} />{ev.status}
+                    </span>
                   </div>
-                );
-              })}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                  <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground flex-wrap">
+                    <span className="tabular-nums">
+                      {fmtDate(ev.eventDate, { weekday: "short", month: "short", day: "numeric", year: "numeric" })}
+                      {evAny.eventStartTime ? ` · ${evAny.eventStartTime}` : ""}
+                    </span>
+                    {ev.location && (
+                      <span className="flex items-center gap-1">
+                        <MapPin className="w-3 h-3 stroke-[1.75]" /> {ev.location}
+                      </span>
+                    )}
+                    {evAny.clientName && <span>{evAny.clientName}</span>}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </Section>
 
-      <Card>
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Clock className="w-4 h-4 text-primary" /> {t("equipment_detail.history_title")}
-            </CardTitle>
-            <span className="text-xs text-muted-foreground">
-              {t("equipment_detail.history_records", { count: item.serviceHistory?.length ?? 0 })}
-            </span>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {(!item.serviceHistory || item.serviceHistory.length === 0) ? (
-            <div className="py-8 text-center text-muted-foreground text-sm">{t("equipment_detail.no_history")}</div>
-          ) : (
+      <Section
+        title={t("equipment_detail.history_title")}
+        actions={
+          <span className="text-xs text-muted-foreground tabular-nums">
+            {t("equipment_detail.history_records", { count: item.serviceHistory?.length ?? 0 })}
+          </span>
+        }
+      >
+        {(!item.serviceHistory || item.serviceHistory.length === 0) ? (
+          <EmptyState text={t("equipment_detail.no_history")} className="py-8" />
+        ) : (
+          <div className="rounded-xl border border-border bg-card p-5">
             <div className="relative">
-              <div className="absolute left-[7px] top-2 bottom-2 w-0.5 bg-muted" />
+              <div className="absolute left-[3px] top-2 bottom-2 w-px bg-border" />
               <div className="space-y-5">
                 {item.serviceHistory.map((record) => {
                   const style = SERVICE_TYPE_STYLES[record.serviceType] ?? SERVICE_TYPE_STYLES.inspection!;
                   return (
                     <div key={record.id} className="flex gap-4">
-                      <div className={`w-3.5 h-3.5 rounded-full ${style.dot} mt-1.5 shrink-0 ring-2 ring-white z-10`} />
-                      <div className="flex-1 min-w-0 pb-4 border-b border-border last:border-0">
+                      <div className={`w-[7px] h-[7px] rounded-full ${style.dot} mt-1.5 shrink-0 ring-4 ring-card z-10`} />
+                      <div className="flex-1 min-w-0 pb-5 border-b border-border last:border-0 last:pb-0">
                         <div className="flex items-start justify-between gap-2 flex-wrap">
                           <div>
-                            <span className={`text-xs px-2 py-0.5 rounded-full border font-medium ${style.color}`}>
+                            <p className="text-sm font-medium text-foreground">
                               {serviceLabel(record.serviceType)}
-                            </span>
-                            <p className="text-xs text-muted-foreground mt-1">
+                            </p>
+                            <p className="text-xs text-muted-foreground tabular-nums mt-0.5">
                               {fmtDate(record.serviceDate, { month: "short", day: "numeric", year: "numeric" })}
                               {record.technicianName && ` · ${record.technicianName}`}
                             </p>
                           </div>
                           {record.cost && Number(record.cost) > 0 && (
-                            <span className="text-xs font-semibold text-muted-foreground">${Number(record.cost).toFixed(2)}</span>
+                            <span className="text-xs text-muted-foreground tabular-nums">${Number(record.cost).toFixed(2)}</span>
                           )}
                         </div>
-                        <p className="text-sm text-foreground mt-1.5 leading-relaxed">{record.description}</p>
+                        <p className="text-sm text-muted-foreground mt-1.5 leading-relaxed">{record.description}</p>
                         {record.nextServiceDate && (
-                          <p className="text-xs text-muted-foreground mt-1">
+                          <p className="text-xs text-muted-foreground tabular-nums mt-1">
                             {t("equipment_detail.next_scheduled")} {fmtDate(record.nextServiceDate, { month: "short", day: "numeric", year: "numeric" })}
                           </p>
                         )}
@@ -317,9 +286,9 @@ export default function EquipmentDetail() {
                 })}
               </div>
             </div>
-          )}
-        </CardContent>
-      </Card>
+          </div>
+        )}
+      </Section>
     </div>
   );
 }

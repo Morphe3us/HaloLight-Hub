@@ -7,15 +7,15 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft, Plus, MessageSquare, Pin, Eye, Hash,
-  Lock, Megaphone, ChevronRight, ThumbsUp, Clock,
+  Lock, Megaphone, ChevronRight, ThumbsUp,
 } from "lucide-react";
+import { EmptyState } from "@/components/page";
 
 type ChannelInfo = { id: string; name: string; description?: string | null; type: string };
 
@@ -68,33 +68,33 @@ export default function CommunityChannel() {
   const canPost = !isAnnouncement || isAdmin;
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
-      <div className="flex items-center gap-3">
+    <div className="max-w-3xl space-y-8">
+      <div className="flex flex-wrap items-center gap-2">
         <Link href="/community">
-          <Button variant="ghost" size="sm" className="gap-2">
-            <ArrowLeft className="w-4 h-4" /> {t("community_channel.back")}
+          <Button variant="ghost" size="sm" className="gap-2 -ml-2 text-muted-foreground hover:text-foreground">
+            <ArrowLeft className="w-4 h-4 stroke-[1.75]" /> {t("community_channel.back")}
           </Button>
         </Link>
-        <span className="text-muted-foreground">/</span>
+        <span className="text-muted-foreground/60">/</span>
         <div className="flex items-center gap-2">
           {channel?.type === "announcement" ? (
-            <Megaphone className="w-4 h-4 text-warning" />
+            <Megaphone className="w-4 h-4 stroke-[1.75] text-muted-foreground" />
           ) : channel?.type === "private" ? (
-            <Lock className="w-4 h-4 text-muted-foreground" />
+            <Lock className="w-4 h-4 stroke-[1.75] text-muted-foreground" />
           ) : (
-            <Hash className="w-4 h-4 text-info" />
+            <Hash className="w-4 h-4 stroke-[1.75] text-muted-foreground" />
           )}
-          <span className="font-semibold text-foreground">{channel?.name ?? t("community_channel.channel_fallback")}</span>
-          <span className="text-sm text-muted-foreground">{t("community_channel.posts_count", { count: total })}</span>
+          <span className="text-sm font-medium text-foreground">{channel?.name ?? t("community_channel.channel_fallback")}</span>
+          <span className="text-[13px] text-muted-foreground tabular-nums">{t("community_channel.posts_count", { count: total })}</span>
         </div>
       </div>
 
       {channel?.description && (
-        <p className="text-sm text-muted-foreground bg-muted rounded-lg px-4 py-2">{channel.description}</p>
+        <p className="text-sm text-muted-foreground max-w-2xl">{channel.description}</p>
       )}
 
       <div className="flex items-center justify-between">
-        <h2 className="font-medium text-foreground">{t("community_channel.posts_title")}</h2>
+        <h2 className="text-sm font-medium text-foreground">{t("community_channel.posts_title")}</h2>
         {canPost && (
           <Button onClick={() => setShowCreate(true)} size="sm" className="gap-2">
             <Plus className="w-4 h-4" /> {t("community_channel.new_post")}
@@ -103,73 +103,65 @@ export default function CommunityChannel() {
       </div>
 
       {isLoading ? (
-        <div className="space-y-3">
-          {[1, 2, 3].map((i) => <div key={i} className="h-24 bg-muted rounded-xl animate-pulse" />)}
+        <div className="rounded-xl border border-border bg-card divide-y divide-border">
+          {[1, 2, 3].map((i) => <div key={i} className="h-24 px-4 py-3"><div className="h-full bg-muted rounded-md animate-pulse" /></div>)}
         </div>
       ) : posts.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-            <MessageSquare className="w-12 h-12 text-muted-foreground mb-3" />
-            <p className="text-muted-foreground font-medium">{t("community_channel.no_posts")}</p>
-            {canPost && <p className="text-sm text-muted-foreground mt-1">{t("community_channel.no_posts_hint")}</p>}
-          </CardContent>
-        </Card>
+        <EmptyState icon={MessageSquare} text={t("community_channel.no_posts")}>
+          {canPost && <p className="text-[13px] text-muted-foreground -mt-2">{t("community_channel.no_posts_hint")}</p>}
+        </EmptyState>
       ) : (
-        <div className="space-y-3">
+        <ul className="rounded-xl border border-border bg-card divide-y divide-border overflow-hidden">
           {posts.map((post) => (
-            <div key={post.id} className={`relative ${post.isPinned ? "pt-4" : ""}`}>
-              {post.isPinned && (
-                <div className="absolute top-0 left-4 flex items-center gap-1 bg-warning/15 text-warning text-xs px-2 py-0.5 rounded-full z-10">
-                  <Pin className="w-3 h-3" /> {t("community_channel.pinned")}
-                </div>
-              )}
-              <Link href={`/community/posts/${post.id}`}>
-                <Card className={`hover:shadow-md transition-all cursor-pointer group ${post.isPinned ? "border-warning/30" : ""}`}>
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors mb-1 line-clamp-1">
-                          {post.title}
-                        </h3>
-                        <p className="text-sm text-muted-foreground line-clamp-2 mb-2">{post.content}</p>
-                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                          <span className="flex items-center gap-1 shrink-0">
-                            <div className="w-5 h-5 rounded-full bg-gradient-to-br from-primary/30 to-primary/10 flex items-center justify-center text-primary font-bold text-xs">
-                              {((post as unknown as { userName?: string }).userName ?? t("community_channel.user_fallback")).charAt(0).toUpperCase()}
-                            </div>
-                            <span className="truncate max-w-[100px]">{(post as unknown as { userName?: string }).userName ?? t("community_channel.user_fallback")}</span>
-                          </span>
-                          <span className="flex items-center gap-1 shrink-0"><Clock className="w-3 h-3" />{formatDate(post.createdAt)}</span>
-                          <span className="flex items-center gap-1 shrink-0"><Eye className="w-3 h-3" />{post.views}</span>
-                          <span className="flex items-center gap-1 shrink-0">
-                            <MessageSquare className="w-3 h-3" />
-                            {t("community_channel.replies", { count: (post as unknown as { replyCount?: number }).replyCount ?? 0 })}
-                          </span>
-                          <span className="flex items-center gap-1 shrink-0">
-                            <ThumbsUp className="w-3 h-3" />
-                            {(post as unknown as { reactionCount?: number }).reactionCount ?? 0}
-                          </span>
+            <li key={post.id}>
+              <Link href={`/community/posts/${post.id}`} className="group block px-4 py-3 hover:bg-muted/50 transition-colors">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    {post.isPinned && (
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
+                        <Pin className="w-3 h-3 stroke-[1.75] text-warning" /> {t("community_channel.pinned")}
+                      </div>
+                    )}
+                    <h3 className="text-sm font-medium text-foreground mb-1 line-clamp-1">
+                      {post.title}
+                    </h3>
+                    <p className="text-[13px] text-muted-foreground line-clamp-2 mb-2">{post.content}</p>
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1.5 shrink-0">
+                        <div className="w-5 h-5 rounded-full bg-muted flex items-center justify-center text-muted-foreground font-medium text-[10px]">
+                          {((post as unknown as { userName?: string }).userName ?? t("community_channel.user_fallback")).charAt(0).toUpperCase()}
                         </div>
-                      </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        {isAdmin && (
-                          <Button
-                            variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100"
-                            onClick={(e) => { e.preventDefault(); post.id && togglePin({ id: post.id }); }}
-                            title={post.isPinned ? t("community_channel.unpin") : t("community_channel.pin")}
-                          >
-                            <Pin className={`w-3.5 h-3.5 ${post.isPinned ? "text-warning" : "text-muted-foreground"}`} />
-                          </Button>
-                        )}
-                        <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-muted-foreground" />
-                      </div>
+                        <span className="truncate max-w-[100px]">{(post as unknown as { userName?: string }).userName ?? t("community_channel.user_fallback")}</span>
+                      </span>
+                      <span className="shrink-0 tabular-nums">{formatDate(post.createdAt)}</span>
+                      <span className="flex items-center gap-1 shrink-0 tabular-nums"><Eye className="w-3 h-3 stroke-[1.75]" />{post.views}</span>
+                      <span className="flex items-center gap-1 shrink-0 tabular-nums">
+                        <MessageSquare className="w-3 h-3 stroke-[1.75]" />
+                        {t("community_channel.replies", { count: (post as unknown as { replyCount?: number }).replyCount ?? 0 })}
+                      </span>
+                      <span className="flex items-center gap-1 shrink-0 tabular-nums">
+                        <ThumbsUp className="w-3 h-3 stroke-[1.75]" />
+                        {(post as unknown as { reactionCount?: number }).reactionCount ?? 0}
+                      </span>
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {isAdmin && (
+                      <Button
+                        variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100"
+                        onClick={(e) => { e.preventDefault(); post.id && togglePin({ id: post.id }); }}
+                        title={post.isPinned ? t("community_channel.unpin") : t("community_channel.pin")}
+                      >
+                        <Pin className={`w-3.5 h-3.5 stroke-[1.75] ${post.isPinned ? "text-warning" : "text-muted-foreground"}`} />
+                      </Button>
+                    )}
+                    <ChevronRight className="w-4 h-4 stroke-[1.75] text-muted-foreground/60 group-hover:text-foreground transition-colors" />
+                  </div>
+                </div>
               </Link>
-            </div>
+            </li>
           ))}
-        </div>
+        </ul>
       )}
 
       <Dialog open={showCreate} onOpenChange={setShowCreate}>

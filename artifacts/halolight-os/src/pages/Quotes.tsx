@@ -44,13 +44,14 @@ import { useCurrency } from "@/lib/currency";
 import CustomerSearchCombobox from "@/components/CustomerSearchCombobox";
 import { useProspectCreation } from "@/hooks/useProspectCreation";
 import { prospectPrefill } from "@/lib/prospectCreation";
+import { EmptyState, PageHeader, Stat, StatGrid } from "@/components/page";
 
 const STATUS_COLORS: Record<string, string> = {
-  draft: "bg-slate-100 text-slate-700 border-slate-200",
-  sent: "bg-info/10 text-info border-info/30",
-  accepted: "bg-success/8 text-success border-success/20",
-  declined: "bg-destructive/10 text-destructive border-destructive/30",
-  expired: "bg-warning/8 text-warning border-warning/20",
+  draft: "bg-muted-foreground/50",
+  sent: "bg-info",
+  accepted: "bg-success",
+  declined: "bg-destructive",
+  expired: "bg-warning",
 };
 
 const STATUS_KEYS = ["draft", "sent", "accepted", "declined", "expired"];
@@ -334,22 +335,18 @@ export default function Quotes() {
   ];
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">
-            {t("quotes.title")}
-          </h1>
-          <p className="text-muted-foreground text-sm mt-1">
-            {t("quotes.subtitle")}
-          </p>
-        </div>
-        <Button onClick={() => setShowCreate(true)} className="gap-2 shrink-0">
-          <Plus className="w-4 h-4" /> {t("quotes.new_quote")}
-        </Button>
-      </div>
+    <div className="space-y-8">
+      <PageHeader
+        title={t("quotes.title")}
+        description={t("quotes.subtitle")}
+        actions={
+          <Button onClick={() => setShowCreate(true)} className="gap-2 shrink-0">
+            <Plus className="w-4 h-4 stroke-[1.75]" /> {t("quotes.new_quote")}
+          </Button>
+        }
+      />
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <StatGrid className="md:grid-cols-4">
         {[
           { label: t("quotes.total_quotes"), value: String(quotes.length) },
           {
@@ -365,14 +362,9 @@ export default function Quotes() {
             value: formatCurrency(totalRevenue),
           },
         ].map((s) => (
-          <div key={s.label} className="rounded-xl border bg-card p-4">
-            <p className="text-xs text-muted-foreground font-medium">
-              {s.label}
-            </p>
-            <p className="text-xl font-bold mt-1">{s.value}</p>
-          </div>
+          <Stat key={s.label} label={s.label} value={s.value} />
         ))}
-      </div>
+      </StatGrid>
 
       <div className="flex gap-2 items-center">
         <Select value={filterStatus} onValueChange={setFilterStatus}>
@@ -393,36 +385,31 @@ export default function Quotes() {
         </span>
       </div>
 
-      <div className="rounded-xl border bg-card overflow-hidden">
+      <div className={cn(!isLoading && quotes.length === 0 ? "" : "rounded-xl border border-border bg-card overflow-hidden")}>
         {isLoading ? (
-          <div className="flex items-center justify-center h-40 text-muted-foreground">
+          <div className="flex items-center justify-center h-40 text-sm text-muted-foreground">
             {t("quotes.loading")}
           </div>
         ) : quotes.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16">
-            <FileText className="w-10 h-10 text-muted-foreground/30 mb-3" />
-            <p className="font-medium text-muted-foreground">
-              {t("quotes.no_quotes")}
-            </p>
-          </div>
+          <EmptyState icon={FileText} text={t("quotes.no_quotes")} />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm min-w-[500px]">
-              <thead className="bg-muted/40 border-b">
+              <thead className="border-b border-border">
                 <tr>
-                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">
+                  <th className="text-left px-4 py-3 text-[13px] font-normal text-muted-foreground">
                     {t("quotes.col_quote_num")}
                   </th>
-                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">
+                  <th className="text-left px-4 py-3 text-[13px] font-normal text-muted-foreground">
                     {t("quotes.col_client")}
                   </th>
-                  <th className="text-left px-4 py-3 font-medium text-muted-foreground hidden sm:table-cell">
+                  <th className="text-left px-4 py-3 text-[13px] font-normal text-muted-foreground hidden sm:table-cell">
                     {t("common.status")}
                   </th>
-                  <th className="text-left px-4 py-3 font-medium text-muted-foreground hidden md:table-cell">
+                  <th className="text-left px-4 py-3 text-[13px] font-normal text-muted-foreground hidden md:table-cell">
                     {t("quotes.valid_until_label")}
                   </th>
-                  <th className="text-right px-4 py-3 font-medium text-muted-foreground">
+                  <th className="text-right px-4 py-3 text-[13px] font-normal text-muted-foreground">
                     {t("quotes.total_col")}
                   </th>
                   <th className="px-4 py-3"></th>
@@ -434,11 +421,11 @@ export default function Quotes() {
                   return (
                     <tr
                       key={q.id}
-                      className="hover:bg-muted/20 transition-colors group"
+                      className="hover:bg-muted/40 transition-colors group"
                     >
                       <td className="px-4 py-3">
                         <Link href={`/quotes/${q.id}`}>
-                          <span className="font-mono text-sm font-medium hover:text-primary cursor-pointer">
+                          <span className="font-mono text-sm font-medium hover:underline underline-offset-4 cursor-pointer">
                             {q.quoteNumber}
                           </span>
                         </Link>
@@ -446,7 +433,7 @@ export default function Quotes() {
                           {q.title}
                         </p>
                         {(q as any).packageName && (
-                          <p className="text-xs text-accent-foreground/70 truncate max-w-[160px]">
+                          <p className="text-xs text-muted-foreground truncate max-w-[160px]">
                             {(q as any).packageName}
                           </p>
                         )}
@@ -470,11 +457,9 @@ export default function Quotes() {
                           }
                         >
                           <SelectTrigger
-                            className={cn(
-                              "h-7 text-xs w-[110px] border font-medium",
-                              color,
-                            )}
+                            className="h-7 text-xs w-[120px] gap-1.5 font-medium"
                           >
+                            <span className={cn("h-1.5 w-1.5 rounded-full shrink-0", color)} />
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -489,7 +474,7 @@ export default function Quotes() {
                       <td className="px-4 py-3 hidden md:table-cell text-muted-foreground text-xs">
                         {formatDate(q.validUntil)}
                       </td>
-                      <td className="px-4 py-3 text-right font-bold">
+                      <td className="px-4 py-3 text-right font-medium tabular-nums">
                         {formatCurrency(q.total)}
                       </td>
                       <td className="px-4 py-3 text-right">
@@ -500,14 +485,14 @@ export default function Quotes() {
                               size="icon"
                               className="h-7 w-7"
                             >
-                              <ChevronRight className="w-4 h-4" />
+                              <ChevronRight className="w-4 h-4 stroke-[1.75]" />
                             </Button>
                           </Link>
                           <button
                             onClick={() => deleteMutation.mutate({ id: q.id })}
                             className="text-muted-foreground hover:text-destructive p-1"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 className="w-4 h-4 stroke-[1.75]" />
                           </button>
                         </div>
                       </td>
@@ -647,7 +632,7 @@ export default function Quotes() {
               {(form.packageName ||
                 form.includedPrints ||
                 form.equipmentIds.length > 0) && (
-                <span className="ml-auto text-xs text-primary font-medium">
+                <span className="ml-auto text-xs text-foreground font-medium">
                   {[
                     form.packageName,
                     form.includedPrints && `${form.includedPrints} prints`,
@@ -661,7 +646,7 @@ export default function Quotes() {
             </button>
 
             {showService && (
-              <div className="border rounded-xl p-4 space-y-4 bg-muted/20">
+              <div className="border border-border rounded-xl p-4 space-y-4 bg-card">
                 {/* Time + Package */}
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   <div className="space-y-1.5">
@@ -693,7 +678,7 @@ export default function Quotes() {
                     <Input
                       value={form.packageName}
                       onChange={f("packageName")}
-                      placeholder="Premium"
+                      placeholder={t("quotes.package_placeholder")}
                     />
                   </div>
                   <div className="space-y-1.5">
@@ -731,7 +716,7 @@ export default function Quotes() {
                     value={form.optionsList}
                     onChange={f("optionsList")}
                     rows={2}
-                    placeholder="Extra album, GIF booth…"
+                    placeholder={t("quotes.options_placeholder")}
                   />
                 </div>
 
@@ -893,10 +878,10 @@ export default function Quotes() {
               </div>
               <div className="flex items-end pb-1">
                 <div className="text-right w-full">
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-muted-foreground tabular-nums">
                     {t("quotes.subtotal")}: {formatCurrency(calcSubtotal())}
                   </p>
-                  <p className="text-base font-bold">
+                  <p className="text-base font-semibold tabular-nums">
                     {t("quotes.total_col")}: {formatCurrency(calcTotal())}
                   </p>
                 </div>

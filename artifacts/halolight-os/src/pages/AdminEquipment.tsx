@@ -2,14 +2,16 @@ import { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "wouter";
 import { useGetAdminEquipment, useGetAdminConsumables } from "@workspace/api-client-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import {
-  Monitor, Wrench, AlertTriangle, ShieldX, ShieldAlert, ShieldCheck,
-  Package, CheckCircle2, Search, BarChart3,
-  TrendingDown, ChevronRight, Clock, Layers,
+  Wrench, AlertTriangle, ShieldX, ShieldAlert, ShieldCheck,
+  CheckCircle2, Search, BarChart3,
+  TrendingDown, ChevronRight, Clock,
 } from "lucide-react";
+import { PageHeader, Section, StatGrid } from "@/components/page";
+import { cn } from "@/lib/utils";
 
 type AdminEquipmentItem = {
   id: string; userId: string; productModel: string; serialNumber: string;
@@ -27,19 +29,24 @@ type AdminConsumableItem = {
   reorderRecommended: boolean;
 };
 
-const STATUS_COLOR: Record<string, string> = {
-  active:     "bg-success/15 text-success",
-  inactive:   "bg-muted text-muted-foreground",
-  in_service: "bg-info/15 text-info",
-  retired:    "bg-destructive/15 text-destructive",
+const STATUS_DOT: Record<string, string> = {
+  active:     "bg-success",
+  inactive:   "bg-muted-foreground/50",
+  in_service: "bg-info",
+  retired:    "bg-destructive",
 };
 
-const MODEL_COLORS: Record<string, string> = {
-  "HaloLight Pro 2":       "bg-info/15 text-info",
-  "HaloLight Elite":       "bg-muted text-foreground",
-  "HaloLight Open Air":    "bg-success/15 text-success",
-  "HaloLight Studio 360":  "bg-warning/15 text-warning",
-};
+/** Libellé sobre : point de couleur + texte. */
+function DotLabel({ dot, children }: { dot: string; children: React.ReactNode }) {
+  return (
+    <Badge variant="outline" className="gap-1.5 text-xs font-normal text-foreground">
+      <span className={`h-1.5 w-1.5 rounded-full ${dot}`} aria-hidden="true" />
+      {children}
+    </Badge>
+  );
+}
+
+const TH = "px-4 py-2.5 text-[13px] font-normal text-muted-foreground";
 
 function fmtDate(d: string | null) {
   if (!d) return "—";
@@ -98,21 +105,21 @@ export default function AdminEquipment() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">{t("admin_equipment.title")}</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">{t("admin_equipment.subtitle")}</p>
-        </div>
-        <Link href="/admin/analytics">
-          <Button variant="outline" size="sm" className="gap-2">
-            <BarChart3 className="w-4 h-4" />
-            {t("admin_equipment.analytics_btn")}
-          </Button>
-        </Link>
-      </div>
+    <div className="space-y-8">
+      <PageHeader
+        title={t("admin_equipment.title")}
+        description={t("admin_equipment.subtitle")}
+        actions={
+          <Link href="/admin/analytics">
+            <Button variant="outline" size="sm" className="gap-2">
+              <BarChart3 className="w-4 h-4 stroke-[1.75]" />
+              {t("admin_equipment.analytics_btn")}
+            </Button>
+          </Link>
+        }
+      />
 
-      <div className="flex gap-1 bg-muted p-1 rounded-lg w-fit">
+      <div className="flex gap-1 border-b border-border">
         {([
           { key: "equipment",   labelKey: "admin_equipment.tab_equipment",   count: equipment.length,   alert: false },
           { key: "consumables", labelKey: "admin_equipment.tab_consumables", count: criticalConsumables.length + lowConsumables.length, alert: criticalConsumables.length + lowConsumables.length > 0 },
@@ -120,13 +127,13 @@ export default function AdminEquipment() {
           <button
             key={tabItem.key}
             onClick={() => setTab(tabItem.key)}
-            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all flex items-center gap-1.5 ${tab === tabItem.key ? "bg-card shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+            className={`-mb-px px-3 py-2 text-sm transition-colors flex items-center gap-1.5 border-b-2 ${tab === tabItem.key ? "border-foreground text-foreground font-medium" : "border-transparent text-muted-foreground hover:text-foreground"}`}
           >
             {t(tabItem.labelKey as Parameters<typeof t>[0])}
             {tabItem.alert ? (
-              <span className="w-4 h-4 bg-warning text-foreground rounded-full text-xs flex items-center justify-center">{tabItem.count}</span>
+              <span className="flex items-center gap-1 text-xs tabular-nums text-foreground"><span className="h-1.5 w-1.5 rounded-full bg-warning" aria-hidden="true" />{tabItem.count}</span>
             ) : (
-              <span className="text-xs text-muted-foreground">({tabItem.count})</span>
+              <span className="text-xs tabular-nums text-muted-foreground">({tabItem.count})</span>
             )}
           </button>
         ))}
@@ -134,27 +141,34 @@ export default function AdminEquipment() {
 
       {tab === "equipment" && (
         <>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <StatGrid className="md:grid-cols-4">
             {[
-              { label: t("admin_equipment.alert_warranty_expired"),   value: alertCounts.warrantyExpired,    color: "text-destructive", bg: "bg-destructive/10 border-destructive/30", filter: "warranty_expired" },
-              { label: t("admin_equipment.alert_warranty_soon"),      value: alertCounts.warrantySoon,       color: "text-warning",     bg: "bg-warning/8 border-warning/30",          filter: "warranty_soon" },
-              { label: t("admin_equipment.alert_maintenance_overdue"),value: alertCounts.maintenanceOverdue, color: "text-destructive", bg: "bg-destructive/10 border-destructive/30", filter: "maintenance_overdue" },
-              { label: t("admin_equipment.alert_service_due"),        value: alertCounts.maintenanceDue,     color: "text-warning",     bg: "bg-warning/8 border-warning/30",          filter: "maintenance_due" },
+              { label: t("admin_equipment.alert_warranty_expired"),   value: alertCounts.warrantyExpired,    dot: "bg-destructive", filter: "warranty_expired" },
+              { label: t("admin_equipment.alert_warranty_soon"),      value: alertCounts.warrantySoon,       dot: "bg-warning",     filter: "warranty_soon" },
+              { label: t("admin_equipment.alert_maintenance_overdue"),value: alertCounts.maintenanceOverdue, dot: "bg-destructive", filter: "maintenance_overdue" },
+              { label: t("admin_equipment.alert_service_due"),        value: alertCounts.maintenanceDue,     dot: "bg-warning",     filter: "maintenance_due" },
             ].map(s => (
               <button
                 key={s.label}
                 onClick={() => setAlertFilter(alertFilter === s.filter ? "all" : s.filter)}
-                className={`rounded-xl border p-4 text-left transition-all ${s.value > 0 ? s.bg : "bg-card border-border opacity-50"} ${alertFilter === s.filter ? "ring-2 ring-primary/40" : ""}`}
+                className={cn(
+                  "relative flex flex-col justify-between gap-4 p-5 min-h-[116px] text-left shadow-[1px_1px_0_0_hsl(var(--border))] transition-colors hover:bg-muted/50",
+                  alertFilter === s.filter && "bg-muted/60",
+                )}
               >
-                <p className={`text-2xl font-bold ${s.value > 0 ? s.color : "text-muted-foreground"}`}>{s.value}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">{s.label}</p>
+                <div className="flex items-start justify-between gap-2">
+                  <span className={cn("text-[13px] leading-snug", alertFilter === s.filter ? "text-foreground" : "text-muted-foreground")}>{s.label}</span>
+                  {s.value > 0 && <span className={cn("h-1.5 w-1.5 rounded-full mt-1.5 shrink-0", s.dot)} />}
+                </div>
+                <p className={cn("text-2xl font-semibold tracking-tight tabular-nums", s.value > 0 ? "text-foreground" : "text-muted-foreground")}>{s.value}</p>
               </button>
             ))}
-          </div>
+          </StatGrid>
 
+          <div className="space-y-4">
           <div className="flex flex-wrap gap-3 items-center">
             <div className="relative flex-1 min-w-48 max-w-72">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Search className="w-4 h-4 stroke-[1.75] absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder={t("admin_equipment.search_placeholder")}
                 value={search}
@@ -186,94 +200,84 @@ export default function AdminEquipment() {
                 {t("admin_equipment.clear_filters")}
               </Button>
             )}
-            <span className="text-xs text-muted-foreground ml-auto">{t("admin_equipment.units_count", { filtered: filtered.length, total: equipment.length })}</span>
+            <span className="text-[13px] tabular-nums text-muted-foreground ml-auto">{t("admin_equipment.units_count", { filtered: filtered.length, total: equipment.length })}</span>
           </div>
 
           {equipLoading ? (
             <div className="space-y-2">{[1,2,3,4].map(i => <div key={i} className="h-16 bg-muted rounded-xl animate-pulse" />)}</div>
           ) : (
-            <Card>
-              <CardContent className="p-0">
-                <div className="overflow-x-auto">
+            <div className="rounded-xl border border-border bg-card overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="border-b border-border bg-muted/50">
-                        <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t("admin_equipment.col_unit")}</th>
-                        <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide hidden md:table-cell">{t("admin_equipment.col_client")}</th>
-                        <th className="text-center px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t("admin_equipment.col_status")}</th>
-                        <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide hidden lg:table-cell">{t("admin_equipment.col_warranty")}</th>
-                        <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide hidden lg:table-cell">{t("admin_equipment.col_next_service")}</th>
-                        <th className="text-center px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t("admin_equipment.col_alerts")}</th>
+                      <tr className="border-b border-border">
+                        <th className={`text-left ${TH}`}>{t("admin_equipment.col_unit")}</th>
+                        <th className={`text-left ${TH} hidden md:table-cell`}>{t("admin_equipment.col_client")}</th>
+                        <th className={`text-center ${TH}`}>{t("admin_equipment.col_status")}</th>
+                        <th className={`text-left ${TH} hidden lg:table-cell`}>{t("admin_equipment.col_warranty")}</th>
+                        <th className={`text-left ${TH} hidden lg:table-cell`}>{t("admin_equipment.col_next_service")}</th>
+                        <th className={`text-center ${TH}`}>{t("admin_equipment.col_alerts")}</th>
                         <th className="w-8" />
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-50">
+                    <tbody className="divide-y divide-border">
                       {filtered.map(item => {
-                        const statusColor = STATUS_COLOR[item.status] ?? STATUS_COLOR.active!;
-                        const modelColor = MODEL_COLORS[item.productModel] ?? "bg-muted text-foreground";
+                        const statusDot = STATUS_DOT[item.status] ?? STATUS_DOT.active!;
                         const hasAlert = item.warrantyExpired || item.warrantyExpiringSoon || item.maintenanceOverdue || item.maintenanceDueSoon;
                         return (
-                          <tr key={item.id} className="hover:bg-muted/50 transition-colors">
+                          <tr key={item.id} className="hover:bg-muted/40 transition-colors">
                             <td className="px-4 py-3">
-                              <div className="flex items-center gap-2.5">
-                                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                                  <Monitor className="w-4 h-4 text-primary" />
-                                </div>
-                                <div>
-                                  <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${modelColor}`}>{item.productModel}</span>
-                                  <p className="text-xs text-muted-foreground mt-0.5">{t("admin_equipment.serial_prefix")} {item.serialNumber}</p>
-                                </div>
-                              </div>
+                              <p className="text-sm font-medium text-foreground">{item.productModel}</p>
+                              <p className="text-xs text-muted-foreground mt-0.5 tabular-nums">{t("admin_equipment.serial_prefix")} {item.serialNumber}</p>
                             </td>
                             <td className="px-4 py-3 hidden md:table-cell">
-                              <p className="font-medium text-foreground text-sm">{item.ownerName}</p>
+                              <p className="text-sm text-foreground">{item.ownerName}</p>
                               <p className="text-xs text-muted-foreground">{item.ownerCompany || item.ownerEmail}</p>
                             </td>
                             <td className="px-4 py-3 text-center">
-                              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusColor}`}>
+                              <DotLabel dot={statusDot}>
                                 {statusLabels[item.status] ?? item.status}
-                              </span>
+                              </DotLabel>
                             </td>
                             <td className="px-4 py-3 hidden lg:table-cell">
                               {item.warrantyExpired ? (
-                                <span className="text-xs text-destructive flex items-center gap-1"><ShieldX className="w-3 h-3" />{t("admin_equipment.warranty_expired_label")}</span>
+                                <span className="text-xs text-destructive flex items-center gap-1"><ShieldX className="w-3 h-3 stroke-[1.75]" />{t("admin_equipment.warranty_expired_label")}</span>
                               ) : item.warrantyExpiringSoon ? (
-                                <span className="text-xs text-warning flex items-center gap-1"><ShieldAlert className="w-3 h-3" />{fmtDate(item.warrantyExpiration)}</span>
+                                <span className="text-xs text-warning flex items-center gap-1 tabular-nums"><ShieldAlert className="w-3 h-3 stroke-[1.75]" />{fmtDate(item.warrantyExpiration)}</span>
                               ) : item.warrantyExpiration ? (
-                                <span className="text-xs text-success flex items-center gap-1"><ShieldCheck className="w-3 h-3" />{fmtDate(item.warrantyExpiration)}</span>
+                                <span className="text-xs text-muted-foreground flex items-center gap-1 tabular-nums"><ShieldCheck className="w-3 h-3 stroke-[1.75] text-success" />{fmtDate(item.warrantyExpiration)}</span>
                               ) : (
                                 <span className="text-xs text-muted-foreground">—</span>
                               )}
                             </td>
                             <td className="px-4 py-3 hidden lg:table-cell">
                               {item.maintenanceOverdue ? (
-                                <span className="text-xs text-destructive flex items-center gap-1"><AlertTriangle className="w-3 h-3" />{t("admin_equipment.maintenance_overdue_label")}</span>
+                                <span className="text-xs text-destructive flex items-center gap-1"><AlertTriangle className="w-3 h-3 stroke-[1.75]" />{t("admin_equipment.maintenance_overdue_label")}</span>
                               ) : item.maintenanceDueSoon ? (
-                                <span className="text-xs text-warning flex items-center gap-1"><Clock className="w-3 h-3" />{fmtDate(item.nextMaintenanceDate)}</span>
+                                <span className="text-xs text-warning flex items-center gap-1 tabular-nums"><Clock className="w-3 h-3 stroke-[1.75]" />{fmtDate(item.nextMaintenanceDate)}</span>
                               ) : (
-                                <span className="text-xs text-muted-foreground">{fmtDate(item.nextMaintenanceDate)}</span>
+                                <span className="text-xs text-muted-foreground tabular-nums">{fmtDate(item.nextMaintenanceDate)}</span>
                               )}
                             </td>
                             <td className="px-4 py-3 text-center">
                               {hasAlert ? (
-                                <div className="flex justify-center gap-1">
+                                <div className="flex justify-center gap-1.5">
                                   {(item.warrantyExpired || item.warrantyExpiringSoon) && (
-                                    <div className="w-5 h-5 bg-warning/15 rounded-full flex items-center justify-center" title={t("admin_equipment.warranty_alert_title")}>
-                                      <ShieldAlert className="w-3 h-3 text-warning" />
-                                    </div>
+                                    <span className="inline-flex" title={t("admin_equipment.warranty_alert_title")}>
+                                      <ShieldAlert className="w-4 h-4 stroke-[1.75] text-warning" />
+                                    </span>
                                   )}
                                   {(item.maintenanceOverdue || item.maintenanceDueSoon) && (
-                                    <div className="w-5 h-5 bg-warning/15 rounded-full flex items-center justify-center" title={t("admin_equipment.maintenance_alert_title")}>
-                                      <Wrench className="w-3 h-3 text-warning" />
-                                    </div>
+                                    <span className="inline-flex" title={t("admin_equipment.maintenance_alert_title")}>
+                                      <Wrench className="w-4 h-4 stroke-[1.75] text-warning" />
+                                    </span>
                                   )}
                                 </div>
                               ) : (
-                                <CheckCircle2 className="w-4 h-4 text-success mx-auto" />
+                                <CheckCircle2 className="w-4 h-4 stroke-[1.75] text-success mx-auto" />
                               )}
                             </td>
                             <td className="px-4 py-3">
-                              <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                              <ChevronRight className="w-4 h-4 stroke-[1.75] text-muted-foreground/60" />
                             </td>
                           </tr>
                         );
@@ -285,68 +289,60 @@ export default function AdminEquipment() {
                       )}
                     </tbody>
                   </table>
-                </div>
-              </CardContent>
-            </Card>
+            </div>
           )}
+          </div>
         </>
       )}
 
       {tab === "consumables" && (
         <>
           {(criticalConsumables.length > 0 || lowConsumables.length > 0) && (
-            <div className="space-y-3">
+            <ul className="rounded-xl border border-border bg-card divide-y divide-border">
               {criticalConsumables.map(c => (
-                <div key={c.id} className="bg-destructive/10 border border-destructive/30 rounded-xl p-4 flex items-center gap-3">
-                  <AlertTriangle className="w-5 h-5 text-destructive shrink-0" />
-                  <div className="flex-1">
-                    <p className="text-sm font-semibold text-destructive">{t("admin_equipment.out_of_stock", { name: c.name })}</p>
-                    <p className="text-xs text-destructive">{c.ownerName} ({c.ownerCompany}) — 0 {c.unitType} remaining</p>
+                <li key={c.id} className="px-4 py-3 flex items-center gap-3">
+                  <AlertTriangle className="w-4 h-4 stroke-[1.75] text-destructive shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground">{t("admin_equipment.out_of_stock", { name: c.name })}</p>
+                    <p className="text-[13px] text-muted-foreground">{c.ownerName} ({c.ownerCompany}) — 0 {c.unitType} remaining</p>
                   </div>
-                  <span className="text-xs bg-destructive/15 text-destructive px-2 py-0.5 rounded-full font-medium">{t("admin_equipment.critical_badge")}</span>
-                </div>
+                  <DotLabel dot="bg-destructive">{t("admin_equipment.critical_badge")}</DotLabel>
+                </li>
               ))}
               {lowConsumables.map(c => (
-                <div key={c.id} className="bg-warning/8 border border-warning/30 rounded-xl p-4 flex items-center gap-3">
-                  <TrendingDown className="w-5 h-5 text-warning shrink-0" />
-                  <div className="flex-1">
-                    <p className="text-sm font-semibold text-warning">{t("admin_equipment.low_stock", { name: c.name })}</p>
-                    <p className="text-xs text-warning">
+                <li key={c.id} className="px-4 py-3 flex items-center gap-3">
+                  <TrendingDown className="w-4 h-4 stroke-[1.75] text-warning shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground">{t("admin_equipment.low_stock", { name: c.name })}</p>
+                    <p className="text-[13px] text-muted-foreground">
                       {c.ownerName} ({c.ownerCompany}) — {c.currentQuantity} {c.unitType} left
                       {c.daysRemaining !== null ? ` (~${c.daysRemaining} days)` : ""}
                     </p>
                   </div>
-                  <span className="text-xs bg-warning/15 text-warning px-2 py-0.5 rounded-full font-medium">{t("admin_equipment.status_low")}</span>
-                </div>
+                  <DotLabel dot="bg-warning">{t("admin_equipment.status_low")}</DotLabel>
+                </li>
               ))}
-            </div>
+            </ul>
           )}
 
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Layers className="w-4 h-4 text-primary" />
-                {t("admin_equipment.consumable_stock_title")}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
+          <Section title={t("admin_equipment.consumable_stock_title")}>
               {consumLoading ? (
-                <div className="p-6 space-y-2">{[1,2,3].map(i => <div key={i} className="h-12 bg-muted rounded animate-pulse" />)}</div>
+                <div className="space-y-2">{[1,2,3].map(i => <div key={i} className="h-12 bg-muted rounded-xl animate-pulse" />)}</div>
               ) : (
-                <div className="overflow-x-auto">
+                <div className="rounded-xl border border-border bg-card overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="border-b border-border bg-muted/50">
-                        <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t("admin_equipment.col_item")}</th>
-                        <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide hidden md:table-cell">{t("admin_equipment.col_client")}</th>
-                        <th className="text-center px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t("admin_equipment.col_stock")}</th>
-                        <th className="text-center px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide hidden sm:table-cell">{t("admin_equipment.col_days")}</th>
-                        <th className="text-center px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t("admin_equipment.col_status")}</th>
+                      <tr className="border-b border-border">
+                        <th className={`text-left ${TH}`}>{t("admin_equipment.col_item")}</th>
+                        <th className={`text-left ${TH} hidden md:table-cell`}>{t("admin_equipment.col_client")}</th>
+                        <th className={`text-center ${TH}`}>{t("admin_equipment.col_stock")}</th>
+                        <th className={`text-center ${TH} hidden sm:table-cell`}>{t("admin_equipment.col_days")}</th>
+                        <th className={`text-center ${TH}`}>{t("admin_equipment.col_status")}</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-50">
+                    <tbody className="divide-y divide-border">
                       {consumables.map(c => (
-                        <tr key={c.id} className="hover:bg-muted/50">
+                        <tr key={c.id} className="hover:bg-muted/40 transition-colors">
                           <td className="px-4 py-3">
                             <p className="font-medium text-foreground">{c.name}</p>
                             <p className="text-xs text-muted-foreground">{c.sku}</p>
@@ -356,21 +352,21 @@ export default function AdminEquipment() {
                             <p className="text-xs text-muted-foreground">{c.ownerCompany}</p>
                           </td>
                           <td className="px-4 py-3 text-center">
-                            <span className={`font-bold ${c.isCritical ? "text-destructive" : c.isLow ? "text-warning" : "text-foreground"}`}>
+                            <span className={`font-medium tabular-nums ${c.isCritical ? "text-destructive" : c.isLow ? "text-warning" : "text-foreground"}`}>
                               {c.currentQuantity}
                             </span>
                             <span className="text-xs text-muted-foreground ml-1">{c.unitType}</span>
                           </td>
-                          <td className="px-4 py-3 text-center hidden sm:table-cell text-xs text-muted-foreground">
+                          <td className="px-4 py-3 text-center hidden sm:table-cell text-xs tabular-nums text-muted-foreground">
                             {c.daysRemaining !== null ? `~${c.daysRemaining}d` : "—"}
                           </td>
                           <td className="px-4 py-3 text-center">
                             {c.isCritical ? (
-                              <span className="text-xs px-2 py-0.5 rounded-full bg-destructive/15 text-destructive font-medium">{t("admin_equipment.status_critical")}</span>
+                              <DotLabel dot="bg-destructive">{t("admin_equipment.status_critical")}</DotLabel>
                             ) : c.isLow ? (
-                              <span className="text-xs px-2 py-0.5 rounded-full bg-warning/15 text-warning font-medium">{t("admin_equipment.status_low")}</span>
+                              <DotLabel dot="bg-warning">{t("admin_equipment.status_low")}</DotLabel>
                             ) : (
-                              <span className="text-xs px-2 py-0.5 rounded-full bg-success/15 text-success font-medium">{t("admin_equipment.status_ok")}</span>
+                              <DotLabel dot="bg-success">{t("admin_equipment.status_ok")}</DotLabel>
                             )}
                           </td>
                         </tr>
@@ -382,8 +378,7 @@ export default function AdminEquipment() {
                   </table>
                 </div>
               )}
-            </CardContent>
-          </Card>
+          </Section>
         </>
       )}
     </div>

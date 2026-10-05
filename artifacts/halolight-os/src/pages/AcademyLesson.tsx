@@ -14,8 +14,6 @@ import {
   useSubmitQuiz,
 } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -32,6 +30,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { academyErrorMessage, apiErrorStatus } from "@/lib/apiErrorMessage";
+import { EmptyState, Notice } from "@/components/page";
 
 export function getVideoEmbedUrl(url: string): string {
   if (typeof url !== "string" || !url.trim()) return "";
@@ -220,9 +219,9 @@ function AcademyLessonContent({ courseId, lessonId, lang }: { courseId: string; 
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-8">
         <Skeleton className="h-8 w-48" />
-        <Skeleton className="aspect-video rounded-2xl" />
+        <Skeleton className="aspect-video rounded-xl" />
         <Skeleton className="h-48 rounded-xl" />
       </div>
     );
@@ -230,42 +229,38 @@ function AcademyLessonContent({ courseId, lessonId, lang }: { courseId: string; 
 
   if (isLessonError || isCourseError) {
     return (
-      <div role="alert" className="rounded-xl border border-destructive/20 bg-destructive/8 p-5 text-destructive break-words">
-        <div className="flex items-start gap-3">
-          <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
-          <div>
-            <p className="font-semibold">{t("academy.error_title")}</p>
-            <p className="mt-1 text-sm">
-              {isCourseError ? academyErrorMessage(courseError, t)
-                : apiErrorStatus(lessonError) === 404 ? t("academy.lesson_unavailable")
-                : academyErrorMessage(lessonError, t)}
-            </p>
+      <Notice
+        icon={AlertCircle}
+        title={t("academy.error_title")}
+        action={
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" size="sm" disabled={isFetchingLesson || isFetchingCourse} onClick={() => {
+              void refetchLesson();
+              void refetchCourse();
+            }}>
+              <RefreshCw className={cn("h-4 w-4", (isFetchingLesson || isFetchingCourse) && "animate-spin")} />
+              {t("academy.retry")}
+            </Button>
+            <Button variant="outline" size="sm" asChild>
+              <Link href={`/academy/${courseId}`}>{t("academy.back_to_course")}</Link>
+            </Button>
           </div>
-        </div>
-        <div className="mt-4 flex flex-wrap gap-2">
-          <Button variant="outline" disabled={isFetchingLesson || isFetchingCourse} onClick={() => {
-            void refetchLesson();
-            void refetchCourse();
-          }}>
-            <RefreshCw className={cn("mr-2 h-4 w-4", (isFetchingLesson || isFetchingCourse) && "animate-spin")} />
-            {t("academy.retry")}
-          </Button>
-          <Button variant="outline" asChild>
-            <Link href={`/academy/${courseId}`}>{t("academy.back_to_course")}</Link>
-          </Button>
-        </div>
-      </div>
+        }
+      >
+        {isCourseError ? academyErrorMessage(courseError, t)
+          : apiErrorStatus(lessonError) === 404 ? t("academy.lesson_unavailable")
+          : academyErrorMessage(lessonError, t)}
+      </Notice>
     );
   }
 
   if (!lesson || !course || currentIdx === -1 || lesson.id !== lessonId || course.id !== courseId) {
     return (
-      <div className="text-center py-16 text-muted-foreground">
-        <p>{t("academy.lesson_unavailable")}</p>
+      <EmptyState text={t("academy.lesson_unavailable")}>
         <Link href={`/academy/${courseId}`}>
-          <Button variant="outline" className="mt-4">{t("academy.back_to_course")}</Button>
+          <Button variant="outline" size="sm">{t("academy.back_to_course")}</Button>
         </Link>
-      </div>
+      </EmptyState>
     );
   }
 
@@ -352,35 +347,35 @@ function AcademyLessonContent({ courseId, lessonId, lang }: { courseId: string; 
     null;
 
   return (
-    <div className="space-y-6" data-testid="page-academy-lesson">
+    <div className="space-y-8" data-testid="page-academy-lesson">
       {/* Back */}
       <Link href={`/academy/${courseId}`}>
-        <button className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
-          <ArrowLeft className="w-4 h-4" />
+        <button className="flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-foreground transition-colors">
+          <ArrowLeft className="w-3.5 h-3.5 stroke-[1.75]" />
           {t("academy.back_to_course")}
         </button>
       </Link>
 
       {/* Title & status */}
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <p className="text-sm text-muted-foreground mb-1">{course.title}</p>
-          <h1 className="text-2xl font-bold text-foreground">{lesson.title}</h1>
+      <div className="flex items-end justify-between gap-4">
+        <div className="min-w-0">
+          <p className="text-[13px] text-muted-foreground mb-1">{course.title}</p>
+          <h1 className="text-2xl md:text-[28px] font-semibold tracking-tight text-foreground break-words">{lesson.title}</h1>
         </div>
         {isCompleted && (
-          <Badge className="bg-success/15 text-success border-success/30 shrink-0">
-            <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
+          <span className="inline-flex items-center gap-1.5 text-xs text-success shrink-0 pb-1.5">
+            <CheckCircle2 className="w-3.5 h-3.5 stroke-[1.75]" />
             {t("academy.completed")}
-          </Badge>
+          </span>
         )}
       </div>
 
       {/* Video Player */}
       {isRetryingPlayback ? (
-        <Skeleton className="aspect-video rounded-2xl" aria-label={t("common.loading")} />
+        <Skeleton className="aspect-video rounded-xl" aria-label={t("common.loading")} />
       ) : embedUrl ? (
         <div
-          className="relative bg-black rounded-2xl overflow-hidden shadow-lg aspect-video"
+          className="relative bg-black rounded-xl overflow-hidden border border-border aspect-video"
           style={thumbnailUrl ? { backgroundImage: `url(${thumbnailUrl})`, backgroundSize: "cover", backgroundPosition: "center" } : undefined}
         >
           <iframe
@@ -395,59 +390,55 @@ function AcademyLessonContent({ courseId, lessonId, lang }: { courseId: string; 
           />
         </div>
       ) : thumbnailUrl ? (
-        <div className="relative rounded-2xl overflow-hidden shadow-sm aspect-video bg-black">
+        <div className="relative rounded-xl overflow-hidden border border-border aspect-video bg-black">
           <img src={thumbnailUrl} alt={lesson.title} className="w-full h-full object-cover opacity-60" />
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-white">
-            <Video className="w-12 h-12 opacity-60" />
+            <Video className="w-5 h-5 stroke-[1.75] opacity-80" />
             <p className="text-sm">{t("academy_lesson.no_video", { defaultValue: "Video not available in this language yet." })}</p>
           </div>
         </div>
       ) : (
-        <div className="relative bg-muted rounded-2xl overflow-hidden shadow-sm aspect-video flex flex-col items-center justify-center gap-3 text-muted-foreground">
-          <Video className="w-12 h-12 opacity-30" />
+        <div className="relative rounded-xl border border-dashed border-border overflow-hidden aspect-video flex flex-col items-center justify-center gap-3 text-muted-foreground">
+          <Video className="w-5 h-5 stroke-[1.75] text-muted-foreground/70" />
           <p className="text-sm">{t("academy_lesson.no_video", { defaultValue: "Video not available in this language yet." })}</p>
         </div>
       )}
 
-      <div className="flex justify-end">
-        <Button variant="outline" onClick={() => void retryPlayback()} disabled={isRetryingPlayback || isFetchingLesson}>
-          <RefreshCw className={cn("mr-2 h-4 w-4", (isRetryingPlayback || isFetchingLesson) && "animate-spin")} />
+      <div className="flex flex-wrap justify-end gap-2 -mt-4">
+        <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground hover:text-foreground" onClick={() => void retryPlayback()} disabled={isRetryingPlayback || isFetchingLesson}>
+          <RefreshCw className={cn("h-4 w-4 stroke-[1.75]", (isRetryingPlayback || isFetchingLesson) && "animate-spin")} />
           {t("academy.retry_video")}
         </Button>
-      </div>
 
-      {/* Mark Complete */}
-      {!isCompleted && (lesson.quizQuestions.length === 0 || quizResult?.passed) && (
-        <div className="flex justify-end">
+        {/* Mark Complete */}
+        {!isCompleted && (lesson.quizQuestions.length === 0 || quizResult?.passed) && (
           <Button
+            size="sm"
             onClick={handleMarkComplete}
             disabled={isMarkingComplete}
-            className="shadow-sm"
+            className="gap-1.5"
           >
-            <CheckCircle2 className="w-4 h-4 mr-2" />
+            <CheckCircle2 className="w-4 h-4 stroke-[1.75]" />
             {t("academy.mark_complete")}
           </Button>
-        </div>
-      )}
+        )}
+      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-8 gap-y-10">
         {/* Left: Quiz */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-10">
           {lesson.quizQuestions.length > 0 && (
-            <Card className="border-border shadow-sm">
-              <CardHeader className="pb-4">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <BookOpen className="w-5 h-5 text-primary" />
-                  {t("academy.quiz")}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
+            <section>
+              <h2 className="text-sm font-medium text-foreground mb-3">
+                {t("academy.quiz")}
+              </h2>
+              <div className="rounded-xl border border-border bg-card p-5 space-y-6">
                 {lesson.quizQuestions.map((q, qi) => {
                   const result = quizResult?.answers.find((a) => a.questionId === q.id);
                   return (
                     <div key={q.id} className="space-y-3">
-                      <p className="font-medium text-foreground">
-                        {qi + 1}. {q.question}
+                      <p className="text-sm font-medium text-foreground">
+                        <span className="tabular-nums text-muted-foreground">{qi + 1}.</span> {q.question}
                       </p>
                       <div className="space-y-2">
                         {q.options.map((opt, oi) => {
@@ -461,16 +452,16 @@ function AcademyLessonContent({ courseId, lessonId, lang }: { courseId: string; 
                               disabled={quizSubmitted || isSubmittingQuiz}
                               aria-pressed={isSelected}
                               className={cn(
-                                "w-full text-left px-4 py-3 rounded-lg border text-sm transition-all",
+                                "w-full text-left px-4 py-3 rounded-lg border text-sm transition-colors",
                                 quizSubmitted
                                   ? isCorrect
-                                    ? "border-success/40 bg-success/8 text-success"
+                                    ? "border-success/50 text-success"
                                     : isWrong
-                                      ? "border-destructive/30 bg-destructive/10 text-destructive"
+                                      ? "border-destructive/50 text-destructive"
                                       : "border-border text-muted-foreground"
                                   : isSelected
-                                    ? "border-primary bg-primary/5 text-primary font-medium"
-                                    : "border-border hover:border-border hover:bg-muted text-foreground"
+                                    ? "border-foreground/60 bg-muted/50 text-foreground font-medium"
+                                    : "border-border hover:border-foreground/20 hover:bg-muted/50 text-foreground"
                               )}
                             >
                               {opt}
@@ -483,19 +474,16 @@ function AcademyLessonContent({ courseId, lessonId, lang }: { courseId: string; 
                 })}
 
                 {quizResult && (
-                  <div className={cn(
-                    "rounded-xl p-4 flex items-center gap-3",
-                    quizResult.passed ? "bg-success/8 border border-success/20" : "bg-warning/8 border border-warning/20"
-                  )}>
+                  <div className="rounded-lg border border-border p-4 flex items-start gap-3">
                     {quizResult.passed
-                      ? <CheckCircle2 className="w-5 h-5 text-success shrink-0" />
-                      : <AlertCircle className="w-5 h-5 text-warning shrink-0" />
+                      ? <CheckCircle2 className="w-4 h-4 stroke-[1.75] mt-0.5 text-success shrink-0" />
+                      : <AlertCircle className="w-4 h-4 stroke-[1.75] mt-0.5 text-warning shrink-0" />
                     }
                     <div>
-                      <p className={cn("font-semibold", quizResult.passed ? "text-success" : "text-warning")}>
+                      <p className={cn("text-sm font-medium", quizResult.passed ? "text-success" : "text-warning")}>
                         {quizResult.passed ? t("academy.quiz_passed") : t("academy.quiz_failed")}
                       </p>
-                      <p className={cn("text-sm", quizResult.passed ? "text-success" : "text-warning")}>
+                      <p className="text-sm text-muted-foreground tabular-nums mt-0.5">
                         {t("academy.quiz_score")}: {quizResult.score} / {quizResult.total}
                       </p>
                     </div>
@@ -523,19 +511,16 @@ function AcademyLessonContent({ courseId, lessonId, lang }: { courseId: string; 
                     {t("academy.quiz_retake")}
                   </Button>
                 )}
-              </CardContent>
-            </Card>
+              </div>
+            </section>
           )}
         </div>
 
         {/* Right: Resources */}
         {lesson.resources.length > 0 && (
-          <div className="space-y-4">
-            <Card className="border-border shadow-sm">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">{t("academy.resources")}</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
+          <section>
+            <h2 className="text-sm font-medium text-foreground mb-3">{t("academy.resources")}</h2>
+            <div className="rounded-xl border border-border bg-card divide-y divide-border overflow-hidden">
                 {lesson.resources.map((r) => {
                   const Icon = RESOURCE_ICONS[r.type] ?? FileText;
                   return (
@@ -544,25 +529,22 @@ function AcademyLessonContent({ courseId, lessonId, lang }: { courseId: string; 
                       href={r.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted transition-colors group"
+                      className="flex items-center gap-3 px-4 py-3 hover:bg-muted/50 transition-colors group"
                     >
-                      <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                        <Icon className="w-4 h-4 text-primary" />
-                      </div>
-                      <span className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">
+                      <Icon className="w-4 h-4 stroke-[1.75] text-muted-foreground flex-shrink-0" />
+                      <span className="text-sm text-foreground min-w-0 break-words">
                         {r.title}
                       </span>
                     </a>
                   );
                 })}
-              </CardContent>
-            </Card>
-          </div>
+            </div>
+          </section>
         )}
       </div>
 
       {/* Navigation */}
-      <div className="flex justify-between pt-4 border-t border-border">
+      <div className="flex justify-between pt-6 border-t border-border">
         {prevLesson ? (
           <Link href={`/academy/${courseId}/${prevLesson.id}`}>
             <Button variant="outline" className="gap-2">

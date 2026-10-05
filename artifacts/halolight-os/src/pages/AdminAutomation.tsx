@@ -15,7 +15,6 @@ import {
   getListAutomationExecutionsQueryKey,
   getListAutomationLogsQueryKey,
 } from "@workspace/api-client-react";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -24,13 +23,13 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
-  Zap, Play, Clock, CheckCircle2, XCircle, AlertTriangle,
-  SkipForward, Activity, RefreshCw, Trash2, BarChart3,
+  Play, Clock, CheckCircle2, XCircle, AlertTriangle,
+  SkipForward, Activity, RefreshCw, Trash2,
   Bell, Mail, BookOpen, Headphones, TrendingUp, Package,
   Loader2, ListFilter,
 } from "lucide-react";
-import { motion } from "framer-motion";
 import { formatDistanceToNow, format } from "date-fns";
+import { EmptyState, PageHeader, Stat, StatGrid, type StatTone } from "@/components/page";
 
 type AutomationRule = {
   id: string; name: string; description: string; triggerType: string; actionType: string;
@@ -50,18 +49,23 @@ type AutomationLog = {
   status: string; detail: Record<string, unknown>; createdAt: string;
 };
 
-const TRIGGER_COLORS: Record<string, string> = {
-  onboarding_stalled: "bg-warning/15 text-warning",
-  inactive_user: "bg-slate-100 text-slate-700",
-  low_academy_progress: "bg-info/15 text-info",
-  no_events_created: "bg-muted text-foreground",
-  no_quotes_created: "bg-info/15 text-info",
-  low_consumable_stock: "bg-warning/15 text-warning",
-  warranty_expiring: "bg-destructive/15 text-destructive",
-  high_performer_detected: "bg-success/15 text-success",
-  upsell_opportunity_detected: "bg-teal-100 text-teal-800",
-  coaching_recommendation_generated: "bg-info/15 text-info",
+// Déclencheurs : seul un point signale un statut (alerte / succès), le reste reste neutre.
+const TRIGGER_DOTS: Record<string, string> = {
+  onboarding_stalled: "bg-warning",
+  low_consumable_stock: "bg-warning",
+  warranty_expiring: "bg-destructive",
+  high_performer_detected: "bg-success",
 };
+
+function TriggerBadge({ type, children }: { type: string; children: React.ReactNode }) {
+  const dot = TRIGGER_DOTS[type];
+  return (
+    <Badge variant="outline" className="gap-1.5 text-xs font-normal text-foreground">
+      {dot && <span className={`h-1.5 w-1.5 rounded-full ${dot}`} aria-hidden="true" />}
+      {children}
+    </Badge>
+  );
+}
 
 const ACTION_ICONS: Record<string, React.ElementType> = {
   in_app_notification: Bell,
@@ -74,11 +78,11 @@ const ACTION_ICONS: Record<string, React.ElementType> = {
 
 const STATUS_ICONS: Record<string, { Icon: React.ElementType; color: string }> = {
   action_taken:     { Icon: CheckCircle2, color: "text-success" },
-  no_match:         { Icon: SkipForward,  color: "text-slate-400" },
+  no_match:         { Icon: SkipForward,  color: "text-muted-foreground" },
   skipped_cooldown: { Icon: Clock,        color: "text-warning" },
   skipped_preference: { Icon: SkipForward, color: "text-muted-foreground" },
   error:            { Icon: XCircle,      color: "text-destructive" },
-  matched:          { Icon: CheckCircle2, color: "text-info" },
+  matched:          { Icon: CheckCircle2, color: "text-foreground" },
 };
 
 export default function AdminAutomation() {
@@ -158,18 +162,18 @@ export default function AdminAutomation() {
     { key: "logs" as const,       label: t("admin_automation.tab_logs") },
   ];
 
-  const STATS = [
-    { labelKey: "admin_automation.stat_total",         value: stats?.totalRules ?? 0,       icon: Zap,           color: "text-primary" },
-    { labelKey: "admin_automation.stat_enabled",       value: stats?.enabledRules ?? 0,     icon: CheckCircle2,  color: "text-success" },
-    { labelKey: "admin_automation.stat_runs_today",    value: stats?.todayExecutions ?? 0,  icon: Activity,      color: "text-info" },
-    { labelKey: "admin_automation.stat_total_runs",    value: stats?.totalExecutions ?? 0,  icon: RefreshCw,     color: "text-slate-600" },
-    { labelKey: "admin_automation.stat_actions_today", value: stats?.actionsToday ?? 0,     icon: Zap,           color: "text-info" },
-    { labelKey: "admin_automation.stat_total_actions", value: stats?.totalActions ?? 0,     icon: BarChart3,     color: "text-teal-600" },
-    { labelKey: "admin_automation.stat_errors_today",  value: stats?.errorsToday ?? 0,      icon: AlertTriangle, color: "text-destructive" },
+  const STATS: { labelKey: string; value: number; tone?: StatTone }[] = [
+    { labelKey: "admin_automation.stat_total",         value: stats?.totalRules ?? 0 },
+    { labelKey: "admin_automation.stat_enabled",       value: stats?.enabledRules ?? 0 },
+    { labelKey: "admin_automation.stat_runs_today",    value: stats?.todayExecutions ?? 0 },
+    { labelKey: "admin_automation.stat_total_runs",    value: stats?.totalExecutions ?? 0 },
+    { labelKey: "admin_automation.stat_actions_today", value: stats?.actionsToday ?? 0 },
+    { labelKey: "admin_automation.stat_total_actions", value: stats?.totalActions ?? 0 },
+    { labelKey: "admin_automation.stat_errors_today",  value: stats?.errorsToday ?? 0,      tone: (stats?.errorsToday ?? 0) > 0 ? "destructive" : undefined },
   ];
 
   return (
-    <div className="p-6 space-y-6 max-w-7xl mx-auto">
+    <div className="space-y-8">
       <AlertDialog open={!!deleteId} onOpenChange={o => { if (!o) setDeleteId(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -185,39 +189,31 @@ export default function AdminAutomation() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <div className="flex items-center justify-between flex-wrap gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <Zap className="h-6 w-6 text-primary" /> {t("admin_automation.title")}
-          </h1>
-          <p className="text-muted-foreground text-sm mt-1">{t("admin_automation.subtitle")}</p>
-        </div>
-        <Button onClick={handleRunAll} disabled={runningGlobal} className="gap-2">
-          {runningGlobal ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
-          {runningGlobal ? t("admin_automation.running") : t("admin_automation.run_all")}
-        </Button>
-      </div>
+      <PageHeader
+        title={t("admin_automation.title")}
+        description={t("admin_automation.subtitle")}
+        actions={
+          <Button onClick={handleRunAll} disabled={runningGlobal} size="sm" className="gap-2">
+            {runningGlobal ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4 stroke-[1.75]" />}
+            {runningGlobal ? t("admin_automation.running") : t("admin_automation.run_all")}
+          </Button>
+        }
+      />
 
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
+      <StatGrid className="md:grid-cols-4 lg:grid-cols-7">
         {STATS.map((s) => (
-          <Card key={s.labelKey} className="p-4">
-            <div className="flex items-center gap-2 mb-1">
-              <s.icon className={`h-4 w-4 ${s.color}`} />
-              <span className="text-xs text-muted-foreground">{t(s.labelKey as Parameters<typeof t>[0])}</span>
-            </div>
-            <p className="text-2xl font-bold">{s.value}</p>
-          </Card>
+          <Stat key={s.labelKey} label={t(s.labelKey as Parameters<typeof t>[0])} value={s.value} tone={s.tone} />
         ))}
-      </div>
+      </StatGrid>
 
       <div className="flex gap-1 border-b border-border">
         {TABS.map((tab) => (
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
-            className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px ${
+            className={`px-3 py-2 text-sm transition-colors border-b-2 -mb-px ${
               activeTab === tab.key
-                ? "border-primary text-primary"
+                ? "border-foreground text-foreground font-medium"
                 : "border-transparent text-muted-foreground hover:text-foreground"
             }`}
           >
@@ -228,50 +224,46 @@ export default function AdminAutomation() {
 
       {/* Rules Tab */}
       {activeTab === "rules" && (
-        <div className="space-y-3">
+        <div>
           {rulesLoading ? (
             <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
             </div>
           ) : rules.length === 0 ? (
-            <Card className="p-8 text-center text-muted-foreground">{t("admin_automation.no_rules")}</Card>
+            <EmptyState text={t("admin_automation.no_rules")} />
           ) : (
-            rules.map((rule, i) => {
+            <ul className="rounded-xl border border-border bg-card divide-y divide-border">
+            {rules.map((rule) => {
               const ActionIcon = ACTION_ICONS[rule.actionType] ?? Bell;
-              const triggerColor = TRIGGER_COLORS[rule.triggerType] ?? "bg-slate-100 text-slate-700";
               const isTriggering = triggeringId === rule.id;
 
               return (
-                <motion.div key={rule.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
-                  <Card className={`transition-opacity ${rule.isEnabled === 0 ? "opacity-60" : ""}`}>
-                    <CardContent className="p-4">
-                      <div className="flex items-start gap-4">
-                        <div className="mt-0.5 h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                          <ActionIcon className="h-4 w-4 text-primary" />
-                        </div>
+                <li key={rule.id} className={`px-4 py-3 transition-opacity ${rule.isEnabled === 0 ? "opacity-60" : ""}`}>
+                      <div className="flex items-start gap-3">
+                        <ActionIcon className="mt-0.5 h-4 w-4 stroke-[1.75] text-muted-foreground shrink-0" />
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap mb-1">
-                            <span className="font-medium text-sm">{rule.name}</span>
-                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${triggerColor}`}>
+                            <span className="font-medium text-sm text-foreground">{rule.name}</span>
+                            <TriggerBadge type={rule.triggerType}>
                               {triggerLabel(rule.triggerType)}
-                            </span>
-                            <span className="text-xs px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground">
+                            </TriggerBadge>
+                            <Badge variant="outline" className="text-xs font-normal text-muted-foreground">
                               {actionLabel(rule.actionType)}
-                            </span>
+                            </Badge>
                           </div>
-                          <p className="text-xs text-muted-foreground line-clamp-1">{rule.description}</p>
-                          <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+                          <p className="text-[13px] text-muted-foreground line-clamp-1">{rule.description}</p>
+                          <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground tabular-nums">
                             <span className="flex items-center gap-1">
-                              <RefreshCw className="h-3 w-3" />
+                              <RefreshCw className="h-3 w-3 stroke-[1.75]" />
                               {t("admin_automation.runs", { count: rule.runCount })}
                             </span>
                             <span className="flex items-center gap-1">
-                              <CheckCircle2 className="h-3 w-3" />
+                              <CheckCircle2 className="h-3 w-3 stroke-[1.75]" />
                               {t("admin_automation.matches", { count: rule.matchCount })}
                             </span>
                             {rule.lastRunAt && (
                               <span className="flex items-center gap-1">
-                                <Clock className="h-3 w-3" />
+                                <Clock className="h-3 w-3 stroke-[1.75]" />
                                 {formatDistanceToNow(new Date(rule.lastRunAt), { addSuffix: true })}
                               </span>
                             )}
@@ -280,34 +272,34 @@ export default function AdminAutomation() {
                         <div className="flex items-center gap-2 shrink-0">
                           <Switch checked={rule.isEnabled === 1} onCheckedChange={() => handleToggle(rule)} />
                           <Button size="sm" variant="outline" className="gap-1 text-xs" onClick={() => handleTrigger(rule.id)} disabled={isTriggering}>
-                            {isTriggering ? <Loader2 className="h-3 w-3 animate-spin" /> : <Play className="h-3 w-3" />}
+                            {isTriggering ? <Loader2 className="h-3 w-3 animate-spin" /> : <Play className="h-3 w-3 stroke-[1.75]" />}
                             {t("admin_automation.run_btn")}
                           </Button>
-                          <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => setDeleteId(rule.id)}>
-                            <Trash2 className="h-3.5 w-3.5" />
+                          <Button size="sm" variant="ghost" className="text-muted-foreground hover:text-destructive" onClick={() => setDeleteId(rule.id)}>
+                            <Trash2 className="h-3.5 w-3.5 stroke-[1.75]" />
                           </Button>
                         </div>
                       </div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
+                </li>
               );
-            })
+            })}
+            </ul>
           )}
         </div>
       )}
 
       {/* Executions Tab */}
       {activeTab === "executions" && (
-        <div className="space-y-3">
+        <div>
           {execLoading ? (
             <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
             </div>
           ) : executions.length === 0 ? (
-            <Card className="p-8 text-center text-muted-foreground">{t("admin_automation.no_executions")}</Card>
+            <EmptyState text={t("admin_automation.no_executions")} />
           ) : (
-            executions.map((exec, i) => {
+            <ul className="rounded-xl border border-border bg-card divide-y divide-border">
+            {executions.map((exec) => {
               const isOk = exec.status === "completed" && exec.errors === 0;
               const hasFailed = exec.status === "failed";
 
@@ -317,23 +309,17 @@ export default function AdminAutomation() {
               else runLabel = t("admin_automation.run_by", { id: exec.triggeredBy.slice(0, 8) });
 
               return (
-                <motion.div key={exec.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
-                  <Card>
-                    <CardContent className="p-4">
-                      <div className="flex items-center gap-4">
-                        <div className={`h-8 w-8 rounded-full flex items-center justify-center shrink-0 ${
-                          hasFailed ? "bg-destructive/15" : isOk ? "bg-success/15" : "bg-warning/8"
-                        }`}>
-                          {hasFailed ? <XCircle className="h-4 w-4 text-destructive" />
-                            : isOk ? <CheckCircle2 className="h-4 w-4 text-success" />
-                            : <AlertTriangle className="h-4 w-4 text-warning" />}
-                        </div>
+                <li key={exec.id} className="px-4 py-3">
+                      <div className="flex items-center gap-3">
+                        {hasFailed ? <XCircle className="h-4 w-4 stroke-[1.75] text-destructive shrink-0" />
+                          : isOk ? <CheckCircle2 className="h-4 w-4 stroke-[1.75] text-success shrink-0" />
+                          : <AlertTriangle className="h-4 w-4 stroke-[1.75] text-warning shrink-0" />}
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                            <span className="font-medium text-sm">{runLabel}</span>
-                            <Badge variant={hasFailed ? "destructive" : "secondary"} className="text-xs">{exec.status}</Badge>
+                            <span className="font-medium text-sm text-foreground">{runLabel}</span>
+                            <Badge variant="outline" className={`text-xs font-normal ${hasFailed ? "text-destructive" : "text-muted-foreground"}`}>{exec.status}</Badge>
                           </div>
-                          <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                          <div className="flex items-center gap-4 text-xs text-muted-foreground tabular-nums">
                             <span>{format(new Date(exec.startedAt), "MMM d, HH:mm:ss")}</span>
                             {exec.finishedAt && (
                               <span>
@@ -344,39 +330,38 @@ export default function AdminAutomation() {
                         </div>
                         <div className="flex items-center gap-6 text-sm shrink-0">
                           <div className="text-center">
-                            <p className="font-semibold">{exec.rulesEvaluated}</p>
+                            <p className="font-medium tabular-nums text-foreground">{exec.rulesEvaluated}</p>
                             <p className="text-xs text-muted-foreground">{t("admin_automation.col_rules")}</p>
                           </div>
                           <div className="text-center">
-                            <p className="font-semibold text-success">{exec.actionsFired}</p>
+                            <p className="font-medium tabular-nums text-foreground">{exec.actionsFired}</p>
                             <p className="text-xs text-muted-foreground">{t("admin_automation.col_actions")}</p>
                           </div>
                           <div className="text-center">
-                            <p className={`font-semibold ${exec.errors > 0 ? "text-destructive" : ""}`}>{exec.errors}</p>
+                            <p className={`font-medium tabular-nums ${exec.errors > 0 ? "text-destructive" : "text-foreground"}`}>{exec.errors}</p>
                             <p className="text-xs text-muted-foreground">{t("admin_automation.col_errors")}</p>
                           </div>
                         </div>
                       </div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
+                </li>
               );
-            })
+            })}
+            </ul>
           )}
         </div>
       )}
 
       {/* Logs Tab */}
       {activeTab === "logs" && (
-        <div className="space-y-3">
+        <div className="space-y-4">
           <div className="flex items-center gap-2 flex-wrap">
-            <ListFilter className="h-4 w-4 text-muted-foreground" />
+            <ListFilter className="h-4 w-4 stroke-[1.75] text-muted-foreground" />
             {["", "action_taken", "no_match", "skipped_cooldown", "skipped_preference", "error"].map((f) => (
               <button
                 key={f}
                 onClick={() => setLogFilter(f)}
                 className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
-                  logFilter === f ? "bg-primary text-primary-foreground border-primary" : "border-border hover:bg-muted"
+                  logFilter === f ? "bg-foreground text-background border-foreground" : "border-border text-muted-foreground hover:text-foreground hover:bg-muted/50"
                 }`}
               >
                 {f === "" ? t("admin_automation.filter_all") : statusLabel(f)}
@@ -386,45 +371,45 @@ export default function AdminAutomation() {
 
           {logsLoading ? (
             <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
             </div>
           ) : logs.length === 0 ? (
-            <Card className="p-8 text-center text-muted-foreground">{t("admin_automation.no_logs")}</Card>
+            <EmptyState text={t("admin_automation.no_logs")} />
           ) : (
-            <div className="rounded-lg border border-border overflow-hidden">
+            <div className="rounded-xl border border-border bg-card overflow-x-auto">
               <table className="w-full text-sm">
-                <thead className="bg-muted/50">
-                  <tr className="text-left text-xs text-muted-foreground">
-                    <th className="px-4 py-2 font-medium">{t("admin_automation.col_status")}</th>
-                    <th className="px-4 py-2 font-medium">{t("admin_automation.col_rule")}</th>
-                    <th className="px-4 py-2 font-medium">{t("admin_automation.col_trigger")}</th>
-                    <th className="px-4 py-2 font-medium">{t("admin_automation.col_action")}</th>
-                    <th className="px-4 py-2 font-medium">{t("admin_automation.col_target")}</th>
-                    <th className="px-4 py-2 font-medium">{t("admin_automation.col_time")}</th>
+                <thead>
+                  <tr className="text-left text-[13px] text-muted-foreground border-b border-border">
+                    <th className="px-4 py-2.5 font-normal">{t("admin_automation.col_status")}</th>
+                    <th className="px-4 py-2.5 font-normal">{t("admin_automation.col_rule")}</th>
+                    <th className="px-4 py-2.5 font-normal">{t("admin_automation.col_trigger")}</th>
+                    <th className="px-4 py-2.5 font-normal">{t("admin_automation.col_action")}</th>
+                    <th className="px-4 py-2.5 font-normal">{t("admin_automation.col_target")}</th>
+                    <th className="px-4 py-2.5 font-normal">{t("admin_automation.col_time")}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
                   {logs.map((log) => {
-                    const sc = STATUS_ICONS[log.status] ?? { Icon: Activity, color: "text-slate-500" };
+                    const sc = STATUS_ICONS[log.status] ?? { Icon: Activity, color: "text-muted-foreground" };
                     return (
-                      <tr key={log.id} className="hover:bg-muted/30 transition-colors">
-                        <td className="px-4 py-2">
-                          <div className={`flex items-center gap-1.5 ${sc.color}`}>
-                            <sc.Icon className="h-3.5 w-3.5" />
-                            <span className="text-xs font-medium">{statusLabel(log.status)}</span>
+                      <tr key={log.id} className="hover:bg-muted/40 transition-colors">
+                        <td className="px-4 py-2.5">
+                          <div className="flex items-center gap-1.5">
+                            <sc.Icon className={`h-3.5 w-3.5 stroke-[1.75] ${sc.color}`} />
+                            <span className="text-xs text-foreground">{statusLabel(log.status)}</span>
                           </div>
                         </td>
-                        <td className="px-4 py-2 text-xs font-medium max-w-[160px] truncate">{log.ruleName}</td>
-                        <td className="px-4 py-2">
-                          <span className={`text-xs px-2 py-0.5 rounded-full ${TRIGGER_COLORS[log.triggerType] ?? "bg-muted"}`}>
+                        <td className="px-4 py-2.5 text-xs font-medium text-foreground max-w-[160px] truncate">{log.ruleName}</td>
+                        <td className="px-4 py-2.5">
+                          <TriggerBadge type={log.triggerType}>
                             {triggerLabel(log.triggerType)}
-                          </span>
+                          </TriggerBadge>
                         </td>
-                        <td className="px-4 py-2 text-xs text-muted-foreground">{actionLabel(log.actionType)}</td>
-                        <td className="px-4 py-2 text-xs text-muted-foreground font-mono">
+                        <td className="px-4 py-2.5 text-xs text-muted-foreground">{actionLabel(log.actionType)}</td>
+                        <td className="px-4 py-2.5 text-xs text-muted-foreground font-mono">
                           {log.targetUserId ? `${log.targetUserId.slice(0, 8)}…` : "—"}
                         </td>
-                        <td className="px-4 py-2 text-xs text-muted-foreground whitespace-nowrap">
+                        <td className="px-4 py-2.5 text-xs text-muted-foreground whitespace-nowrap">
                           {formatDistanceToNow(new Date(log.createdAt), { addSuffix: true })}
                         </td>
                       </tr>
