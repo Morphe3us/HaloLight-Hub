@@ -14,6 +14,7 @@ import AiAssistantSection from "@/components/landing/AiAssistantSection";
  */
 
 const SIGN_IN = "/sign-in";
+const SIGN_UP = "/sign-up";
 
 const TOKENS = cn(
   "[--hub-paper:#f9f8f6] [--hub-card:#ffffff] [--hub-panel:#f2efea] [--hub-chip:#ebe7e1]",
@@ -36,7 +37,7 @@ export default function Landing() {
       className={cn(TOKENS, "min-h-screen scroll-smooth bg-(--hub-paper) font-sans text-(--hub-ink) antialiased [color-scheme:light]")}
       data-testid="page-landing"
     >
-      <HubHero signInHref={SIGN_IN} />
+      <HubHero signInHref={SIGN_IN} signUpHref={SIGN_UP} />
 
       <section aria-label={t("landing.v2.values_label")} className="border-y border-black/5 bg-(--hub-card)">
         <ul className="mx-auto grid max-w-6xl gap-px bg-black/5 sm:grid-cols-3">
@@ -56,7 +57,7 @@ export default function Landing() {
 
       <ProductTour />
       <FeatureBento />
-      <AiAssistantSection ctaHref={SIGN_IN} />
+      <AiAssistantSection ctaHref={SIGN_UP} />
 
       <section id="onboarding" className="scroll-mt-20 px-4 pb-16 sm:px-6 sm:pb-24">
         <div className="relative mx-auto max-w-6xl overflow-hidden rounded-[2rem] bg-(--hub-ink) px-6 py-14 text-white sm:px-12 sm:py-16">
@@ -94,7 +95,7 @@ export default function Landing() {
           <p className="relative mt-4 max-w-lg text-(--hub-muted) sm:text-lg">{t("landing.cta_subtitle")}</p>
           <div className="relative mt-8 flex w-full flex-col justify-center gap-2.5 sm:w-auto sm:flex-row">
             <Link
-              href={SIGN_IN}
+              href={SIGN_UP}
               className="group inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-(--hub-ink) px-6 text-[0.9375rem] font-semibold text-white hover:bg-black"
             >
               {t("landing.cta_btn")}

@@ -141,7 +141,7 @@ export function PillLink({
   );
 }
 
-function NavBar({ signInHref }: { signInHref: string }) {
+function NavBar({ signInHref, signUpHref }: { signInHref: string; signUpHref: string }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const shouldReduceMotion = useReducedMotion();
@@ -174,7 +174,7 @@ function NavBar({ signInHref }: { signInHref: string }) {
           <Link href={signInHref} className="text-sm font-medium text-(--hub-ink) hover:underline" data-testid="button-landing-signin">
             {t("landing.nav_sign_in")}
           </Link>
-          <PillLink href={signInHref} variant="solid" className="min-h-9 px-4 text-sm sm:min-h-9">
+          <PillLink href={signUpHref} variant="solid" className="min-h-9 px-4 text-sm sm:min-h-9">
             {t("landing.nav_get_started")}
           </PillLink>
         </div>
@@ -216,7 +216,7 @@ function NavBar({ signInHref }: { signInHref: string }) {
               <PillLink href={signInHref} variant="outline">
                 {t("landing.nav_sign_in")}
               </PillLink>
-              <PillLink href={signInHref} variant="solid">
+              <PillLink href={signUpHref} variant="solid">
                 {t("landing.nav_get_started")}
               </PillLink>
             </div>
@@ -390,11 +390,11 @@ function Diagram() {
   );
 }
 
-export default function HubHero({ signInHref }: { signInHref: string }) {
+export default function HubHero({ signInHref, signUpHref }: { signInHref: string; signUpHref: string }) {
   const { t } = useTranslation();
   return (
     <div id="top" className="relative isolate w-full overflow-x-clip">
-      <NavBar signInHref={signInHref} />
+      <NavBar signInHref={signInHref} signUpHref={signUpHref} />
       <section aria-labelledby="hub-hero-heading" className="relative px-4 pt-14 sm:px-6 sm:pt-20">
         <div
           aria-hidden
@@ -413,7 +413,7 @@ export default function HubHero({ signInHref }: { signInHref: string }) {
           </h1>
           <p className="max-w-[52ch] text-center text-base text-pretty text-(--hub-muted) sm:text-lg">{t("landing.v2.hero_subtitle")}</p>
           <div className="flex w-full flex-col items-stretch justify-center gap-2.5 sm:w-auto sm:flex-row sm:items-center">
-            <PillLink href={signInHref} variant="solid">
+            <PillLink href={signUpHref} variant="solid">
               <span data-testid="button-landing-signup">{t("landing.cta_btn")}</span>
               <span aria-hidden>→</span>
             </PillLink>
