@@ -75,6 +75,7 @@ async function runWorker(): Promise<void> {
         if (name === "drizzle-orm") return orm;
         if (name === "../middlewares/supabaseAuth") return { getAuth: (req: unknown) => req };
         if (name === "./logger") return { logger: { warn() {}, info() {} } };
+        if (name === "./notifyPendingSignup") return { notifyAdminsOfPendingSignup: async () => {} };
         if (name === "./env") return { parseBooleanEnv: (value: string) => value === "true" };
         if (name === "./supabaseProfile") return {
           ...profile,

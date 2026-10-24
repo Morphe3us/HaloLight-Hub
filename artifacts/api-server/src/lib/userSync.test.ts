@@ -79,6 +79,7 @@ function harness(initial: User[], options: {
       if (id === "@workspace/db") return { db, usersTable };
       if (id === "../middlewares/supabaseAuth") return { getAuth: (req: unknown) => req };
       if (id === "./logger") return { logger: { warn() {}, info() {} } };
+      if (id === "./notifyPendingSignup") return { notifyAdminsOfPendingSignup: async () => {} };
       if (id === "./env") return { ...env, isExplicitDevelopment: () => false };
       if (id === "./supabaseProfile") return {
         ...supabaseProfile,

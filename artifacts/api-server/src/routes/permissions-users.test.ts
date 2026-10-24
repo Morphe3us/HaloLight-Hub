@@ -71,6 +71,7 @@ test("four roles: real auth/sync, disabled users, profile privilege injection an
   const sync = load(new URL("../lib/userSync.ts", import.meta.url), {
     "../middlewares/supabaseAuth": auth, "@workspace/db": { db, usersTable }, "drizzle-orm": orm,
     "./logger": { logger: { warn() {}, info() {} } },
+    "./notifyPendingSignup": { notifyAdminsOfPendingSignup: async () => {} },
     "./env": { isExplicitDevelopment: () => false, parseBooleanEnv: () => false },
     "./supabaseProfile": { buildSupabaseUserProfile: () => ({}), needsSupabaseProfileRepair: () => false,
       fetchSupabaseUserProfile: () => assert.fail("No Supabase network calls"), isPlaceholderEmail: () => false, isPlaceholderProfileName: () => false },

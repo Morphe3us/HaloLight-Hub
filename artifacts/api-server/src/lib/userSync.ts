@@ -12,6 +12,7 @@ import {
   type SupabaseUserProfile,
 } from "./supabaseProfile";
 import { parseBooleanEnv } from "./env";
+import { notifyAdminsOfPendingSignup } from "./notifyPendingSignup";
 
 type User = typeof usersTable.$inferSelect;
 const SUPABASE_PROFILE_REFRESH_TTL_MS = 5 * 60 * 1000;
@@ -343,6 +344,7 @@ async function syncLocalUser(
       .returning();
 
     logger.info({ authId, userId: created.id }, "JIT provisioned new user");
+    await notifyAdminsOfPendingSignup(created);
     return created;
   } catch (error) {
     if (!isUniqueViolation(error)) throw error;
