@@ -12,7 +12,13 @@ const localeLoaders = import.meta.glob<{ default: Record<string, unknown> }>([
 ]);
 
 const LANG_KEY = "halolight-lang";
-const storedLang = normalizeLang(localStorage.getItem(LANG_KEY));
+const storedLang = normalizeLang(localStorage.getItem(LANG_KEY) ?? browserLang());
+
+/** First supported language the visitor's browser asks for; used until they pick one. */
+function browserLang(): string | null {
+  const wanted = typeof navigator === "undefined" ? [] : [...(navigator.languages ?? []), navigator.language];
+  return wanted.find((lang) => SUPPORTED_LANGS.includes(lang?.split("-")[0] as SupportedLang)) ?? null;
+}
 
 function normalizeLang(lang: string | null | undefined): SupportedLang {
   const normalized = lang?.split("-")[0];
@@ -42,6 +48,11 @@ export async function setAppLanguage(lang: string) {
   return normalized;
 }
 
+// The API reads <html lang> (via customFetch) to give new accounts the language they signed up in.
+i18n.on("languageChanged", (lang) => {
+  if (typeof document !== "undefined") document.documentElement.lang = normalizeLang(lang);
+});
+
 i18n.use(initReactI18next).init({
   resources: { en: { translation: en } },
   lng: "en",
@@ -55,4 +66,14 @@ if (storedLang !== "en") {
 }
 
 export const LANG_STORAGE_KEY = LANG_KEY;
+export const APP_LANGUAGES: Array<{ code: SupportedLang; label: string }> = [
+  { code: "en", label: "English" },
+  { code: "fr", label: "Français" },
+  { code: "es", label: "Español" },
+  { code: "de", label: "Deutsch" },
+  { code: "it", label: "Italiano" },
+  { code: "pl", label: "Polski" },
+  { code: "pt", label: "Português" },
+  { code: "nl", label: "Nederlands" },
+];
 export default i18n;

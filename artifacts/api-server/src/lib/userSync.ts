@@ -230,10 +230,27 @@ function allowPublicSignups(): boolean {
   return parseBooleanEnv(process.env.ALLOW_PUBLIC_SIGNUPS) === true;
 }
 
+const SIGNUP_LANGUAGES = ["en", "fr", "es", "de", "it", "pl", "pt", "nl"] as const;
+type SignupLanguage = (typeof SIGNUP_LANGUAGES)[number];
+
+/** The UI language a new account signed up in: the app's explicit header first, then the browser's. */
+function signupLanguage(req: Request): SignupLanguage | undefined {
+  const headers = req.headers ?? {};
+  for (const value of [headers["x-hub-language"], headers["accept-language"]]) {
+    if (typeof value !== "string") continue;
+    for (const part of value.split(",")) {
+      const code = part.split(";")[0].trim().toLowerCase().split("-")[0];
+      if ((SIGNUP_LANGUAGES as readonly string[]).includes(code)) return code as SignupLanguage;
+    }
+  }
+  return undefined;
+}
+
 async function syncLocalUser(
   authId: string,
   claims: Record<string, unknown> | undefined,
   accessToken: string,
+  language?: SignupLanguage,
 ): Promise<User | null> {
   const [existing] = await db
     .select()
@@ -336,6 +353,7 @@ async function syncLocalUser(
         authId,
         role: "client",
         accessStatus: "pending",
+        ...(language ? { language } : {}),
         email: verifiedProfile.email,
         firstName: verifiedProfile.firstName,
         lastName: verifiedProfile.lastName,
@@ -388,7 +406,7 @@ export async function resolveAccountUser(req: Request): Promise<User | null> {
   const existing = localUserSyncInFlight.get(authId);
   if (existing) { requestUsers.set(req, existing); return existing; }
 
-  const request = syncLocalUser(authId, claims, auth.accessToken).finally(() => {
+  const request = syncLocalUser(authId, claims, auth.accessToken, signupLanguage(req)).finally(() => {
     localUserSyncInFlight.delete(authId);
   });
   localUserSyncInFlight.set(authId, request);

@@ -7,6 +7,7 @@ import { useAuth } from "@/auth/AuthProvider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PublicLanguageSwitch } from "@/components/PublicLanguageSwitch";
 
 const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 type Mode = "sign-in" | "sign-up" | "reset" | "callback" | "password" | "error";
@@ -85,9 +86,10 @@ export function AuthPage({ mode }: { mode: Mode }) {
   };
   return (
     <main
-      className="flex min-h-[100dvh] items-center justify-center bg-background px-4 py-10"
+      className="relative flex min-h-[100dvh] items-center justify-center bg-background px-4 py-10"
       data-testid="page-auth"
     >
+      <PublicLanguageSwitch className="absolute top-4 right-4 text-muted-foreground hover:text-foreground hover:bg-muted" />
       <section className="w-full max-w-sm">
         <Link
           href="/"

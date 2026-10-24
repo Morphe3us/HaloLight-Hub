@@ -369,6 +369,11 @@ export async function customFetch<T = unknown>(
     }
   }
 
+  // Lets the API store the interface language when it provisions a new account.
+  if (!headers.has("x-hub-language") && typeof document !== "undefined" && document.documentElement.lang) {
+    headers.set("x-hub-language", document.documentElement.lang);
+  }
+
   const requestInfo = { method, url: resolveUrl(input) };
 
   const response = await fetch(input, { ...init, method, headers });

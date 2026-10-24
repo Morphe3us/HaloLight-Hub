@@ -13,6 +13,7 @@ import {
   Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { PublicLanguageSwitch } from "@/components/PublicLanguageSwitch";
 
 /**
  * Landing hero, adapted from the Aceternity Pro block "Hero Section With Hub":
@@ -171,6 +172,7 @@ function NavBar({ signInHref, signUpHref }: { signInHref: string; signUpHref: st
           ))}
         </ul>
         <div className="hidden items-center gap-4 justify-self-end lg:flex">
+          <PublicLanguageSwitch className="text-(--hub-muted) hover:text-(--hub-ink)" />
           <Link href={signInHref} className="text-sm font-medium text-(--hub-ink) hover:underline" data-testid="button-landing-signin">
             {t("landing.nav_sign_in")}
           </Link>
@@ -178,9 +180,11 @@ function NavBar({ signInHref, signUpHref }: { signInHref: string; signUpHref: st
             {t("landing.nav_get_started")}
           </PillLink>
         </div>
+        <div className="flex items-center gap-1 justify-self-end lg:hidden">
+        <PublicLanguageSwitch className="text-(--hub-muted)" />
         <button
           type="button"
-          className="relative grid size-11 place-items-center justify-self-end rounded-full text-(--hub-ink) ring-1 ring-black/10 lg:hidden"
+          className="relative grid size-11 place-items-center rounded-full text-(--hub-ink) ring-1 ring-black/10"
           aria-expanded={open}
           aria-controls="hub-mobile-nav"
           onClick={() => setOpen((value) => !value)}
@@ -192,6 +196,7 @@ function NavBar({ signInHref, signUpHref }: { signInHref: string; signUpHref: st
             <span className={cn("h-px w-full bg-current transition", open && "-translate-y-1 -rotate-45")} />
           </span>
         </button>
+        </div>
       </nav>
       <AnimatePresence>
         {open ? (

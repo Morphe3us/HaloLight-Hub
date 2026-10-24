@@ -196,6 +196,20 @@ test("explicit public provisioning still requires verified real email", async ()
   assert.equal(denied.writes, 0);
 });
 
+test("a public signup keeps the language it registered in, app header before browser", async () => {
+  const cases: Array<[Record<string, string>, string]> = [
+    [{ "x-hub-language": "it", "accept-language": "de-DE,de;q=0.9" }, "it"],
+    [{ "accept-language": "xx,es-ES;q=0.8,en;q=0.5" }, "es"],
+    // Unsupported languages leave the column to its database default (the fixture's value here).
+    [{ "accept-language": "ja-JP" }, user().language],
+  ];
+  for (const [headers, expected] of cases) {
+    const h = harness([], { publicSignups: true });
+    await h.resolve({ userId: "user_google", sessionClaims: {}, accessToken: "verified-token", headers } as never);
+    assert.equal(h.rows[0].language, expected);
+  }
+});
+
 test("raw access lookup preserves rejected, pending and disabled accounts without repair", async () => {
   for (const patch of [{ accessStatus: "pending" as const }, { accessStatus: "rejected" as const }, { isActive: false }]) {
     const h = harness([user({ authId: "user_google", ...patch })], { publicSignups: true });
