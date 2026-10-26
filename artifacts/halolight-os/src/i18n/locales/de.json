@@ -111,7 +111,8 @@
     "role_admin": "Administrator",
     "role_client": "Mitglied",
     "role_coach": "Coach",
-    "role_sales_rep": "Vertriebsmitarbeiter"
+    "role_sales_rep": "Vertriebsmitarbeiter",
+    "access_requests": "Zugangsanfragen"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -881,7 +882,8 @@
     "toast_user_updated": "Benutzer aktualisiert",
     "toast_user_save_failed": "Benutzer konnte nicht gespeichert werden",
     "toast_user_required": "E-Mail und vollständiger Name sind erforderlich",
-    "saving_user": "Speichern..."
+    "saving_user": "Speichern...",
+    "access_requests_subtitle": "Neue Registrierungen warten auf Ihre Freigabe. Geben Sie einen Kunden frei, um ihm Zugang zum Hub zu gewähren."
   },
   "leads": {
     "title": "CRM — Leads",

@@ -111,7 +111,8 @@
     "role_admin": "Administrator",
     "role_client": "Member",
     "role_coach": "Coach",
-    "role_sales_rep": "Sales Rep"
+    "role_sales_rep": "Sales Rep",
+    "access_requests": "Access requests"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -881,7 +882,8 @@
     "toast_user_updated": "User updated",
     "toast_user_save_failed": "Unable to save user",
     "toast_user_required": "Email and full name are required",
-    "saving_user": "Saving..."
+    "saving_user": "Saving...",
+    "access_requests_subtitle": "New sign-ups waiting for your approval. Approve a client to open their Hub access."
   },
   "leads": {
     "title": "CRM — Leads",

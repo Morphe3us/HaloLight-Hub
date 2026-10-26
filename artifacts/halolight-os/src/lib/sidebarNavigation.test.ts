@@ -4,7 +4,7 @@ import { createRequire } from "node:module";
 import { runInNewContext } from "node:vm";
 import { describe, it } from "node:test";
 import ts from "typescript";
-import { createAdminNavigation, createClientNavigation, hasNotificationBadge, isNavItemActive, type NavItem } from "../components/layout/sidebarNavigation";
+import { createAdminNavigation, createClientNavigation, hasNotificationBadge, isNavItemActive, navItemCount, type NavItem } from "../components/layout/sidebarNavigation";
 
 const items = createClientNavigation((key) => key);
 const leaves = (nodes: NavItem[]): NavItem[] => nodes.flatMap((node) => node.children ? leaves(node.children) : [node]);
@@ -13,15 +13,25 @@ describe("admin navigation", () => {
   const admin = createAdminNavigation((key) => key);
   it("groups all existing admin pages without changing their destinations", () => {
     assert.deepEqual(admin[0].children!.map((item) => item.title), [
-      "nav.admin_pilotage", "nav.admin_operations", "nav.admin_content_ai", "nav.admin_data_system", "nav.settings",
+      "nav.access_requests", "nav.admin_pilotage", "nav.admin_operations", "nav.admin_content_ai", "nav.admin_data_system", "nav.settings",
     ]);
     const destinations = leaves(admin).map((item) => item.href);
-    assert.equal(destinations.length, 19);
-    assert.equal(new Set(destinations).size, 19);
-    for (const path of ["/admin", "/admin/analytics", "/admin/revenue", "/admin/clients", "/admin/equipment", "/admin/automation", "/admin/academy", "/admin/resources", "/admin/search", "/admin/translations", "/admin/uploads", "/admin/ai-knowledge", "/admin/backup", "/admin/exports", "/admin/contract-templates", "/admin/roles", "/admin/settings", "/admin/branding", "/admin/notifications"]) {
+    assert.equal(destinations.length, 20);
+    assert.equal(new Set(destinations).size, 20);
+    for (const path of ["/admin/access-requests", "/admin", "/admin/analytics", "/admin/revenue", "/admin/clients", "/admin/equipment", "/admin/automation", "/admin/academy", "/admin/resources", "/admin/search", "/admin/translations", "/admin/uploads", "/admin/ai-knowledge", "/admin/backup", "/admin/exports", "/admin/contract-templates", "/admin/roles", "/admin/settings", "/admin/branding", "/admin/notifications"]) {
       assert.ok(destinations.includes(path), path);
       assert.equal(admin[0].children!.filter((item) => isNavItemActive(item, path)).length, 1);
     }
+  });
+});
+
+describe("access request badge", () => {
+  it("counts pending sign-ups on the item and its admin parent, never for zero", () => {
+    assert.equal(navItemCount(createAdminNavigation((key) => key)[0]), 0);
+    const admin = createAdminNavigation((key) => key, { pendingAccess: 3 });
+    assert.equal(navItemCount(admin[0].children![0]), 3);
+    assert.equal(navItemCount(admin[0]), 3);
+    assert.equal(navItemCount(admin[0].children![1]), 0);
   });
 });
 
@@ -93,7 +103,7 @@ function navHarness(preloadSidebarPage = (_href: string) => {}) {
           return [state, (value: unknown) => { state = value; }];
         },
       };
-      if (id === "./sidebarNavigation") return { createClientNavigation, hasNotificationBadge, isNavItemActive };
+      if (id === "./sidebarNavigation") return { createClientNavigation, hasNotificationBadge, isNavItemActive, navItemCount };
       if (id === "@/lib/utils") return { cn: (...args: string[]) => args.filter(Boolean).join(" ") };
       if (id === "wouter") return { Link: "a" };
       if (id === "@/lib/pageRoutes") return { preloadSidebarPage };

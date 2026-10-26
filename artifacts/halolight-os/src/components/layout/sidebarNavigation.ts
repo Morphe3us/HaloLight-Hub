@@ -4,7 +4,7 @@ import {
   FileSignature, ReceiptText, LifeBuoy, BookOpen, Sparkles, Settings,
   UserRound, Bell, CheckCircle2, Monitor, Package,
   Shield, BarChart3, DollarSign, UserCheck, Zap, LibraryBig, Search,
-  Languages, FolderUp, Brain, HardDrive, DownloadCloud,
+  Languages, FolderUp, Brain, HardDrive, DownloadCloud, UserPlus,
 } from "lucide-react";
 
 export type NavItem = {
@@ -12,6 +12,8 @@ export type NavItem = {
   href: string;
   icon: ComponentType<{ className?: string }>;
   badge?: boolean;
+  /** Explicit count shown as a badge (e.g. pending access requests); parents show their children's total. */
+  count?: number;
   children?: NavItem[];
 };
 
@@ -25,8 +27,13 @@ export function hasNotificationBadge(item: NavItem): boolean {
   return !!item.badge || !!item.children?.some(hasNotificationBadge);
 }
 
-export function createAdminNavigation(t: (key: string) => string): NavItem[] {
+export function navItemCount(item: NavItem): number {
+  return (item.count ?? 0) + (item.children?.reduce((sum, child) => sum + navItemCount(child), 0) ?? 0);
+}
+
+export function createAdminNavigation(t: (key: string) => string, { pendingAccess = 0 }: { pendingAccess?: number } = {}): NavItem[] {
   return [{ title: t("nav.admin_section"), href: "/admin", icon: Shield, children: [
+    { title: t("nav.access_requests"), href: "/admin/access-requests", icon: UserPlus, count: pendingAccess },
     { title: t("nav.admin_pilotage"), href: "/admin/group/pilotage", icon: BarChart3, children: [
       { title: t("nav.analytics"), href: "/admin/analytics", icon: BarChart3 },
       { title: t("nav.revenue"), href: "/admin/revenue", icon: DollarSign },

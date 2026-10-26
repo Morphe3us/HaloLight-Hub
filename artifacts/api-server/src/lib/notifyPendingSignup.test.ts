@@ -30,7 +30,7 @@ test("each approved active admin is told about a pending signup, linking to user
   await notifyAdminsOfPendingSignup({ id: "new", email: "ada@example.invalid", fullName: "Ada Lovelace" });
   assert.deepEqual(sent.map((n) => n.userId), ["admin-1", "admin-2"]);
   assert.equal(sent[0].type, "signup_pending");
-  assert.equal(sent[0].link, "/admin");
+  assert.equal(sent[0].link, "/admin/access-requests");
   assert.match(String(sent[0].body), /Ada Lovelace · ada@example\.invalid/);
 });
 

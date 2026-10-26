@@ -111,7 +111,8 @@
     "role_admin": "Administrator",
     "role_client": "Członek",
     "role_coach": "Coach",
-    "role_sales_rep": "Handlowiec"
+    "role_sales_rep": "Handlowiec",
+    "access_requests": "Prośby o dostęp"
   },
   "dashboard": {
     "title": "Panel",
@@ -883,7 +884,8 @@
     "toast_user_updated": "Użytkownik zaktualizowany",
     "toast_user_save_failed": "Nie można zapisać użytkownika",
     "toast_user_required": "Email i imię i nazwisko są wymagane",
-    "saving_user": "Zapisywanie..."
+    "saving_user": "Zapisywanie...",
+    "access_requests_subtitle": "Nowe rejestracje czekają na Twoją akceptację. Zaakceptuj klienta, aby otworzyć mu dostęp do Hub."
   },
   "leads": {
     "title": "CRM — Leady",

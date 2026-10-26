@@ -111,7 +111,8 @@
     "role_admin": "Administrateur",
     "role_client": "Membre",
     "role_coach": "Coach",
-    "role_sales_rep": "Commercial"
+    "role_sales_rep": "Commercial",
+    "access_requests": "Demandes d’accès"
   },
   "dashboard": {
     "title": "Tableau de bord",
@@ -881,7 +882,8 @@
     "toast_user_updated": "Utilisateur mis à jour",
     "toast_user_save_failed": "Impossible d’enregistrer l’utilisateur",
     "toast_user_required": "E-mail et nom complet requis",
-    "saving_user": "Enregistrement…"
+    "saving_user": "Enregistrement…",
+    "access_requests_subtitle": "Nouvelles inscriptions en attente de votre validation. Validez un client pour lui ouvrir l’accès au Hub."
   },
   "leads": {
     "title": "CRM — Prospects",

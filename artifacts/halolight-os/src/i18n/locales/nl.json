@@ -111,7 +111,8 @@
     "role_admin": "Beheerder",
     "role_client": "Lid",
     "role_coach": "Coach",
-    "role_sales_rep": "Verkoopmedewerker"
+    "role_sales_rep": "Verkoopmedewerker",
+    "access_requests": "Toegangsaanvragen"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -881,7 +882,8 @@
     "toast_user_updated": "Gebruiker bijgewerkt",
     "toast_user_save_failed": "Gebruiker opslaan mislukt",
     "toast_user_required": "E-mail en volledige naam zijn verplicht",
-    "saving_user": "Opslaan..."
+    "saving_user": "Opslaan...",
+    "access_requests_subtitle": "Nieuwe aanmeldingen wachten op uw goedkeuring. Keur een klant goed om toegang tot de Hub te geven."
   },
   "leads": {
     "title": "CRM — Leads",

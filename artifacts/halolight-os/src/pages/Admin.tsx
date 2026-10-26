@@ -74,7 +74,7 @@ const EMPTY_FORM = {
 
 type UserForm = typeof EMPTY_FORM;
 
-export default function Admin() {
+export default function Admin({ initialAccessFilter = "all" }: { initialAccessFilter?: "all" | NonNullable<ListUsersParams["accessStatus"]> } = {}) {
   const { t } = useTranslation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -83,7 +83,7 @@ export default function Admin() {
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
   const [activeFilter, setActiveFilter] = useState("all");
-  const [accessFilter, setAccessFilter] = useState<"all" | NonNullable<ListUsersParams["accessStatus"]>>("all");
+  const [accessFilter, setAccessFilter] = useState<"all" | NonNullable<ListUsersParams["accessStatus"]>>(initialAccessFilter);
   const [offset, setOffset] = useState(0);
   const [review, setReview] = useState<{ user: User; decision: "approved" | "rejected" } | null>(null);
   const tr = (key: string, fallback: string) => t(`auth.${key}`, { defaultValue: fallback });
@@ -242,8 +242,8 @@ export default function Admin() {
   return (
     <div className="space-y-10" data-testid="page-admin">
       <PageHeader
-        title={t("admin.console_title")}
-        description={t("admin.console_subtitle")}
+        title={initialAccessFilter === "pending" ? t("nav.access_requests") : t("admin.console_title")}
+        description={initialAccessFilter === "pending" ? t("admin.access_requests_subtitle") : t("admin.console_subtitle")}
         actions={
           <Button onClick={openCreate} size="sm" className="gap-2">
             <UserPlus className="h-4 w-4 stroke-[1.75]" />

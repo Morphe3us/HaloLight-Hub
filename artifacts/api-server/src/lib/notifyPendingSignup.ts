@@ -18,7 +18,7 @@ export async function notifyAdminsOfPendingSignup(user: PendingSignup): Promise<
       type: "signup_pending",
       title: "Nouvelle inscription à valider",
       body: `${who} attend votre validation pour accéder au Hub.`,
-      link: "/admin",
+      link: "/admin/access-requests",
     })));
   } catch (error) {
     // A failed alert must never block the registration itself.

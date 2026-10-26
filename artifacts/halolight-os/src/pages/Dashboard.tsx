@@ -2,6 +2,7 @@ import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ConsentForm } from "@/components/ConsentGate";
+import { ACCESS_REQUESTS_PATH, usePendingAccessCount } from "@/lib/pendingAccess";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { consentKey, dashboardPreferencesKey, DEFAULT_DASHBOARD_WIDGETS, getConsent, getDashboardPreferences, saveDashboardPreference } from "@/lib/userCompliance";
 import {
@@ -46,6 +47,7 @@ const WIDGET_LABELS: Record<WidgetKey, string> = {
 
 export default function Dashboard() {
   const { t } = useTranslation();
+  const pendingAccess = usePendingAccessCount();
   const hour = new Date().getHours();
   const greeting =
     hour < 12
@@ -126,6 +128,7 @@ export default function Dashboard() {
     : 0;
 
   const attention = [
+    pendingAccess > 0 && { key: "access", count: pendingAccess, label: t("nav.access_requests"), href: ACCESS_REQUESTS_PATH },
     equipmentAlerts > 0 && { key: "equipment", count: equipmentAlerts, label: t("dashboard.kpi_equipment_alerts"), href: "/equipment" },
     lowStockCount > 0 && { key: "stock", count: lowStockCount, label: t("dashboard.kpi_low_stock"), href: "/consumables" },
   ].filter(Boolean) as { key: string; count: number; label: string; href: string }[];

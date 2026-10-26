@@ -46,6 +46,7 @@ export const protectedPages = [
   { path: "/admin/backup", load: () => import("../pages/AdminBackup"), admin: true },
   { path: "/admin/exports", load: () => import("../pages/AdminExports"), admin: true },
   { path: "/admin/contract-templates", load: () => import("../pages/AdminContractTemplates"), admin: true },
+  { path: "/admin/access-requests", load: () => import("../pages/AdminAccessRequests"), admin: true },
   { path: "/admin", load: () => import("../pages/Admin"), admin: true },
   { path: "/equipment/:id", load: () => import("../pages/EquipmentDetail"), admin: false },
   { path: "/equipment", load: () => import("../pages/Equipment"), admin: false },

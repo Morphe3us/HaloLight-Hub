@@ -10,7 +10,8 @@ import { useId, useState } from "react";
 import { useTheme } from "@/components/theme-provider";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { createAdminNavigation, createClientNavigation, hasNotificationBadge, isNavItemActive, type NavItem } from "./sidebarNavigation";
+import { createAdminNavigation, createClientNavigation, hasNotificationBadge, isNavItemActive, navItemCount, type NavItem } from "./sidebarNavigation";
+import { usePendingAccessCount } from "@/lib/pendingAccess";
 import { preloadSidebarPage } from "@/lib/pageRoutes";
 
 function NavLink({
@@ -31,9 +32,10 @@ function NavLink({
   const open = disclosure.location === location ? disclosure.open : isActive;
   if (disclosure.location !== location) setDisclosure({ location, open: isActive });
   const setOpen = (value: boolean) => setDisclosure({ location, open: value });
-  const badge = hasNotificationBadge(item) && unreadCount > 0 ? (
+  const count = navItemCount(item) || (hasNotificationBadge(item) ? unreadCount : 0);
+  const badge = count > 0 ? (
     <span className="bg-foreground text-background text-[11px] font-medium leading-5 px-1.5 rounded-full min-w-5 text-center tabular-nums shrink-0">
-      {unreadCount}
+      {count}
     </span>
   ) : null;
 
@@ -111,7 +113,8 @@ export function Sidebar() {
 
   const navItems = createClientNavigation(t);
 
-  const adminItems: NavItem[] = isAdmin ? createAdminNavigation(t) : [];
+  const pendingAccess = usePendingAccessCount();
+  const adminItems: NavItem[] = isAdmin ? createAdminNavigation(t, { pendingAccess }) : [];
 
   const allItems: NavItem[] = [...navItems, ...adminItems];
 
