@@ -8,6 +8,7 @@ import express from "express";
 import { transformSync } from "esbuild";
 import * as drizzle from "drizzle-orm";
 import { PgDialect } from "drizzle-orm/pg-core";
+import * as nodePostgres from "drizzle-orm/node-postgres";
 import * as schema from "../../../../lib/db/src/schema/consumables";
 import { usersTable } from "../../../../lib/db/src/schema/users";
 import { events } from "../../../../lib/db/src/schema/events";
@@ -102,4 +103,19 @@ test("consumable HTTP usage is owner-scoped and catalog plus stock creation is a
   assert.equal(inserts.length, 2); assert.equal(inserts[0]!.value.reorderThreshold, 0); assert.equal(inserts[1]!.value.userId, "owner");
   assert.equal(inserts[0]!.value.unitType, "prints");
   for (const invalid of [{ ...create, currentQuantity: 1.1 }, { ...create, category: "bad" }, { ...create, averagePrintsPerEvent: -1 }, { ...create, unitType: "rolls" }, { ...create, category: "accessory", unitType: "packs" }]) assert.equal((await request("/consumables/stock", invalid, "owner", "POST")).status, 400);
+});
+
+test("clients only see and reorder catalog items backing their own stock", () => {
+  const db = nodePostgres.drizzle.mock();
+  const deps: Record<string, unknown> = { express, "node:crypto": crypto, "drizzle-orm": drizzle, "@workspace/db": { db, ...schema, usersTable, events }, "../lib/consumableUsage": usage,
+    "../middlewares/requireAuth": { requireAuth: () => undefined }, "../lib/userSync": { getOrCreateUser: async () => null } };
+  const module = { exports: {} as { visibleCatalogItems: (user: { id: string; role: string }) => drizzle.SQL | undefined } };
+  new Function("require", "module", "exports", transformSync(readFileSync(new URL("./consumables.ts", import.meta.url), "utf8"), { loader: "ts", format: "cjs" }).code)
+    ((name: string) => { assert.ok(name in deps, name); return deps[name]; }, module, module.exports);
+  const scope = module.exports.visibleCatalogItems({ id: "client-a", role: "client" });
+  assert.ok(scope);
+  const compiled = new PgDialect().sqlToQuery(scope);
+  assert.match(compiled.sql, /"consumable_catalog"\."id" in \(select "catalog_item_id" from "consumable_stock" where "consumable_stock"\."user_id" = \$1\)/);
+  assert.deepEqual(compiled.params, ["client-a"]);
+  assert.equal(module.exports.visibleCatalogItems({ id: "boss", role: "admin" }), undefined);
 });

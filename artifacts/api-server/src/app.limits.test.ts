@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { once } from "node:events";
 import type { AddressInfo } from "node:net";
 import test from "node:test";
+import express from "express";
 
 test("global JSON limit is 1mb, large routes accept bigger bodies, security headers are set", async (t) => {
   const originalDatabaseUrl = process.env.DATABASE_URL;
@@ -37,14 +38,40 @@ test("global JSON limit is 1mb, large routes accept bigger bodies, security head
   assert.equal(oversized.status, 413);
   assert.deepEqual(await oversized.json(), { error: "Payload Too Large" });
 
-  // Parsed successfully by the route-specific parser, then rejected only by auth.
-  const largeAllowed = await fetch(`${base}/support/tickets`, {
+  // Large route limits are reserved for signed-in callers: anonymous bodies stay at 1mb.
+  const anonymousLarge = await fetch(`${base}/support/tickets`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: body(3 * 1024 * 1024),
   });
-  assert.equal(largeAllowed.status, 401);
-  assert.deepEqual(await largeAllowed.json(), { error: "Unauthorized" });
+  assert.equal(anonymousLarge.status, 413);
+  const anonymousSmall = await fetch(`${base}/support/tickets`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: body(1024),
+  });
+  assert.equal(anonymousSmall.status, 401);
+  assert.deepEqual(await anonymousSmall.json(), { error: "Unauthorized" });
+
+  const { createBodyParsers } = await import("./lib/bodyLimits");
+  const parsers = express();
+  parsers.use((req, _res, next) => { (req as { signedIn?: boolean }).signedIn = req.headers["x-test-auth"] === "1"; next(); });
+  parsers.use(createBodyParsers((req) => Boolean((req as { signedIn?: boolean }).signedIn)));
+  parsers.post("/api/support/tickets", (req, res) => { res.json({ bytes: JSON.stringify(req.body).length }); });
+  parsers.use((error: { status?: number }, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+    res.status(error.status ?? 500).end();
+  });
+  const parsersServer = parsers.listen(0, "127.0.0.1");
+  t.after(() => new Promise<void>((resolve) => { parsersServer.close(() => resolve()); parsersServer.closeAllConnections(); }));
+  await once(parsersServer, "listening");
+  const parsersBase = `http://127.0.0.1:${(parsersServer.address() as AddressInfo).port}`;
+  const post = (signedIn: boolean) => fetch(`${parsersBase}/api/support/tickets`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...(signedIn ? { "x-test-auth": "1" } : {}) },
+    body: body(3 * 1024 * 1024),
+  });
+  assert.equal((await post(true)).status, 200, "signed-in callers keep the route-specific limit");
+  assert.equal((await post(false)).status, 413);
 
   const tooLargeEvenForRoute = await fetch(`${base}/users/me`, {
     method: "PATCH",

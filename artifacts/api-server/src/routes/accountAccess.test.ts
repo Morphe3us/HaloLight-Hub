@@ -109,7 +109,7 @@ test("account approval integration uses real middleware order and route guards w
     "./middlewares/consentGate": { consentGate: ((_req, _res, next) => { consentCalls++; next(); }) as express.RequestHandler },
     "./middlewares/accountAccessGate": { accountAccessGate: gate }, "./routes/accountAccess": access,
     "./lib/bodyLimits": bodyLimits,
-    "./lib/rateLimit": { createApiRateLimiter: () => pass, resolveTrustProxy: () => false },
+    "./lib/rateLimit": { createApiRateLimiter: () => pass, createFailedAuthRateLimiter: () => pass, resolveTrustProxy: () => false },
     "./lib/securityHeaders": { createSecurityHeaders: () => pass },
   }).default;
   const server = app.listen(0, "127.0.0.1"); await once(server, "listening");

@@ -89,6 +89,18 @@ function resolveUrl(input: RequestInfo | URL): string {
   return input.url;
 }
 
+/**
+ * Generated hooks interpolate path params without encoding them. A param taken
+ * from a crafted link, such as "../exports/workspace-zip", would make the browser
+ * normalise the URL and call another endpoint with the signed-in user's token.
+ */
+export function assertNoDotSegments(url: string): void {
+  const path = url.split(/[?#]/, 1)[0];
+  if (path.split(/[\\/]/).some((segment) => /^(?:\.|%2e){1,2}$/i.test(segment))) {
+    throw new TypeError("customFetch: dot segments are not allowed in request URLs.");
+  }
+}
+
 function mergeHeaders(...sources: Array<HeadersInit | undefined>): Headers {
   const headers = new Headers();
 
@@ -338,6 +350,7 @@ export async function customFetch<T = unknown>(
   options: CustomFetchOptions = {},
 ): Promise<T> {
   input = applyBaseUrl(input);
+  assertNoDotSegments(resolveUrl(input));
   const { responseType = "auto", headers: headersInit, ...init } = options;
 
   const method = resolveMethod(input, init.method);

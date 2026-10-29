@@ -47,10 +47,14 @@ onlyBuiltDependencies:
 
 overrides:
   '@esbuild-kit/esm-loader': npm:tsx@^4.21.0
-  # Security: GHSA-4mjr-xmp4-gh2g (qs), GHSA-v422-hmwv-36x6 (body-parser), GHSA-q2hr-2g5m-vwhr (brace-expansion)
-  'qs@<6.16.0': ^6.16.0
-  'body-parser@>=2.0.0 <2.3.0': ^2.3.0
+  # Security: GHSA-4mjr-xmp4-gh2g + GHSA-6pq8-jhm2-2vcw (qs), GHSA-v422-hmwv-36x6 + GHSA-27r3-jxmh-p828 (body-parser),
+  # GHSA-q2hr-2g5m-vwhr (brace-expansion), GHSA-mrhx-c7xc-m3w5 (proxy-addr), compression memory leak, GHSA-rxp7-6hxx-x8q5 (ip-address)
+  'qs@<6.16.1': 6.16.1
+  'body-parser@>=2.0.0 <2.4.0': 2.4.0
   'brace-expansion@>=4.0.0 <5.0.12': ^5.0.12
+  'proxy-addr@<2.0.8': 2.0.8
+  'compression@<1.8.2': 1.8.2
+  'ip-address@<10.7.4': 10.7.4
   '@expo/ngrok-bin>@expo/ngrok-bin-darwin-arm64': '-'
   '@expo/ngrok-bin>@expo/ngrok-bin-darwin-x64': '-'
   '@expo/ngrok-bin>@expo/ngrok-bin-freebsd-ia32': '-'

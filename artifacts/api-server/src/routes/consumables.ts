@@ -8,12 +8,23 @@ import { consumableUsage, parseConsumableUsage } from "../lib/consumableUsage";
 
 const router: IRouter = Router();
 
-// GET /consumables/catalog — all catalog items
+// Client-created items live in the shared catalog table: a client only sees and reorders
+// the items backing their own stock, never entries (names, prices, notes) of other clients.
+export function visibleCatalogItems(user: { id: string; role: string }) {
+  if (user.role === "admin") return undefined;
+  return inArray(
+    consumableCatalog.id,
+    db.select({ id: consumableStock.catalogItemId }).from(consumableStock).where(eq(consumableStock.userId, user.id)),
+  );
+}
+
+// GET /consumables/catalog — catalog items visible to the caller
 router.get("/consumables/catalog", requireAuth, async (req: Request, res: Response): Promise<void> => {
   const user = await getOrCreateUser(req);
   if (!user) { res.status(401).json({ error: "Unauthorized" }); return; }
 
-  const items = await db.select().from(consumableCatalog).orderBy(consumableCatalog.category, consumableCatalog.name);
+  const items = await db.select().from(consumableCatalog).where(visibleCatalogItems(user))
+    .orderBy(consumableCatalog.category, consumableCatalog.name);
   res.json(items);
 });
 
@@ -315,13 +326,16 @@ router.post("/consumables/orders", requireAuth, async (req: Request, res: Respon
   const user = await getOrCreateUser(req);
   if (!user) { res.status(401).json({ error: "Unauthorized" }); return; }
 
-  const { catalogItemId, quantity, notes } = req.body as { catalogItemId: string; quantity: number; notes?: string };
-  if (!catalogItemId || !quantity || quantity < 1) {
+  const { catalogItemId, quantity, notes } = (req.body ?? {}) as { catalogItemId?: unknown; quantity?: unknown; notes?: unknown };
+  if (typeof catalogItemId !== "string" || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(catalogItemId) ||
+    typeof quantity !== "number" || !Number.isInteger(quantity) || quantity < 1 || quantity > 10000 ||
+    (notes != null && (typeof notes !== "string" || notes.length > 2000))) {
     res.status(400).json({ error: "catalogItemId and quantity are required" });
     return;
   }
 
-  const [catalogItem] = await db.select().from(consumableCatalog).where(eq(consumableCatalog.id, catalogItemId));
+  const [catalogItem] = await db.select().from(consumableCatalog)
+    .where(and(eq(consumableCatalog.id, catalogItemId), visibleCatalogItems(user)));
   if (!catalogItem) { res.status(404).json({ error: "Catalog item not found" }); return; }
 
   const unitPrice = Number(catalogItem.unitPrice);
@@ -334,7 +348,7 @@ router.post("/consumables/orders", requireAuth, async (req: Request, res: Respon
     unitPrice: String(unitPrice),
     total: String(total),
     status: "pending",
-    notes: notes ?? null,
+    notes: typeof notes === "string" ? notes : null,
   }).returning();
 
   res.status(201).json(order);

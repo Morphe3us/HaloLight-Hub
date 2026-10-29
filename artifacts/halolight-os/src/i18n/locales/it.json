@@ -22,6 +22,7 @@
     "pending_message": "La tua email è confermata. Il nostro team verificherà il tuo acquisto prima di darti accesso all’Hub.",
     "review_time_max": "Un amministratore esaminerà il tuo account entro un massimo di 12 ore.",
     "purchase_email_hint": "Usa l’indirizzo email utilizzato per il tuo acquisto HaloLight.",
+    "password_account": "Account: {{email}} — non è il suo? Esca e chiuda questa pagina.",
     "registered_email": "Email dell’account",
     "refresh_status": "Verifica il mio stato",
     "switch_account": "Esci e cambia account",

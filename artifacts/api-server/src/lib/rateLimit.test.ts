@@ -6,6 +6,7 @@ import express from "express";
 import {
   RATE_LIMITED_RESPONSE,
   createApiRateLimiter,
+  createFailedAuthRateLimiter,
   createRateLimiter,
   readLimit,
   resolveTrustProxy,
@@ -61,6 +62,28 @@ test("general API limiter never counts health probes and 0 disables it", async (
   for (let i = 0; i < 3; i++) {
     assert.equal((await fetch(`${disabledBase}/api/thing`)).status, 200);
   }
+});
+
+test("failed-auth limiter only counts 401s that carried a bearer token", async (t) => {
+  const app = express();
+  app.use(createFailedAuthRateLimiter({ FAILED_AUTH_RATE_LIMIT_PER_15_MINUTES: "2" }));
+  app.get("/api/thing", (req, res) => {
+    if (req.headers.authorization === "Bearer good") res.json({ ok: true });
+    else res.status(401).json({ error: "Unauthorized" });
+  });
+  const base = await serve(t, app);
+  const call = (token?: string) => fetch(`${base}/api/thing`, token ? { headers: { authorization: `Bearer ${token}` } } : {});
+
+  for (let i = 0; i < 4; i++) {
+    assert.equal((await call("good")).status, 200, "valid sessions are never counted");
+    assert.equal((await call()).status, 401, "anonymous requests are never counted");
+  }
+  assert.equal((await call("forged")).status, 401);
+  assert.equal((await call("forged")).status, 401);
+  const limited = await call("forged");
+  assert.equal(limited.status, 429);
+  assert.deepEqual(await limited.json(), RATE_LIMITED_RESPONSE);
+  assert.equal(limited.headers.get("ratelimit"), null, "does not clobber the API limiter headers");
 });
 
 test("limit and trust proxy configuration parsing", () => {

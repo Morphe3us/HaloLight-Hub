@@ -1,7 +1,7 @@
 import express, { type Express } from "express";
 import cors from "cors";
 import pinoHttp from "pino-http";
-import { supabaseAuth } from "./middlewares/supabaseAuth";
+import { getAuth, supabaseAuth } from "./middlewares/supabaseAuth";
 import router from "./routes";
 import { logger } from "./lib/logger";
 import { getAllowedCorsOrigins, isCorsOriginAllowed } from "./lib/corsPolicy";
@@ -13,7 +13,7 @@ import { consentGate } from "./middlewares/consentGate";
 import { accountAccessGate } from "./middlewares/accountAccessGate";
 import accountAccessRouter from "./routes/accountAccess";
 import { createBodyParsers } from "./lib/bodyLimits";
-import { createApiRateLimiter, resolveTrustProxy } from "./lib/rateLimit";
+import { createApiRateLimiter, createFailedAuthRateLimiter, resolveTrustProxy } from "./lib/rateLimit";
 import { createSecurityHeaders } from "./lib/securityHeaders";
 
 const app: Express = express();
@@ -57,13 +57,15 @@ app.use("/api", healthRouter);
 if (process.env.NODE_ENV === "production") {
   app.use(createFrontendHandler(process.env.FRONTEND_DIST_PATH || "artifacts/halolight-os/dist/public"));
 }
-// Strict 1mb default; only the routes listed in lib/bodyLimits accept larger JSON.
-app.use(createBodyParsers());
-
+// Before auth: only forged or expired bearer tokens are counted, per IP.
+app.use(createFailedAuthRateLimiter());
 app.use(supabaseAuth);
 // After auth so authenticated traffic is counted per user rather than per IP.
 app.use("/api", createApiRateLimiter());
 app.use("/api", accountAccessGate);
+// Bodies are read only once the caller is known: strict 1mb default, and only
+// signed-in, approved users reach the larger limits listed in lib/bodyLimits.
+app.use(createBodyParsers((req) => Boolean(getAuth(req)?.userId)));
 app.use("/api", (req, res, next) => {
   if (req.method === "GET" && req.path === "/users/me/access") accountAccessRouter(req, res, next);
   else next();

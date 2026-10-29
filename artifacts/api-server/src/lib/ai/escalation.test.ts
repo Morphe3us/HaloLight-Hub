@@ -86,7 +86,7 @@ test("AI escalation enqueues mail in the ticket transaction and dispatches only 
     "../lib/userSync": { getOrCreateUser: async () => user },
     "../lib/ai/factory": {},
     "../lib/ai/chatLimits": {},
-    "../lib/rateLimit": { createAiRateLimiters: () => [] },
+    "../lib/rateLimit": { createAiRateLimiters: () => [], createTicketRateLimiter: () => (_req: unknown, _res: unknown, next: () => void) => next() },
     "../lib/ai/provider": {},
     "../lib/ai/rag": {},
     "../lib/ai/supportPolicy": supportPolicy,

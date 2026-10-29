@@ -1,4 +1,4 @@
-import express, { type RequestHandler } from "express";
+import express, { type Request, type RequestHandler } from "express";
 
 /** Default JSON/urlencoded body limit for every API route not listed below. */
 export const DEFAULT_BODY_LIMIT = "1mb";
@@ -34,15 +34,17 @@ export function largeBodyLimitFor(method: string, path: string): string | undefi
 /**
  * Route-specific large parsers run first; body-parser skips a request whose body
  * stream was already consumed, so the strict global parsers below never re-read it.
+ * `allowLarge` gates the large limits (the app passes "authenticated"), so anonymous
+ * callers cannot make the server buffer and parse tens of megabytes per request.
  */
-export function createBodyParsers(): RequestHandler[] {
+export function createBodyParsers(allowLarge: (req: Request) => boolean = () => true): RequestHandler[] {
   const largeParsers = new Map<string, RequestHandler>();
   for (const { limit } of LARGE_BODY_ROUTES) {
     if (!largeParsers.has(limit)) largeParsers.set(limit, express.json({ limit }));
   }
   const large: RequestHandler = (req, res, next) => {
     const limit = largeBodyLimitFor(req.method, req.path);
-    if (!limit) {
+    if (!limit || !allowLarge(req)) {
       next();
       return;
     }

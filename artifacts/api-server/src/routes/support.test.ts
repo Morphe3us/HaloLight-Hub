@@ -47,6 +47,7 @@ test("support HTTP creation queues once atomically, edits never requeue, attachm
       saveTicketAttachments: async () => [{ id: "12345678-1234-4321-8123-123456789abc", key: "PRIVATE-KEY", fileName: "fixture.pdf", mimeType: "application/pdf", size: bytes.length }] },
     "../lib/mail/ticketOutbox": { enqueueTicketMail: async () => { assert.ok(inTransaction); enqueued++; }, dispatchTicketMail: async () => { dispatched++; }, ticketMailHistory: async () => ({ emailDelivery: { status: "disabled", attempts: 0, sentAt: null }, deliveryHistory: [] }) },
     "../middlewares/requireAuth": { requireAuth: (req: express.Request, res: express.Response, next: express.NextFunction) => { if (!req.headers["x-user"]) { res.sendStatus(401); return; } next(); } },
+    "../lib/rateLimit": { createTicketRateLimiter: () => (_req: express.Request, _res: express.Response, next: express.NextFunction) => next() },
     "../lib/userSync": { getOrCreateUser: async (req: express.Request) => ({ id: req.headers["x-user"], role: req.headers["x-user"] === "admin" ? "admin" : "client" }) },
   };
   const module = { exports: {} as { default: express.Router } };

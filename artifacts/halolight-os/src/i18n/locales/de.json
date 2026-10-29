@@ -22,6 +22,7 @@
     "pending_message": "Ihre E-Mail-Adresse ist bestätigt. Unser Team prüft Ihren Kauf, bevor Ihr Hub-Zugang freigegeben wird.",
     "review_time_max": "Ein Administrator prüft Ihr Konto innerhalb von maximal 12 Stunden.",
     "purchase_email_hint": "Verwenden Sie die E-Mail-Adresse Ihres HaloLight-Kaufs.",
+    "password_account": "Konto: {{email}} — nicht Ihr Konto? Melden Sie sich ab und schließen Sie diese Seite.",
     "registered_email": "E-Mail-Adresse des Kontos",
     "refresh_status": "Status prüfen",
     "switch_account": "Abmelden und Konto wechseln",

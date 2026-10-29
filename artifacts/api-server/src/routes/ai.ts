@@ -11,7 +11,7 @@ import { requireAuth } from "../middlewares/requireAuth";
 import { getOrCreateUser } from "../lib/userSync";
 import { getAIProvider } from "../lib/ai/factory";
 import { chatInputError } from "../lib/ai/chatLimits";
-import { createAiRateLimiters } from "../lib/rateLimit";
+import { createAiRateLimiters, createTicketRateLimiter } from "../lib/rateLimit";
 import {
   enqueueTicketMail,
   dispatchTicketMail,
@@ -31,6 +31,7 @@ import {
 const router: IRouter = Router();
 // Shared per-user burst + daily caps for every route that calls the LLM provider.
 const aiRateLimit = createAiRateLimiters();
+const ticketRateLimit = createTicketRateLimiter();
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -455,6 +456,7 @@ router.post(
 router.post(
   "/ai/conversations/:id/escalate",
   requireAuth,
+  ticketRateLimit,
   async (req: Request, res: Response): Promise<void> => {
     const user = await getOrCreateUser(req);
     if (!user) {
@@ -490,16 +492,20 @@ router.post(
       )
       .join("\n\n");
 
-    const { subject, priority = "medium" } = req.body as {
-      subject?: string;
+    const { subject, priority = "medium" } = (req.body ?? {}) as {
+      subject?: unknown;
       priority?: string;
     };
+    if (subject !== undefined && (typeof subject !== "string" || subject.length > 250)) {
+      res.status(400).json({ error: "Invalid subject" });
+      return;
+    }
     const liveFailure = classifySupport(
       recentSupportContext([...messages].reverse()),
     ).liveFailure;
 
     const ticketTitle = redactSensitiveText(
-      subject ?? `AI Chat: ${conv.title}`,
+      subject?.trim() || `AI Chat: ${conv.title}`,
     );
     const ticketBody = `This support ticket was escalated from an AI Assistant conversation.\n\n---\n\n${transcript}\n\n---\n\n*Conversation ID: ${id}*`;
 

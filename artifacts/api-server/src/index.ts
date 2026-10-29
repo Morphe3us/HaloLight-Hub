@@ -3,6 +3,7 @@ import { logger } from "./lib/logger";
 import { startAutomationScheduler, stopAutomationScheduler } from "./lib/automation/scheduler";
 import { pool } from "@workspace/db";
 import { startTicketMailWorker, stopTicketMailWorker } from "./lib/mail/ticketOutbox";
+import { warnIfDataApiExposed } from "./lib/dataApiExposure";
 
 const rawPort = process.env["PORT"] ?? "8080";
 
@@ -21,6 +22,7 @@ const server = app.listen(port, (err) => {
   logger.info({ port }, "Server listening");
   startAutomationScheduler();
   startTicketMailWorker();
+  void warnIfDataApiExposed();
 });
 
 let stopping = false;

@@ -7,8 +7,10 @@ import { requireAuth } from "../middlewares/requireAuth";
 import { getOrCreateUser } from "../lib/userSync";
 import { decodeTicketAttachments, publicTicketAttachments, removeTicketAttachments, saveTicketAttachments, ticketAttachmentStorage } from "../lib/supportAttachments";
 import { dispatchTicketMail, enqueueTicketMail, ticketMailHistory } from "../lib/mail/ticketOutbox";
+import { createTicketRateLimiter } from "../lib/rateLimit";
 
 const router: IRouter = Router();
+const ticketRateLimit = createTicketRateLimiter();
 const priorities = ["low", "medium", "high", "urgent"];
 const categories = ["billing", "technical", "general", "feature_request", "bug_report"];
 const statuses = ["open", "in_progress", "waiting_on_client", "resolved", "closed"];
@@ -70,7 +72,7 @@ router.get("/support/tickets", requireAuth, async (req: Request, res: Response):
 });
 
 // POST /support/tickets
-router.post("/support/tickets", requireAuth, async (req: Request, res: Response): Promise<void> => {
+router.post("/support/tickets", requireAuth, ticketRateLimit, async (req: Request, res: Response): Promise<void> => {
   const user = await getOrCreateUser(req);
   if (!user) { res.status(401).json({ error: "Unauthorized" }); return; }
 

@@ -8,12 +8,15 @@ export const RATE_LIMITED_RESPONSE = {
 } as const;
 
 const MINUTE_MS = 60_000;
-const DAY_MS = 24 * 60 * MINUTE_MS;
+const HOUR_MS = 60 * MINUTE_MS;
+const DAY_MS = 24 * HOUR_MS;
 
 export const RATE_LIMIT_DEFAULTS = {
   apiPerMinute: 600,
   aiPerMinute: 20,
   aiPerDay: 300,
+  ticketsPerHour: 20,
+  failedAuthPer15Minutes: 100,
 } as const;
 
 /** Positive integer from env; "0" disables the limiter; invalid values keep the default. */
@@ -78,6 +81,38 @@ export function createAiRateLimiters(env: NodeJS.ProcessEnv = process.env): Requ
       limit: readLimit(env.AI_RATE_LIMIT_PER_DAY, RATE_LIMIT_DEFAULTS.aiPerDay),
     }),
   ];
+}
+
+/** Each ticket stores up to 10 MiB of attachments and queues an e-mail: cap creation per user. */
+export function createTicketRateLimiter(env: NodeJS.ProcessEnv = process.env): RequestHandler {
+  return createRateLimiter({
+    windowMs: HOUR_MS,
+    limit: readLimit(env.SUPPORT_TICKET_RATE_LIMIT_PER_HOUR, RATE_LIMIT_DEFAULTS.ticketsPerHour),
+  });
+}
+
+/**
+ * Mount before supabaseAuth. Counts, per client IP, only requests that carry a
+ * bearer token and end in 401: forged tokens can force signing-key lookups and
+ * Supabase Auth calls, while valid sessions and anonymous visitors are never counted.
+ */
+export function createFailedAuthRateLimiter(env: NodeJS.ProcessEnv = process.env): RequestHandler {
+  const limit = readLimit(env.FAILED_AUTH_RATE_LIMIT_PER_15_MINUTES, RATE_LIMIT_DEFAULTS.failedAuthPer15Minutes);
+  if (limit <= 0) return (_req, _res, next) => next();
+  return rateLimit({
+    windowMs: 15 * MINUTE_MS,
+    limit,
+    standardHeaders: false,
+    legacyHeaders: false,
+    keyGenerator: (req) => `auth-fail:${ipKeyGenerator(req.ip ?? req.socket.remoteAddress ?? "unknown")}`,
+    skip: (req) => req.headers.authorization === undefined,
+    skipSuccessfulRequests: true,
+    requestWasSuccessful: (_req, res) => res.statusCode !== 401,
+    handler(_req, res) {
+      res.setHeader("Cache-Control", "no-store");
+      res.status(429).json(RATE_LIMITED_RESPONSE);
+    },
+  });
 }
 
 /**

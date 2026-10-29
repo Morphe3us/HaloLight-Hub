@@ -6,13 +6,20 @@ import { contractPrintSettings } from "./contractPrintSettings";
 import type { Lead } from "@workspace/api-client-react";
 
 test("all prospect actions open the main module using only an encoded ID", () => {
+  const id = "3f0c2a4e-8b1d-4c6e-9a7f-2d5b8e1c0f9a";
   for (const module of ["quotes", "invoices", "contracts"] as const) {
-    const url = prospectCreationUrl(module, "id&create=0");
+    const url = prospectCreationUrl(module, id);
     assert.ok(url.startsWith(`/${module}?`));
-    assert.equal(creationLeadId(url.split("?")[1]), "id&create=0");
+    assert.equal(creationLeadId(url.split("?")[1]), id);
   }
-  assert.equal(creationLeadId("leadId=x"), null);
+  assert.equal(creationLeadId(`leadId=${id}`), null);
   assert.equal(creationLeadId("create=1"), null);
+});
+
+test("a crafted leadId never reaches the API client", () => {
+  for (const bad of ["../exports/workspace-zip", "id&create=0", "x", `${"3f0c2a4e-8b1d-4c6e-9a7f-2d5b8e1c0f9a"}/../../users`]) {
+    assert.equal(creationLeadId(new URLSearchParams({ create: "1", leadId: bad }).toString()), null);
+  }
 });
 
 test("prefill preserves contact and event data without inventing line items or venue", () => {

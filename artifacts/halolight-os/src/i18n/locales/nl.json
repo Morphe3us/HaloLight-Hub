@@ -22,6 +22,7 @@
     "pending_message": "Uw e-mailadres is bevestigd. Ons team controleert uw aankoop voordat u toegang krijgt tot de Hub.",
     "review_time_max": "Een beheerder beoordeelt uw account binnen maximaal 12 uur.",
     "purchase_email_hint": "Gebruik het e-mailadres waarmee u uw HaloLight-aankoop hebt gedaan.",
+    "password_account": "Account: {{email}} — niet van u? Meld u af en sluit deze pagina.",
     "registered_email": "E-mailadres van het account",
     "refresh_status": "Mijn status controleren",
     "switch_account": "Uitloggen en van account wisselen",

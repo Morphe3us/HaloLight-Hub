@@ -103,6 +103,12 @@ export function AuthPage({ mode }: { mode: Mode }) {
           />
         </Link>
         <h1 className="text-center text-xl font-semibold tracking-tight text-foreground">{title}</h1>
+        {mode === "password" && auth.user?.email && (
+          // A reset link can sign this browser into someone else's account: always show which one.
+          <p className="mt-2 text-center text-sm text-muted-foreground" data-testid="text-password-account">
+            {t("auth.password_account", { email: auth.user.email, defaultValue: "Account: {{email}} — not you? Sign out and close this page." })}
+          </p>
+        )}
         {(mode === "sign-in" || mode === "sign-up") && !sent && (
           <p className="mt-2 text-center text-sm text-muted-foreground">
             {tr("purchase_email_hint", "Use the email address used for your HaloLight purchase.")}
